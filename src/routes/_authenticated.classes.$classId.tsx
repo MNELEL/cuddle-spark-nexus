@@ -69,7 +69,7 @@ function ClassDetail() {
         </TabsContent>
 
         <TabsContent value="relations" className="mt-4">
-          <RelationsTab classId={classId} students={students as Student[]} relations={relations} />
+          <RelationsTab classId={classId} students={students as Student[]} relations={relations as never} />
         </TabsContent>
 
         <TabsContent value="seating" className="mt-4">
