@@ -140,5 +140,6 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family: "Heebo", system-ui, -apple-system, sans-serif;
   }
 }
