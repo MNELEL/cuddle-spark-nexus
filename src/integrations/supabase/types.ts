@@ -14,7 +14,147 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      classes: {
+        Row: {
+          created_at: string
+          grid_cols: number
+          grid_rows: number
+          id: string
+          name: string
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          grid_cols?: number
+          grid_rows?: number
+          id?: string
+          name: string
+          owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          grid_cols?: number
+          grid_rows?: number
+          id?: string
+          name?: string
+          owner_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
+      student_relations: {
+        Row: {
+          class_id: string
+          created_at: string
+          id: string
+          kind: string
+          student_a: string
+          student_b: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          id?: string
+          kind: string
+          student_a: string
+          student_b: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          student_a?: string
+          student_b?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_relations_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_relations_student_a_fkey"
+            columns: ["student_a"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_relations_student_b_fkey"
+            columns: ["student_b"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      students: {
+        Row: {
+          class_id: string
+          corner_pref: boolean
+          created_at: string
+          gender: string | null
+          height: string
+          id: string
+          name: string
+          notes: string | null
+          row_pref: string
+        }
+        Insert: {
+          class_id: string
+          corner_pref?: boolean
+          created_at?: string
+          gender?: string | null
+          height?: string
+          id?: string
+          name: string
+          notes?: string | null
+          row_pref?: string
+        }
+        Update: {
+          class_id?: string
+          corner_pref?: boolean
+          created_at?: string
+          gender?: string | null
+          height?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          row_pref?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "students_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
