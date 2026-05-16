@@ -180,6 +180,91 @@ export function SeatingGrid({ classId }: { classId: string }) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
   const [activeStudent, setActiveStudent] = useState<Student | null>(null);
 
+  // Accessibility mode (keyboard navigation + screen reader)
+  const [a11y, setA11y] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("cmp.a11y") === "1";
+  });
+  const [highContrast, setHighContrast] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("cmp.hc") === "1";
+  });
+  useEffect(() => { localStorage.setItem("cmp.a11y", a11y ? "1" : "0"); }, [a11y]);
+  useEffect(() => { localStorage.setItem("cmp.hc", highContrast ? "1" : "0"); }, [highContrast]);
+
+  const [focus, setFocus] = useState<{ r: number; c: number }>({ r: 0, c: 0 });
+  const [grabbedId, setGrabbedId] = useState<string | null>(null);
+  const [announcement, setAnnouncement] = useState<string>("");
+  const seatRefs = useRef<Map<string, HTMLElement>>(new Map());
+
+  const announce = (msg: string) => setAnnouncement(msg);
+
+  const isHidden = (r: number, c: number) => hiddenSet.has(seatKey(r, c));
+
+  const moveFocus = (dr: number, dc: number) => {
+    let nr = focus.r, nc = focus.c;
+    for (let step = 0; step < rows * cols; step++) {
+      nr = Math.max(0, Math.min(rows - 1, nr + dr));
+      nc = Math.max(0, Math.min(cols - 1, nc + dc));
+      if (!isHidden(nr, nc)) break;
+      if (nr === 0 && dr < 0) break;
+      if (nr === rows - 1 && dr > 0) break;
+      if (nc === 0 && dc < 0) break;
+      if (nc === cols - 1 && dc > 0) break;
+    }
+    setFocus({ r: nr, c: nc });
+    requestAnimationFrame(() => seatRefs.current.get(seatKey(nr, nc))?.focus());
+  };
+
+  const activateSeat = () => {
+    const { r, c } = focus;
+    if (isHidden(r, c)) { hideM.mutate({ row: r, col: c }); return; }
+    const child = seated.get(seatKey(r, c));
+    if (grabbedId) {
+      const student = students.find((s) => s.id === grabbedId);
+      if (!student) { setGrabbedId(null); return; }
+      const occupant = seated.get(seatKey(r, c));
+      if (occupant?.seat_locked) { toast.error("המושב היעד נעול"); return; }
+      moveM.mutate({ student_id: grabbedId, seat_row: r, seat_col: c });
+      announce(`${student.name} הונח בשורה ${r + 1} עמודה ${c + 1}`);
+      setGrabbedId(null);
+    } else if (child) {
+      if (child.seat_locked) { toast.error("המושב נעול"); return; }
+      setGrabbedId(child.id);
+      announce(`${child.name} נאסף. בחר מושב יעד והקש Enter.`);
+    }
+  };
+
+  const onGridKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!a11y) return;
+    const isRTL = true;
+    switch (e.key) {
+      case "ArrowUp": e.preventDefault(); moveFocus(-1, 0); break;
+      case "ArrowDown": e.preventDefault(); moveFocus(1, 0); break;
+      case "ArrowLeft": e.preventDefault(); moveFocus(0, isRTL ? 1 : -1); break;
+      case "ArrowRight": e.preventDefault(); moveFocus(0, isRTL ? -1 : 1); break;
+      case "Home": e.preventDefault(); setFocus({ r: focus.r, c: 0 }); break;
+      case "End": e.preventDefault(); setFocus({ r: focus.r, c: cols - 1 }); break;
+      case "Enter":
+      case " ": e.preventDefault(); activateSeat(); break;
+      case "Escape":
+        if (grabbedId) { e.preventDefault(); setGrabbedId(null); announce("הפעולה בוטלה"); }
+        else if (selectedId) { e.preventDefault(); setSelectedId(null); }
+        break;
+      case "l": case "L": {
+        e.preventDefault();
+        const child = seated.get(seatKey(focus.r, focus.c));
+        if (child) { lockM.mutate({ id: child.id, locked: !child.seat_locked }); announce(child.seat_locked ? "נעילה הוסרה" : "המושב ננעל"); }
+        break;
+      }
+      case "h": case "H": {
+        e.preventDefault();
+        if (!seated.get(seatKey(focus.r, focus.c))) { hideM.mutate({ row: focus.r, col: focus.c }); announce(isHidden(focus.r, focus.c) ? "הוצג" : "הוסתר"); }
+        break;
+      }
+    }
+  };
+
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["students", classId] });
   };
@@ -271,7 +356,8 @@ export function SeatingGrid({ classId }: { classId: string }) {
 
   return (
     <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
-      <div className="space-y-4">
+      <div className={`space-y-4 ${highContrast ? "contrast-125 [&_*]:!border-foreground/60" : ""}`}>
+        <div aria-live="polite" aria-atomic="true" className="sr-only">{announcement}</div>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap gap-2">
             <Button size="sm" onClick={() => smartM.mutate()} disabled={smartM.isPending || students.length === 0}>
@@ -288,16 +374,57 @@ export function SeatingGrid({ classId }: { classId: string }) {
                 בטל בחירה
               </Button>
             )}
+            {grabbedId && (
+              <Button size="sm" variant="destructive" onClick={() => { setGrabbedId(null); announce("הפעולה בוטלה"); }}>
+                בטל הרמה ({nameOf(grabbedId)})
+              </Button>
+            )}
           </div>
-          <GridSettings rows={rows} cols={cols} onSave={(r, c) =>
-            updateClassFn({ data: { id: classId, grid_rows: r, grid_cols: c } })
-              .then(() => qc.invalidateQueries({ queryKey: ["class", classId] }))
-          } />
+          <div className="flex items-center gap-3">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button size="sm" variant={a11y ? "default" : "ghost"} aria-pressed={a11y} aria-label="הגדרות נגישות">
+                  <Accessibility className="ms-1 h-4 w-4" /> נגישות
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-72 space-y-3 text-sm">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="a11y-toggle">ניווט מקלדת וקורא מסך</Label>
+                  <Switch id="a11y-toggle" checked={a11y} onCheckedChange={setA11y} />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="hc-toggle">ניגודיות גבוהה</Label>
+                  <Switch id="hc-toggle" checked={highContrast} onCheckedChange={setHighContrast} />
+                </div>
+                <div className="rounded bg-muted/40 p-2 text-[11px] leading-relaxed text-muted-foreground">
+                  <div className="font-semibold mb-1">קיצורי מקלדת:</div>
+                  חיצים — ניווט בין מושבים<br />
+                  Enter / רווח — הרם תלמיד / הנח<br />
+                  Esc — בטל הרמה / בחירה<br />
+                  L — נעל / שחרר מושב<br />
+                  H — הסתר / הצג מושב ריק<br />
+                  Home / End — תחילת/סוף השורה
+                </div>
+              </PopoverContent>
+            </Popover>
+            <GridSettings rows={rows} cols={cols} onSave={(r, c) =>
+              updateClassFn({ data: { id: classId, grid_rows: r, grid_cols: c } })
+                .then(() => qc.invalidateQueries({ queryKey: ["class", classId] }))
+            } />
+          </div>
         </div>
 
         <div id="seating-grid-canvas" className="rounded-lg border bg-muted/30 p-3">
           <div className="mb-2 text-center text-xs font-semibold text-muted-foreground">חזית הכיתה</div>
-          <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0,1fr))` }}>
+          <div
+            role={a11y ? "grid" : undefined}
+            aria-label={a11y ? `סידור הושבה, ${rows} שורות על ${cols} עמודות` : undefined}
+            aria-rowcount={a11y ? rows : undefined}
+            aria-colcount={a11y ? cols : undefined}
+            onKeyDown={onGridKeyDown}
+            className="grid gap-2 outline-none"
+            style={{ gridTemplateColumns: `repeat(${cols}, minmax(0,1fr))` }}
+          >
             {Array.from({ length: rows }).flatMap((_, r) =>
               Array.from({ length: cols }).map((__, c) => {
                 const child = seated.get(seatKey(r, c)) ?? null;
@@ -311,11 +438,25 @@ export function SeatingGrid({ classId }: { classId: string }) {
                     onSelect={() => child && setSelectedId((cur) => cur === child.id ? null : child.id)}
                     onToggleHide={() => hideM.mutate({ row: r, col: c })}
                     onToggleLock={() => child && lockM.mutate({ id: child.id, locked: !child.seat_locked })}
+                    a11y={a11y}
+                    focused={a11y && focus.r === r && focus.c === c}
+                    grabbedId={grabbedId}
+                    onFocusSeat={() => setFocus({ r, c })}
+                    seatRef={(el) => {
+                      const k = seatKey(r, c);
+                      if (el) seatRefs.current.set(k, el);
+                      else seatRefs.current.delete(k);
+                    }}
                   />
                 );
               }),
             )}
           </div>
+          {a11y && (
+            <div className="mt-2 text-center text-[11px] text-muted-foreground">
+              {grabbedId ? `מצב הרמה: ${nameOf(grabbedId)} — בחר מושב יעד והקש Enter (Esc לביטול)` : "השתמש בחיצים לניווט, Enter להרמה/הנחה"}
+            </div>
+          )}
         </div>
 
         <UnseatedTray students={unseated} highlightMap={highlightMap} onSelect={(id) => setSelectedId((cur) => cur === id ? null : id)} />
