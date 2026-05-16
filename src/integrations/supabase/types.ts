@@ -47,6 +47,30 @@ export type Database = {
         }
         Relationships: []
       }
+      groups: {
+        Row: {
+          class_id: string
+          color: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          class_id: string
+          color?: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          class_id?: string
+          color?: string
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -62,6 +86,45 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+        }
+        Relationships: []
+      }
+      seating_configs: {
+        Row: {
+          class_id: string
+          created_at: string
+          id: string
+          name: string
+          snapshot: Json
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          id?: string
+          name: string
+          snapshot: Json
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          snapshot?: Json
+        }
+        Relationships: []
+      }
+      student_groups: {
+        Row: {
+          group_id: string
+          student_id: string
+        }
+        Insert: {
+          group_id: string
+          student_id: string
+        }
+        Update: {
+          group_id?: string
+          student_id?: string
         }
         Relationships: []
       }

@@ -24,6 +24,8 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Heart, Ban, MoveHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { SeatingGrid } from "@/components/seating-grid";
+import { GroupsTab } from "@/components/groups-tab";
+import { ImportExportBar } from "@/components/import-export";
 
 export const Route = createFileRoute("/_authenticated/classes/$classId")({
   component: ClassDetail,
@@ -62,10 +64,12 @@ function ClassDetail() {
         <TabsList>
           <TabsTrigger value="students">תלמידים</TabsTrigger>
           <TabsTrigger value="relations">אילוצים</TabsTrigger>
+          <TabsTrigger value="groups">קבוצות</TabsTrigger>
           <TabsTrigger value="seating">סידור</TabsTrigger>
         </TabsList>
 
         <TabsContent value="students" className="mt-4">
+          <div className="mb-3"><ImportExportBar classId={classId} /></div>
           <StudentsTab classId={classId} students={students as Student[]} />
         </TabsContent>
 
@@ -73,7 +77,12 @@ function ClassDetail() {
           <RelationsTab classId={classId} students={students as Student[]} relations={relations as never} />
         </TabsContent>
 
+        <TabsContent value="groups" className="mt-4">
+          <GroupsTab classId={classId} />
+        </TabsContent>
+
         <TabsContent value="seating" className="mt-4">
+          <div className="mb-3"><ImportExportBar classId={classId} /></div>
           <SeatingGrid classId={classId} />
         </TabsContent>
       </Tabs>
