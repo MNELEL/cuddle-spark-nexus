@@ -19,6 +19,7 @@ export type Database = {
           created_at: string
           grid_cols: number
           grid_rows: number
+          hidden_seats: Json
           id: string
           name: string
           owner_id: string
@@ -28,6 +29,7 @@ export type Database = {
           created_at?: string
           grid_cols?: number
           grid_rows?: number
+          hidden_seats?: Json
           id?: string
           name: string
           owner_id: string
@@ -37,6 +39,7 @@ export type Database = {
           created_at?: string
           grid_cols?: number
           grid_rows?: number
+          hidden_seats?: Json
           id?: string
           name?: string
           owner_id?: string
@@ -122,6 +125,9 @@ export type Database = {
           name: string
           notes: string | null
           row_pref: string
+          seat_col: number | null
+          seat_locked: boolean
+          seat_row: number | null
         }
         Insert: {
           class_id: string
@@ -133,6 +139,9 @@ export type Database = {
           name: string
           notes?: string | null
           row_pref?: string
+          seat_col?: number | null
+          seat_locked?: boolean
+          seat_row?: number | null
         }
         Update: {
           class_id?: string
@@ -144,6 +153,9 @@ export type Database = {
           name?: string
           notes?: string | null
           row_pref?: string
+          seat_col?: number | null
+          seat_locked?: boolean
+          seat_row?: number | null
         }
         Relationships: [
           {

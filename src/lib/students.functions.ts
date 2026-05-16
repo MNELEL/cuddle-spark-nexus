@@ -52,6 +52,101 @@ export const deleteStudent = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// seating
+export const setSeat = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z.object({
+      class_id: z.string().uuid(),
+      student_id: z.string().uuid(),
+      seat_row: z.number().int().min(0).nullable(),
+      seat_col: z.number().int().min(0).nullable(),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    // if target seat occupied by another student, swap
+    if (data.seat_row !== null && data.seat_col !== null) {
+      const { data: occupant } = await context.supabase
+        .from("students")
+        .select("id, seat_row, seat_col")
+        .eq("class_id", data.class_id)
+        .eq("seat_row", data.seat_row)
+        .eq("seat_col", data.seat_col)
+        .maybeSingle();
+
+      const { data: mover } = await context.supabase
+        .from("students")
+        .select("seat_row, seat_col")
+        .eq("id", data.student_id)
+        .single();
+
+      if (occupant && occupant.id !== data.student_id) {
+        // clear both first to avoid unique conflict
+        await context.supabase.from("students").update({ seat_row: null, seat_col: null }).eq("id", occupant.id);
+        await context.supabase.from("students").update({ seat_row: null, seat_col: null }).eq("id", data.student_id);
+        await context.supabase.from("students")
+          .update({ seat_row: mover?.seat_row ?? null, seat_col: mover?.seat_col ?? null })
+          .eq("id", occupant.id);
+      }
+    }
+    const { error } = await context.supabase
+      .from("students")
+      .update({ seat_row: data.seat_row, seat_col: data.seat_col })
+      .eq("id", data.student_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const toggleSeatLock = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ id: z.string().uuid(), locked: z.boolean() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.from("students").update({ seat_locked: data.locked }).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const clearAllSeats = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ class_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("students")
+      .update({ seat_row: null, seat_col: null })
+      .eq("class_id", data.class_id)
+      .eq("seat_locked", false);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const toggleHiddenSeat = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z.object({
+      class_id: z.string().uuid(),
+      row: z.number().int().min(0),
+      col: z.number().int().min(0),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: cls, error: e1 } = await context.supabase
+      .from("classes").select("hidden_seats").eq("id", data.class_id).single();
+    if (e1) throw new Error(e1.message);
+    const key = `${data.row}:${data.col}`;
+    const list: string[] = Array.isArray(cls?.hidden_seats) ? (cls!.hidden_seats as string[]) : [];
+    const next = list.includes(key) ? list.filter((k) => k !== key) : [...list, key];
+    // if hiding, evict any occupant
+    if (!list.includes(key)) {
+      await context.supabase.from("students")
+        .update({ seat_row: null, seat_col: null })
+        .eq("class_id", data.class_id).eq("seat_row", data.row).eq("seat_col", data.col);
+    }
+    const { error } = await context.supabase.from("classes")
+      .update({ hidden_seats: next }).eq("id", data.class_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 // relations
 const kindEnum = z.enum(["friend", "avoid", "distance"]);
 

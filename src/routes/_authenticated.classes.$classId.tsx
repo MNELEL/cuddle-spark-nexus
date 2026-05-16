@@ -23,6 +23,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Heart, Ban, MoveHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { SeatingGrid } from "@/components/seating-grid";
 
 export const Route = createFileRoute("/_authenticated/classes/$classId")({
   component: ClassDetail,
@@ -73,9 +74,7 @@ function ClassDetail() {
         </TabsContent>
 
         <TabsContent value="seating" className="mt-4">
-          <Card><CardContent className="py-12 text-center text-muted-foreground">
-            סידור הושבה ויזואלי (גריד + Drag & Drop) יגיע בשלב הבא.
-          </CardContent></Card>
+          <SeatingGrid classId={classId} />
         </TabsContent>
       </Tabs>
     </div>
