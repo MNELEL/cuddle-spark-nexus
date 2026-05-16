@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import {
   DndContext, DragEndEvent, DragOverlay, DragStartEvent,
   PointerSensor, useDraggable, useDroppable, useSensor, useSensors,
@@ -235,7 +235,7 @@ export function SeatingGrid({ classId }: { classId: string }) {
     }
   };
 
-  const onGridKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+  const onGridKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
     if (!a11y) return;
     const isRTL = true;
     switch (e.key) {
