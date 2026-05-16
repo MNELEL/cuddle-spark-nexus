@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      attendance: {
+        Row: {
+          class_id: string
+          created_at: string
+          date: string
+          id: string
+          notes: string | null
+          status: string
+          student_id: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          date: string
+          id?: string
+          notes?: string | null
+          status: string
+          student_id: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          date?: string
+          id?: string
+          notes?: string | null
+          status?: string
+          student_id?: string
+        }
+        Relationships: []
+      }
       classes: {
         Row: {
           created_at: string
@@ -44,6 +74,42 @@ export type Database = {
           name?: string
           owner_id?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      grades: {
+        Row: {
+          class_id: string
+          created_at: string
+          date: string
+          id: string
+          max_value: number
+          notes: string | null
+          student_id: string
+          subject: string
+          value: number
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          date?: string
+          id?: string
+          max_value?: number
+          notes?: string | null
+          student_id: string
+          subject?: string
+          value: number
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          date?: string
+          id?: string
+          max_value?: number
+          notes?: string | null
+          student_id?: string
+          subject?: string
+          value?: number
         }
         Relationships: []
       }
