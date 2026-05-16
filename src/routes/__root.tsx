@@ -77,10 +77,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "ClassManager Pro - ניהול כיתה חכם" },
       { name: "description", content: "מערכת לניהול תלמידים, סידורי הושבה ואילוצים פדגוגיים" },
-      { property: "og:title", content: "ClassManager Pro" },
-      { property: "og:description", content: "ניהול כיתה חכם למורים" },
+      { property: "og:title", content: "ClassManager Pro - ניהול כיתה חכם" },
+      { property: "og:description", content: "מערכת לניהול תלמידים, סידורי הושבה ואילוצים פדגוגיים" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: "ClassManager Pro - ניהול כיתה חכם" },
+      { name: "twitter:description", content: "מערכת לניהול תלמידים, סידורי הושבה ואילוצים פדגוגיים" },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/aa57a72e-c2c9-4917-af1a-984d8cdf60e2/id-preview-59dfd712--2734475a-1431-4ef2-8175-67b8af357276.lovable.app-1778954743145.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/aa57a72e-c2c9-4917-af1a-984d8cdf60e2/id-preview-59dfd712--2734475a-1431-4ef2-8175-67b8af357276.lovable.app-1778954743145.png" },
     ],
     links: [
       {
