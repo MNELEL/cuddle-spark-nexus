@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { smartAssign, type ScoringStudent, type ScoringRelation } from "@/lib/seating-logic";
 
 const heightEnum = z.enum(["low", "mid", "high"]);
 const rowEnum = z.enum(["front", "mid", "back", "any"]);
@@ -144,6 +145,42 @@ export const toggleHiddenSeat = createServerFn({ method: "POST" })
     const { error } = await context.supabase.from("classes")
       .update({ hidden_seats: next }).eq("id", data.class_id);
     if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const smartSortSeats = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ class_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: cls, error: e1 } = await context.supabase
+      .from("classes").select("grid_rows, grid_cols, hidden_seats").eq("id", data.class_id).single();
+    if (e1) throw new Error(e1.message);
+    const { data: students, error: e2 } = await context.supabase
+      .from("students").select("*").eq("class_id", data.class_id);
+    if (e2) throw new Error(e2.message);
+    const { data: relations, error: e3 } = await context.supabase
+      .from("student_relations").select("student_a, student_b, kind").eq("class_id", data.class_id);
+    if (e3) throw new Error(e3.message);
+
+    const hidden = new Set<string>(Array.isArray(cls.hidden_seats) ? (cls.hidden_seats as string[]) : []);
+    const assign = smartAssign(
+      (students ?? []) as unknown as ScoringStudent[],
+      (relations ?? []) as unknown as ScoringRelation[],
+      cls.grid_rows, cls.grid_cols, hidden,
+    );
+    // clear movable first to avoid unique conflict
+    const movableIds = (students ?? []).filter((s) => !s.seat_locked).map((s) => s.id);
+    if (movableIds.length) {
+      await context.supabase.from("students")
+        .update({ seat_row: null, seat_col: null })
+        .in("id", movableIds);
+    }
+    // assign
+    for (const [sid, pos] of assign.entries()) {
+      await context.supabase.from("students")
+        .update({ seat_row: pos?.row ?? null, seat_col: pos?.col ?? null })
+        .eq("id", sid);
+    }
     return { ok: true };
   });
 
