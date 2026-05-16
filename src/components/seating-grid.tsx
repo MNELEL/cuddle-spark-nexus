@@ -275,7 +275,7 @@ export function SeatingGrid({ classId }: { classId: string }) {
           } />
         </div>
 
-        <div className="rounded-lg border bg-muted/30 p-3">
+        <div id="seating-grid-canvas" className="rounded-lg border bg-muted/30 p-3">
           <div className="mb-2 text-center text-xs font-semibold text-muted-foreground">חזית הכיתה</div>
           <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0,1fr))` }}>
             {Array.from({ length: rows }).flatMap((_, r) =>
