@@ -34,6 +34,14 @@ const ROW_MAP: Record<string, "front" | "mid" | "back" | "any"> = {
   "קדמית": "front", "אמצעית": "mid", "אחורית": "back", "לא משנה": "any",
 };
 
+type ImportRow = {
+  name: string;
+  height: "low" | "mid" | "high";
+  row_pref: "front" | "mid" | "back" | "any";
+  corner_pref: boolean;
+  notes: string;
+};
+
 export function ImportExportBar({ classId }: { classId: string }) {
   const qc = useQueryClient();
   const listS = useServerFn(listStudents);
@@ -50,7 +58,7 @@ export function ImportExportBar({ classId }: { classId: string }) {
   const [cfgName, setCfgName] = useState("");
 
   const importM = useMutation({
-    mutationFn: (rows: Parameters<typeof imp>[0]["data"]["students"]) =>
+    mutationFn: (rows: ImportRow[]) =>
       imp({ data: { class_id: classId, students: rows } }),
     onSuccess: (r) => {
       qc.invalidateQueries({ queryKey: ["students", classId] });
