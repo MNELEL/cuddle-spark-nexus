@@ -56,11 +56,17 @@ function DraggableStudent({ student, id, highlight, onClick }: { student: Studen
 
 function Seat({
   row, col, hidden, child, onToggleHide, onToggleLock, lockedChild, highlight, onSelect,
+  a11y, focused, grabbedId, onFocusSeat, seatRef,
 }: {
   row: number; col: number; hidden: boolean; child: Student | null;
   onToggleHide: () => void; onToggleLock: () => void; lockedChild: boolean;
   highlight?: "friend" | "avoid" | "distance" | "self" | null;
   onSelect?: () => void;
+  a11y?: boolean;
+  focused?: boolean;
+  grabbedId?: string | null;
+  onFocusSeat?: () => void;
+  seatRef?: (el: HTMLElement | null) => void;
 }) {
   const dropId = `seat:${row}:${col}`;
   const { isOver, setNodeRef } = useDroppable({ id: dropId, data: { row, col }, disabled: hidden });
@@ -70,7 +76,11 @@ function Seat({
       <button
         type="button"
         onClick={onToggleHide}
-        className="aspect-[4/3] rounded-md border border-dashed border-muted bg-muted/20 text-[10px] text-muted-foreground hover:bg-muted/40"
+        ref={(el) => { seatRef?.(el); }}
+        tabIndex={a11y ? (focused ? 0 : -1) : undefined}
+        onFocus={onFocusSeat}
+        aria-label={`מושב מוסתר בשורה ${row + 1} עמודה ${col + 1}. הקש Enter כדי להציג`}
+        className={`aspect-[4/3] rounded-md border border-dashed border-muted bg-muted/20 text-[10px] text-muted-foreground hover:bg-muted/40 ${a11y && focused ? "outline outline-2 outline-offset-2 outline-primary" : ""} ${a11y ? "focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-primary" : ""}`}
         title="הסר הסתרה"
       >
         מוסתר
@@ -78,12 +88,23 @@ function Seat({
     );
   }
 
+  const seatLabel = child
+    ? `שורה ${row + 1} עמודה ${col + 1}, תלמיד: ${child.name}${child.seat_locked ? ", נעול" : ""}${highlight ? `, ${highlight === "self" ? "נבחר" : highlight === "friend" ? "חבר" : highlight === "avoid" ? "להרחיק" : "מרחק"}` : ""}`
+    : `שורה ${row + 1} עמודה ${col + 1}, מושב ריק${grabbedId ? ". הקש Enter כדי להניח כאן" : ""}`;
+
   return (
     <div
       ref={setNodeRef}
+      role={a11y ? "gridcell" : undefined}
+      tabIndex={a11y ? (focused ? 0 : -1) : undefined}
+      aria-label={a11y ? seatLabel : undefined}
+      aria-selected={a11y && !!child && highlight === "self"}
+      onFocus={onFocusSeat}
+      data-seat-ref={(el: HTMLElement | null) => seatRef?.(el)}
       className={`group relative flex aspect-[4/3] items-center justify-center rounded-md border bg-card p-1 transition-colors ${
         isOver ? "border-primary bg-primary/10" : "border-border"
-      }`}
+      } ${a11y && focused ? "outline outline-2 outline-offset-2 outline-primary z-10" : ""} ${a11y ? "focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-primary focus:z-10" : ""} ${grabbedId && !child ? "ring-1 ring-dashed ring-primary/60" : ""}`}
+      ref-callback={seatRef ? "true" : undefined}
     >
       <div className="absolute top-0.5 left-0.5 flex gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
         {child && (
