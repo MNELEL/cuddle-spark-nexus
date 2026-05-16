@@ -26,6 +26,7 @@ import { toast } from "sonner";
 import { SeatingGrid } from "@/components/seating-grid";
 import { GroupsTab } from "@/components/groups-tab";
 import { ImportExportBar } from "@/components/import-export";
+import { TrackingTab } from "@/components/tracking-tab";
 
 export const Route = createFileRoute("/_authenticated/classes/$classId")({
   component: ClassDetail,
@@ -66,6 +67,7 @@ function ClassDetail() {
           <TabsTrigger value="relations">אילוצים</TabsTrigger>
           <TabsTrigger value="groups">קבוצות</TabsTrigger>
           <TabsTrigger value="seating">סידור</TabsTrigger>
+          <TabsTrigger value="tracking">ציונים ונוכחות</TabsTrigger>
         </TabsList>
 
         <TabsContent value="students" className="mt-4">
@@ -84,6 +86,10 @@ function ClassDetail() {
         <TabsContent value="seating" className="mt-4">
           <div className="mb-3"><ImportExportBar classId={classId} /></div>
           <SeatingGrid classId={classId} />
+        </TabsContent>
+
+        <TabsContent value="tracking" className="mt-4">
+          <TrackingTab classId={classId} />
         </TabsContent>
       </Tabs>
     </div>
