@@ -179,7 +179,7 @@ export function ImportExportBar({ classId }: { classId: string }) {
           <DialogHeader><DialogTitle>שמירת סידור נוכחי</DialogTitle></DialogHeader>
           <div>
             <Label>שם הסידור</Label>
-            <Input value={cfgName} onChange={(e) => setCfgName(e.target.value)} placeholder='למשל "סידור סמסטר א'"' />
+            <Input value={cfgName} onChange={(e) => setCfgName(e.target.value)} placeholder="סידור סמסטר א" />
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setSaveOpen(false)}>ביטול</Button>
