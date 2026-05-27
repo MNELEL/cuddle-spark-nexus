@@ -44,6 +44,39 @@ export type Database = {
         }
         Relationships: []
       }
+      behavior_points: {
+        Row: {
+          category: string
+          class_id: string
+          created_at: string
+          date: string
+          id: string
+          note: string | null
+          points: number
+          student_id: string
+        }
+        Insert: {
+          category?: string
+          class_id: string
+          created_at?: string
+          date?: string
+          id?: string
+          note?: string | null
+          points?: number
+          student_id: string
+        }
+        Update: {
+          category?: string
+          class_id?: string
+          created_at?: string
+          date?: string
+          id?: string
+          note?: string | null
+          points?: number
+          student_id?: string
+        }
+        Relationships: []
+      }
       classes: {
         Row: {
           created_at: string
@@ -152,6 +185,39 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+        }
+        Relationships: []
+      }
+      reminders: {
+        Row: {
+          class_id: string
+          completed: boolean
+          created_at: string
+          description: string | null
+          due_date: string | null
+          id: string
+          student_id: string
+          title: string
+        }
+        Insert: {
+          class_id: string
+          completed?: boolean
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          student_id: string
+          title: string
+        }
+        Update: {
+          class_id?: string
+          completed?: boolean
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          student_id?: string
+          title?: string
         }
         Relationships: []
       }
