@@ -6,6 +6,9 @@ import {
   listReminders, upsertReminder, toggleReminderDone, deleteReminder,
   listBehaviorPoints, addBehaviorPoints, deleteBehaviorPoint,
 } from "@/lib/crm.functions";
+import { listClassScoreInputs } from "@/lib/scoring.functions";
+import { computeStudentScore, tierColorClasses, tierLabel } from "@/lib/performance-score";
+import { ScoreBadge } from "@/components/score-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -43,6 +46,7 @@ export function CrmTab({ classId }: { classId: string }) {
   const listS = useServerFn(listStudents);
   const listR = useServerFn(listReminders);
   const listP = useServerFn(listBehaviorPoints);
+  const listInputs = useServerFn(listClassScoreInputs);
 
   const { data: students = [] } = useQuery({
     queryKey: ["students", classId], queryFn: () => listS({ data: { classId } }),
@@ -52,6 +56,9 @@ export function CrmTab({ classId }: { classId: string }) {
   });
   const { data: points = [] } = useQuery({
     queryKey: ["points", classId], queryFn: () => listP({ data: { classId } }),
+  });
+  const { data: scoreInputs } = useQuery({
+    queryKey: ["score-inputs", classId], queryFn: () => listInputs({ data: { classId } }),
   });
 
   if (students.length === 0) {
@@ -73,7 +80,7 @@ export function CrmTab({ classId }: { classId: string }) {
         <PointsPanel classId={classId} students={students as Student[]} points={points as Point[]} />
       </TabsContent>
       <TabsContent value="leaderboard" className="mt-4">
-        <Leaderboard students={students as Student[]} points={points as Point[]} />
+        <Leaderboard students={students as Student[]} scoreInputs={scoreInputs} />
       </TabsContent>
     </Tabs>
   );
@@ -369,37 +376,55 @@ function PointsDialog({ classId, students, onClose }: { classId: string; student
 
 /* ---------------- Leaderboard ---------------- */
 
-function Leaderboard({ students, points }: { students: Student[]; points: Point[] }) {
-  const totals = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const p of points) map.set(p.student_id, (map.get(p.student_id) ?? 0) + p.points);
-    return students.map((s) => ({ ...s, total: map.get(s.id) ?? 0 }))
-      .sort((a, b) => b.total - a.total);
-  }, [students, points]);
-
-  const max = Math.max(1, ...totals.map((t) => Math.abs(t.total)));
+function Leaderboard({
+  students, scoreInputs,
+}: {
+  students: Student[];
+  scoreInputs?: { grades: { student_id: string; value: number; max_value: number }[]; attendance: { student_id: string; status: string }[]; behavior: { student_id: string; points: number }[] };
+}) {
+  const ranked = useMemo(() => {
+    const g = scoreInputs?.grades ?? [];
+    const a = scoreInputs?.attendance ?? [];
+    const b = scoreInputs?.behavior ?? [];
+    return students
+      .map((s) => ({ ...s, score: computeStudentScore(s.id, g, a, b) }))
+      .sort((x, y) => y.score.score - x.score.score);
+  }, [students, scoreInputs]);
 
   return (
-    <Card>
-      <CardHeader><CardTitle className="text-base">סך נקודות לכל תלמיד</CardTitle></CardHeader>
-      <CardContent className="space-y-2">
-        {totals.map((t, i) => (
-          <div key={t.id} className="flex items-center gap-3">
-            <div className="w-6 text-center text-sm font-bold text-muted-foreground">{i + 1}</div>
-            <div className="flex-1">
-              <div className="flex items-baseline justify-between">
-                <div className="font-medium">{t.name}</div>
-                <div className={`font-bold ${t.total > 0 ? "text-emerald-600" : t.total < 0 ? "text-red-600" : "text-muted-foreground"}`}>
-                  {t.total > 0 ? "+" : ""}{t.total}
+    <Card className="overflow-hidden">
+      <CardHeader className="bg-mesh">
+        <CardTitle className="text-base">ציון ביצועים — דירוג הכיתה</CardTitle>
+        <p className="text-xs text-muted-foreground mt-1">
+          משוקלל מ-ציונים (40%), נוכחות (30%), והתנהגות (30%). העבר עכבר על תג הציון לפירוט.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-2 pt-4">
+        {ranked.map((t, i) => {
+          const c = tierColorClasses(t.score.tier);
+          return (
+            <div key={t.id} className="flex items-center gap-3 rounded-lg border bg-card p-3 transition hover:shadow-md">
+              <div className="w-7 text-center font-display text-lg font-bold text-muted-foreground">
+                {i + 1}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="font-semibold truncate">{t.name}</div>
+                  <ScoreBadge score={t.score} />
+                </div>
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
+                  <div className={`h-full ${c.bg}`} style={{ width: `${t.score.score}%`, backgroundColor: `var(--${t.score.tier === "excellent" ? "emerald-score" : t.score.tier === "good" ? "amber" : "rose-score"})` }} />
+                </div>
+                <div className="mt-1 flex gap-2 text-[10px] text-muted-foreground font-mono-tabular">
+                  <span>{tierLabel(t.score.tier)}</span>
+                  {t.score.breakdown.grades !== null && <span>· ציונים {t.score.breakdown.grades}%</span>}
+                  {t.score.breakdown.attendance !== null && <span>· נוכחות {t.score.breakdown.attendance}%</span>}
+                  <span>· התנהגות {t.score.raw.behaviorTotal >= 0 ? "+" : ""}{t.score.raw.behaviorTotal}</span>
                 </div>
               </div>
-              <div className="mt-1 h-2 overflow-hidden rounded bg-muted">
-                <div className={t.total >= 0 ? "h-full bg-emerald-500" : "h-full bg-red-500"}
-                  style={{ width: `${(Math.abs(t.total) / max) * 100}%` }} />
-              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </CardContent>
     </Card>
   );
