@@ -68,11 +68,11 @@ function ClassDetail() {
       </div>
 
       <Tabs defaultValue="students" dir="rtl">
-        <TabsList>
+        <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="students">תלמידים</TabsTrigger>
           <TabsTrigger value="relations">אילוצים</TabsTrigger>
           <TabsTrigger value="groups">קבוצות</TabsTrigger>
-          <TabsTrigger value="seating">סידור</TabsTrigger>
+          <TabsTrigger value="seating">סידור הושבה</TabsTrigger>
           <TabsTrigger value="tracking">ציונים ונוכחות</TabsTrigger>
           <TabsTrigger value="crm">CRM פדגוגי</TabsTrigger>
         </TabsList>
