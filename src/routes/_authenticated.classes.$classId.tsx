@@ -28,6 +28,9 @@ import { GroupsTab } from "@/components/groups-tab";
 import { ImportExportBar } from "@/components/import-export";
 import { TrackingTab } from "@/components/tracking-tab";
 import { CrmTab } from "@/components/crm-tab";
+import { listClassScoreInputs } from "@/lib/scoring.functions";
+import { computeStudentScore } from "@/lib/performance-score";
+import { ScoreBadge } from "@/components/score-badge";
 
 export const Route = createFileRoute("/_authenticated/classes/$classId")({
   component: ClassDetail,
@@ -43,21 +46,23 @@ function ClassDetail() {
   const getC = useServerFn(getClass);
   const listS = useServerFn(listStudents);
   const listR = useServerFn(listRelations);
+  const listInputs = useServerFn(listClassScoreInputs);
 
   const { data: cls } = useQuery({ queryKey: ["class", classId], queryFn: () => getC({ data: { id: classId } }) });
   const { data: students = [] } = useQuery({ queryKey: ["students", classId], queryFn: () => listS({ data: { classId } }) });
   const { data: relations = [] } = useQuery({ queryKey: ["relations", classId], queryFn: () => listR({ data: { classId } }) });
+  const { data: scoreInputs } = useQuery({ queryKey: ["score-inputs", classId], queryFn: () => listInputs({ data: { classId } }) });
 
   return (
-    <div className="mx-auto max-w-5xl space-y-4">
+    <div className="mx-auto max-w-6xl space-y-5">
       <div className="flex items-center gap-2">
         <Link to="/classes" className="text-sm text-muted-foreground hover:underline flex items-center gap-1">
           <ArrowRight className="h-4 w-4" /> חזרה לכיתות
         </Link>
       </div>
-      <div>
-        <h1 className="text-2xl font-bold">{cls?.name ?? "..."}</h1>
-        <p className="text-sm text-muted-foreground">
+      <div className="rounded-2xl border bg-card bg-mesh p-6 shadow-sm">
+        <h1 className="font-display text-3xl font-bold tracking-tight">{cls?.name ?? "..."}</h1>
+        <p className="mt-1 text-sm text-muted-foreground font-mono-tabular">
           {students.length} תלמידים · {relations.length} אילוצים
         </p>
       </div>
@@ -74,7 +79,7 @@ function ClassDetail() {
 
         <TabsContent value="students" className="mt-4">
           <div className="mb-3"><ImportExportBar classId={classId} /></div>
-          <StudentsTab classId={classId} students={students as Student[]} />
+          <StudentsTab classId={classId} students={students as Student[]} scoreInputs={scoreInputs} />
         </TabsContent>
 
         <TabsContent value="relations" className="mt-4">
@@ -107,7 +112,12 @@ function ClassDetail() {
 const heightLabel = { low: "נמוך", mid: "בינוני", high: "גבוה" };
 const rowLabel = { front: "קדמית", mid: "אמצעית", back: "אחורית", any: "לא משנה" };
 
-function StudentsTab({ classId, students }: { classId: string; students: Student[] }) {
+function StudentsTab({
+  classId, students, scoreInputs,
+}: {
+  classId: string; students: Student[];
+  scoreInputs?: { grades: { student_id: string; value: number; max_value: number }[]; attendance: { student_id: string; status: string }[]; behavior: { student_id: string; points: number }[] };
+}) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Student | null>(null);
 
@@ -127,7 +137,7 @@ function StudentsTab({ classId, students }: { classId: string; students: Student
       ) : (
         <div className="grid gap-2">
           {students.map((s) => (
-            <StudentRow key={s.id} student={s}
+            <StudentRow key={s.id} student={s} scoreInputs={scoreInputs}
               onEdit={() => { setEditing(s); setOpen(true); }} />
           ))}
         </div>
@@ -136,7 +146,12 @@ function StudentsTab({ classId, students }: { classId: string; students: Student
   );
 }
 
-function StudentRow({ student, onEdit }: { student: Student; onEdit: () => void }) {
+function StudentRow({
+  student, onEdit, scoreInputs,
+}: {
+  student: Student; onEdit: () => void;
+  scoreInputs?: { grades: { student_id: string; value: number; max_value: number }[]; attendance: { student_id: string; status: string }[]; behavior: { student_id: string; points: number }[] };
+}) {
   const remove = useServerFn(deleteStudent);
   const qc = useQueryClient();
   const removeM = useMutation({
@@ -147,12 +162,18 @@ function StudentRow({ student, onEdit }: { student: Student; onEdit: () => void 
       toast.success("התלמיד נמחק");
     },
   });
+  const score = scoreInputs
+    ? computeStudentScore(student.id, scoreInputs.grades, scoreInputs.attendance, scoreInputs.behavior)
+    : null;
 
   return (
-    <Card>
+    <Card className="transition hover:border-amber/40 hover:shadow-sm">
       <CardContent className="flex items-center justify-between py-3">
-        <div>
-          <div className="font-semibold">{student.name}</div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">{student.name}</span>
+            {score && <ScoreBadge score={score} size="sm" />}
+          </div>
           <div className="mt-1 flex flex-wrap gap-1">
             <Badge variant="secondary">גובה: {heightLabel[student.height]}</Badge>
             <Badge variant="secondary">שורה: {rowLabel[student.row_pref]}</Badge>
