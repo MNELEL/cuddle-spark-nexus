@@ -1,6 +1,7 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Heebo:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap");
 
 @custom-variant dark (&:is(.dark *));
 
@@ -59,29 +60,40 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-amber: var(--amber);
+  --color-amber-glow: var(--amber-glow);
+  --color-emerald-score: var(--emerald-score);
+  --color-rose-score: var(--rose-score);
+  --font-display: "Space Grotesk", "Heebo", system-ui, sans-serif;
+  --font-body: "Heebo", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(0.985 0.005 240);
-  --foreground: oklch(0.20 0.04 250);
+  --background: oklch(0.985 0.006 250);
+  --foreground: oklch(0.18 0.04 250);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.20 0.04 250);
+  --card-foreground: oklch(0.18 0.04 250);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.20 0.04 250);
-  --primary: oklch(0.55 0.18 255);
+  --popover-foreground: oklch(0.18 0.04 250);
+  --primary: oklch(0.28 0.06 260);
   --primary-foreground: oklch(0.99 0 0);
   --secondary: oklch(0.95 0.02 250);
-  --secondary-foreground: oklch(0.25 0.05 250);
+  --secondary-foreground: oklch(0.22 0.05 250);
   --muted: oklch(0.96 0.01 250);
   --muted-foreground: oklch(0.50 0.03 250);
-  --accent: oklch(0.92 0.06 60);
-  --accent-foreground: oklch(0.25 0.06 60);
+  --accent: oklch(0.78 0.17 70);
+  --accent-foreground: oklch(0.22 0.06 60);
+  --amber: oklch(0.78 0.17 70);
+  --amber-glow: oklch(0.88 0.15 80);
+  --emerald-score: oklch(0.70 0.16 155);
+  --rose-score: oklch(0.65 0.20 25);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.984 0.003 247.858);
   --border: oklch(0.929 0.013 255.508);
   --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
+  --ring: oklch(0.78 0.17 70);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -98,25 +110,29 @@
 }
 
 .dark {
-  --background: oklch(0.129 0.042 264.695);
+  --background: oklch(0.18 0.025 255);
   --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.208 0.042 265.755);
+  --card: oklch(0.22 0.03 258);
   --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.208 0.042 265.755);
+  --popover: oklch(0.22 0.03 258);
   --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
+  --primary: oklch(0.78 0.17 70);
+  --primary-foreground: oklch(0.18 0.025 255);
+  --secondary: oklch(0.27 0.03 258);
   --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
+  --muted: oklch(0.27 0.03 258);
+  --muted-foreground: oklch(0.74 0.03 256);
+  --accent: oklch(0.78 0.17 70);
+  --accent-foreground: oklch(0.18 0.025 255);
+  --amber: oklch(0.82 0.17 75);
+  --amber-glow: oklch(0.88 0.15 80);
+  --emerald-score: oklch(0.74 0.16 155);
+  --rose-score: oklch(0.70 0.20 25);
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(1 0 0 / 10%);
+  --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
+  --ring: oklch(0.78 0.17 70);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
@@ -140,6 +156,37 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    font-family: "Heebo", system-ui, -apple-system, sans-serif;
+    font-family: var(--font-body);
+    font-feature-settings: "ss01", "cv11";
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+}
+
+@layer utilities {
+  .font-mono-tabular {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+  .bg-mesh {
+    background-image:
+      radial-gradient(at 20% 10%, color-mix(in oklab, var(--amber) 18%, transparent) 0, transparent 45%),
+      radial-gradient(at 80% 0%, color-mix(in oklab, var(--primary) 25%, transparent) 0, transparent 50%),
+      radial-gradient(at 50% 100%, color-mix(in oklab, var(--amber-glow) 15%, transparent) 0, transparent 55%);
+  }
+  .shadow-glow-amber {
+    box-shadow: 0 10px 40px -10px color-mix(in oklab, var(--amber) 50%, transparent);
+  }
+  .shadow-glow-primary {
+    box-shadow: 0 14px 40px -14px color-mix(in oklab, var(--primary) 55%, transparent);
+  }
+  .text-gradient-amber {
+    background: linear-gradient(135deg, var(--amber) 0%, var(--amber-glow) 60%, var(--primary) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
 }
