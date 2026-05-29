@@ -21,7 +21,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Heart, Ban, MoveHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowRight, Heart, Ban, MoveHorizontal, Pencil, Plus, Trash2, FolderOpen } from "lucide-react";
 import { toast } from "sonner";
 import { SeatingGrid } from "@/components/seating-grid";
 import { GroupsTab } from "@/components/groups-tab";
@@ -31,6 +31,7 @@ import { CrmTab } from "@/components/crm-tab";
 import { listClassScoreInputs } from "@/lib/scoring.functions";
 import { computeStudentScore } from "@/lib/performance-score";
 import { ScoreBadge } from "@/components/score-badge";
+import { StudentFileSheet } from "@/components/student-file-sheet";
 
 export const Route = createFileRoute("/_authenticated/classes/$classId")({
   component: ClassDetail,
@@ -120,6 +121,7 @@ function StudentsTab({
 }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Student | null>(null);
+  const [fileFor, setFileFor] = useState<Student | null>(null);
 
   return (
     <div className="space-y-3">
@@ -138,18 +140,29 @@ function StudentsTab({
         <div className="grid gap-2">
           {students.map((s) => (
             <StudentRow key={s.id} student={s} scoreInputs={scoreInputs}
-              onEdit={() => { setEditing(s); setOpen(true); }} />
+              onEdit={() => { setEditing(s); setOpen(true); }}
+              onOpenFile={() => setFileFor(s)} />
           ))}
         </div>
+      )}
+
+      {fileFor && (
+        <StudentFileSheet
+          open={!!fileFor}
+          onOpenChange={(o) => { if (!o) setFileFor(null); }}
+          classId={classId}
+          studentId={fileFor.id}
+          studentName={fileFor.name}
+        />
       )}
     </div>
   );
 }
 
 function StudentRow({
-  student, onEdit, scoreInputs,
+  student, onEdit, onOpenFile, scoreInputs,
 }: {
-  student: Student; onEdit: () => void;
+  student: Student; onEdit: () => void; onOpenFile: () => void;
   scoreInputs?: { grades: { student_id: string; value: number; max_value: number }[]; attendance: { student_id: string; status: string }[]; behavior: { student_id: string; points: number }[] };
 }) {
   const remove = useServerFn(deleteStudent);
@@ -182,6 +195,9 @@ function StudentRow({
           {student.notes && <p className="mt-1 text-xs text-muted-foreground line-clamp-1">{student.notes}</p>}
         </div>
         <div className="flex gap-1">
+          <Button variant="ghost" size="icon" onClick={onOpenFile} title="תיק תלמיד">
+            <FolderOpen className="h-4 w-4" />
+          </Button>
           <Button variant="ghost" size="icon" onClick={onEdit}><Pencil className="h-4 w-4" /></Button>
           <Button variant="ghost" size="icon" className="text-destructive" onClick={() => removeM.mutate()}>
             <Trash2 className="h-4 w-4" />
