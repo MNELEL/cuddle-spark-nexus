@@ -1,105 +1,94 @@
 
-# תוכנית מאסטר: ClassManager Pro → "ClassAlign Studio"
+# תוכנית: ClassAlign Studio — שלב "תיקי תלמידים + דוחות + UI חדש"
 
-איחוד הטוב משני המסמכים (ClassAlign + ClassPro) עם מה שכבר בנינו, ויצירת חוויה ברמה של Awwwards בעברית RTL.
+## 1) מעטפת עיצוב חדשה (UI/UX Refresh)
+החלפת `src/styles.css` לפלטה החדשה (HSL, light/dark, sidebar), גופן **Heebo** RTL, `--radius: 0.75rem`, scrollbar מותאם, `card-hover`, אנימציות Framer Motion עדינות.
+- **Layout חדש** (`src/components/app-shell.tsx`):
+  - Header sticky 56px עם safe-area
+  - Bottom Nav במובייל (4 פריטים: בית, כיתות, CRM, פרופיל)
+  - Sidebar בדסקטופ (`md+`) עם רשימת כיתות/תלמידים
+  - Pull-to-refresh, bottom sheets במקום dialogs במובייל
+- Toast: Sonner `top-center` `richColors`
+- Toggle Light/Dark + שמירה ב-localStorage
 
-## מה לוקחים מכל מקור
+## 2) תיקי תלמידים (Student Files)
+טאב חדש בפרופיל התלמיד + עמוד ייעודי `/_authenticated/students/$studentId`.
+- **מסמכים**: העלאה ל-Supabase Storage (bucket פרטי `student-files`), קטגוריות: אבחון, מכתב להורים, צילום מסמך, היסטוריה, כללי
+- **יומן שיחות עם הורים**: רשומות עם תאריך, ערוץ (טלפון/וואטסאפ/פגישה/מייל), תקציר, מסמך מצורף אופציונלי, פולו-אפ
+- **היסטוריה משנים קודמות**: תגית `school_year`, סינון/חיפוש
+- תצוגת timeline מאוחדת לכל התלמיד
 
-**מ-ClassAlign (Three.js):**
-- 3D אמיתי ב-React Three Fiber (במקום CSS 3D), עם OrbitControls, ContactShadows, תאורה
-- אפקטים: Floor Halo פועם, Pulsing Glow על כיסא נבחר, אווטרים כדוריים מרחפים עם שם
-- מצב Pairing — חיבור בין שני שולחנות עם צינור סגול זוהר
-- AI Sort מתקדם עם 4 רמות עדיפות (חברים יחד, ניגודים בנפרד, מתקשים קדימה, גיוון)
-- כפתורי toggle לכיסא enabled/disabled בריחוף
+## 3) ציונים — קליטה בהקלטה/הקלדה/חופשי + AI
+- כפתור 🎤 **הקלטה** (Web Speech API → fallback ל-Whisper דרך Lovable AI אם קיים) + כפתור הקלדה
+- שדה "טקסט חופשי" — נשלח ל-Gemini עם JSON schema:
+  ```
+  { items: [{ studentName, subject, value, max, date?, notes? }] }
+  ```
+- שכבת **התאמה (matching)** לשמות תלמידים בכיתה (fuzzy), מסך אישור לפני שמירה
+- כתיבה לטבלת `grades` הקיימת
 
-**מ-ClassPro (UI/UX):**
-- אסתטיקה Premium: Slate #0f172a + הדגשות ענבר/Amber, Light/Dark, RTL מלא
-- טיפוגרפיה: Space Grotesk + Inter + JetBrains Mono לתגים
-- ציון ביצועים דינמי 0-100 עם Tooltip מרחף צבעוני (ירוק/צהוב/אדום) מעל כל שולחן
-- מצב מצגת (Presentation HUD) עם Toggle לשמות/אנונימי, פריסות מצלמה: Normal / Bird's Eye / Student Level / Side Observer
-- מחולל דוחות PDF (html2canvas + jsPDF) — כיתתי / אישי, A4, נוכחות+התנהגות+הערות
-- שיגור Gmail אוטומטי להורים
+## 4) דוחות PDF + שליחה
+עמוד `/_authenticated/reports`:
+- בחירת תלמיד / מקצוע / טווח תאריכים
+- **תדפיס ציונים**: לפי תלמיד, לפי מקצוע, עם סיכום (ממוצע, מגמה, ScoreBadge)
+- **דוח תקופתי**: ציונים + נוכחות + התנהגות + משימות
+- יצירת PDF RTL (`jspdf` + `html2canvas`) — תבנית מעוצבת עם לוגו וכותרת
+- כפתורי שליחה מהירה: **WhatsApp** (`wa.me/?text=...` עם לינק חתום למסמך), **Email** (`mailto:`)
 
-## מה כבר יש לנו (לשמור ולחבר)
-כיתות, תלמידים, גריד 2D עם drag, נעילת כיסאות, הסתרת מושבים, יחסים (friend/avoid/distance), Smart Sort בסיסי, קבוצות, Import/Export, נוכחות+ציונים, CRM (תזכורות + נקודות התנהגות + Leaderboard), נגישות, Auth.
+## 5) יומן אירועים משמעתיים
+טבלה חדשה `discipline_events`: סוג (חיובי/שלילי), קטגוריה, חומרה 1-5, תיאור, תאריך, קשור להורים?
+- תצוגה: יומן מתגלגל בפרופיל התלמיד עם סינון (סוג/חומרה/טווח), badges צבעוניים, אינטגרציה ל-Score
 
-## שלבי הביצוע
+## 6) מסד נתונים — מיגרציות חדשות
+- `student_documents` (id, student_id, class_id, category, title, file_path, mime, size, school_year, uploaded_at)
+- `parent_communications` (id, student_id, class_id, date, channel, summary, follow_up_date, document_id?)
+- `discipline_events` (id, student_id, class_id, type, category, severity, description, date, parents_notified)
+- `exams` + `exam_questions` + `exam_submissions` (למבחנים אינטראקטיביים — סעיף 7.16)
+- `report_templates` (תבניות דוח שמורות)
+- Storage bucket פרטי `student-files` + RLS לפי בעלות על הכיתה
+- כל הטבלאות עם GRANTs ו-RLS scoped דרך `classes.owner_id`
 
-### שלב A — שדרוג מערכת העיצוב (Design System Refresh)
-- `src/styles.css`: עדכון tokens — Midnight Slate `#0f172a`, Amber `#f59e0b`, gradient mesh, glow shadows
-- חיבור 3 פונטים: Space Grotesk (display), Inter (body), JetBrains Mono (tags/scores)
-- אנימציות framer-motion חלקות במעברי טאבים, drawers, dialogs
-- Layout עליון מחודש: navbar שקוף עם blur, breadcrumb, theme toggle
+## 7) 20 פונקציות נוספות לבית ספר
+1. **מחולל מכתבים להורים** (AI) — תבניות + מילוי אוטומטי
+2. **לוח שנה אקדמי** — מבחנים, אירועים, חופשות
+3. **תוכניות לימוד שבועיות** עם export PDF
+4. **בנק שאלות** לפי נושא ורמת קושי
+5. **מבחנים אינטראקטיביים** — בנייה, שליחה לתלמידים, תיקון אוטומטי
+6. **מעקב מטלות בית** (assignments) עם סטטוס הגשה
+7. **טפסי הסכמה דיגיטליים** (טיולים, צילום) עם חתימת הורים
+8. **תקשורת המונים** — שליחת הודעה לכל הכיתה/קבוצה ב-WhatsApp/Email
+9. **דשבורד הורים** — קישור משותף מאובטח לצפייה בציוני הילד
+10. **מעקב נוכחות עם תרשים** ו-streaks
+11. **השוואת ביצועים** בין מבחנים/תקופות
+12. **המלצות AI אישיות** לתלמיד (חיזוקים נדרשים)
+13. **קבוצות לימוד דינמיות** ע"פ רמות
+14. **תיעוד IEP** (תוכנית חינוכית אישית) לתלמידי שילוב
+15. **בנק חיזוקים חיוביים** (משפטים מוכנים להערות)
+16. **תזכורות חכמות להורים** (יום לפני מבחן)
+17. **גיבוי שנה שלם** ל-ZIP להורדה
+18. **ייבוא ממערכות אחרות** (CSV/Excel מפורט)
+19. **מצב מורה מחליף** — תקציר מהיר של כל הכיתה
+20. **אנליטיקס כיתה** — heatmap ביצועים, זיהוי קשיים מערכתיים
 
-### שלב B — מנוע ציון ביצועים (Performance Score Engine)
-- פונקציה `computeStudentScore(student)` שמחשבת 0-100 לפי: ממוצע ציונים (40%), נוכחות (30%), נקודות התנהגות (30%)
-- הצגה: bage עם רקע צבעוני (emerald 85+, amber 70-84, rose <70) + JetBrains Mono
-- שילוב בכרטיס תלמיד, ב-Leaderboard, ובכיסא בגריד
-
-### שלב C — תצוגת 3D אמיתית (Three.js)
-- התקנה: `three`, `@react-three/fiber`, `@react-three/drei`
-- קומפוננטה `Classroom3D.tsx`: רצפת slate, לוח כיתה, שולחן מורה, שולחנות תלמידים מתוך הגריד
-- אווטר כדורי מרחף + Float + Text של שם מעל כל שולחן תפוס
-- Halo טבעת פועמת + emissive glow על שולחן נבחר
-- OrbitControls + ContactShadows + תאורה דרמטית
-- Toggle בין תצוגת 2D (הקיימת) לתצוגת 3D באותו טאב
-
-### שלב D — מצב Pairing (חיבור שולחנות)
-- הוספת עמודה `paired_with` ב-students (migration)
-- מצב Pairing ב-UI: לחיצה ראשונה צבע ענבר → לחיצה שניה יוצרת חיבור (גם בגריד 2D כקו, גם ב-3D כצינור סגול)
-- פאנל RTL עם רשימת כל הזוגות + מחיקה
-- ה-Smart Sort החדש יכבד paired_with — מנסה לשבץ זוגות סמוכים
-
-### שלב E — AI Sort עם Gemini
-- serverFn חדש `aiSortSeats` שמשתמש ב-Lovable AI Gateway (google/gemini-2.5-pro) עם structured JSON
-- שולח: תלמידים + ציונים + נוכחות + יחסים + paired_with + גריד
-- מקבל: שיבוץ אופטימלי + הסבר טקסטואלי לכל החלטה
-- דיאלוג "AI Sort": תצוגה מקדימה של ההצעה עם הסברים → אישור / ביטול
-- אינדיקטור עלות/תוקן בזמן אמת
-
-### שלב F — מצב מצגת (Presentation Mode)
-- כפתור Fullscreen שמסתיר navbar וטאבים
-- HUD תחתון מרחף: toggle שמות/אנונימי, toggle תוויות מושב, 4 פריסות מצלמה (רק ב-3D)
-- אנימציית מצלמה חלקה בין presets (lerp ב-useFrame)
-
-### שלב G — מחולל דוחות PDF
-- התקנה: `jspdf`, `html2canvas`
-- קומפוננטה `ReportBuilder.tsx`: בחירת מצב (כיתתי/אישי), טווח תאריכים, סעיפים (נוכחות/ציונים/התנהגות/הערות)
-- תבנית A4 RTL עם כותרת, גרפים (recharts קיים), טבלאות
-- כפתורי: הורד PDF, הדפס, שלח במייל (`mailto:` עם גוף מוכן להורים)
-
-### שלב H — ליטוש סופי + Onboarding
-- מסך נחיתה משודרג ל-/index עם hero, תכונות, CTA
-- Empty states יפים בכל המקומות
-- Toasts, skeletons, loading states עם framer-motion
-- בדיקות נגישות חוזרות
-
-## פרטים טכניים
-
-**Migrations נדרשות:**
-- `students.paired_with uuid nullable` + index
-- אופציונלי: `students.birth_date date`, `students.academic_history jsonb` להתאמה למודל ClassAlign
-
-**Dependencies חדשות:**
-`three @react-three/fiber @react-three/drei jspdf html2canvas`
-
-**קבצים חדשים עיקריים:**
-- `src/lib/performance-score.ts`
-- `src/lib/ai-sort.functions.ts` (Lovable AI)
-- `src/components/classroom-3d.tsx`
-- `src/components/pairing-mode.tsx`
-- `src/components/presentation-hud.tsx`
-- `src/components/report-builder.tsx`
-
-**עריכות עיקריות:**
-- `src/styles.css` — design tokens
-- `src/components/seating-grid.tsx` — אינטגרציה ל-3D + Pairing + Score badge
-- `src/routes/_authenticated.classes.$classId.tsx` — toggle 3D/2D + Presentation
-- `src/routes/index.tsx` — landing page חדש
-
-## סדר ביצוע מוצע
-מבצע A → B → C → D → E → F → G → H ברצף, בכל שלב עוצר אם משהו לא עובד. השלבים A-D הם הליבה החזותית — הם משדרגים את התחושה הכי הרבה.
+## 8) טכני
+- ספריות חדשות: `jspdf`, `html2canvas`, `framer-motion` (אם חסר), `react-hot-toast`/sonner קיים
+- כל הלוגיקה הרגישה ב-`createServerFn` עם `requireSupabaseAuth`
+- העלאות קבצים: דרך browser supabase client לבאקט הפרטי
+- AI: Lovable AI Gateway (`google/gemini-2.5-pro` להבנת חופשי, `google/gemini-2.5-flash` לקליל)
+- שמירה על שפת העיצוב החדשה בכל קומפוננטה — שימוש בטוקנים בלבד
 
 ---
 
-**שאלה אחת לפני שמתחילים:** האם להתחיל מ-A+B+C ביחד (Design System + Score + 3D — השדרוג ה"וואו" הראשון), או שאתה מעדיף שאעבור שלב-שלב עם אישור ביניהם?
+## אסטרטגיית מימוש (גלים)
+- **גל A** (מיידי): מעטפת UI חדשה + AppShell + תיקי תלמידים בסיסי (מסמכים + יומן שיחות) + מיגרציות
+- **גל B**: דוחות PDF + שליחה + יומן משמעת
+- **גל C**: קליטת ציונים בהקלטה/AI חופשי
+- **גל D**: 20 הפיצ'רים — בקבוצות של 4-5 לפי עדיפות שתבחר
+
+---
+
+## ❓ שאלות לפני התחלה
+1. **גל ראשון** — להתחיל מ-A (UI+תיקים) או להוסיף גם B (דוחות) מיד?
+2. **20 הפיצ'רים** — לסמן 5 שהכי קריטיים שייכנסו לגל הקרוב, או להשאיר לסוף?
+3. **שליחת WhatsApp** — דרך `wa.me` (פתיחת ווטסאפ עם טקסט מוכן, חינם, ידני) או דרך API חיצוני (UAZAPI/Twilio, דורש מפתח בתשלום)?
+4. **הקלטת קול** — Web Speech API דפדפן (חינם, איכות בינונית, תמיכה חלקית בעברית ב-Safari) או Whisper דרך Lovable AI (איכות גבוהה)?

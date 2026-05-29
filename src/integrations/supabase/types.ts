@@ -110,6 +110,45 @@ export type Database = {
         }
         Relationships: []
       }
+      discipline_events: {
+        Row: {
+          category: string
+          class_id: string
+          created_at: string
+          date: string
+          description: string
+          id: string
+          parents_notified: boolean
+          severity: number
+          student_id: string
+          type: string
+        }
+        Insert: {
+          category?: string
+          class_id: string
+          created_at?: string
+          date?: string
+          description?: string
+          id?: string
+          parents_notified?: boolean
+          severity?: number
+          student_id: string
+          type?: string
+        }
+        Update: {
+          category?: string
+          class_id?: string
+          created_at?: string
+          date?: string
+          description?: string
+          id?: string
+          parents_notified?: boolean
+          severity?: number
+          student_id?: string
+          type?: string
+        }
+        Relationships: []
+      }
       grades: {
         Row: {
           class_id: string
@@ -167,6 +206,45 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+        }
+        Relationships: []
+      }
+      parent_communications: {
+        Row: {
+          channel: string
+          class_id: string
+          created_at: string
+          date: string
+          document_id: string | null
+          follow_up_date: string | null
+          id: string
+          student_id: string
+          subject: string
+          summary: string
+        }
+        Insert: {
+          channel?: string
+          class_id: string
+          created_at?: string
+          date?: string
+          document_id?: string | null
+          follow_up_date?: string | null
+          id?: string
+          student_id: string
+          subject?: string
+          summary?: string
+        }
+        Update: {
+          channel?: string
+          class_id?: string
+          created_at?: string
+          date?: string
+          document_id?: string | null
+          follow_up_date?: string | null
+          id?: string
+          student_id?: string
+          subject?: string
+          summary?: string
         }
         Relationships: []
       }
@@ -242,6 +320,48 @@ export type Database = {
           id?: string
           name?: string
           snapshot?: Json
+        }
+        Relationships: []
+      }
+      student_documents: {
+        Row: {
+          category: string
+          class_id: string
+          created_at: string
+          description: string | null
+          file_path: string | null
+          file_size: number | null
+          id: string
+          mime_type: string | null
+          school_year: string | null
+          student_id: string
+          title: string
+        }
+        Insert: {
+          category?: string
+          class_id: string
+          created_at?: string
+          description?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          school_year?: string | null
+          student_id: string
+          title: string
+        }
+        Update: {
+          category?: string
+          class_id?: string
+          created_at?: string
+          description?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          school_year?: string | null
+          student_id?: string
+          title?: string
         }
         Relationships: []
       }
