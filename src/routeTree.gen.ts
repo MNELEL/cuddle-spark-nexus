@@ -13,6 +13,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedClassesIndexRouteImport } from './routes/_authenticated.classes.index'
+import { Route as AuthenticatedReportsClassIdRouteImport } from './routes/_authenticated.reports.$classId'
 import { Route as AuthenticatedClassesClassIdRouteImport } from './routes/_authenticated.classes.$classId'
 
 const LoginRoute = LoginRouteImport.update({
@@ -35,6 +36,12 @@ const AuthenticatedClassesIndexRoute =
     path: '/classes/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedReportsClassIdRoute =
+  AuthenticatedReportsClassIdRouteImport.update({
+    id: '/reports/$classId',
+    path: '/reports/$classId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedClassesClassIdRoute =
   AuthenticatedClassesClassIdRouteImport.update({
     id: '/classes/$classId',
@@ -46,12 +53,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/classes/$classId': typeof AuthenticatedClassesClassIdRoute
+  '/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/classes/': typeof AuthenticatedClassesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/classes/$classId': typeof AuthenticatedClassesClassIdRoute
+  '/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/classes': typeof AuthenticatedClassesIndexRoute
 }
 export interface FileRoutesById {
@@ -60,19 +69,26 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
   '/_authenticated/classes/$classId': typeof AuthenticatedClassesClassIdRoute
+  '/_authenticated/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/_authenticated/classes/': typeof AuthenticatedClassesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/classes/$classId' | '/classes/'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/classes/$classId'
+    | '/reports/$classId'
+    | '/classes/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/classes/$classId' | '/classes'
+  to: '/' | '/login' | '/classes/$classId' | '/reports/$classId' | '/classes'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/login'
     | '/_authenticated/classes/$classId'
+    | '/_authenticated/reports/$classId'
     | '/_authenticated/classes/'
   fileRoutesById: FileRoutesById
 }
@@ -112,6 +128,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClassesIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/reports/$classId': {
+      id: '/_authenticated/reports/$classId'
+      path: '/reports/$classId'
+      fullPath: '/reports/$classId'
+      preLoaderRoute: typeof AuthenticatedReportsClassIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/classes/$classId': {
       id: '/_authenticated/classes/$classId'
       path: '/classes/$classId'
@@ -124,11 +147,13 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteChildren {
   AuthenticatedClassesClassIdRoute: typeof AuthenticatedClassesClassIdRoute
+  AuthenticatedReportsClassIdRoute: typeof AuthenticatedReportsClassIdRoute
   AuthenticatedClassesIndexRoute: typeof AuthenticatedClassesIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedClassesClassIdRoute: AuthenticatedClassesClassIdRoute,
+  AuthenticatedReportsClassIdRoute: AuthenticatedReportsClassIdRoute,
   AuthenticatedClassesIndexRoute: AuthenticatedClassesIndexRoute,
 }
 
