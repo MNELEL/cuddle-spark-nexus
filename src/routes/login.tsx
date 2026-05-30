@@ -92,7 +92,7 @@ function LoginPage() {
             {mode === "signup" && (
               <div>
                 <Label htmlFor="name">שם</Label>
-                <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="המורה ישראלה" />
+                <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="הרב ישראל / המלמד" />
               </div>
             )}
             <div>
