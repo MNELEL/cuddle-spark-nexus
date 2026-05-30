@@ -21,6 +21,7 @@ import {
   listAttendanceByDate, upsertAttendance, bulkMarkAttendance,
   listGrades, upsertGrade, deleteGrade,
 } from "@/lib/tracking.functions";
+import { KODESH_SUBJECTS } from "@/lib/kodesh-subjects";
 
 type Student = { id: string; name: string };
 type Status = "present" | "absent" | "late" | "excused";
@@ -223,8 +224,8 @@ function GradesPanel({ classId }: { classId: string }) {
             </Select>
           </div>
           <div className="flex-1 min-w-[160px]">
-            <Label>מקצוע/מטלה</Label>
-            <Input value={filterSubject} onChange={(e) => setFilterSubject(e.target.value)} placeholder="חיפוש" />
+            <Label>מקצוע / מסכת</Label>
+            <Input value={filterSubject} onChange={(e) => setFilterSubject(e.target.value)} placeholder="חיפוש (גמרא, חומש, הלכה...)" />
           </div>
           <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
             <DialogTrigger asChild>
@@ -333,8 +334,28 @@ function GradeDialog({
           </Select>
         </div>
         <div>
-          <Label>מקצוע / מטלה</Label>
-          <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="למשל: מתמטיקה - מבחן" />
+          <Label>מקצוע / מסכת</Label>
+          <Input
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            placeholder="למשל: גמרא - בבא מציעא, חומש - וירא"
+            list="kodesh-subjects"
+          />
+          <datalist id="kodesh-subjects">
+            {KODESH_SUBJECTS.map((s) => <option key={s} value={s} />)}
+          </datalist>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {KODESH_SUBJECTS.map((s) => (
+              <button
+                type="button"
+                key={s}
+                onClick={() => setSubject(s)}
+                className="rounded-full border border-border bg-secondary/40 px-2.5 py-0.5 text-xs hover:border-primary hover:bg-primary/10"
+              >
+                {s}
+              </button>
+            ))}
+          </div>
         </div>
         <div className="grid grid-cols-3 gap-2">
           <div>

@@ -42,7 +42,7 @@ function Index() {
             <span className="text-gradient-amber">מסונכרנת בשלמות.</span>
           </h1>
           <p className="mt-7 mx-auto max-w-2xl text-lg text-muted-foreground md:text-xl">
-            סידור הושבה אופטימלי בעזרת AI, מעקב פדגוגי חי, מצב מצגת תלת-ממדי ודוחות מקצועיים — בממשק עברית מלא וחווייתי.
+            סידור הושבה אופטימלי בעזרת AI, מעקב פדגוגי חי, מצב מצגת תלת-ממדי ודוחות מקצועיים — מותאם לתלמודי תורה, חיידרים ובתי ספר, בממשק עברית מלא וחווייתי.
           </p>
           <div className="mt-10 flex flex-wrap justify-center gap-3">
             <Link to="/login">
@@ -74,7 +74,7 @@ function Index() {
                 </div>
                 <div className="mt-4 h-1 rounded-full bg-gradient-to-l from-amber via-amber-glow to-primary" />
                 <div className="mt-3 flex justify-between text-xs text-muted-foreground font-mono-tabular">
-                  <span>שולחן מורה</span>
+                  <span>שולחן הרב</span>
                   <span>24 מושבים · 18 תפוסים</span>
                 </div>
               </div>
@@ -102,7 +102,7 @@ function Index() {
         </section>
 
         <footer className="mt-28 text-center text-xs text-muted-foreground">
-          נבנה עם אהבה למורים · ClassAlign Studio © {new Date().getFullYear()}
+          נבנה עם אהבה למלמדים ולרבנים · ClassAlign Studio © {new Date().getFullYear()}
         </footer>
       </main>
     </div>
