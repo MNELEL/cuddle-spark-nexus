@@ -21,7 +21,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Heart, Ban, MoveHorizontal, Pencil, Plus, Trash2, FolderOpen } from "lucide-react";
+import { ArrowRight, Heart, Ban, MoveHorizontal, Pencil, Plus, Trash2, FolderOpen, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { SeatingGrid } from "@/components/seating-grid";
 import { GroupsTab } from "@/components/groups-tab";
@@ -59,6 +59,11 @@ function ClassDetail() {
       <div className="flex items-center gap-2">
         <Link to="/classes" className="text-sm text-muted-foreground hover:underline flex items-center gap-1">
           <ArrowRight className="h-4 w-4" /> חזרה לכיתות
+        </Link>
+        <Link to="/reports/$classId" params={{ classId }} className="ms-auto">
+          <Button variant="outline" size="sm">
+            <FileText className="ms-1 h-4 w-4" /> דוח כיתה
+          </Button>
         </Link>
       </div>
       <div className="rounded-2xl border bg-card bg-mesh p-6 shadow-sm">
