@@ -22,6 +22,7 @@ import {
   listGrades, upsertGrade, deleteGrade,
 } from "@/lib/tracking.functions";
 import { KODESH_SUBJECTS } from "@/lib/kodesh-subjects";
+import { GradeAiImport } from "@/components/grade-ai-import";
 
 type Student = { id: string; name: string };
 type Status = "present" | "absent" | "late" | "excused";
@@ -234,6 +235,7 @@ function GradesPanel({ classId }: { classId: string }) {
             <GradeDialog classId={classId} editing={editing} students={students}
               onClose={() => { setOpen(false); setEditing(null); }} />
           </Dialog>
+          <GradeAiImport classId={classId} students={students} />
         </CardContent>
       </Card>
 
