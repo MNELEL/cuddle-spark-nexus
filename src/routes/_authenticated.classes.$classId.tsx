@@ -32,6 +32,7 @@ import { listClassScoreInputs } from "@/lib/scoring.functions";
 import { computeStudentScore } from "@/lib/performance-score";
 import { ScoreBadge } from "@/components/score-badge";
 import { StudentFileSheet } from "@/components/student-file-sheet";
+import { AiAssistantDock } from "@/components/ai-assistant-dock";
 
 export const Route = createFileRoute("/_authenticated/classes/$classId")({
   component: ClassDetail,
@@ -109,6 +110,7 @@ function ClassDetail() {
           <CrmTab classId={classId} />
         </TabsContent>
       </Tabs>
+      <AiAssistantDock classId={classId} />
     </div>
   );
 }
