@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+const ParamValue = z.union([z.string(), z.number(), z.boolean(), z.null()]);
 const ActionSchema = z.object({
   kind: z.enum([
     "add_grade",
@@ -11,7 +12,7 @@ const ActionSchema = z.object({
     "add_parent_call",
   ]),
   summary: z.string().max(280),
-  params: z.record(z.string(), z.unknown()),
+  params: z.record(z.string(), ParamValue),
 });
 export type AssistantAction = z.infer<typeof ActionSchema>;
 
