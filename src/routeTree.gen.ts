@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedClassesIndexRouteImport } from './routes/_authenticated.classes.index'
 import { Route as AuthenticatedReportsClassIdRouteImport } from './routes/_authenticated.reports.$classId'
 import { Route as AuthenticatedClassesClassIdRouteImport } from './routes/_authenticated.classes.$classId'
+import { Route as AuthenticatedBulletinsClassIdRouteImport } from './routes/_authenticated.bulletins.$classId'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -48,10 +49,17 @@ const AuthenticatedClassesClassIdRoute =
     path: '/classes/$classId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedBulletinsClassIdRoute =
+  AuthenticatedBulletinsClassIdRouteImport.update({
+    id: '/bulletins/$classId',
+    path: '/bulletins/$classId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
   '/classes/$classId': typeof AuthenticatedClassesClassIdRoute
   '/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/classes/': typeof AuthenticatedClassesIndexRoute
@@ -59,6 +67,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
   '/classes/$classId': typeof AuthenticatedClassesClassIdRoute
   '/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/classes': typeof AuthenticatedClassesIndexRoute
@@ -68,6 +77,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
+  '/_authenticated/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
   '/_authenticated/classes/$classId': typeof AuthenticatedClassesClassIdRoute
   '/_authenticated/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/_authenticated/classes/': typeof AuthenticatedClassesIndexRoute
@@ -77,16 +87,24 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/bulletins/$classId'
     | '/classes/$classId'
     | '/reports/$classId'
     | '/classes/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/classes/$classId' | '/reports/$classId' | '/classes'
+  to:
+    | '/'
+    | '/login'
+    | '/bulletins/$classId'
+    | '/classes/$classId'
+    | '/reports/$classId'
+    | '/classes'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/login'
+    | '/_authenticated/bulletins/$classId'
     | '/_authenticated/classes/$classId'
     | '/_authenticated/reports/$classId'
     | '/_authenticated/classes/'
@@ -142,16 +160,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClassesClassIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/bulletins/$classId': {
+      id: '/_authenticated/bulletins/$classId'
+      path: '/bulletins/$classId'
+      fullPath: '/bulletins/$classId'
+      preLoaderRoute: typeof AuthenticatedBulletinsClassIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
 interface AuthenticatedRouteChildren {
+  AuthenticatedBulletinsClassIdRoute: typeof AuthenticatedBulletinsClassIdRoute
   AuthenticatedClassesClassIdRoute: typeof AuthenticatedClassesClassIdRoute
   AuthenticatedReportsClassIdRoute: typeof AuthenticatedReportsClassIdRoute
   AuthenticatedClassesIndexRoute: typeof AuthenticatedClassesIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedBulletinsClassIdRoute: AuthenticatedBulletinsClassIdRoute,
   AuthenticatedClassesClassIdRoute: AuthenticatedClassesClassIdRoute,
   AuthenticatedReportsClassIdRoute: AuthenticatedReportsClassIdRoute,
   AuthenticatedClassesIndexRoute: AuthenticatedClassesIndexRoute,
@@ -169,3 +196,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
