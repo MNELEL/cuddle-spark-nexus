@@ -190,3 +190,108 @@
     color: transparent;
   }
 }
+
+/* ─────────────────────────────────────────────────────────────
+ * Dynamic Theme System — 5 variants
+ * Default (no attribute) = Modern Midnight Slate + Amber
+ * Activated via <html data-theme="...">
+ * ──────────────────────────────────────────────────────────── */
+
+/* Conservative — warm parchment + gold, serif headings (Torah school) */
+[data-theme="conservative"] {
+  --radius: 0.5rem;
+  --background: oklch(0.97 0.02 80);
+  --foreground: oklch(0.22 0.04 50);
+  --card: oklch(0.995 0.01 80);
+  --card-foreground: oklch(0.22 0.04 50);
+  --popover: oklch(0.995 0.01 80);
+  --popover-foreground: oklch(0.22 0.04 50);
+  --primary: oklch(0.38 0.08 50);
+  --primary-foreground: oklch(0.985 0.01 80);
+  --secondary: oklch(0.93 0.04 80);
+  --secondary-foreground: oklch(0.30 0.06 50);
+  --muted: oklch(0.94 0.02 80);
+  --muted-foreground: oklch(0.50 0.04 60);
+  --accent: oklch(0.72 0.14 70);
+  --accent-foreground: oklch(0.22 0.06 50);
+  --amber: oklch(0.72 0.14 70);
+  --amber-glow: oklch(0.84 0.13 80);
+  --border: oklch(0.86 0.04 75);
+  --input: oklch(0.86 0.04 75);
+  --ring: oklch(0.72 0.14 70);
+  --font-display: "Frank Ruhl Libre", "Heebo", serif;
+}
+
+/* Minimal — flat monochrome, sharp corners, max clarity */
+[data-theme="minimal"] {
+  --radius: 0.125rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.15 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.15 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.15 0 0);
+  --primary: oklch(0.15 0 0);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.96 0 0);
+  --secondary-foreground: oklch(0.15 0 0);
+  --muted: oklch(0.96 0 0);
+  --muted-foreground: oklch(0.45 0 0);
+  --accent: oklch(0.15 0 0);
+  --accent-foreground: oklch(0.99 0 0);
+  --amber: oklch(0.15 0 0);
+  --amber-glow: oklch(0.35 0 0);
+  --border: oklch(0.88 0 0);
+  --input: oklch(0.88 0 0);
+  --ring: oklch(0.15 0 0);
+}
+
+/* Kitsch — bubble corners, vibrant rose, playful */
+[data-theme="kitsch"] {
+  --radius: 1.25rem;
+  --background: oklch(0.98 0.025 350);
+  --foreground: oklch(0.22 0.08 350);
+  --card: oklch(1 0.01 350);
+  --card-foreground: oklch(0.22 0.08 350);
+  --popover: oklch(1 0.01 350);
+  --popover-foreground: oklch(0.22 0.08 350);
+  --primary: oklch(0.62 0.22 350);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.94 0.05 350);
+  --secondary-foreground: oklch(0.30 0.10 350);
+  --muted: oklch(0.95 0.03 350);
+  --muted-foreground: oklch(0.50 0.06 350);
+  --accent: oklch(0.75 0.20 330);
+  --accent-foreground: oklch(0.99 0 0);
+  --amber: oklch(0.78 0.18 60);
+  --amber-glow: oklch(0.88 0.16 70);
+  --border: oklch(0.88 0.05 350);
+  --input: oklch(0.88 0.05 350);
+  --ring: oklch(0.62 0.22 350);
+}
+
+/* Mono — retro terminal, cyber emerald on dark */
+[data-theme="mono"] {
+  --radius: 0.25rem;
+  --background: oklch(0.16 0.02 160);
+  --foreground: oklch(0.85 0.16 155);
+  --card: oklch(0.20 0.025 160);
+  --card-foreground: oklch(0.85 0.16 155);
+  --popover: oklch(0.20 0.025 160);
+  --popover-foreground: oklch(0.85 0.16 155);
+  --primary: oklch(0.78 0.18 155);
+  --primary-foreground: oklch(0.14 0.02 160);
+  --secondary: oklch(0.24 0.03 160);
+  --secondary-foreground: oklch(0.85 0.16 155);
+  --muted: oklch(0.24 0.03 160);
+  --muted-foreground: oklch(0.62 0.10 155);
+  --accent: oklch(0.78 0.18 155);
+  --accent-foreground: oklch(0.14 0.02 160);
+  --amber: oklch(0.78 0.18 155);
+  --amber-glow: oklch(0.85 0.16 155);
+  --border: oklch(0.78 0.18 155 / 25%);
+  --input: oklch(0.78 0.18 155 / 20%);
+  --ring: oklch(0.78 0.18 155);
+  --font-display: "JetBrains Mono", "Heebo", monospace;
+  --font-body: "JetBrains Mono", "Heebo", monospace;
+}
