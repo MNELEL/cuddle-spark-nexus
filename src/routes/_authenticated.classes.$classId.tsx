@@ -61,11 +61,18 @@ function ClassDetail() {
         <Link to="/classes" className="text-sm text-muted-foreground hover:underline flex items-center gap-1">
           <ArrowRight className="h-4 w-4" /> חזרה לכיתות
         </Link>
-        <Link to="/reports/$classId" params={{ classId }} className="ms-auto">
-          <Button variant="outline" size="sm">
-            <FileText className="ms-1 h-4 w-4" /> דוח כיתה
-          </Button>
-        </Link>
+        <div className="ms-auto flex gap-2">
+          <Link to="/bulletins/$classId" params={{ classId }}>
+            <Button variant="outline" size="sm">
+              <Sparkles className="ms-1 h-4 w-4" /> עלון שבועי
+            </Button>
+          </Link>
+          <Link to="/reports/$classId" params={{ classId }}>
+            <Button variant="outline" size="sm">
+              <FileText className="ms-1 h-4 w-4" /> דוח כיתה
+            </Button>
+          </Link>
+        </div>
       </div>
       <div className="rounded-2xl border bg-card bg-mesh p-6 shadow-sm">
         <h1 className="font-display text-3xl font-bold tracking-tight">{cls?.name ?? "..."}</h1>
