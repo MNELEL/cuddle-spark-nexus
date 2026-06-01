@@ -482,6 +482,54 @@ export type Database = {
           },
         ]
       }
+      weekly_bulletins: {
+        Row: {
+          activities: Json
+          class_id: string
+          created_at: string
+          digest_summary: string
+          end_date: string
+          id: string
+          notes: string
+          recap_questions: Json
+          start_date: string
+          study_points: Json
+          title: string
+          weekly_riddle: string
+          weekly_riddle_answer: string
+        }
+        Insert: {
+          activities?: Json
+          class_id: string
+          created_at?: string
+          digest_summary?: string
+          end_date: string
+          id?: string
+          notes?: string
+          recap_questions?: Json
+          start_date: string
+          study_points?: Json
+          title?: string
+          weekly_riddle?: string
+          weekly_riddle_answer?: string
+        }
+        Update: {
+          activities?: Json
+          class_id?: string
+          created_at?: string
+          digest_summary?: string
+          end_date?: string
+          id?: string
+          notes?: string
+          recap_questions?: Json
+          start_date?: string
+          study_points?: Json
+          title?: string
+          weekly_riddle?: string
+          weekly_riddle_answer?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
