@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { GraduationCap, LogOut } from "lucide-react";
+import { ThemeSwitcher } from "@/components/theme-switcher";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthLayout,
@@ -31,6 +32,7 @@ function AuthLayout() {
           </Link>
           <div className="flex items-center gap-3">
             <span className="hidden text-sm text-muted-foreground sm:inline">{user.email}</span>
+            <ThemeSwitcher />
             <Button variant="ghost" size="sm" onClick={() => supabase.auth.signOut().then(() => navigate({ to: "/login" }))}>
               <LogOut className="ms-1 h-4 w-4" /> יציאה
             </Button>
