@@ -69,10 +69,17 @@ export type ParentView = {
   className: string;
   studentId: string | null;
   studentName: string | null;
-  grades: { subject: string; value: number; max_value: number; date: string; notes: string }[];
-  attendance: { date: string; status: string; notes: string }[];
-  behavior: { date: string; category: string; points: number; note: string }[];
-  bulletins: { id: string; title: string; start_date: string; end_date: string; digest_summary: string; study_points: unknown; recap_questions: unknown; weekly_riddle: string; weekly_riddle_answer: string; activities: unknown }[];
+  grades: { subject: string; value: number; max_value: number; date: string; notes: string | null }[];
+  attendance: { date: string; status: string; notes: string | null }[];
+  behavior: { date: string; category: string; points: number; note: string | null }[];
+  bulletins: {
+    id: string; title: string; start_date: string; end_date: string;
+    digest_summary: string;
+    study_points: string[];
+    recap_questions: { question: string; answer: string }[];
+    weekly_riddle: string; weekly_riddle_answer: string;
+    activities: string[];
+  }[];
 };
 
 export const getParentView = createServerFn({ method: "POST" })
@@ -121,6 +128,23 @@ export const getParentView = createServerFn({ method: "POST" })
     const filter = <T extends { student_id?: string }>(rows: T[]) =>
       t.student_id ? rows.filter((r) => r.student_id === t.student_id) : rows;
 
+    const bulletins = (bul.data ?? []).map((r) => ({
+      id: r.id,
+      title: r.title,
+      start_date: r.start_date,
+      end_date: r.end_date,
+      digest_summary: r.digest_summary,
+      study_points: Array.isArray(r.study_points) ? (r.study_points as unknown[]).map(String) : [],
+      recap_questions: Array.isArray(r.recap_questions)
+        ? (r.recap_questions as { question?: unknown; answer?: unknown }[])
+            .filter((q) => typeof q?.question === "string" && typeof q?.answer === "string")
+            .map((q) => ({ question: String(q.question), answer: String(q.answer) }))
+        : [],
+      weekly_riddle: r.weekly_riddle,
+      weekly_riddle_answer: r.weekly_riddle_answer,
+      activities: Array.isArray(r.activities) ? (r.activities as unknown[]).map(String) : [],
+    }));
+
     return {
       classId: t.class_id,
       className: cls?.name ?? "כיתה",
@@ -129,6 +153,6 @@ export const getParentView = createServerFn({ method: "POST" })
       grades: filter(g.data ?? []).map(({ student_id: _u, ...r }) => r),
       attendance: filter(a.data ?? []).map(({ student_id: _u, ...r }) => r),
       behavior: filter(b.data ?? []).map(({ student_id: _u, ...r }) => r),
-      bulletins: bul.data ?? [],
+      bulletins,
     };
   });
