@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as PTokenRouteImport } from './routes/p.$token'
 import { Route as AuthenticatedClassesIndexRouteImport } from './routes/_authenticated.classes.index'
 import { Route as AuthenticatedReportsClassIdRouteImport } from './routes/_authenticated.reports.$classId'
+import { Route as AuthenticatedParentsClassIdRouteImport } from './routes/_authenticated.parents.$classId'
 import { Route as AuthenticatedGamificationClassIdRouteImport } from './routes/_authenticated.gamification.$classId'
 import { Route as AuthenticatedClassesClassIdRouteImport } from './routes/_authenticated.classes.$classId'
 import { Route as AuthenticatedBulletinsClassIdRouteImport } from './routes/_authenticated.bulletins.$classId'
@@ -50,6 +51,12 @@ const AuthenticatedReportsClassIdRoute =
     path: '/reports/$classId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedParentsClassIdRoute =
+  AuthenticatedParentsClassIdRouteImport.update({
+    id: '/parents/$classId',
+    path: '/parents/$classId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedGamificationClassIdRoute =
   AuthenticatedGamificationClassIdRouteImport.update({
     id: '/gamification/$classId',
@@ -76,6 +83,7 @@ export interface FileRoutesByFullPath {
   '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
   '/classes/$classId': typeof AuthenticatedClassesClassIdRoute
   '/gamification/$classId': typeof AuthenticatedGamificationClassIdRoute
+  '/parents/$classId': typeof AuthenticatedParentsClassIdRoute
   '/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/classes/': typeof AuthenticatedClassesIndexRoute
 }
@@ -86,6 +94,7 @@ export interface FileRoutesByTo {
   '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
   '/classes/$classId': typeof AuthenticatedClassesClassIdRoute
   '/gamification/$classId': typeof AuthenticatedGamificationClassIdRoute
+  '/parents/$classId': typeof AuthenticatedParentsClassIdRoute
   '/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/classes': typeof AuthenticatedClassesIndexRoute
 }
@@ -98,6 +107,7 @@ export interface FileRoutesById {
   '/_authenticated/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
   '/_authenticated/classes/$classId': typeof AuthenticatedClassesClassIdRoute
   '/_authenticated/gamification/$classId': typeof AuthenticatedGamificationClassIdRoute
+  '/_authenticated/parents/$classId': typeof AuthenticatedParentsClassIdRoute
   '/_authenticated/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/_authenticated/classes/': typeof AuthenticatedClassesIndexRoute
 }
@@ -110,6 +120,7 @@ export interface FileRouteTypes {
     | '/bulletins/$classId'
     | '/classes/$classId'
     | '/gamification/$classId'
+    | '/parents/$classId'
     | '/reports/$classId'
     | '/classes/'
   fileRoutesByTo: FileRoutesByTo
@@ -120,6 +131,7 @@ export interface FileRouteTypes {
     | '/bulletins/$classId'
     | '/classes/$classId'
     | '/gamification/$classId'
+    | '/parents/$classId'
     | '/reports/$classId'
     | '/classes'
   id:
@@ -131,6 +143,7 @@ export interface FileRouteTypes {
     | '/_authenticated/bulletins/$classId'
     | '/_authenticated/classes/$classId'
     | '/_authenticated/gamification/$classId'
+    | '/_authenticated/parents/$classId'
     | '/_authenticated/reports/$classId'
     | '/_authenticated/classes/'
   fileRoutesById: FileRoutesById
@@ -186,6 +199,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsClassIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/parents/$classId': {
+      id: '/_authenticated/parents/$classId'
+      path: '/parents/$classId'
+      fullPath: '/parents/$classId'
+      preLoaderRoute: typeof AuthenticatedParentsClassIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/gamification/$classId': {
       id: '/_authenticated/gamification/$classId'
       path: '/gamification/$classId'
@@ -214,6 +234,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedBulletinsClassIdRoute: typeof AuthenticatedBulletinsClassIdRoute
   AuthenticatedClassesClassIdRoute: typeof AuthenticatedClassesClassIdRoute
   AuthenticatedGamificationClassIdRoute: typeof AuthenticatedGamificationClassIdRoute
+  AuthenticatedParentsClassIdRoute: typeof AuthenticatedParentsClassIdRoute
   AuthenticatedReportsClassIdRoute: typeof AuthenticatedReportsClassIdRoute
   AuthenticatedClassesIndexRoute: typeof AuthenticatedClassesIndexRoute
 }
@@ -222,6 +243,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedBulletinsClassIdRoute: AuthenticatedBulletinsClassIdRoute,
   AuthenticatedClassesClassIdRoute: AuthenticatedClassesClassIdRoute,
   AuthenticatedGamificationClassIdRoute: AuthenticatedGamificationClassIdRoute,
+  AuthenticatedParentsClassIdRoute: AuthenticatedParentsClassIdRoute,
   AuthenticatedReportsClassIdRoute: AuthenticatedReportsClassIdRoute,
   AuthenticatedClassesIndexRoute: AuthenticatedClassesIndexRoute,
 }
