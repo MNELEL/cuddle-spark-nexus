@@ -287,6 +287,36 @@ export type Database = {
         }
         Relationships: []
       }
+      parent_share_tokens: {
+        Row: {
+          class_id: string
+          created_at: string
+          id: string
+          label: string
+          revoked: boolean
+          student_id: string | null
+          token: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          id?: string
+          label?: string
+          revoked?: boolean
+          student_id?: string | null
+          token: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          id?: string
+          label?: string
+          revoked?: boolean
+          student_id?: string | null
+          token?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
