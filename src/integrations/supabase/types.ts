@@ -77,6 +77,45 @@ export type Database = {
         }
         Relationships: []
       }
+      campaigns: {
+        Row: {
+          active: boolean
+          class_id: string
+          created_at: string
+          description: string
+          end_date: string
+          id: string
+          name: string
+          prize: string
+          start_date: string
+          target_points: number
+        }
+        Insert: {
+          active?: boolean
+          class_id: string
+          created_at?: string
+          description?: string
+          end_date?: string
+          id?: string
+          name: string
+          prize?: string
+          start_date?: string
+          target_points?: number
+        }
+        Update: {
+          active?: boolean
+          class_id?: string
+          created_at?: string
+          description?: string
+          end_date?: string
+          id?: string
+          name?: string
+          prize?: string
+          start_date?: string
+          target_points?: number
+        }
+        Relationships: []
+      }
       classes: {
         Row: {
           created_at: string
@@ -248,6 +287,36 @@ export type Database = {
         }
         Relationships: []
       }
+      parent_share_tokens: {
+        Row: {
+          class_id: string
+          created_at: string
+          id: string
+          label: string
+          revoked: boolean
+          student_id: string | null
+          token: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          id?: string
+          label?: string
+          revoked?: boolean
+          student_id?: string | null
+          token: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          id?: string
+          label?: string
+          revoked?: boolean
+          student_id?: string | null
+          token?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -296,6 +365,78 @@ export type Database = {
           id?: string
           student_id?: string
           title?: string
+        }
+        Relationships: []
+      }
+      reward_redemptions: {
+        Row: {
+          campaign_id: string | null
+          class_id: string
+          created_at: string
+          date: string
+          id: string
+          notes: string
+          points_spent: number
+          prize_name: string
+          reward_id: string | null
+          student_id: string
+        }
+        Insert: {
+          campaign_id?: string | null
+          class_id: string
+          created_at?: string
+          date?: string
+          id?: string
+          notes?: string
+          points_spent?: number
+          prize_name?: string
+          reward_id?: string | null
+          student_id: string
+        }
+        Update: {
+          campaign_id?: string | null
+          class_id?: string
+          created_at?: string
+          date?: string
+          id?: string
+          notes?: string
+          points_spent?: number
+          prize_name?: string
+          reward_id?: string | null
+          student_id?: string
+        }
+        Relationships: []
+      }
+      rewards: {
+        Row: {
+          active: boolean
+          class_id: string
+          created_at: string
+          description: string
+          id: string
+          name: string
+          points_cost: number
+          stock: number | null
+        }
+        Insert: {
+          active?: boolean
+          class_id: string
+          created_at?: string
+          description?: string
+          id?: string
+          name: string
+          points_cost?: number
+          stock?: number | null
+        }
+        Update: {
+          active?: boolean
+          class_id?: string
+          created_at?: string
+          description?: string
+          id?: string
+          name?: string
+          points_cost?: number
+          stock?: number | null
         }
         Relationships: []
       }

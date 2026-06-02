@@ -12,8 +12,11 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PTokenRouteImport } from './routes/p.$token'
 import { Route as AuthenticatedClassesIndexRouteImport } from './routes/_authenticated.classes.index'
 import { Route as AuthenticatedReportsClassIdRouteImport } from './routes/_authenticated.reports.$classId'
+import { Route as AuthenticatedParentsClassIdRouteImport } from './routes/_authenticated.parents.$classId'
+import { Route as AuthenticatedGamificationClassIdRouteImport } from './routes/_authenticated.gamification.$classId'
 import { Route as AuthenticatedClassesClassIdRouteImport } from './routes/_authenticated.classes.$classId'
 import { Route as AuthenticatedBulletinsClassIdRouteImport } from './routes/_authenticated.bulletins.$classId'
 
@@ -31,6 +34,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PTokenRoute = PTokenRouteImport.update({
+  id: '/p/$token',
+  path: '/p/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedClassesIndexRoute =
   AuthenticatedClassesIndexRouteImport.update({
     id: '/classes/',
@@ -41,6 +49,18 @@ const AuthenticatedReportsClassIdRoute =
   AuthenticatedReportsClassIdRouteImport.update({
     id: '/reports/$classId',
     path: '/reports/$classId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedParentsClassIdRoute =
+  AuthenticatedParentsClassIdRouteImport.update({
+    id: '/parents/$classId',
+    path: '/parents/$classId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedGamificationClassIdRoute =
+  AuthenticatedGamificationClassIdRouteImport.update({
+    id: '/gamification/$classId',
+    path: '/gamification/$classId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedClassesClassIdRoute =
@@ -59,16 +79,22 @@ const AuthenticatedBulletinsClassIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/p/$token': typeof PTokenRoute
   '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
   '/classes/$classId': typeof AuthenticatedClassesClassIdRoute
+  '/gamification/$classId': typeof AuthenticatedGamificationClassIdRoute
+  '/parents/$classId': typeof AuthenticatedParentsClassIdRoute
   '/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/classes/': typeof AuthenticatedClassesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/p/$token': typeof PTokenRoute
   '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
   '/classes/$classId': typeof AuthenticatedClassesClassIdRoute
+  '/gamification/$classId': typeof AuthenticatedGamificationClassIdRoute
+  '/parents/$classId': typeof AuthenticatedParentsClassIdRoute
   '/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/classes': typeof AuthenticatedClassesIndexRoute
 }
@@ -77,8 +103,11 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
+  '/p/$token': typeof PTokenRoute
   '/_authenticated/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
   '/_authenticated/classes/$classId': typeof AuthenticatedClassesClassIdRoute
+  '/_authenticated/gamification/$classId': typeof AuthenticatedGamificationClassIdRoute
+  '/_authenticated/parents/$classId': typeof AuthenticatedParentsClassIdRoute
   '/_authenticated/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/_authenticated/classes/': typeof AuthenticatedClassesIndexRoute
 }
@@ -87,16 +116,22 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/p/$token'
     | '/bulletins/$classId'
     | '/classes/$classId'
+    | '/gamification/$classId'
+    | '/parents/$classId'
     | '/reports/$classId'
     | '/classes/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
+    | '/p/$token'
     | '/bulletins/$classId'
     | '/classes/$classId'
+    | '/gamification/$classId'
+    | '/parents/$classId'
     | '/reports/$classId'
     | '/classes'
   id:
@@ -104,8 +139,11 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/login'
+    | '/p/$token'
     | '/_authenticated/bulletins/$classId'
     | '/_authenticated/classes/$classId'
+    | '/_authenticated/gamification/$classId'
+    | '/_authenticated/parents/$classId'
     | '/_authenticated/reports/$classId'
     | '/_authenticated/classes/'
   fileRoutesById: FileRoutesById
@@ -114,6 +152,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
+  PTokenRoute: typeof PTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -139,6 +178,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/p/$token': {
+      id: '/p/$token'
+      path: '/p/$token'
+      fullPath: '/p/$token'
+      preLoaderRoute: typeof PTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/classes/': {
       id: '/_authenticated/classes/'
       path: '/classes'
@@ -151,6 +197,20 @@ declare module '@tanstack/react-router' {
       path: '/reports/$classId'
       fullPath: '/reports/$classId'
       preLoaderRoute: typeof AuthenticatedReportsClassIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/parents/$classId': {
+      id: '/_authenticated/parents/$classId'
+      path: '/parents/$classId'
+      fullPath: '/parents/$classId'
+      preLoaderRoute: typeof AuthenticatedParentsClassIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/gamification/$classId': {
+      id: '/_authenticated/gamification/$classId'
+      path: '/gamification/$classId'
+      fullPath: '/gamification/$classId'
+      preLoaderRoute: typeof AuthenticatedGamificationClassIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/classes/$classId': {
@@ -173,6 +233,8 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteChildren {
   AuthenticatedBulletinsClassIdRoute: typeof AuthenticatedBulletinsClassIdRoute
   AuthenticatedClassesClassIdRoute: typeof AuthenticatedClassesClassIdRoute
+  AuthenticatedGamificationClassIdRoute: typeof AuthenticatedGamificationClassIdRoute
+  AuthenticatedParentsClassIdRoute: typeof AuthenticatedParentsClassIdRoute
   AuthenticatedReportsClassIdRoute: typeof AuthenticatedReportsClassIdRoute
   AuthenticatedClassesIndexRoute: typeof AuthenticatedClassesIndexRoute
 }
@@ -180,6 +242,8 @@ interface AuthenticatedRouteChildren {
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedBulletinsClassIdRoute: AuthenticatedBulletinsClassIdRoute,
   AuthenticatedClassesClassIdRoute: AuthenticatedClassesClassIdRoute,
+  AuthenticatedGamificationClassIdRoute: AuthenticatedGamificationClassIdRoute,
+  AuthenticatedParentsClassIdRoute: AuthenticatedParentsClassIdRoute,
   AuthenticatedReportsClassIdRoute: AuthenticatedReportsClassIdRoute,
   AuthenticatedClassesIndexRoute: AuthenticatedClassesIndexRoute,
 }
@@ -192,17 +256,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
+  PTokenRoute: PTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
