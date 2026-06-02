@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedClassesIndexRouteImport } from './routes/_authenticated.classes.index'
 import { Route as AuthenticatedReportsClassIdRouteImport } from './routes/_authenticated.reports.$classId'
+import { Route as AuthenticatedGamificationClassIdRouteImport } from './routes/_authenticated.gamification.$classId'
 import { Route as AuthenticatedClassesClassIdRouteImport } from './routes/_authenticated.classes.$classId'
 import { Route as AuthenticatedBulletinsClassIdRouteImport } from './routes/_authenticated.bulletins.$classId'
 
@@ -43,6 +44,12 @@ const AuthenticatedReportsClassIdRoute =
     path: '/reports/$classId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedGamificationClassIdRoute =
+  AuthenticatedGamificationClassIdRouteImport.update({
+    id: '/gamification/$classId',
+    path: '/gamification/$classId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedClassesClassIdRoute =
   AuthenticatedClassesClassIdRouteImport.update({
     id: '/classes/$classId',
@@ -61,6 +68,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
   '/classes/$classId': typeof AuthenticatedClassesClassIdRoute
+  '/gamification/$classId': typeof AuthenticatedGamificationClassIdRoute
   '/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/classes/': typeof AuthenticatedClassesIndexRoute
 }
@@ -69,6 +77,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
   '/classes/$classId': typeof AuthenticatedClassesClassIdRoute
+  '/gamification/$classId': typeof AuthenticatedGamificationClassIdRoute
   '/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/classes': typeof AuthenticatedClassesIndexRoute
 }
@@ -79,6 +88,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_authenticated/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
   '/_authenticated/classes/$classId': typeof AuthenticatedClassesClassIdRoute
+  '/_authenticated/gamification/$classId': typeof AuthenticatedGamificationClassIdRoute
   '/_authenticated/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/_authenticated/classes/': typeof AuthenticatedClassesIndexRoute
 }
@@ -89,6 +99,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/bulletins/$classId'
     | '/classes/$classId'
+    | '/gamification/$classId'
     | '/reports/$classId'
     | '/classes/'
   fileRoutesByTo: FileRoutesByTo
@@ -97,6 +108,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/bulletins/$classId'
     | '/classes/$classId'
+    | '/gamification/$classId'
     | '/reports/$classId'
     | '/classes'
   id:
@@ -106,6 +118,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/_authenticated/bulletins/$classId'
     | '/_authenticated/classes/$classId'
+    | '/_authenticated/gamification/$classId'
     | '/_authenticated/reports/$classId'
     | '/_authenticated/classes/'
   fileRoutesById: FileRoutesById
@@ -153,6 +166,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsClassIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/gamification/$classId': {
+      id: '/_authenticated/gamification/$classId'
+      path: '/gamification/$classId'
+      fullPath: '/gamification/$classId'
+      preLoaderRoute: typeof AuthenticatedGamificationClassIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/classes/$classId': {
       id: '/_authenticated/classes/$classId'
       path: '/classes/$classId'
@@ -173,6 +193,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteChildren {
   AuthenticatedBulletinsClassIdRoute: typeof AuthenticatedBulletinsClassIdRoute
   AuthenticatedClassesClassIdRoute: typeof AuthenticatedClassesClassIdRoute
+  AuthenticatedGamificationClassIdRoute: typeof AuthenticatedGamificationClassIdRoute
   AuthenticatedReportsClassIdRoute: typeof AuthenticatedReportsClassIdRoute
   AuthenticatedClassesIndexRoute: typeof AuthenticatedClassesIndexRoute
 }
@@ -180,6 +201,7 @@ interface AuthenticatedRouteChildren {
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedBulletinsClassIdRoute: AuthenticatedBulletinsClassIdRoute,
   AuthenticatedClassesClassIdRoute: AuthenticatedClassesClassIdRoute,
+  AuthenticatedGamificationClassIdRoute: AuthenticatedGamificationClassIdRoute,
   AuthenticatedReportsClassIdRoute: AuthenticatedReportsClassIdRoute,
   AuthenticatedClassesIndexRoute: AuthenticatedClassesIndexRoute,
 }
@@ -196,3 +218,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
