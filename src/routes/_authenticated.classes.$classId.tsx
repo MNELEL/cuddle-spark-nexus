@@ -21,7 +21,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Heart, Ban, MoveHorizontal, Pencil, Plus, Trash2, FolderOpen, FileText, Sparkles } from "lucide-react";
+import { ArrowRight, Heart, Ban, MoveHorizontal, Pencil, Plus, Trash2, FolderOpen, FileText, Sparkles, Trophy, Users } from "lucide-react";
 import { toast } from "sonner";
 import { SeatingGrid } from "@/components/seating-grid";
 import { GroupsTab } from "@/components/groups-tab";
@@ -65,6 +65,16 @@ function ClassDetail() {
           <Link to="/bulletins/$classId" params={{ classId }}>
             <Button variant="outline" size="sm">
               <Sparkles className="ms-1 h-4 w-4" /> עלון שבועי
+            </Button>
+          </Link>
+          <Link to="/gamification/$classId" params={{ classId }}>
+            <Button variant="outline" size="sm">
+              <Trophy className="ms-1 h-4 w-4" /> גיימיפיקציה
+            </Button>
+          </Link>
+          <Link to="/parents/$classId" params={{ classId }}>
+            <Button variant="outline" size="sm">
+              <Users className="ms-1 h-4 w-4" /> פורטל הורים
             </Button>
           </Link>
           <Link to="/reports/$classId" params={{ classId }}>
