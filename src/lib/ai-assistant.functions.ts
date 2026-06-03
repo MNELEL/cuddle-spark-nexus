@@ -138,7 +138,7 @@ export const executeAssistantAction = createServerFn({ method: "POST" })
         notes: String(params.notes ?? ""),
         date: String(params.date ?? todayIso()),
       });
-      if (error) throw new Error(error.message);
+      if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     } else if (kind === "mark_attendance") {
       const status = String(params.status ?? "present");
       const { error } = await supabase.from("attendance").upsert({
@@ -148,7 +148,7 @@ export const executeAssistantAction = createServerFn({ method: "POST" })
         status,
         notes: String(params.notes ?? ""),
       }, { onConflict: "student_id,date" });
-      if (error) throw new Error(error.message);
+      if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     } else if (kind === "add_note") {
       const { error } = await supabase.from("discipline_events").insert({
         class_id: data.classId,
@@ -158,7 +158,7 @@ export const executeAssistantAction = createServerFn({ method: "POST" })
         description: String(params.description ?? ""),
         date: String(params.date ?? todayIso()),
       });
-      if (error) throw new Error(error.message);
+      if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     } else if (kind === "add_behavior") {
       const { error } = await supabase.from("behavior_points").insert({
         class_id: data.classId,
@@ -168,7 +168,7 @@ export const executeAssistantAction = createServerFn({ method: "POST" })
         note: String(params.note ?? ""),
         date: String(params.date ?? todayIso()),
       });
-      if (error) throw new Error(error.message);
+      if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     } else if (kind === "add_parent_call") {
       const { error } = await supabase.from("parent_communications").insert({
         class_id: data.classId,
@@ -178,7 +178,7 @@ export const executeAssistantAction = createServerFn({ method: "POST" })
         summary: String(params.summary ?? ""),
         date: String(params.date ?? todayIso()),
       });
-      if (error) throw new Error(error.message);
+      if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     }
     return { ok: true };
   });

@@ -8,7 +8,7 @@ export const listGroups = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: groups, error } = await context.supabase
       .from("groups").select("*").eq("class_id", data.classId).order("name");
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     const { data: memberships, error: e2 } = await context.supabase
       .from("student_groups").select("*")
       .in("group_id", (groups ?? []).map((g) => g.id).length ? (groups ?? []).map((g) => g.id) : ["00000000-0000-0000-0000-000000000000"]);
@@ -28,10 +28,10 @@ export const upsertGroup = createServerFn({ method: "POST" })
     if (data.id) {
       const { id, ...rest } = data;
       const { error } = await context.supabase.from("groups").update(rest).eq("id", id);
-      if (error) throw new Error(error.message);
+      if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     } else {
       const { error } = await context.supabase.from("groups").insert(data);
-      if (error) throw new Error(error.message);
+      if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     }
     return { ok: true };
   });
@@ -42,7 +42,7 @@ export const deleteGroup = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await context.supabase.from("student_groups").delete().eq("group_id", data.id);
     const { error } = await context.supabase.from("groups").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return { ok: true };
   });
 
@@ -57,7 +57,7 @@ export const setStudentGroups = createServerFn({ method: "POST" })
     if (data.group_ids.length) {
       const rows = data.group_ids.map((gid) => ({ student_id: data.student_id, group_id: gid }));
       const { error } = await context.supabase.from("student_groups").insert(rows);
-      if (error) throw new Error(error.message);
+      if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     }
     return { ok: true };
   });

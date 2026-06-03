@@ -34,7 +34,7 @@ export const listBulletins = createServerFn({ method: "POST" })
       .select("*")
       .eq("class_id", data.classId)
       .order("start_date", { ascending: false });
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return (rows ?? []) as unknown as StoredBulletin[];
   });
 
@@ -168,12 +168,12 @@ export const saveBulletin = createServerFn({ method: "POST" })
     };
     if (data.id) {
       const { error } = await context.supabase.from("weekly_bulletins").update(row).eq("id", data.id);
-      if (error) throw new Error(error.message);
+      if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
       return { id: data.id };
     }
     const { data: ins, error } = await context.supabase
       .from("weekly_bulletins").insert(row).select("id").single();
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return { id: ins!.id };
   });
 
@@ -183,6 +183,6 @@ export const deleteBulletin = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("weekly_bulletins").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return { ok: true };
   });

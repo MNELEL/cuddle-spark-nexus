@@ -32,7 +32,7 @@ export const parseGradesFromText = createServerFn({ method: "POST" })
     const { supabase } = context;
     const { data: students, error } = await supabase
       .from("students").select("id,name").eq("class_id", data.classId);
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     if (!students || students.length === 0) throw new Error("אין תלמידים בכיתה");
 
     const apiKey = process.env.LOVABLE_API_KEY;
@@ -67,7 +67,10 @@ export const parseGradesFromText = createServerFn({ method: "POST" })
 
     if (resp.status === 429) throw new Error("חרגת ממכסת בקשות AI. נסה שוב בעוד דקה.");
     if (resp.status === 402) throw new Error("נגמרו קרדיטים ב-Lovable AI. הוסף קרדיטים בהגדרות.");
-    if (!resp.ok) throw new Error(`שגיאת AI: ${resp.status} ${await resp.text()}`);
+    if (!resp.ok) {
+      console.error("[AI Gateway Error]", resp.status, await resp.text());
+      throw new Error(`שגיאת AI: ${resp.status}`);
+    }
 
     const json = await resp.json() as { choices?: { message?: { content?: string } }[] };
     const raw = json.choices?.[0]?.message?.content ?? "{}";
@@ -118,6 +121,6 @@ export const bulkInsertGrades = createServerFn({ method: "POST" })
       notes: r.notes,
     }));
     const { error } = await context.supabase.from("grades").insert(payload);
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return { ok: true, count: payload.length };
   });

@@ -9,7 +9,7 @@ export const listClasses = createServerFn({ method: "GET" })
       .from("classes")
       .select("*")
       .order("created_at", { ascending: false });
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return data ?? [];
   });
 
@@ -22,7 +22,7 @@ export const createClass = createServerFn({ method: "POST" })
       .insert({ name: data.name, owner_id: context.userId })
       .select()
       .single();
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return row;
   });
 
@@ -35,7 +35,7 @@ export const getClass = createServerFn({ method: "POST" })
       .select("*")
       .eq("id", data.id)
       .single();
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return row;
   });
 
@@ -55,7 +55,7 @@ export const updateClass = createServerFn({ method: "POST" })
       .from("classes")
       .update({ ...rest, updated_at: new Date().toISOString() })
       .eq("id", id);
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return { ok: true };
   });
 
@@ -64,6 +64,6 @@ export const deleteClass = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("classes").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return { ok: true };
   });

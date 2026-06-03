@@ -18,7 +18,7 @@ export const listParentTokens = createServerFn({ method: "POST" })
     const { data: rows, error } = await context.supabase
       .from("parent_share_tokens").select("*").eq("class_id", data.classId)
       .order("created_at", { ascending: false });
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return rows ?? [];
   });
 
@@ -39,7 +39,7 @@ export const createParentToken = createServerFn({ method: "POST" })
       token,
       label: data.label,
     }).select("*").single();
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return ins;
   });
 
@@ -49,7 +49,7 @@ export const revokeParentToken = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("parent_share_tokens")
       .update({ revoked: data.revoked }).eq("id", data.id);
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return { ok: true };
   });
 
@@ -58,7 +58,7 @@ export const deleteParentToken = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("parent_share_tokens").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return { ok: true };
   });
 
@@ -120,10 +120,10 @@ export const getParentView = createServerFn({ method: "POST" })
       .eq("class_id", t.class_id).order("start_date", { ascending: false }).limit(8);
 
     const [g, a, b, bul] = await Promise.all([gradesQ, attQ, behQ, bulQ]);
-    if (g.error) throw new Error(g.error.message);
-    if (a.error) throw new Error(a.error.message);
-    if (b.error) throw new Error(b.error.message);
-    if (bul.error) throw new Error(bul.error.message);
+    if (g.error) { console.error("[DB Error]", g.error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    if (a.error) { console.error("[DB Error]", a.error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    if (b.error) { console.error("[DB Error]", b.error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    if (bul.error) { console.error("[DB Error]", bul.error); throw new Error("הפעולה נכשלה. נסה שוב."); }
 
     const filter = <T extends { student_id?: string }>(rows: T[]) =>
       t.student_id ? rows.filter((r) => r.student_id === t.student_id) : rows;
