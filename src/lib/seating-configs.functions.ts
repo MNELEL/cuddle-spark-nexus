@@ -16,7 +16,7 @@ export const listConfigs = createServerFn({ method: "POST" })
     const { data: rows, error } = await context.supabase
       .from("seating_configs").select("id, name, created_at").eq("class_id", data.classId)
       .order("created_at", { ascending: false });
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return rows ?? [];
   });
 
@@ -42,7 +42,7 @@ export const saveConfig = createServerFn({ method: "POST" })
     };
     const { error } = await context.supabase.from("seating_configs")
       .insert({ class_id: data.class_id, name: data.name, snapshot });
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return { ok: true };
   });
 
@@ -52,7 +52,7 @@ export const loadConfig = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: cfg, error } = await context.supabase.from("seating_configs")
       .select("class_id, snapshot").eq("id", data.id).single();
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     const snap = cfg.snapshot as unknown as SeatSnapshot;
     await context.supabase.from("classes").update({
       grid_rows: snap.grid_rows, grid_cols: snap.grid_cols, hidden_seats: snap.hidden_seats,
@@ -77,7 +77,7 @@ export const deleteConfig = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("seating_configs").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return { ok: true };
   });
 
@@ -96,6 +96,6 @@ export const importStudents = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const rows = data.students.map((s) => ({ class_id: data.class_id, ...s }));
     const { error } = await context.supabase.from("students").insert(rows);
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return { ok: true, count: rows.length };
   });

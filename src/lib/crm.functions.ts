@@ -12,7 +12,7 @@ export const listReminders = createServerFn({ method: "POST" })
       .from("reminders").select("*").eq("class_id", data.classId)
       .order("completed").order("due_date", { ascending: true, nullsFirst: false })
       .order("created_at", { ascending: false });
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return rows ?? [];
   });
 
@@ -30,10 +30,10 @@ export const upsertReminder = createServerFn({ method: "POST" })
     if (data.id) {
       const { id, ...rest } = data;
       const { error } = await context.supabase.from("reminders").update(rest).eq("id", id);
-      if (error) throw new Error(error.message);
+      if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     } else {
       const { error } = await context.supabase.from("reminders").insert(data);
-      if (error) throw new Error(error.message);
+      if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     }
     return { ok: true };
   });
@@ -43,7 +43,7 @@ export const toggleReminderDone = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid(), completed: z.boolean() }).parse(d))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("reminders").update({ completed: data.completed }).eq("id", data.id);
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return { ok: true };
   });
 
@@ -52,7 +52,7 @@ export const deleteReminder = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("reminders").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return { ok: true };
   });
 
@@ -63,7 +63,7 @@ export const listBehaviorPoints = createServerFn({ method: "POST" })
     const { data: rows, error } = await context.supabase
       .from("behavior_points").select("*").eq("class_id", data.classId)
       .order("created_at", { ascending: false });
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return rows ?? [];
   });
 
@@ -79,7 +79,7 @@ export const addBehaviorPoints = createServerFn({ method: "POST" })
   }).parse(d))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("behavior_points").insert(data);
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return { ok: true };
   });
 
@@ -88,6 +88,6 @@ export const deleteBehaviorPoint = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("behavior_points").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return { ok: true };
   });

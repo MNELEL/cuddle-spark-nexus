@@ -32,7 +32,7 @@ export const parseGradesFromText = createServerFn({ method: "POST" })
     const { supabase } = context;
     const { data: students, error } = await supabase
       .from("students").select("id,name").eq("class_id", data.classId);
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     if (!students || students.length === 0) throw new Error("אין תלמידים בכיתה");
 
     const apiKey = process.env.LOVABLE_API_KEY;
@@ -118,6 +118,6 @@ export const bulkInsertGrades = createServerFn({ method: "POST" })
       notes: r.notes,
     }));
     const { error } = await context.supabase.from("grades").insert(payload);
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return { ok: true, count: payload.length };
   });

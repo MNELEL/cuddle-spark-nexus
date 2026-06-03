@@ -16,9 +16,9 @@ export const listClassScoreInputs = createServerFn({ method: "POST" })
       context.supabase.from("attendance").select("student_id,status").eq("class_id", classId),
       context.supabase.from("behavior_points").select("student_id,points").eq("class_id", classId),
     ]);
-    if (g.error) throw new Error(g.error.message);
-    if (a.error) throw new Error(a.error.message);
-    if (b.error) throw new Error(b.error.message);
+    if (g.error) { console.error("[DB Error]", g.error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    if (a.error) { console.error("[DB Error]", a.error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    if (b.error) { console.error("[DB Error]", b.error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return {
       grades: g.data ?? [],
       attendance: a.data ?? [],

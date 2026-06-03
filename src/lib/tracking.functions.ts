@@ -16,7 +16,7 @@ export const listAttendanceByDate = createServerFn({ method: "POST" })
     const { data: rows, error } = await context.supabase
       .from("attendance").select("*")
       .eq("class_id", data.class_id).eq("date", data.date);
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return rows ?? [];
   });
 
@@ -27,7 +27,7 @@ export const listAttendanceByStudent = createServerFn({ method: "POST" })
     const { data: rows, error } = await context.supabase
       .from("attendance").select("*")
       .eq("student_id", data.student_id).order("date", { ascending: false });
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return rows ?? [];
   });
 
@@ -44,7 +44,7 @@ export const upsertAttendance = createServerFn({ method: "POST" })
     const { error } = await context.supabase
       .from("attendance")
       .upsert(data, { onConflict: "student_id,date" });
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return { ok: true };
   });
 
@@ -65,7 +65,7 @@ export const bulkMarkAttendance = createServerFn({ method: "POST" })
     if (!rows.length) return { ok: true };
     const { error } = await context.supabase.from("attendance")
       .upsert(rows, { onConflict: "student_id,date" });
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return { ok: true };
   });
 
@@ -78,7 +78,7 @@ export const listGrades = createServerFn({ method: "POST" })
     const { data: rows, error } = await context.supabase
       .from("grades").select("*")
       .eq("class_id", data.classId).order("date", { ascending: false });
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return rows ?? [];
   });
 
@@ -98,10 +98,10 @@ export const upsertGrade = createServerFn({ method: "POST" })
     if (data.id) {
       const { id, ...rest } = data;
       const { error } = await context.supabase.from("grades").update(rest).eq("id", id);
-      if (error) throw new Error(error.message);
+      if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     } else {
       const { error } = await context.supabase.from("grades").insert(data);
-      if (error) throw new Error(error.message);
+      if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     }
     return { ok: true };
   });
@@ -111,6 +111,6 @@ export const deleteGrade = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("grades").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return { ok: true };
   });

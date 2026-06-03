@@ -15,7 +15,7 @@ export const listStudentDocuments = createServerFn({ method: "POST" })
       .select("*")
       .eq("student_id", data.studentId)
       .order("created_at", { ascending: false });
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return rows ?? [];
   });
 
@@ -37,10 +37,10 @@ export const upsertStudentDocument = createServerFn({ method: "POST" })
     if (data.id) {
       const { id, ...rest } = data;
       const { error } = await context.supabase.from("student_documents").update(rest).eq("id", id);
-      if (error) throw new Error(error.message);
+      if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     } else {
       const { error } = await context.supabase.from("student_documents").insert(data);
-      if (error) throw new Error(error.message);
+      if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     }
     return { ok: true };
   });
@@ -53,7 +53,7 @@ export const deleteStudentDocument = createServerFn({ method: "POST" })
       await context.supabase.storage.from("student-files").remove([data.file_path]);
     }
     const { error } = await context.supabase.from("student_documents").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return { ok: true };
   });
 
@@ -64,7 +64,7 @@ export const getDocumentSignedUrl = createServerFn({ method: "POST" })
     const { data: signed, error } = await context.supabase.storage
       .from("student-files")
       .createSignedUrl(data.file_path, 60 * 10);
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return { url: signed.signedUrl };
   });
 
@@ -80,7 +80,7 @@ export const listParentCommunications = createServerFn({ method: "POST" })
       .eq("student_id", data.studentId)
       .order("date", { ascending: false })
       .order("created_at", { ascending: false });
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return rows ?? [];
   });
 
@@ -100,10 +100,10 @@ export const upsertParentCommunication = createServerFn({ method: "POST" })
     if (data.id) {
       const { id, ...rest } = data;
       const { error } = await context.supabase.from("parent_communications").update(rest).eq("id", id);
-      if (error) throw new Error(error.message);
+      if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     } else {
       const { error } = await context.supabase.from("parent_communications").insert(data);
-      if (error) throw new Error(error.message);
+      if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     }
     return { ok: true };
   });
@@ -113,7 +113,7 @@ export const deleteParentCommunication = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: uuid }).parse(d))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("parent_communications").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return { ok: true };
   });
 
@@ -129,7 +129,7 @@ export const listDisciplineEvents = createServerFn({ method: "POST" })
       .eq("student_id", data.studentId)
       .order("date", { ascending: false })
       .order("created_at", { ascending: false });
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return rows ?? [];
   });
 
@@ -150,10 +150,10 @@ export const upsertDisciplineEvent = createServerFn({ method: "POST" })
     if (data.id) {
       const { id, ...rest } = data;
       const { error } = await context.supabase.from("discipline_events").update(rest).eq("id", id);
-      if (error) throw new Error(error.message);
+      if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     } else {
       const { error } = await context.supabase.from("discipline_events").insert(data);
-      if (error) throw new Error(error.message);
+      if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     }
     return { ok: true };
   });
@@ -163,6 +163,6 @@ export const deleteDisciplineEvent = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: uuid }).parse(d))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("discipline_events").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return { ok: true };
   });

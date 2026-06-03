@@ -13,7 +13,7 @@ export const listCampaigns = createServerFn({ method: "POST" })
     const { data: rows, error } = await context.supabase
       .from("campaigns").select("*").eq("class_id", data.classId)
       .order("created_at", { ascending: false });
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return rows ?? [];
   });
 
@@ -45,12 +45,12 @@ export const upsertCampaign = createServerFn({ method: "POST" })
     };
     if (data.id) {
       const { error } = await context.supabase.from("campaigns").update(row).eq("id", data.id);
-      if (error) throw new Error(error.message);
+      if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
       return { id: data.id };
     }
     const { data: ins, error } = await context.supabase
       .from("campaigns").insert(row).select("id").single();
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return { id: ins!.id };
   });
 
@@ -59,7 +59,7 @@ export const deleteCampaign = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("campaigns").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return { ok: true };
   });
 
@@ -71,7 +71,7 @@ export const listRewards = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase
       .from("rewards").select("*").eq("class_id", data.classId).order("points_cost");
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return rows ?? [];
   });
 
@@ -99,12 +99,12 @@ export const upsertReward = createServerFn({ method: "POST" })
     };
     if (data.id) {
       const { error } = await context.supabase.from("rewards").update(row).eq("id", data.id);
-      if (error) throw new Error(error.message);
+      if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
       return { id: data.id };
     }
     const { data: ins, error } = await context.supabase
       .from("rewards").insert(row).select("id").single();
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return { id: ins!.id };
   });
 
@@ -113,7 +113,7 @@ export const deleteReward = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("rewards").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return { ok: true };
   });
 
@@ -126,7 +126,7 @@ export const listRedemptions = createServerFn({ method: "POST" })
     const { data: rows, error } = await context.supabase
       .from("reward_redemptions").select("*").eq("class_id", data.classId)
       .order("date", { ascending: false }).limit(200);
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return rows ?? [];
   });
 
@@ -154,7 +154,7 @@ export const redeemReward = createServerFn({ method: "POST" })
         points_spent: data.points_spent,
         notes: data.notes,
       }).select("id").single();
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return { id: ins!.id };
   });
 
@@ -163,7 +163,7 @@ export const deleteRedemption = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("reward_redemptions").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return { ok: true };
   });
 
