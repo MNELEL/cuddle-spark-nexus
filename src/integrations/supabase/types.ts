@@ -116,6 +116,38 @@ export type Database = {
         }
         Relationships: []
       }
+      class_resource_usage: {
+        Row: {
+          class_id: string
+          id: string
+          notes: string
+          resource_id: string
+          used_at: string
+        }
+        Insert: {
+          class_id: string
+          id?: string
+          notes?: string
+          resource_id: string
+          used_at?: string
+        }
+        Update: {
+          class_id?: string
+          id?: string
+          notes?: string
+          resource_id?: string
+          used_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_resource_usage_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "teaching_resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       classes: {
         Row: {
           created_at: string
@@ -365,6 +397,66 @@ export type Database = {
           id?: string
           student_id?: string
           title?: string
+        }
+        Relationships: []
+      }
+      resource_collection_items: {
+        Row: {
+          added_at: string
+          collection_id: string
+          resource_id: string
+        }
+        Insert: {
+          added_at?: string
+          collection_id: string
+          resource_id: string
+        }
+        Update: {
+          added_at?: string
+          collection_id?: string
+          resource_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resource_collection_items_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "resource_collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resource_collection_items_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "teaching_resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resource_collections: {
+        Row: {
+          color: string
+          created_at: string
+          description: string
+          id: string
+          name: string
+          owner_id: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          description?: string
+          id?: string
+          name: string
+          owner_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          description?: string
+          id?: string
+          name?: string
+          owner_id?: string
         }
         Relationships: []
       }
@@ -622,6 +714,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      teaching_resources: {
+        Row: {
+          ai_generated: boolean
+          content: Json
+          created_at: string
+          description: string
+          file_path: string | null
+          grade_level: string
+          id: string
+          mime_type: string | null
+          owner_id: string
+          resource_type: string
+          source_prompt: string
+          subject: string
+          tags: string[]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          ai_generated?: boolean
+          content?: Json
+          created_at?: string
+          description?: string
+          file_path?: string | null
+          grade_level?: string
+          id?: string
+          mime_type?: string | null
+          owner_id: string
+          resource_type?: string
+          source_prompt?: string
+          subject?: string
+          tags?: string[]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          ai_generated?: boolean
+          content?: Json
+          created_at?: string
+          description?: string
+          file_path?: string | null
+          grade_level?: string
+          id?: string
+          mime_type?: string | null
+          owner_id?: string
+          resource_type?: string
+          source_prompt?: string
+          subject?: string
+          tags?: string[]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       weekly_bulletins: {
         Row: {
