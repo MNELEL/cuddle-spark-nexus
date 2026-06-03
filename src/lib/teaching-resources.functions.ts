@@ -67,25 +67,17 @@ export const listResources = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }): Promise<ResourceRow[]> => {
-    const sb = context.supabase as unknown as {
-      from: (t: string) => {
-        select: (s: string) => {
-          eq: (k: string, v: unknown) => ReturnType<ReturnType<typeof sb.from>["select"]>;
-          contains: (k: string, v: unknown) => ReturnType<ReturnType<typeof sb.from>["select"]>;
-          or: (s: string) => ReturnType<ReturnType<typeof sb.from>["select"]>;
-          in: (k: string, v: unknown[]) => ReturnType<ReturnType<typeof sb.from>["select"]>;
-          order: (k: string, o: { ascending: boolean }) => Promise<{ data: ResourceRow[] | null; error: { message: string } | null }>;
-        };
-      };
-    };
     let ids: string[] | null = null;
     if (data.collection_id) {
-      const r = await (context.supabase as unknown as { from: typeof sb.from })
-        .from("resource_collection_items").select("resource_id").eq("collection_id", data.collection_id) as unknown as { data: { resource_id: string }[] | null };
-      ids = (r.data ?? []).map((x) => x.resource_id);
+      const r = await context.supabase
+        .from("resource_collection_items")
+        .select("resource_id")
+        .eq("collection_id", data.collection_id);
+      ids = ((r.data ?? []) as { resource_id: string }[]).map((x) => x.resource_id);
       if (ids.length === 0) return [];
     }
-    let q = sb.from("teaching_resources").select("*");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let q: any = context.supabase.from("teaching_resources").select("*");
     if (data.resource_type) q = q.eq("resource_type", data.resource_type);
     if (data.subject) q = q.eq("subject", data.subject);
     if (data.grade_level) q = q.eq("grade_level", data.grade_level);
@@ -97,7 +89,7 @@ export const listResources = createServerFn({ method: "POST" })
     }
     const { data: rows, error } = await q.order("updated_at", { ascending: false });
     if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
-    return rows ?? [];
+    return (rows ?? []) as ResourceRow[];
   });
 
 export const getResource = createServerFn({ method: "POST" })
