@@ -67,7 +67,10 @@ export const parseGradesFromText = createServerFn({ method: "POST" })
 
     if (resp.status === 429) throw new Error("חרגת ממכסת בקשות AI. נסה שוב בעוד דקה.");
     if (resp.status === 402) throw new Error("נגמרו קרדיטים ב-Lovable AI. הוסף קרדיטים בהגדרות.");
-    if (!resp.ok) throw new Error(`שגיאת AI: ${resp.status} ${await resp.text()}`);
+    if (!resp.ok) {
+      console.error("[AI Gateway Error]", resp.status, await resp.text());
+      throw new Error(`שגיאת AI: ${resp.status}`);
+    }
 
     const json = await resp.json() as { choices?: { message?: { content?: string } }[] };
     const raw = json.choices?.[0]?.message?.content ?? "{}";
