@@ -71,7 +71,7 @@ function LoginPage() {
         <CardHeader className="text-center">
           <Link to="/" className="mx-auto mb-2 flex items-center gap-2">
             <GraduationCap className="h-7 w-7 text-primary" />
-            <span className="text-lg font-bold">ClassManager Pro</span>
+            <span className="text-lg font-bold">ClassAlign Studio</span>
           </Link>
           <CardTitle>{mode === "signin" ? "ברוך הבא" : "צור חשבון"}</CardTitle>
           <CardDescription>

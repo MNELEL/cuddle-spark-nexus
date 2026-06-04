@@ -28,7 +28,7 @@ function AuthLayout() {
         <div className="container mx-auto flex items-center justify-between px-6 py-3">
           <Link to="/classes" className="flex items-center gap-2">
             <GraduationCap className="h-6 w-6 text-primary" />
-            <span className="font-bold">ClassManager Pro</span>
+            <span className="font-bold">ClassAlign Studio</span>
           </Link>
           <div className="flex items-center gap-3">
             <span className="hidden text-sm text-muted-foreground sm:inline">{user.email}</span>
