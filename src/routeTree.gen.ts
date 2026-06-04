@@ -21,7 +21,6 @@ import { Route as AuthenticatedGamificationClassIdRouteImport } from './routes/_
 import { Route as AuthenticatedClassesClassIdRouteImport } from './routes/_authenticated.classes.$classId'
 import { Route as AuthenticatedBulletinsClassIdRouteImport } from './routes/_authenticated.bulletins.$classId'
 import { Route as AuthenticatedClassesClassIdDisplayRouteImport } from './routes/_authenticated.classes.$classId.display'
-import { Route as AuthenticatedClassesClassIdDisplayRouteImport } from './routes/_authenticated.classes.$classId.display'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -81,12 +80,6 @@ const AuthenticatedBulletinsClassIdRoute =
   AuthenticatedBulletinsClassIdRouteImport.update({
     id: '/bulletins/$classId',
     path: '/bulletins/$classId',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedClassesClassIdDisplayRoute =
-  AuthenticatedClassesClassIdDisplayRouteImport.update({
-    id: '/classes/$classId/display',
-    path: '/classes/$classId/display',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedClassesClassIdDisplayRoute =
