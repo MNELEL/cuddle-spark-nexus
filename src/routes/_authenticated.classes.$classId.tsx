@@ -21,7 +21,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Heart, Ban, MoveHorizontal, Pencil, Plus, Trash2, FolderOpen, FileText, Sparkles, Trophy, Users } from "lucide-react";
+import { ArrowRight, Heart, Ban, MoveHorizontal, Pencil, Plus, Trash2, FolderOpen, FileText, Sparkles, Trophy, Users, Library, Monitor } from "lucide-react";
 import { toast } from "sonner";
 import { SeatingGrid } from "@/components/seating-grid";
 import { GroupsTab } from "@/components/groups-tab";
@@ -62,6 +62,16 @@ function ClassDetail() {
           <ArrowRight className="h-4 w-4" /> חזרה לכיתות
         </Link>
         <div className="ms-auto flex gap-2">
+          <Link to="/resources">
+            <Button variant="outline" size="sm">
+              <Library className="ms-1 h-4 w-4" /> ספריית עזרים
+            </Button>
+          </Link>
+          <Link to="/classes/$classId/display" params={{ classId }}>
+            <Button variant="outline" size="sm">
+              <Monitor className="ms-1 h-4 w-4" /> מצב תצוגה
+            </Button>
+          </Link>
           <Link to="/bulletins/$classId" params={{ classId }}>
             <Button variant="outline" size="sm">
               <Sparkles className="ms-1 h-4 w-4" /> עלון שבועי
