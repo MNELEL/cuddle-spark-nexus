@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { listStudents, listRelations, setSeat, toggleSeatLock, clearAllSeats, toggleHiddenSeat, smartSortSeats } from "@/lib/students.functions";
 import { getClass, updateClass } from "@/lib/classes.functions";
 import { computeViolations, type ScoringStudent, type ScoringRelation } from "@/lib/seating-logic";
+import { SeatingSnapshots } from "@/components/seating-snapshots";
 
 type Student = {
   id: string; class_id: string; name: string;
@@ -411,6 +412,7 @@ export function SeatingGrid({ classId }: { classId: string }) {
               updateClassFn({ data: { id: classId, grid_rows: r, grid_cols: c } })
                 .then(() => qc.invalidateQueries({ queryKey: ["class", classId] }))
             } />
+            <SeatingSnapshots classId={classId} />
           </div>
         </div>
 

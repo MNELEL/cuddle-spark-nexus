@@ -20,6 +20,7 @@ import { Route as AuthenticatedParentsClassIdRouteImport } from './routes/_authe
 import { Route as AuthenticatedGamificationClassIdRouteImport } from './routes/_authenticated.gamification.$classId'
 import { Route as AuthenticatedClassesClassIdRouteImport } from './routes/_authenticated.classes.$classId'
 import { Route as AuthenticatedBulletinsClassIdRouteImport } from './routes/_authenticated.bulletins.$classId'
+import { Route as AuthenticatedClassesClassIdDisplayRouteImport } from './routes/_authenticated.classes.$classId.display'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -81,6 +82,12 @@ const AuthenticatedBulletinsClassIdRoute =
     path: '/bulletins/$classId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedClassesClassIdDisplayRoute =
+  AuthenticatedClassesClassIdDisplayRouteImport.update({
+    id: '/display',
+    path: '/display',
+    getParentRoute: () => AuthenticatedClassesClassIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -88,11 +95,12 @@ export interface FileRoutesByFullPath {
   '/resources': typeof AuthenticatedResourcesRoute
   '/p/$token': typeof PTokenRoute
   '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
-  '/classes/$classId': typeof AuthenticatedClassesClassIdRoute
+  '/classes/$classId': typeof AuthenticatedClassesClassIdRouteWithChildren
   '/gamification/$classId': typeof AuthenticatedGamificationClassIdRoute
   '/parents/$classId': typeof AuthenticatedParentsClassIdRoute
   '/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/classes/': typeof AuthenticatedClassesIndexRoute
+  '/classes/$classId/display': typeof AuthenticatedClassesClassIdDisplayRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -100,11 +108,12 @@ export interface FileRoutesByTo {
   '/resources': typeof AuthenticatedResourcesRoute
   '/p/$token': typeof PTokenRoute
   '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
-  '/classes/$classId': typeof AuthenticatedClassesClassIdRoute
+  '/classes/$classId': typeof AuthenticatedClassesClassIdRouteWithChildren
   '/gamification/$classId': typeof AuthenticatedGamificationClassIdRoute
   '/parents/$classId': typeof AuthenticatedParentsClassIdRoute
   '/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/classes': typeof AuthenticatedClassesIndexRoute
+  '/classes/$classId/display': typeof AuthenticatedClassesClassIdDisplayRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -114,11 +123,12 @@ export interface FileRoutesById {
   '/_authenticated/resources': typeof AuthenticatedResourcesRoute
   '/p/$token': typeof PTokenRoute
   '/_authenticated/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
-  '/_authenticated/classes/$classId': typeof AuthenticatedClassesClassIdRoute
+  '/_authenticated/classes/$classId': typeof AuthenticatedClassesClassIdRouteWithChildren
   '/_authenticated/gamification/$classId': typeof AuthenticatedGamificationClassIdRoute
   '/_authenticated/parents/$classId': typeof AuthenticatedParentsClassIdRoute
   '/_authenticated/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/_authenticated/classes/': typeof AuthenticatedClassesIndexRoute
+  '/_authenticated/classes/$classId/display': typeof AuthenticatedClassesClassIdDisplayRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -133,6 +143,7 @@ export interface FileRouteTypes {
     | '/parents/$classId'
     | '/reports/$classId'
     | '/classes/'
+    | '/classes/$classId/display'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -145,6 +156,7 @@ export interface FileRouteTypes {
     | '/parents/$classId'
     | '/reports/$classId'
     | '/classes'
+    | '/classes/$classId/display'
   id:
     | '__root__'
     | '/'
@@ -158,6 +170,7 @@ export interface FileRouteTypes {
     | '/_authenticated/parents/$classId'
     | '/_authenticated/reports/$classId'
     | '/_authenticated/classes/'
+    | '/_authenticated/classes/$classId/display'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -246,13 +259,35 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBulletinsClassIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/classes/$classId/display': {
+      id: '/_authenticated/classes/$classId/display'
+      path: '/display'
+      fullPath: '/classes/$classId/display'
+      preLoaderRoute: typeof AuthenticatedClassesClassIdDisplayRouteImport
+      parentRoute: typeof AuthenticatedClassesClassIdRoute
+    }
   }
 }
+
+interface AuthenticatedClassesClassIdRouteChildren {
+  AuthenticatedClassesClassIdDisplayRoute: typeof AuthenticatedClassesClassIdDisplayRoute
+}
+
+const AuthenticatedClassesClassIdRouteChildren: AuthenticatedClassesClassIdRouteChildren =
+  {
+    AuthenticatedClassesClassIdDisplayRoute:
+      AuthenticatedClassesClassIdDisplayRoute,
+  }
+
+const AuthenticatedClassesClassIdRouteWithChildren =
+  AuthenticatedClassesClassIdRoute._addFileChildren(
+    AuthenticatedClassesClassIdRouteChildren,
+  )
 
 interface AuthenticatedRouteChildren {
   AuthenticatedResourcesRoute: typeof AuthenticatedResourcesRoute
   AuthenticatedBulletinsClassIdRoute: typeof AuthenticatedBulletinsClassIdRoute
-  AuthenticatedClassesClassIdRoute: typeof AuthenticatedClassesClassIdRoute
+  AuthenticatedClassesClassIdRoute: typeof AuthenticatedClassesClassIdRouteWithChildren
   AuthenticatedGamificationClassIdRoute: typeof AuthenticatedGamificationClassIdRoute
   AuthenticatedParentsClassIdRoute: typeof AuthenticatedParentsClassIdRoute
   AuthenticatedReportsClassIdRoute: typeof AuthenticatedReportsClassIdRoute
@@ -262,7 +297,8 @@ interface AuthenticatedRouteChildren {
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedResourcesRoute: AuthenticatedResourcesRoute,
   AuthenticatedBulletinsClassIdRoute: AuthenticatedBulletinsClassIdRoute,
-  AuthenticatedClassesClassIdRoute: AuthenticatedClassesClassIdRoute,
+  AuthenticatedClassesClassIdRoute:
+    AuthenticatedClassesClassIdRouteWithChildren,
   AuthenticatedGamificationClassIdRoute: AuthenticatedGamificationClassIdRoute,
   AuthenticatedParentsClassIdRoute: AuthenticatedParentsClassIdRoute,
   AuthenticatedReportsClassIdRoute: AuthenticatedReportsClassIdRoute,
