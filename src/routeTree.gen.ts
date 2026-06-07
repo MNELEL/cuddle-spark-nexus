@@ -13,6 +13,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PTokenRouteImport } from './routes/p.$token'
+import { Route as AuthenticatedToolkitRouteImport } from './routes/_authenticated.toolkit'
 import { Route as AuthenticatedResourcesRouteImport } from './routes/_authenticated.resources'
 import { Route as AuthenticatedClassesIndexRouteImport } from './routes/_authenticated.classes.index'
 import { Route as AuthenticatedReportsClassIdRouteImport } from './routes/_authenticated.reports.$classId'
@@ -40,6 +41,11 @@ const PTokenRoute = PTokenRouteImport.update({
   id: '/p/$token',
   path: '/p/$token',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedToolkitRoute = AuthenticatedToolkitRouteImport.update({
+  id: '/toolkit',
+  path: '/toolkit',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedResourcesRoute = AuthenticatedResourcesRouteImport.update({
   id: '/resources',
@@ -93,6 +99,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/resources': typeof AuthenticatedResourcesRoute
+  '/toolkit': typeof AuthenticatedToolkitRoute
   '/p/$token': typeof PTokenRoute
   '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
   '/classes/$classId': typeof AuthenticatedClassesClassIdRouteWithChildren
@@ -106,6 +113,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/resources': typeof AuthenticatedResourcesRoute
+  '/toolkit': typeof AuthenticatedToolkitRoute
   '/p/$token': typeof PTokenRoute
   '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
   '/classes/$classId': typeof AuthenticatedClassesClassIdRouteWithChildren
@@ -121,6 +129,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
   '/_authenticated/resources': typeof AuthenticatedResourcesRoute
+  '/_authenticated/toolkit': typeof AuthenticatedToolkitRoute
   '/p/$token': typeof PTokenRoute
   '/_authenticated/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
   '/_authenticated/classes/$classId': typeof AuthenticatedClassesClassIdRouteWithChildren
@@ -136,6 +145,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/resources'
+    | '/toolkit'
     | '/p/$token'
     | '/bulletins/$classId'
     | '/classes/$classId'
@@ -149,6 +159,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/resources'
+    | '/toolkit'
     | '/p/$token'
     | '/bulletins/$classId'
     | '/classes/$classId'
@@ -163,6 +174,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/login'
     | '/_authenticated/resources'
+    | '/_authenticated/toolkit'
     | '/p/$token'
     | '/_authenticated/bulletins/$classId'
     | '/_authenticated/classes/$classId'
@@ -209,6 +221,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/p/$token'
       preLoaderRoute: typeof PTokenRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/toolkit': {
+      id: '/_authenticated/toolkit'
+      path: '/toolkit'
+      fullPath: '/toolkit'
+      preLoaderRoute: typeof AuthenticatedToolkitRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/resources': {
       id: '/_authenticated/resources'
@@ -286,6 +305,7 @@ const AuthenticatedClassesClassIdRouteWithChildren =
 
 interface AuthenticatedRouteChildren {
   AuthenticatedResourcesRoute: typeof AuthenticatedResourcesRoute
+  AuthenticatedToolkitRoute: typeof AuthenticatedToolkitRoute
   AuthenticatedBulletinsClassIdRoute: typeof AuthenticatedBulletinsClassIdRoute
   AuthenticatedClassesClassIdRoute: typeof AuthenticatedClassesClassIdRouteWithChildren
   AuthenticatedGamificationClassIdRoute: typeof AuthenticatedGamificationClassIdRoute
@@ -296,6 +316,7 @@ interface AuthenticatedRouteChildren {
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedResourcesRoute: AuthenticatedResourcesRoute,
+  AuthenticatedToolkitRoute: AuthenticatedToolkitRoute,
   AuthenticatedBulletinsClassIdRoute: AuthenticatedBulletinsClassIdRoute,
   AuthenticatedClassesClassIdRoute:
     AuthenticatedClassesClassIdRouteWithChildren,
@@ -318,3 +339,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
