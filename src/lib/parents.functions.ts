@@ -106,15 +106,28 @@ export const getParentView = createServerFn({ method: "POST" })
     sinceDate.setDate(sinceDate.getDate() - 90);
     const since = sinceDate.toISOString().slice(0, 10);
 
-    const gradesQ = supabaseAdmin.from("grades")
-      .select("subject,value,max_value,date,notes,student_id")
-      .eq("class_id", t.class_id).gte("date", since).order("date", { ascending: false }).limit(120);
-    const attQ = supabaseAdmin.from("attendance")
-      .select("date,status,notes,student_id").eq("class_id", t.class_id)
-      .gte("date", since).order("date", { ascending: false }).limit(120);
-    const behQ = supabaseAdmin.from("behavior_points")
-      .select("date,category,points,note,student_id").eq("class_id", t.class_id)
-      .gte("date", since).order("date", { ascending: false }).limit(120);
+    // Per-student rows are only fetched when the token is scoped to a single
+    // student. Class-wide tokens MUST NOT expose row-level academic data for
+    // every student in the class — only bulletins (which are class-level).
+    const isStudentScoped = !!t.student_id;
+    const gradesQ = isStudentScoped
+      ? supabaseAdmin.from("grades")
+          .select("subject,value,max_value,date,notes,student_id")
+          .eq("class_id", t.class_id).eq("student_id", t.student_id!)
+          .gte("date", since).order("date", { ascending: false }).limit(120)
+      : Promise.resolve({ data: [], error: null } as const);
+    const attQ = isStudentScoped
+      ? supabaseAdmin.from("attendance")
+          .select("date,status,notes,student_id").eq("class_id", t.class_id)
+          .eq("student_id", t.student_id!)
+          .gte("date", since).order("date", { ascending: false }).limit(120)
+      : Promise.resolve({ data: [], error: null } as const);
+    const behQ = isStudentScoped
+      ? supabaseAdmin.from("behavior_points")
+          .select("date,category,points,note,student_id").eq("class_id", t.class_id)
+          .eq("student_id", t.student_id!)
+          .gte("date", since).order("date", { ascending: false }).limit(120)
+      : Promise.resolve({ data: [], error: null } as const);
     const bulQ = supabaseAdmin.from("weekly_bulletins")
       .select("id,title,start_date,end_date,digest_summary,study_points,recap_questions,weekly_riddle,weekly_riddle_answer,activities")
       .eq("class_id", t.class_id).order("start_date", { ascending: false }).limit(8);
@@ -124,9 +137,6 @@ export const getParentView = createServerFn({ method: "POST" })
     if (a.error) { console.error("[DB Error]", a.error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     if (b.error) { console.error("[DB Error]", b.error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     if (bul.error) { console.error("[DB Error]", bul.error); throw new Error("הפעולה נכשלה. נסה שוב."); }
-
-    const filter = <T extends { student_id?: string }>(rows: T[]) =>
-      t.student_id ? rows.filter((r) => r.student_id === t.student_id) : rows;
 
     const bulletins = (bul.data ?? []).map((r) => ({
       id: r.id,
@@ -150,9 +160,9 @@ export const getParentView = createServerFn({ method: "POST" })
       className: cls?.name ?? "כיתה",
       studentId: t.student_id,
       studentName,
-      grades: filter(g.data ?? []).map(({ student_id: _u, ...r }) => r),
-      attendance: filter(a.data ?? []).map(({ student_id: _u, ...r }) => r),
-      behavior: filter(b.data ?? []).map(({ student_id: _u, ...r }) => r),
+      grades: (g.data ?? []).map(({ student_id: _u, ...r }) => r),
+      attendance: (a.data ?? []).map(({ student_id: _u, ...r }) => r),
+      behavior: (b.data ?? []).map(({ student_id: _u, ...r }) => r),
       bulletins,
     };
   });
