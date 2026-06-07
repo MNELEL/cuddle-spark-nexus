@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+Disallow: /classes
+Disallow: /classes/
+Disallow: /resources
+Disallow: /bulletins/
+Disallow: /gamification/
+Disallow: /parents/
+Disallow: /reports/
+Disallow: /toolkit
+Disallow: /sound-board
+Disallow: /p/
+
+Sitemap: https://cuddle-spark-nexus.lovable.app/sitemap.xml
