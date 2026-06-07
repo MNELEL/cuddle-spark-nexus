@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PTokenRouteImport } from './routes/p.$token'
 import { Route as AuthenticatedToolkitRouteImport } from './routes/_authenticated.toolkit'
+import { Route as AuthenticatedSoundBoardRouteImport } from './routes/_authenticated.sound-board'
 import { Route as AuthenticatedResourcesRouteImport } from './routes/_authenticated.resources'
 import { Route as AuthenticatedClassesIndexRouteImport } from './routes/_authenticated.classes.index'
 import { Route as AuthenticatedReportsClassIdRouteImport } from './routes/_authenticated.reports.$classId'
@@ -45,6 +46,11 @@ const PTokenRoute = PTokenRouteImport.update({
 const AuthenticatedToolkitRoute = AuthenticatedToolkitRouteImport.update({
   id: '/toolkit',
   path: '/toolkit',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedSoundBoardRoute = AuthenticatedSoundBoardRouteImport.update({
+  id: '/sound-board',
+  path: '/sound-board',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedResourcesRoute = AuthenticatedResourcesRouteImport.update({
@@ -99,6 +105,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/resources': typeof AuthenticatedResourcesRoute
+  '/sound-board': typeof AuthenticatedSoundBoardRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
   '/p/$token': typeof PTokenRoute
   '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
@@ -113,6 +120,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/resources': typeof AuthenticatedResourcesRoute
+  '/sound-board': typeof AuthenticatedSoundBoardRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
   '/p/$token': typeof PTokenRoute
   '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
@@ -129,6 +137,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
   '/_authenticated/resources': typeof AuthenticatedResourcesRoute
+  '/_authenticated/sound-board': typeof AuthenticatedSoundBoardRoute
   '/_authenticated/toolkit': typeof AuthenticatedToolkitRoute
   '/p/$token': typeof PTokenRoute
   '/_authenticated/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
@@ -145,6 +154,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/resources'
+    | '/sound-board'
     | '/toolkit'
     | '/p/$token'
     | '/bulletins/$classId'
@@ -159,6 +169,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/resources'
+    | '/sound-board'
     | '/toolkit'
     | '/p/$token'
     | '/bulletins/$classId'
@@ -174,6 +185,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/login'
     | '/_authenticated/resources'
+    | '/_authenticated/sound-board'
     | '/_authenticated/toolkit'
     | '/p/$token'
     | '/_authenticated/bulletins/$classId'
@@ -227,6 +239,13 @@ declare module '@tanstack/react-router' {
       path: '/toolkit'
       fullPath: '/toolkit'
       preLoaderRoute: typeof AuthenticatedToolkitRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/sound-board': {
+      id: '/_authenticated/sound-board'
+      path: '/sound-board'
+      fullPath: '/sound-board'
+      preLoaderRoute: typeof AuthenticatedSoundBoardRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/resources': {
@@ -305,6 +324,7 @@ const AuthenticatedClassesClassIdRouteWithChildren =
 
 interface AuthenticatedRouteChildren {
   AuthenticatedResourcesRoute: typeof AuthenticatedResourcesRoute
+  AuthenticatedSoundBoardRoute: typeof AuthenticatedSoundBoardRoute
   AuthenticatedToolkitRoute: typeof AuthenticatedToolkitRoute
   AuthenticatedBulletinsClassIdRoute: typeof AuthenticatedBulletinsClassIdRoute
   AuthenticatedClassesClassIdRoute: typeof AuthenticatedClassesClassIdRouteWithChildren
@@ -316,6 +336,7 @@ interface AuthenticatedRouteChildren {
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedResourcesRoute: AuthenticatedResourcesRoute,
+  AuthenticatedSoundBoardRoute: AuthenticatedSoundBoardRoute,
   AuthenticatedToolkitRoute: AuthenticatedToolkitRoute,
   AuthenticatedBulletinsClassIdRoute: AuthenticatedBulletinsClassIdRoute,
   AuthenticatedClassesClassIdRoute:
@@ -339,3 +360,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
