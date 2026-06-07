@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Play, Pause, RotateCcw, Volume2, Shuffle, ChevronRight, ChevronLeft, Mic, MicOff } from "lucide-react";
+import { Play, Pause, RotateCcw, Shuffle, ChevronRight, ChevronLeft, Mic, MicOff } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/toolkit")({
   component: ToolkitPage,
@@ -185,9 +185,9 @@ function NoiseMeter() {
 }
 
 /* ---------- FlashCards ---------- */
-type Card = { q: string; a: string };
+type FlashCard = { q: string; a: string };
 function FlashCards() {
-  const [cards, setCards] = useState<Card[]>(() => {
+  const [cards, setCards] = useState<FlashCard[]>(() => {
     try { return JSON.parse(localStorage.getItem("flashcards") || "[]"); } catch { return []; }
   });
   const [idx, setIdx] = useState(0);
@@ -255,5 +255,3 @@ function beep() {
     setTimeout(() => { o.stop(); ctx.close(); }, 600);
   } catch { /* ignore */ }
 }
-// noop to keep Volume2 imported icon usage trivial-free
-export const _vol = Volume2;
