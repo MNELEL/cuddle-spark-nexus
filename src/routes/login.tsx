@@ -11,6 +11,16 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
+  head: () => ({
+    meta: [
+      { title: "כניסה למערכת · ClassAlign Studio" },
+      { name: "description", content: "התחבר ל-ClassAlign Studio כדי לנהל כיתה, סידור הושבה, ציונים ודוחות פדגוגיים בעברית מלאה." },
+      { property: "og:title", content: "כניסה למערכת · ClassAlign Studio" },
+      { property: "og:description", content: "התחבר ל-ClassAlign Studio כדי לנהל כיתה, סידור הושבה, ציונים ודוחות פדגוגיים בעברית מלאה." },
+      { property: "og:url", content: "https://cuddle-spark-nexus.lovable.app/login" },
+    ],
+    links: [{ rel: "canonical", href: "https://cuddle-spark-nexus.lovable.app/login" }],
+  }),
 });
 
 function LoginPage() {
@@ -67,6 +77,7 @@ function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background to-secondary/40 p-4">
+      <h1 className="sr-only">התחברות ל-ClassAlign Studio</h1>
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <Link to="/" className="mx-auto mb-2 flex items-center gap-2">
