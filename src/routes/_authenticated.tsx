@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { GraduationCap, LogOut } from "lucide-react";
+import { GraduationCap, LogOut, Wrench, Music } from "lucide-react";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -30,6 +30,17 @@ function AuthLayout() {
             <GraduationCap className="h-6 w-6 text-primary" />
             <span className="font-bold">ClassAlign Studio</span>
           </Link>
+          <nav className="hidden items-center gap-1 md:flex">
+            <Link to="/toolkit" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
+              <Wrench className="me-1 inline h-4 w-4" />ארגז כלים
+            </Link>
+            <Link to="/sound-board" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
+              <Music className="me-1 inline h-4 w-4" />לוח צלילים
+            </Link>
+            <Link to="/resources" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
+              ספרייה
+            </Link>
+          </nav>
           <div className="flex items-center gap-3">
             <span className="hidden text-sm text-muted-foreground sm:inline">{user.email}</span>
             <ThemeSwitcher />
