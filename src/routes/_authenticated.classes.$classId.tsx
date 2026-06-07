@@ -36,6 +36,29 @@ import { AiAssistantDock } from "@/components/ai-assistant-dock";
 
 export const Route = createFileRoute("/_authenticated/classes/$classId")({
   component: ClassDetail,
+  loader: async ({ params }) => {
+    const { getClass } = await import("@/lib/classes.functions");
+    try {
+      const cls = await getClass({ data: { id: params.classId } });
+      return { className: cls?.name ?? "כיתה" };
+    } catch {
+      return { className: "כיתה" };
+    }
+  },
+  head: ({ loaderData, params }) => {
+    const name = loaderData?.className ?? "כיתה";
+    const url = `https://cuddle-spark-nexus.lovable.app/classes/${params.classId}`;
+    return {
+      meta: [
+        { title: `${name} · ניהול כיתה · ClassAlign Studio` },
+        { name: "description", content: `סידור הושבה, ציונים, התנהגות וקשר עם הורים עבור כיתה ${name} ב-ClassAlign Studio.` },
+        { property: "og:title", content: `${name} · ניהול כיתה · ClassAlign Studio` },
+        { property: "og:description", content: `סידור הושבה, ציונים, התנהגות וקשר עם הורים עבור כיתה ${name}.` },
+        { property: "og:url", content: url },
+      ],
+      links: [{ rel: "canonical", href: url }],
+    };
+  },
 });
 
 type Student = {
@@ -229,11 +252,11 @@ function StudentRow({
           {student.notes && <p className="mt-1 text-xs text-muted-foreground line-clamp-1">{student.notes}</p>}
         </div>
         <div className="flex gap-1">
-          <Button variant="ghost" size="icon" onClick={onOpenFile} title="תיק תלמיד">
+          <Button variant="ghost" size="icon" aria-label={`פתח תיק תלמיד עבור ${student.name}`} onClick={onOpenFile} title="תיק תלמיד">
             <FolderOpen className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={onEdit}><Pencil className="h-4 w-4" /></Button>
-          <Button variant="ghost" size="icon" className="text-destructive" onClick={() => removeM.mutate()}>
+          <Button variant="ghost" size="icon" aria-label={`ערוך את ${student.name}`} onClick={onEdit}><Pencil className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" aria-label={`מחק את ${student.name}`} className="text-destructive" onClick={() => removeM.mutate()}>
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
@@ -418,7 +441,7 @@ function RelationsTab({
                       <div className="text-xs text-muted-foreground">{meta.label}</div>
                     </div>
                   </div>
-                  <Button variant="ghost" size="icon" className="text-destructive" onClick={() => removeM.mutate(r.id)}>
+                  <Button variant="ghost" size="icon" aria-label="מחק יחס" className="text-destructive" onClick={() => removeM.mutate(r.id)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </CardContent>

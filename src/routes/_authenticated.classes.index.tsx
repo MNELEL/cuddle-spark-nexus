@@ -16,6 +16,16 @@ import {
 
 export const Route = createFileRoute("/_authenticated/classes/")({
   component: ClassesPage,
+  head: () => ({
+    meta: [
+      { title: "הכיתות שלי · ClassAlign Studio" },
+      { name: "description", content: "נהל את הכיתות, התלמידים והאילוצים הפדגוגיים שלך במקום אחד עם ClassAlign Studio." },
+      { property: "og:title", content: "הכיתות שלי · ClassAlign Studio" },
+      { property: "og:description", content: "נהל את הכיתות, התלמידים והאילוצים הפדגוגיים שלך במקום אחד עם ClassAlign Studio." },
+      { property: "og:url", content: "https://cuddle-spark-nexus.lovable.app/classes" },
+    ],
+    links: [{ rel: "canonical", href: "https://cuddle-spark-nexus.lovable.app/classes" }],
+  }),
 });
 
 function ClassesPage() {
@@ -89,7 +99,7 @@ function ClassesPage() {
                 </Link>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="icon" className="ms-2 text-destructive">
+                    <Button variant="ghost" size="icon" aria-label={`מחק את הכיתה ${c.name}`} className="ms-2 text-destructive">
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </AlertDialogTrigger>

@@ -8,6 +8,52 @@ export const Route = createFileRoute("/")({
     meta: [
       { title: "ClassAlign Studio · ניהול כיתה חכם עם AI" },
       { name: "description", content: "סטודיו ניהול כיתה לרוח המודרנית — סידור הושבה AI, מעקב פדגוגי, דוחות חכמים, וחוויית 3D עוצרת נשימה." },
+      { property: "og:title", content: "ClassAlign Studio · ניהול כיתה חכם עם AI" },
+      { property: "og:description", content: "סטודיו ניהול כיתה לרוח המודרנית — סידור הושבה AI, מעקב פדגוגי, דוחות חכמים, וחוויית 3D עוצרת נשימה." },
+      { property: "og:url", content: "https://cuddle-spark-nexus.lovable.app/" },
+    ],
+    links: [{ rel: "canonical", href: "https://cuddle-spark-nexus.lovable.app/" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "ClassAlign Studio",
+          url: "https://cuddle-spark-nexus.lovable.app/",
+          inLanguage: "he",
+        }),
+      },
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          name: "ClassAlign Studio",
+          url: "https://cuddle-spark-nexus.lovable.app/",
+          description: "סטודיו ניהול כיתה לתלמודי תורה, חיידרים ובתי ספר.",
+        }),
+      },
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "SoftwareApplication",
+          name: "ClassAlign Studio",
+          applicationCategory: "EducationalApplication",
+          operatingSystem: "Web",
+          inLanguage: "he",
+          offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+          description: "ניהול כיתה הכולל סידור הושבה מבוסס AI, מעקב פדגוגי, גמיפיקציה, ספריית עזרי הוראה, ודוחות להורים.",
+          featureList: [
+            "סידור הושבה אופטימלי בעזרת AI",
+            "מעקב ציונים והתנהגות",
+            "מצב תצוגה תלת-ממדי",
+            "דוחות PDF להורים",
+            "ספריית חומרי הוראה",
+          ],
+        }),
+      },
     ],
   }),
 });
@@ -82,7 +128,9 @@ function Index() {
           </div>
         </div>
 
-        <section id="features" className="mx-auto mt-28 grid max-w-6xl gap-5 md:grid-cols-3">
+        <section id="features" className="mx-auto mt-28 max-w-6xl">
+          <h2 className="mb-8 text-center font-display text-3xl font-bold tracking-tight md:text-4xl">תכונות מרכזיות</h2>
+          <div className="grid gap-5 md:grid-cols-3">
           {[
             { icon: Brain, title: "AI Sort חכם", desc: "Gemini בוחן יחסים, ציונים והעדפות ומציע סידור מיטבי — עם הסבר לכל החלטה." },
             { icon: BarChart3, title: "ציון ביצועים", desc: "מטריקה חיה לכל תלמיד שמשקללת ציונים, נוכחות והתנהגות — מציגה מי דורש תשומת לב." },
@@ -99,6 +147,7 @@ function Index() {
               <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
             </div>
           ))}
+          </div>
         </section>
 
         <footer className="mt-28 text-center text-xs text-muted-foreground">
