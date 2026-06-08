@@ -61,13 +61,14 @@ function DraggableStudent({ student, id, highlight, onClick, groupColor }: { stu
 }
 
 function Seat({
-  row, col, hidden, child, onToggleHide, onToggleLock, lockedChild, highlight, onSelect,
+  row, col, hidden, child, onToggleHide, onToggleLock, lockedChild, highlight, onSelect, groupColor,
   a11y, focused, grabbedId, onFocusSeat, seatRef,
 }: {
   row: number; col: number; hidden: boolean; child: Student | null;
   onToggleHide: () => void; onToggleLock: () => void; lockedChild: boolean;
   highlight?: "friend" | "avoid" | "distance" | "self" | null;
   onSelect?: () => void;
+  groupColor?: string | null;
   a11y?: boolean;
   focused?: boolean;
   grabbedId?: string | null;
@@ -109,6 +110,7 @@ function Seat({
       className={`group relative flex aspect-[4/3] items-center justify-center rounded-md border bg-card p-1 transition-colors ${
         isOver ? "border-primary bg-primary/10" : "border-border"
       } ${a11y && focused ? "outline outline-2 outline-offset-2 outline-primary z-10" : ""} ${a11y ? "focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-primary focus:z-10" : ""} ${grabbedId && !child ? "ring-2 ring-primary/60" : ""}`}
+      style={groupColor ? { background: `linear-gradient(135deg, ${groupColor}1a, transparent 60%)`, borderColor: `${groupColor}55` } : undefined}
     >
       <div className="absolute top-0.5 left-0.5 flex gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
         {child && (
@@ -126,7 +128,7 @@ function Seat({
       </div>
       <span className="absolute bottom-0.5 right-1 text-[9px] text-muted-foreground">{row + 1},{col + 1}</span>
       {child ? (
-        <DraggableStudent student={child} id={`student:${child.id}`} highlight={highlight} onClick={onSelect} />
+        <DraggableStudent student={child} id={`student:${child.id}`} highlight={highlight} onClick={onSelect} groupColor={groupColor} />
       ) : (
         <span className="text-[10px] text-muted-foreground">ריק</span>
       )}
