@@ -17,6 +17,7 @@ import {
 import { toast } from "sonner";
 import { listStudents, listRelations, setSeat, toggleSeatLock, clearAllSeats, toggleHiddenSeat, smartSortSeats } from "@/lib/students.functions";
 import { getClass, updateClass } from "@/lib/classes.functions";
+import { listGroups } from "@/lib/groups.functions";
 import { computeViolations, type ScoringStudent, type ScoringRelation } from "@/lib/seating-logic";
 import { SeatingSnapshots } from "@/components/seating-snapshots";
 
@@ -28,7 +29,7 @@ type Student = {
 
 const seatKey = (r: number, c: number) => `${r}:${c}`;
 
-function StudentChip({ student, dragging, highlight }: { student: Student; dragging?: boolean; highlight?: "friend" | "avoid" | "distance" | "self" | null }) {
+function StudentChip({ student, dragging, highlight, groupColor }: { student: Student; dragging?: boolean; highlight?: "friend" | "avoid" | "distance" | "self" | null; groupColor?: string | null }) {
   const cls =
     highlight === "self" ? "ring-2 ring-primary bg-primary/20"
     : highlight === "friend" ? "ring-2 ring-emerald-500 bg-emerald-500/15"
@@ -36,21 +37,25 @@ function StudentChip({ student, dragging, highlight }: { student: Student; dragg
     : highlight === "distance" ? "ring-2 ring-amber-500 bg-amber-500/15"
     : "bg-primary/10";
   return (
-    <div className={`select-none rounded-md border px-2 py-1 text-xs font-medium text-foreground shadow-sm ${cls} ${dragging ? "opacity-90 shadow-lg" : ""}`}>
+    <div
+      className={`select-none rounded-md border px-2 py-1 text-xs font-medium text-foreground shadow-sm ${cls} ${dragging ? "opacity-90 shadow-lg" : ""}`}
+      style={groupColor && !highlight ? { borderColor: groupColor, boxShadow: `inset 0 0 0 9999px ${groupColor}22` } : undefined}
+    >
       <div className="flex items-center gap-1">
         {student.seat_locked && <Lock className="h-3 w-3 text-amber-600" />}
+        {groupColor && <span className="inline-block h-2 w-2 rounded-full" style={{ background: groupColor }} aria-hidden />}
         <span className="truncate max-w-[8rem]">{student.name}</span>
       </div>
     </div>
   );
 }
 
-function DraggableStudent({ student, id, highlight, onClick }: { student: Student; id: string; highlight?: "friend" | "avoid" | "distance" | "self" | null; onClick?: () => void }) {
+function DraggableStudent({ student, id, highlight, onClick, groupColor }: { student: Student; id: string; highlight?: "friend" | "avoid" | "distance" | "self" | null; onClick?: () => void; groupColor?: string | null }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id, data: { studentId: student.id } });
   return (
     <div ref={setNodeRef} {...listeners} {...attributes} onClick={onClick}
       className={`cursor-grab active:cursor-grabbing ${isDragging ? "opacity-30" : ""}`}>
-      <StudentChip student={student} highlight={highlight} />
+      <StudentChip student={student} highlight={highlight} groupColor={groupColor} />
     </div>
   );
 }
