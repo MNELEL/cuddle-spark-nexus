@@ -18,6 +18,7 @@ import { Route as AuthenticatedToolkitRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedSoundBoardRouteImport } from './routes/_authenticated.sound-board'
 import { Route as AuthenticatedResourcesRouteImport } from './routes/_authenticated.resources'
 import { Route as AuthenticatedClassesIndexRouteImport } from './routes/_authenticated.classes.index'
+import { Route as AuthenticatedResourcesResourceIdRouteImport } from './routes/_authenticated.resources.$resourceId'
 import { Route as AuthenticatedReportsClassIdRouteImport } from './routes/_authenticated.reports.$classId'
 import { Route as AuthenticatedParentsClassIdRouteImport } from './routes/_authenticated.parents.$classId'
 import { Route as AuthenticatedGamificationClassIdRouteImport } from './routes/_authenticated.gamification.$classId'
@@ -70,6 +71,12 @@ const AuthenticatedClassesIndexRoute =
     path: '/classes/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedResourcesResourceIdRoute =
+  AuthenticatedResourcesResourceIdRouteImport.update({
+    id: '/$resourceId',
+    path: '/$resourceId',
+    getParentRoute: () => AuthenticatedResourcesRoute,
+  } as any)
 const AuthenticatedReportsClassIdRoute =
   AuthenticatedReportsClassIdRouteImport.update({
     id: '/reports/$classId',
@@ -111,7 +118,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/resources': typeof AuthenticatedResourcesRoute
+  '/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/sound-board': typeof AuthenticatedSoundBoardRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
   '/p/$token': typeof PTokenRoute
@@ -120,6 +127,7 @@ export interface FileRoutesByFullPath {
   '/gamification/$classId': typeof AuthenticatedGamificationClassIdRoute
   '/parents/$classId': typeof AuthenticatedParentsClassIdRoute
   '/reports/$classId': typeof AuthenticatedReportsClassIdRoute
+  '/resources/$resourceId': typeof AuthenticatedResourcesResourceIdRoute
   '/classes/': typeof AuthenticatedClassesIndexRoute
   '/classes/$classId/display': typeof AuthenticatedClassesClassIdDisplayRoute
 }
@@ -127,7 +135,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/resources': typeof AuthenticatedResourcesRoute
+  '/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/sound-board': typeof AuthenticatedSoundBoardRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
   '/p/$token': typeof PTokenRoute
@@ -136,6 +144,7 @@ export interface FileRoutesByTo {
   '/gamification/$classId': typeof AuthenticatedGamificationClassIdRoute
   '/parents/$classId': typeof AuthenticatedParentsClassIdRoute
   '/reports/$classId': typeof AuthenticatedReportsClassIdRoute
+  '/resources/$resourceId': typeof AuthenticatedResourcesResourceIdRoute
   '/classes': typeof AuthenticatedClassesIndexRoute
   '/classes/$classId/display': typeof AuthenticatedClassesClassIdDisplayRoute
 }
@@ -145,7 +154,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/_authenticated/resources': typeof AuthenticatedResourcesRoute
+  '/_authenticated/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/_authenticated/sound-board': typeof AuthenticatedSoundBoardRoute
   '/_authenticated/toolkit': typeof AuthenticatedToolkitRoute
   '/p/$token': typeof PTokenRoute
@@ -154,6 +163,7 @@ export interface FileRoutesById {
   '/_authenticated/gamification/$classId': typeof AuthenticatedGamificationClassIdRoute
   '/_authenticated/parents/$classId': typeof AuthenticatedParentsClassIdRoute
   '/_authenticated/reports/$classId': typeof AuthenticatedReportsClassIdRoute
+  '/_authenticated/resources/$resourceId': typeof AuthenticatedResourcesResourceIdRoute
   '/_authenticated/classes/': typeof AuthenticatedClassesIndexRoute
   '/_authenticated/classes/$classId/display': typeof AuthenticatedClassesClassIdDisplayRoute
 }
@@ -172,6 +182,7 @@ export interface FileRouteTypes {
     | '/gamification/$classId'
     | '/parents/$classId'
     | '/reports/$classId'
+    | '/resources/$resourceId'
     | '/classes/'
     | '/classes/$classId/display'
   fileRoutesByTo: FileRoutesByTo
@@ -188,6 +199,7 @@ export interface FileRouteTypes {
     | '/gamification/$classId'
     | '/parents/$classId'
     | '/reports/$classId'
+    | '/resources/$resourceId'
     | '/classes'
     | '/classes/$classId/display'
   id:
@@ -205,6 +217,7 @@ export interface FileRouteTypes {
     | '/_authenticated/gamification/$classId'
     | '/_authenticated/parents/$classId'
     | '/_authenticated/reports/$classId'
+    | '/_authenticated/resources/$resourceId'
     | '/_authenticated/classes/'
     | '/_authenticated/classes/$classId/display'
   fileRoutesById: FileRoutesById
@@ -282,6 +295,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClassesIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/resources/$resourceId': {
+      id: '/_authenticated/resources/$resourceId'
+      path: '/$resourceId'
+      fullPath: '/resources/$resourceId'
+      preLoaderRoute: typeof AuthenticatedResourcesResourceIdRouteImport
+      parentRoute: typeof AuthenticatedResourcesRoute
+    }
     '/_authenticated/reports/$classId': {
       id: '/_authenticated/reports/$classId'
       path: '/reports/$classId'
@@ -327,6 +347,21 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedResourcesRouteChildren {
+  AuthenticatedResourcesResourceIdRoute: typeof AuthenticatedResourcesResourceIdRoute
+}
+
+const AuthenticatedResourcesRouteChildren: AuthenticatedResourcesRouteChildren =
+  {
+    AuthenticatedResourcesResourceIdRoute:
+      AuthenticatedResourcesResourceIdRoute,
+  }
+
+const AuthenticatedResourcesRouteWithChildren =
+  AuthenticatedResourcesRoute._addFileChildren(
+    AuthenticatedResourcesRouteChildren,
+  )
+
 interface AuthenticatedClassesClassIdRouteChildren {
   AuthenticatedClassesClassIdDisplayRoute: typeof AuthenticatedClassesClassIdDisplayRoute
 }
@@ -343,7 +378,7 @@ const AuthenticatedClassesClassIdRouteWithChildren =
   )
 
 interface AuthenticatedRouteChildren {
-  AuthenticatedResourcesRoute: typeof AuthenticatedResourcesRoute
+  AuthenticatedResourcesRoute: typeof AuthenticatedResourcesRouteWithChildren
   AuthenticatedSoundBoardRoute: typeof AuthenticatedSoundBoardRoute
   AuthenticatedToolkitRoute: typeof AuthenticatedToolkitRoute
   AuthenticatedBulletinsClassIdRoute: typeof AuthenticatedBulletinsClassIdRoute
@@ -355,7 +390,7 @@ interface AuthenticatedRouteChildren {
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
-  AuthenticatedResourcesRoute: AuthenticatedResourcesRoute,
+  AuthenticatedResourcesRoute: AuthenticatedResourcesRouteWithChildren,
   AuthenticatedSoundBoardRoute: AuthenticatedSoundBoardRoute,
   AuthenticatedToolkitRoute: AuthenticatedToolkitRoute,
   AuthenticatedBulletinsClassIdRoute: AuthenticatedBulletinsClassIdRoute,
@@ -381,3 +416,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
