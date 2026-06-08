@@ -125,58 +125,86 @@ export const executeAssistantAction = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     const { kind, params } = data.action;
-    const sid = String(params.student_id ?? "");
-    if (!sid) throw new Error("חסר מזהה תלמיד");
+    const sidRaw = String(params.student_id ?? "");
+    const sidParsed = z.string().uuid().safeParse(sidRaw);
+    if (!sidParsed.success) throw new Error("מזהה תלמיד לא תקין");
+    const sid = sidParsed.data;
+
+    // Verify the student belongs to the provided class
+    const { data: studentRow, error: studentErr } = await supabase
+      .from("students").select("id").eq("id", sid).eq("class_id", data.classId).maybeSingle();
+    if (studentErr) { console.error("[DB Error]", studentErr); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    if (!studentRow) throw new Error("התלמיד אינו שייך לכיתה זו");
+
+    const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+    const safeDate = (v: unknown): string => {
+      const r = dateSchema.safeParse(String(v ?? ""));
+      return r.success ? r.data : todayIso();
+    };
 
     if (kind === "add_grade") {
+      const subject = String(params.subject ?? "").slice(0, 120);
+      const value = Number(params.value ?? 0);
+      const maxValue = Number(params.max_value ?? 100);
+      if (!Number.isFinite(value) || !Number.isFinite(maxValue)) throw new Error("ערך ציון לא תקין");
       const { error } = await supabase.from("grades").insert({
         class_id: data.classId,
         student_id: sid,
-        subject: String(params.subject ?? ""),
-        value: Number(params.value ?? 0),
-        max_value: Number(params.max_value ?? 100),
-        notes: String(params.notes ?? ""),
-        date: String(params.date ?? todayIso()),
+        subject,
+        value,
+        max_value: maxValue,
+        notes: String(params.notes ?? "").slice(0, 1000),
+        date: safeDate(params.date),
       });
       if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     } else if (kind === "mark_attendance") {
-      const status = String(params.status ?? "present");
+      const statusParsed = z.enum(["present", "absent", "late", "excused"])
+        .safeParse(String(params.status ?? "present"));
+      if (!statusParsed.success) throw new Error("סטטוס נוכחות לא תקין");
       const { error } = await supabase.from("attendance").upsert({
         class_id: data.classId,
         student_id: sid,
-        date: String(params.date ?? todayIso()),
-        status,
-        notes: String(params.notes ?? ""),
+        date: safeDate(params.date),
+        status: statusParsed.data,
+        notes: String(params.notes ?? "").slice(0, 1000),
       }, { onConflict: "student_id,date" });
       if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     } else if (kind === "add_note") {
+      const typeParsed = z.enum(["positive", "negative", "neutral"])
+        .safeParse(String(params.type ?? "neutral"));
+      if (!typeParsed.success) throw new Error("סוג רישום לא תקין");
       const { error } = await supabase.from("discipline_events").insert({
         class_id: data.classId,
         student_id: sid,
-        type: String(params.type ?? "neutral"),
-        category: String(params.category ?? "note"),
-        description: String(params.description ?? ""),
-        date: String(params.date ?? todayIso()),
+        type: typeParsed.data,
+        category: String(params.category ?? "note").slice(0, 80),
+        description: String(params.description ?? "").slice(0, 2000),
+        date: safeDate(params.date),
       });
       if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     } else if (kind === "add_behavior") {
+      const points = Number(params.points ?? 1);
+      if (!Number.isFinite(points) || points < -10 || points > 10) throw new Error("ערך התנהגות לא תקין");
       const { error } = await supabase.from("behavior_points").insert({
         class_id: data.classId,
         student_id: sid,
-        category: String(params.category ?? "participation"),
-        points: Number(params.points ?? 1),
-        note: String(params.note ?? ""),
-        date: String(params.date ?? todayIso()),
+        category: String(params.category ?? "participation").slice(0, 80),
+        points,
+        note: String(params.note ?? "").slice(0, 1000),
+        date: safeDate(params.date),
       });
       if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     } else if (kind === "add_parent_call") {
+      const channelParsed = z.enum(["phone", "meeting", "whatsapp", "email"])
+        .safeParse(String(params.channel ?? "phone"));
+      if (!channelParsed.success) throw new Error("ערוץ תקשורת לא תקין");
       const { error } = await supabase.from("parent_communications").insert({
         class_id: data.classId,
         student_id: sid,
-        channel: String(params.channel ?? "phone"),
-        subject: String(params.subject ?? ""),
-        summary: String(params.summary ?? ""),
-        date: String(params.date ?? todayIso()),
+        channel: channelParsed.data,
+        subject: String(params.subject ?? "").slice(0, 200),
+        summary: String(params.summary ?? "").slice(0, 2000),
+        date: safeDate(params.date),
       });
       if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     }
