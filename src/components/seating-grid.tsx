@@ -481,12 +481,14 @@ export function SeatingGrid({ classId }: { classId: string }) {
               Array.from({ length: cols }).map((__, c) => {
                 const child = seated.get(seatKey(r, c)) ?? null;
                 const hl = child ? highlightMap.get(child.id) ?? null : null;
+                const gc = child ? studentColor.get(child.id) ?? null : null;
                 return (
                   <Seat key={`${r}-${c}`} row={r} col={c}
                     hidden={hiddenSet.has(seatKey(r, c))}
                     child={child}
                     lockedChild={!!child?.seat_locked}
                     highlight={hl}
+                    groupColor={gc}
                     onSelect={() => child && setSelectedId((cur) => cur === child.id ? null : child.id)}
                     onToggleHide={() => hideM.mutate({ row: r, col: c })}
                     onToggleLock={() => child && lockM.mutate({ id: child.id, locked: !child.seat_locked })}
@@ -511,7 +513,7 @@ export function SeatingGrid({ classId }: { classId: string }) {
           )}
         </div>
 
-        <UnseatedTray students={unseated} highlightMap={highlightMap} onSelect={(id) => setSelectedId((cur) => cur === id ? null : id)} />
+        <UnseatedTray students={unseated} highlightMap={highlightMap} studentColor={studentColor} onSelect={(id) => setSelectedId((cur) => cur === id ? null : id)} />
 
         <ViolationsPanel violations={violations} nameOf={nameOf} onFocus={setSelectedId} />
       </div>
@@ -521,7 +523,7 @@ export function SeatingGrid({ classId }: { classId: string }) {
   );
 }
 
-function UnseatedTray({ students, highlightMap, onSelect }: { students: Student[]; highlightMap: Map<string, "friend" | "avoid" | "distance" | "self">; onSelect: (id: string) => void }) {
+function UnseatedTray({ students, highlightMap, studentColor, onSelect }: { students: Student[]; highlightMap: Map<string, "friend" | "avoid" | "distance" | "self">; studentColor: Map<string, string>; onSelect: (id: string) => void }) {
   const { isOver, setNodeRef } = useDroppable({ id: "tray" });
   return (
     <Card>
@@ -534,6 +536,7 @@ function UnseatedTray({ students, highlightMap, onSelect }: { students: Student[
           students.map((s) => (
             <DraggableStudent key={s.id} student={s} id={`student:${s.id}`}
               highlight={highlightMap.get(s.id) ?? null}
+              groupColor={studentColor.get(s.id) ?? null}
               onClick={() => onSelect(s.id)} />
           ))
         )}
