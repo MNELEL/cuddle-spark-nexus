@@ -5,7 +5,7 @@ import {
 } from "@dnd-kit/core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Lock, Unlock, EyeOff, Shuffle, Settings2, Sparkles, AlertTriangle, Accessibility } from "lucide-react";
+import { Lock, Unlock, EyeOff, Shuffle, Settings2, Sparkles, AlertTriangle, Accessibility, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -151,6 +151,29 @@ export function SeatingGrid({ classId }: { classId: string }) {
   const { data: cls } = useQuery({ queryKey: ["class", classId], queryFn: () => getC({ data: { id: classId } }) });
   const { data: students = [] } = useQuery({ queryKey: ["students", classId], queryFn: () => listS({ data: { classId } }) }) as { data: Student[] };
   const { data: relations = [] } = useQuery({ queryKey: ["relations", classId], queryFn: () => listR({ data: { classId } }) }) as { data: ScoringRelation[] };
+  const listG = useServerFn(listGroups);
+  const { data: groupsData } = useQuery({ queryKey: ["groups", classId], queryFn: () => listG({ data: { classId } }) });
+
+  // Map studentId -> primary (first) group color
+  const studentColor = useMemo(() => {
+    const m = new Map<string, string>();
+    if (!groupsData) return m;
+    const colorByGroup = new Map(groupsData.groups.map((g) => [g.id, g.color]));
+    for (const mem of groupsData.memberships) {
+      if (!m.has(mem.student_id)) {
+        const c = colorByGroup.get(mem.group_id);
+        if (c) m.set(mem.student_id, c);
+      }
+    }
+    return m;
+  }, [groupsData]);
+
+  // In-memory undo stack of previous seat layouts (last 5)
+  type SeatSnap = { id: string; seat_row: number | null; seat_col: number | null; seat_locked: boolean };
+  const [undoStack, setUndoStack] = useState<SeatSnap[][]>([]);
+  const captureSnapshot = (): SeatSnap[] =>
+    students.map((s) => ({ id: s.id, seat_row: s.seat_row, seat_col: s.seat_col, seat_locked: s.seat_locked }));
+  const pushUndo = () => setUndoStack((prev) => [...prev.slice(-4), captureSnapshot()]);
 
   const rows = cls?.grid_rows ?? 5;
   const cols = cls?.grid_cols ?? 6;
@@ -295,12 +318,13 @@ export function SeatingGrid({ classId }: { classId: string }) {
   });
 
   const clearM = useMutation({
-    mutationFn: () => clearFn({ data: { class_id: classId } }),
+    mutationFn: async () => { pushUndo(); return clearFn({ data: { class_id: classId } }); },
     onSuccess: () => { invalidate(); toast.success("הסידור נוקה (פרט לנעולים)"); },
   });
 
   const randomM = useMutation({
     mutationFn: async () => {
+      pushUndo();
       const lockedKeys = new Set<string>();
       for (const s of students) {
         if (s.seat_locked && s.seat_row !== null && s.seat_col !== null)
@@ -330,8 +354,22 @@ export function SeatingGrid({ classId }: { classId: string }) {
   });
 
   const smartM = useMutation({
-    mutationFn: () => smartFn({ data: { class_id: classId } }),
+    mutationFn: async () => { pushUndo(); return smartFn({ data: { class_id: classId } }); },
     onSuccess: () => { invalidate(); toast.success("מיון חכם הושלם"); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
+  });
+
+  const undoM = useMutation({
+    mutationFn: async () => {
+      const snap = undoStack[undoStack.length - 1];
+      if (!snap) return;
+      // restore seats sequentially (small classes); rely on setSeat for positions
+      for (const s of snap) {
+        await setSeatFn({ data: { class_id: classId, student_id: s.id, seat_row: s.seat_row, seat_col: s.seat_col } });
+      }
+      setUndoStack((prev) => prev.slice(0, -1));
+    },
+    onSuccess: () => { invalidate(); toast.success("הפעולה בוטלה"); },
     onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
   });
 
@@ -377,6 +415,11 @@ export function SeatingGrid({ classId }: { classId: string }) {
             <Button size="sm" variant="outline" onClick={() => clearM.mutate()} disabled={clearM.isPending}>
               נקה סידור
             </Button>
+            {undoStack.length > 0 && (
+              <Button size="sm" variant="ghost" onClick={() => undoM.mutate()} disabled={undoM.isPending} title="בטל את הפעולה האחרונה">
+                <Undo2 className="ms-1 h-4 w-4" /> בטל ({undoStack.length})
+              </Button>
+            )}
             {selectedId && (
               <Button size="sm" variant="ghost" onClick={() => setSelectedId(null)}>
                 בטל בחירה
