@@ -248,11 +248,7 @@ function ResourcesPage() {
 
 function ResourceCard({ resource, onOpen }: { resource: ResourceRow; onOpen: () => void }) {
   return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="group rounded-xl border bg-card p-4 text-right transition hover:border-amber/40 hover:shadow-md"
-    >
+    <div className="group rounded-xl border bg-card p-4 text-right transition hover:border-amber/40 hover:shadow-md">
       <div className="flex items-start justify-between gap-2">
         <div className="line-clamp-2 font-semibold">{resource.title}</div>
         {resource.ai_generated && (
@@ -278,7 +274,13 @@ function ResourceCard({ resource, onOpen }: { resource: ResourceRow; onOpen: () 
           ))}
         </div>
       )}
-    </button>
+      <div className="mt-3 flex gap-2">
+        <Button asChild size="sm" variant="outline" className="flex-1">
+          <Link to="/resources/$resourceId" params={{ resourceId: resource.id }}>פתח</Link>
+        </Button>
+        <Button size="sm" variant="ghost" onClick={onOpen}>ערוך</Button>
+      </div>
+    </div>
   );
 }
 
