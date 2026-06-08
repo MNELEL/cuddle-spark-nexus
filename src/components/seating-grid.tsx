@@ -5,7 +5,7 @@ import {
 } from "@dnd-kit/core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Lock, Unlock, EyeOff, Shuffle, Settings2, Sparkles, AlertTriangle, Accessibility } from "lucide-react";
+import { Lock, Unlock, EyeOff, Shuffle, Settings2, Sparkles, AlertTriangle, Accessibility, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ import {
 import { toast } from "sonner";
 import { listStudents, listRelations, setSeat, toggleSeatLock, clearAllSeats, toggleHiddenSeat, smartSortSeats } from "@/lib/students.functions";
 import { getClass, updateClass } from "@/lib/classes.functions";
+import { listGroups } from "@/lib/groups.functions";
 import { computeViolations, type ScoringStudent, type ScoringRelation } from "@/lib/seating-logic";
 import { SeatingSnapshots } from "@/components/seating-snapshots";
 
@@ -28,7 +29,7 @@ type Student = {
 
 const seatKey = (r: number, c: number) => `${r}:${c}`;
 
-function StudentChip({ student, dragging, highlight }: { student: Student; dragging?: boolean; highlight?: "friend" | "avoid" | "distance" | "self" | null }) {
+function StudentChip({ student, dragging, highlight, groupColor }: { student: Student; dragging?: boolean; highlight?: "friend" | "avoid" | "distance" | "self" | null; groupColor?: string | null }) {
   const cls =
     highlight === "self" ? "ring-2 ring-primary bg-primary/20"
     : highlight === "friend" ? "ring-2 ring-emerald-500 bg-emerald-500/15"
@@ -36,33 +37,38 @@ function StudentChip({ student, dragging, highlight }: { student: Student; dragg
     : highlight === "distance" ? "ring-2 ring-amber-500 bg-amber-500/15"
     : "bg-primary/10";
   return (
-    <div className={`select-none rounded-md border px-2 py-1 text-xs font-medium text-foreground shadow-sm ${cls} ${dragging ? "opacity-90 shadow-lg" : ""}`}>
+    <div
+      className={`select-none rounded-md border px-2 py-1 text-xs font-medium text-foreground shadow-sm ${cls} ${dragging ? "opacity-90 shadow-lg" : ""}`}
+      style={groupColor && !highlight ? { borderColor: groupColor, boxShadow: `inset 0 0 0 9999px ${groupColor}22` } : undefined}
+    >
       <div className="flex items-center gap-1">
         {student.seat_locked && <Lock className="h-3 w-3 text-amber-600" />}
+        {groupColor && <span className="inline-block h-2 w-2 rounded-full" style={{ background: groupColor }} aria-hidden />}
         <span className="truncate max-w-[8rem]">{student.name}</span>
       </div>
     </div>
   );
 }
 
-function DraggableStudent({ student, id, highlight, onClick }: { student: Student; id: string; highlight?: "friend" | "avoid" | "distance" | "self" | null; onClick?: () => void }) {
+function DraggableStudent({ student, id, highlight, onClick, groupColor }: { student: Student; id: string; highlight?: "friend" | "avoid" | "distance" | "self" | null; onClick?: () => void; groupColor?: string | null }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id, data: { studentId: student.id } });
   return (
     <div ref={setNodeRef} {...listeners} {...attributes} onClick={onClick}
       className={`cursor-grab active:cursor-grabbing ${isDragging ? "opacity-30" : ""}`}>
-      <StudentChip student={student} highlight={highlight} />
+      <StudentChip student={student} highlight={highlight} groupColor={groupColor} />
     </div>
   );
 }
 
 function Seat({
-  row, col, hidden, child, onToggleHide, onToggleLock, lockedChild, highlight, onSelect,
+  row, col, hidden, child, onToggleHide, onToggleLock, lockedChild, highlight, onSelect, groupColor,
   a11y, focused, grabbedId, onFocusSeat, seatRef,
 }: {
   row: number; col: number; hidden: boolean; child: Student | null;
   onToggleHide: () => void; onToggleLock: () => void; lockedChild: boolean;
   highlight?: "friend" | "avoid" | "distance" | "self" | null;
   onSelect?: () => void;
+  groupColor?: string | null;
   a11y?: boolean;
   focused?: boolean;
   grabbedId?: string | null;
@@ -104,6 +110,7 @@ function Seat({
       className={`group relative flex aspect-[4/3] items-center justify-center rounded-md border bg-card p-1 transition-colors ${
         isOver ? "border-primary bg-primary/10" : "border-border"
       } ${a11y && focused ? "outline outline-2 outline-offset-2 outline-primary z-10" : ""} ${a11y ? "focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-primary focus:z-10" : ""} ${grabbedId && !child ? "ring-2 ring-primary/60" : ""}`}
+      style={groupColor ? { background: `linear-gradient(135deg, ${groupColor}1a, transparent 60%)`, borderColor: `${groupColor}55` } : undefined}
     >
       <div className="absolute top-0.5 left-0.5 flex gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
         {child && (
@@ -121,7 +128,7 @@ function Seat({
       </div>
       <span className="absolute bottom-0.5 right-1 text-[9px] text-muted-foreground">{row + 1},{col + 1}</span>
       {child ? (
-        <DraggableStudent student={child} id={`student:${child.id}`} highlight={highlight} onClick={onSelect} />
+        <DraggableStudent student={child} id={`student:${child.id}`} highlight={highlight} onClick={onSelect} groupColor={groupColor} />
       ) : (
         <span className="text-[10px] text-muted-foreground">ריק</span>
       )}
@@ -144,6 +151,29 @@ export function SeatingGrid({ classId }: { classId: string }) {
   const { data: cls } = useQuery({ queryKey: ["class", classId], queryFn: () => getC({ data: { id: classId } }) });
   const { data: students = [] } = useQuery({ queryKey: ["students", classId], queryFn: () => listS({ data: { classId } }) }) as { data: Student[] };
   const { data: relations = [] } = useQuery({ queryKey: ["relations", classId], queryFn: () => listR({ data: { classId } }) }) as { data: ScoringRelation[] };
+  const listG = useServerFn(listGroups);
+  const { data: groupsData } = useQuery({ queryKey: ["groups", classId], queryFn: () => listG({ data: { classId } }) });
+
+  // Map studentId -> primary (first) group color
+  const studentColor = useMemo(() => {
+    const m = new Map<string, string>();
+    if (!groupsData) return m;
+    const colorByGroup = new Map(groupsData.groups.map((g) => [g.id, g.color]));
+    for (const mem of groupsData.memberships) {
+      if (!m.has(mem.student_id)) {
+        const c = colorByGroup.get(mem.group_id);
+        if (c) m.set(mem.student_id, c);
+      }
+    }
+    return m;
+  }, [groupsData]);
+
+  // In-memory undo stack of previous seat layouts (last 5)
+  type SeatSnap = { id: string; seat_row: number | null; seat_col: number | null; seat_locked: boolean };
+  const [undoStack, setUndoStack] = useState<SeatSnap[][]>([]);
+  const captureSnapshot = (): SeatSnap[] =>
+    students.map((s) => ({ id: s.id, seat_row: s.seat_row, seat_col: s.seat_col, seat_locked: s.seat_locked }));
+  const pushUndo = () => setUndoStack((prev) => [...prev.slice(-4), captureSnapshot()]);
 
   const rows = cls?.grid_rows ?? 5;
   const cols = cls?.grid_cols ?? 6;
@@ -288,12 +318,13 @@ export function SeatingGrid({ classId }: { classId: string }) {
   });
 
   const clearM = useMutation({
-    mutationFn: () => clearFn({ data: { class_id: classId } }),
+    mutationFn: async () => { pushUndo(); return clearFn({ data: { class_id: classId } }); },
     onSuccess: () => { invalidate(); toast.success("הסידור נוקה (פרט לנעולים)"); },
   });
 
   const randomM = useMutation({
     mutationFn: async () => {
+      pushUndo();
       const lockedKeys = new Set<string>();
       for (const s of students) {
         if (s.seat_locked && s.seat_row !== null && s.seat_col !== null)
@@ -323,8 +354,22 @@ export function SeatingGrid({ classId }: { classId: string }) {
   });
 
   const smartM = useMutation({
-    mutationFn: () => smartFn({ data: { class_id: classId } }),
+    mutationFn: async () => { pushUndo(); return smartFn({ data: { class_id: classId } }); },
     onSuccess: () => { invalidate(); toast.success("מיון חכם הושלם"); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
+  });
+
+  const undoM = useMutation({
+    mutationFn: async () => {
+      const snap = undoStack[undoStack.length - 1];
+      if (!snap) return;
+      // restore seats sequentially (small classes); rely on setSeat for positions
+      for (const s of snap) {
+        await setSeatFn({ data: { class_id: classId, student_id: s.id, seat_row: s.seat_row, seat_col: s.seat_col } });
+      }
+      setUndoStack((prev) => prev.slice(0, -1));
+    },
+    onSuccess: () => { invalidate(); toast.success("הפעולה בוטלה"); },
     onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
   });
 
@@ -370,6 +415,11 @@ export function SeatingGrid({ classId }: { classId: string }) {
             <Button size="sm" variant="outline" onClick={() => clearM.mutate()} disabled={clearM.isPending}>
               נקה סידור
             </Button>
+            {undoStack.length > 0 && (
+              <Button size="sm" variant="ghost" onClick={() => undoM.mutate()} disabled={undoM.isPending} title="בטל את הפעולה האחרונה">
+                <Undo2 className="ms-1 h-4 w-4" /> בטל ({undoStack.length})
+              </Button>
+            )}
             {selectedId && (
               <Button size="sm" variant="ghost" onClick={() => setSelectedId(null)}>
                 בטל בחירה
@@ -431,12 +481,14 @@ export function SeatingGrid({ classId }: { classId: string }) {
               Array.from({ length: cols }).map((__, c) => {
                 const child = seated.get(seatKey(r, c)) ?? null;
                 const hl = child ? highlightMap.get(child.id) ?? null : null;
+                const gc = child ? studentColor.get(child.id) ?? null : null;
                 return (
                   <Seat key={`${r}-${c}`} row={r} col={c}
                     hidden={hiddenSet.has(seatKey(r, c))}
                     child={child}
                     lockedChild={!!child?.seat_locked}
                     highlight={hl}
+                    groupColor={gc}
                     onSelect={() => child && setSelectedId((cur) => cur === child.id ? null : child.id)}
                     onToggleHide={() => hideM.mutate({ row: r, col: c })}
                     onToggleLock={() => child && lockM.mutate({ id: child.id, locked: !child.seat_locked })}
@@ -461,7 +513,7 @@ export function SeatingGrid({ classId }: { classId: string }) {
           )}
         </div>
 
-        <UnseatedTray students={unseated} highlightMap={highlightMap} onSelect={(id) => setSelectedId((cur) => cur === id ? null : id)} />
+        <UnseatedTray students={unseated} highlightMap={highlightMap} studentColor={studentColor} onSelect={(id) => setSelectedId((cur) => cur === id ? null : id)} />
 
         <ViolationsPanel violations={violations} nameOf={nameOf} onFocus={setSelectedId} />
       </div>
@@ -471,7 +523,7 @@ export function SeatingGrid({ classId }: { classId: string }) {
   );
 }
 
-function UnseatedTray({ students, highlightMap, onSelect }: { students: Student[]; highlightMap: Map<string, "friend" | "avoid" | "distance" | "self">; onSelect: (id: string) => void }) {
+function UnseatedTray({ students, highlightMap, studentColor, onSelect }: { students: Student[]; highlightMap: Map<string, "friend" | "avoid" | "distance" | "self">; studentColor: Map<string, string>; onSelect: (id: string) => void }) {
   const { isOver, setNodeRef } = useDroppable({ id: "tray" });
   return (
     <Card>
@@ -484,6 +536,7 @@ function UnseatedTray({ students, highlightMap, onSelect }: { students: Student[
           students.map((s) => (
             <DraggableStudent key={s.id} student={s} id={`student:${s.id}`}
               highlight={highlightMap.get(s.id) ?? null}
+              groupColor={studentColor.get(s.id) ?? null}
               onClick={() => onSelect(s.id)} />
           ))
         )}
