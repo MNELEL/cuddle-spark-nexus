@@ -32,7 +32,6 @@ export const suggestResourcesForBulletin = createServerFn({ method: "POST" })
       query_embedding: emb as unknown as string,
       owner: context.userId,
       match_count: data.limit,
-      exclude_id: null,
     });
     const ids = ((matches ?? []) as { id: string; similarity: number }[]);
     if (!ids.length) return [];
