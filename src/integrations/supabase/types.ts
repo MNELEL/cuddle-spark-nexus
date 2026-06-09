@@ -77,6 +77,45 @@ export type Database = {
         }
         Relationships: []
       }
+      bulletin_resources: {
+        Row: {
+          bulletin_id: string
+          created_at: string
+          id: string
+          owner_id: string
+          resource_id: string
+        }
+        Insert: {
+          bulletin_id: string
+          created_at?: string
+          id?: string
+          owner_id: string
+          resource_id: string
+        }
+        Update: {
+          bulletin_id?: string
+          created_at?: string
+          id?: string
+          owner_id?: string
+          resource_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bulletin_resources_bulletin_id_fkey"
+            columns: ["bulletin_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_bulletins"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bulletin_resources_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "teaching_resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaigns: {
         Row: {
           active: boolean
@@ -279,6 +318,65 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      lesson_transcripts: {
+        Row: {
+          audio_path: string | null
+          class_id: string
+          created_at: string
+          duration_seconds: number | null
+          embedding: string | null
+          error: string | null
+          id: string
+          key_points: Json
+          owner_id: string
+          status: string
+          summary: string
+          title: string
+          transcript: string
+          updated_at: string
+        }
+        Insert: {
+          audio_path?: string | null
+          class_id: string
+          created_at?: string
+          duration_seconds?: number | null
+          embedding?: string | null
+          error?: string | null
+          id?: string
+          key_points?: Json
+          owner_id: string
+          status?: string
+          summary?: string
+          title?: string
+          transcript?: string
+          updated_at?: string
+        }
+        Update: {
+          audio_path?: string | null
+          class_id?: string
+          created_at?: string
+          duration_seconds?: number | null
+          embedding?: string | null
+          error?: string | null
+          id?: string
+          key_points?: Json
+          owner_id?: string
+          status?: string
+          summary?: string
+          title?: string
+          transcript?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_transcripts_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       parent_communications: {
         Row: {
@@ -715,12 +813,55 @@ export type Database = {
           },
         ]
       }
+      teacher_style_profile: {
+        Row: {
+          avg_question_length: number
+          avg_questions_per_worksheet: number
+          last_ai_summary: string
+          last_updated_at: string
+          preferred_resource_types: Json
+          preferred_subjects: Json
+          resource_count: number
+          tone_keywords: string[]
+          user_id: string
+          weekly_pace: Json
+          writing_style_sample: string
+        }
+        Insert: {
+          avg_question_length?: number
+          avg_questions_per_worksheet?: number
+          last_ai_summary?: string
+          last_updated_at?: string
+          preferred_resource_types?: Json
+          preferred_subjects?: Json
+          resource_count?: number
+          tone_keywords?: string[]
+          user_id: string
+          weekly_pace?: Json
+          writing_style_sample?: string
+        }
+        Update: {
+          avg_question_length?: number
+          avg_questions_per_worksheet?: number
+          last_ai_summary?: string
+          last_updated_at?: string
+          preferred_resource_types?: Json
+          preferred_subjects?: Json
+          resource_count?: number
+          tone_keywords?: string[]
+          user_id?: string
+          weekly_pace?: Json
+          writing_style_sample?: string
+        }
+        Relationships: []
+      }
       teaching_resources: {
         Row: {
           ai_generated: boolean
           content: Json
           created_at: string
           description: string
+          embedding: string | null
           file_path: string | null
           grade_level: string
           id: string
@@ -728,6 +869,7 @@ export type Database = {
           owner_id: string
           resource_type: string
           source_prompt: string
+          source_transcript_id: string | null
           subject: string
           tags: string[]
           title: string
@@ -738,6 +880,7 @@ export type Database = {
           content?: Json
           created_at?: string
           description?: string
+          embedding?: string | null
           file_path?: string | null
           grade_level?: string
           id?: string
@@ -745,6 +888,7 @@ export type Database = {
           owner_id: string
           resource_type?: string
           source_prompt?: string
+          source_transcript_id?: string | null
           subject?: string
           tags?: string[]
           title: string
@@ -755,6 +899,7 @@ export type Database = {
           content?: Json
           created_at?: string
           description?: string
+          embedding?: string | null
           file_path?: string | null
           grade_level?: string
           id?: string
@@ -762,6 +907,7 @@ export type Database = {
           owner_id?: string
           resource_type?: string
           source_prompt?: string
+          source_transcript_id?: string | null
           subject?: string
           tags?: string[]
           title?: string
@@ -775,6 +921,7 @@ export type Database = {
           class_id: string
           created_at: string
           digest_summary: string
+          embedding: string | null
           end_date: string
           id: string
           notes: string
@@ -790,6 +937,7 @@ export type Database = {
           class_id: string
           created_at?: string
           digest_summary?: string
+          embedding?: string | null
           end_date: string
           id?: string
           notes?: string
@@ -805,6 +953,7 @@ export type Database = {
           class_id?: string
           created_at?: string
           digest_summary?: string
+          embedding?: string | null
           end_date?: string
           id?: string
           notes?: string
@@ -822,7 +971,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      match_resources: {
+        Args: {
+          exclude_id?: string
+          match_count?: number
+          owner: string
+          query_embedding: string
+        }
+        Returns: {
+          id: string
+          similarity: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
