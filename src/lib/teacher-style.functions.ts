@@ -111,7 +111,7 @@ export const getPersonalRecommendations = createServerFn({ method: "POST" })
       // Use admin to call SECURITY DEFINER match function
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { data: matches, error } = await supabaseAdmin.rpc("match_resources", {
-        query_embedding: recentRow.embedding,
+        query_embedding: recentRow.embedding as unknown as string,
         owner: context.userId,
         match_count: data.limit,
         exclude_id: recentRow.id,
