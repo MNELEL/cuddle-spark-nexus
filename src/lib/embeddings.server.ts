@@ -30,7 +30,7 @@ export async function embedText(text: string): Promise<number[] | null> {
   }
 }
 
-/** Format a vector for direct SQL injection (pgvector expects '[1,2,3]'). */
+/** Format a vector as pgvector text literal (also accepted by postgrest for vector cols). */
 export function toPgVector(v: number[]): string {
   return `[${v.join(",")}]`;
 }
