@@ -87,7 +87,11 @@ function ResourcesPage() {
   });
   const recomputeMut = useMutation({
     mutationFn: () => recompute(),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["resource-recommendations"] }); toast.success("הסגנון האישי עודכן"); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["resource-recommendations"] });
+      qc.invalidateQueries({ queryKey: ["teacher-style-profile"] });
+      toast.success("הסגנון האישי עודכן");
+    },
   });
 
   const deleteMut = useMutation({
