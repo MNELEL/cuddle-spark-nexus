@@ -33,6 +33,7 @@ import { computeStudentScore } from "@/lib/performance-score";
 import { ScoreBadge } from "@/components/score-badge";
 import { StudentFileSheet } from "@/components/student-file-sheet";
 import { AiAssistantDock } from "@/components/ai-assistant-dock";
+import { LessonsTab } from "@/components/lessons-tab";
 
 export const Route = createFileRoute("/_authenticated/classes/$classId")({
   component: ClassDetail,
@@ -132,6 +133,7 @@ function ClassDetail() {
           <TabsTrigger value="seating">סידור הושבה</TabsTrigger>
           <TabsTrigger value="tracking">ציונים ונוכחות</TabsTrigger>
           <TabsTrigger value="crm">CRM פדגוגי</TabsTrigger>
+          <TabsTrigger value="lessons">הקלטות שיעור</TabsTrigger>
         </TabsList>
 
         <TabsContent value="students" className="mt-4">
@@ -158,6 +160,10 @@ function ClassDetail() {
 
         <TabsContent value="crm" className="mt-4">
           <CrmTab classId={classId} />
+        </TabsContent>
+
+        <TabsContent value="lessons" className="mt-4">
+          <LessonsTab classId={classId} />
         </TabsContent>
       </Tabs>
       <AiAssistantDock classId={classId} />
