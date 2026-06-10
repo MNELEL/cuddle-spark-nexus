@@ -26,6 +26,8 @@ import {
   RESOURCE_TYPES, RESOURCE_TYPE_LABELS,
   type ResourceRow, type ResourceContent, type ResourceType,
 } from "@/lib/teaching-resources.functions";
+import { getPersonalRecommendations, recomputeStyleProfile } from "@/lib/teacher-style.functions";
+import { Wand2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/resources")({
   component: ResourcesPage,
@@ -76,6 +78,17 @@ function ResourcesPage() {
     queryFn: () => listColls(),
   });
 
+  const recs = useServerFn(getPersonalRecommendations);
+  const recompute = useServerFn(recomputeStyleProfile);
+  const { data: recommendations = [] } = useQuery({
+    queryKey: ["resource-recommendations"],
+    queryFn: () => recs({ data: { limit: 6 } }),
+  });
+  const recomputeMut = useMutation({
+    mutationFn: () => recompute(),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["resource-recommendations"] }); toast.success("הסגנון האישי עודכן"); },
+  });
+
   const deleteMut = useMutation({
     mutationFn: (r: ResourceRow) => del({ data: { id: r.id, file_path: r.file_path } }),
     onSuccess: () => {
@@ -114,6 +127,36 @@ function ResourcesPage() {
           </Button>
         </div>
       </div>
+
+      {recommendations.length > 0 && (
+        <Card className="border-amber/40 bg-amber/5">
+          <CardHeader className="pb-2 flex flex-row items-center justify-between">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Wand2 className="h-4 w-4 text-amber" /> מומלץ עבורך
+              <span className="text-xs font-normal text-muted-foreground">לפי הסגנון והעדפות שלך</span>
+            </CardTitle>
+            <Button size="sm" variant="ghost" onClick={() => recomputeMut.mutate()} disabled={recomputeMut.isPending}>
+              {recomputeMut.isPending ? <Loader2 className="ms-1 h-3 w-3 animate-spin" /> : null}
+              רענן המלצות
+            </Button>
+          </CardHeader>
+          <CardContent className="flex gap-2 overflow-x-auto pb-2">
+            {recommendations.map((r) => (
+              <Link key={r.id} to="/resources/$resourceId" params={{ resourceId: r.id }}
+                className="min-w-[200px] max-w-[240px] rounded-lg border bg-card p-3 text-right transition hover:border-amber/50 hover:shadow">
+                <div className="line-clamp-2 text-sm font-semibold">{r.title}</div>
+                <div className="mt-1 flex flex-wrap gap-1">
+                  <Badge variant="outline" className="text-[10px]">
+                    {RESOURCE_TYPE_LABELS[r.resource_type as ResourceType] ?? r.resource_type}
+                  </Badge>
+                  {r.subject && <Badge variant="secondary" className="text-[10px]">{r.subject}</Badge>}
+                </div>
+                {r.description && <p className="mt-1 line-clamp-2 text-[11px] text-muted-foreground">{r.description}</p>}
+              </Link>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-[260px_1fr]">
         {/* Filters */}
