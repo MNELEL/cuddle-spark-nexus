@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type StyleProfile = {
   user_id: string;
@@ -24,14 +25,13 @@ export const getStyleProfile = createServerFn({ method: "POST" })
     return data as unknown as StyleProfile | null;
   });
 
-/** Recompute the style profile from all the user's resources. Runs cheaply (no AI). */
-export const recomputeStyleProfile = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { data: rows } = await context.supabase
+/** Internal: recompute style profile for a user. Reusable from other server fns (triggers). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function recomputeStyleProfileFor(supabase: SupabaseClient<any, any, any>, userId: string) {
+  const { data: rows } = await supabase
       .from("teaching_resources")
       .select("title,description,subject,resource_type,content,created_at")
-      .eq("owner_id", context.userId)
+      .eq("owner_id", userId)
       .order("created_at", { ascending: false })
       .limit(200);
     const list = (rows ?? []) as { title: string; description: string; subject: string;
@@ -72,7 +72,7 @@ export const recomputeStyleProfile = createServerFn({ method: "POST" })
     ).join("\n");
 
     const upsertRow = {
-      user_id: context.userId,
+      user_id: userId,
       preferred_subjects: subjects,
       preferred_resource_types: types,
       avg_questions_per_worksheet: qCount ? totalQuestions / qCount : 0,
@@ -83,12 +83,17 @@ export const recomputeStyleProfile = createServerFn({ method: "POST" })
       resource_count: list.length,
       last_updated_at: new Date().toISOString(),
     };
-    const { error } = await context.supabase
+  const { error } = await supabase
       .from("teacher_style_profile")
       .upsert(upsertRow as never, { onConflict: "user_id" });
     if (error) { console.error("[Style DB Error]", error); }
     return { ok: true, count: list.length };
-  });
+}
+
+/** Recompute the style profile from all the user's resources. Runs cheaply (no AI). */
+export const recomputeStyleProfile = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => recomputeStyleProfileFor(context.supabase, context.userId));
 
 /** Recommend resources for the current user. Combines style + recency. */
 export const getPersonalRecommendations = createServerFn({ method: "POST" })
