@@ -28,6 +28,7 @@ import {
 } from "@/lib/teaching-resources.functions";
 import { getPersonalRecommendations, recomputeStyleProfile } from "@/lib/teacher-style.functions";
 import { Wand2 } from "lucide-react";
+import { WeeklyPaceCard } from "@/components/weekly-pace-card";
 
 export const Route = createFileRoute("/_authenticated/resources")({
   component: ResourcesPage,
@@ -157,6 +158,8 @@ function ResourcesPage() {
           </CardContent>
         </Card>
       )}
+
+      <WeeklyPaceCard />
 
       <div className="grid gap-4 lg:grid-cols-[260px_1fr]">
         {/* Filters */}
