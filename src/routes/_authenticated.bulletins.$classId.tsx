@@ -17,6 +17,11 @@ import {
   listBulletins, generateBulletin, saveBulletin, deleteBulletin,
   type BulletinDraft, type StoredBulletin,
 } from "@/lib/bulletins.functions";
+import {
+  suggestResourcesForBulletin, listBulletinResources, linkResourceToBulletin,
+  generateQuizFromBulletin,
+} from "@/lib/bulletin-sync.functions";
+import { Library, Link2, Wand2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/bulletins/$classId")({
   component: BulletinsPage,
@@ -320,11 +325,109 @@ function BulletinsPage() {
                       e.target.value.split("\n").map((s) => s.trim()).filter(Boolean))}
                   />
                 </section>
+
+                {editing.id && (
+                  <BulletinSyncPanel bulletinId={editing.id} classId={classId} />
+                )}
               </CardContent>
             </Card>
           </div>
         )}
       </div>
     </div>
+  );
+}
+
+function BulletinSyncPanel({ bulletinId, classId: _classId }: { bulletinId: string; classId: string }) {
+  const qc = useQueryClient();
+  const suggest = useServerFn(suggestResourcesForBulletin);
+  const listLinked = useServerFn(listBulletinResources);
+  const link = useServerFn(linkResourceToBulletin);
+  const genQuiz = useServerFn(generateQuizFromBulletin);
+
+  const { data: suggestions = [], isFetching: loadingS } = useQuery({
+    queryKey: ["bulletin-suggest", bulletinId],
+    queryFn: () => suggest({ data: { bulletin_id: bulletinId, limit: 6 } }),
+  });
+  const { data: linked = [] } = useQuery({
+    queryKey: ["bulletin-linked", bulletinId],
+    queryFn: () => listLinked({ data: { bulletin_id: bulletinId } }),
+  });
+
+  const linkMut = useMutation({
+    mutationFn: (rid: string) => link({ data: { bulletin_id: bulletinId, resource_id: rid } }),
+    onSuccess: () => {
+      toast.success("שויך לעלון");
+      qc.invalidateQueries({ queryKey: ["bulletin-linked", bulletinId] });
+    },
+  });
+  const quizMut = useMutation({
+    mutationFn: () => genQuiz({ data: { bulletin_id: bulletinId } }),
+    onSuccess: () => {
+      toast.success("מבחן חזרה נוסף לספרייה ושויך לעלון");
+      qc.invalidateQueries({ queryKey: ["bulletin-linked", bulletinId] });
+      qc.invalidateQueries({ queryKey: ["teaching-resources"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
+  });
+
+  const linkedIds = new Set(linked.map((r) => r.id));
+
+  return (
+    <section className="print:hidden rounded-xl border bg-muted/20 p-4 space-y-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <Library className="h-4 w-4 text-amber" />
+        <h3 className="font-semibold">סנכרון עם ספריית החומרים</h3>
+        <Button size="sm" variant="outline" className="ms-auto"
+          onClick={() => quizMut.mutate()} disabled={quizMut.isPending}>
+          {quizMut.isPending ? <Loader2 className="ms-1 h-3 w-3 animate-spin" /> : <Wand2 className="ms-1 h-3 w-3" />}
+          צור מבחן חזרה מהשבוע
+        </Button>
+      </div>
+
+      {linked.length > 0 && (
+        <div>
+          <div className="mb-1 text-xs font-medium text-muted-foreground">חומרים מקושרים לעלון</div>
+          <div className="flex flex-wrap gap-2">
+            {linked.map((r) => (
+              <Link key={r.id} to="/resources/$resourceId" params={{ resourceId: r.id }}
+                className="rounded-md border bg-card px-2 py-1 text-xs hover:border-amber/40">
+                {r.title}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div>
+        <div className="mb-1 text-xs font-medium text-muted-foreground">
+          הצעות מתאימות לנקודות הלימוד {loadingS && <Loader2 className="inline h-3 w-3 animate-spin" />}
+        </div>
+        {suggestions.length === 0 && !loadingS && (
+          <div className="text-xs text-muted-foreground">אין הצעות עדיין — הוסף נקודות לימוד ושמור את העלון.</div>
+        )}
+        <div className="grid gap-2 sm:grid-cols-2">
+          {suggestions.map((r) => {
+            const isLinked = linkedIds.has(r.id);
+            return (
+              <div key={r.id} className="rounded-lg border bg-card p-2 text-xs flex items-start gap-2">
+                <div className="flex-1 min-w-0">
+                  <Link to="/resources/$resourceId" params={{ resourceId: r.id }}
+                    className="font-semibold line-clamp-1 hover:underline">{r.title}</Link>
+                  <div className="text-[10px] text-muted-foreground">
+                    {r.resource_type}{r.subject ? ` · ${r.subject}` : ""} · התאמה {Math.round((r.similarity ?? 0) * 100)}%
+                  </div>
+                </div>
+                <Button size="sm" variant={isLinked ? "secondary" : "outline"}
+                  disabled={isLinked || linkMut.isPending}
+                  onClick={() => linkMut.mutate(r.id)}>
+                  <Link2 className="ms-1 h-3 w-3" /> {isLinked ? "מקושר" : "קשר"}
+                </Button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
   );
 }
