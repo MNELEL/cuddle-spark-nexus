@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { recomputeStyleProfileFor } from "./teacher-style.functions";
 
 const uuid = z.string().uuid();
 
@@ -132,12 +133,14 @@ export const upsertResource = createServerFn({ method: "POST" })
       const { id, ...rest } = data;
       const { error } = await context.supabase.from("teaching_resources").update(rest as never).eq("id", id);
       if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+      void recomputeStyleProfileFor(context.supabase, context.userId).catch((e) => console.error("[Style trigger]", e));
       return { id };
     }
     const insertRow = { ...data, owner_id: context.userId } as never;
     const { data: ins, error } = await context.supabase
       .from("teaching_resources").insert(insertRow).select("id").single() as unknown as { data: { id: string } | null; error: { message: string } | null };
     if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    void recomputeStyleProfileFor(context.supabase, context.userId).catch((e) => console.error("[Style trigger]", e));
     return { id: ins!.id };
   });
 
@@ -235,6 +238,7 @@ export const logResourceUsage = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("class_resource_usage").insert(data as never);
     if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    void recomputeStyleProfileFor(context.supabase, context.userId).catch((e) => console.error("[Style trigger]", e));
     return { ok: true };
   });
 

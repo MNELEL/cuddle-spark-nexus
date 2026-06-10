@@ -28,6 +28,7 @@ import {
 } from "@/lib/teaching-resources.functions";
 import { getPersonalRecommendations, recomputeStyleProfile } from "@/lib/teacher-style.functions";
 import { Wand2 } from "lucide-react";
+import { WeeklyPaceCard } from "@/components/weekly-pace-card";
 
 export const Route = createFileRoute("/_authenticated/resources")({
   component: ResourcesPage,
@@ -86,7 +87,11 @@ function ResourcesPage() {
   });
   const recomputeMut = useMutation({
     mutationFn: () => recompute(),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["resource-recommendations"] }); toast.success("הסגנון האישי עודכן"); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["resource-recommendations"] });
+      qc.invalidateQueries({ queryKey: ["teacher-style-profile"] });
+      toast.success("הסגנון האישי עודכן");
+    },
   });
 
   const deleteMut = useMutation({
@@ -157,6 +162,8 @@ function ResourcesPage() {
           </CardContent>
         </Card>
       )}
+
+      <WeeklyPaceCard />
 
       <div className="grid gap-4 lg:grid-cols-[260px_1fr]">
         {/* Filters */}
