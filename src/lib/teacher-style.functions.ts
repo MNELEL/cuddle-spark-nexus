@@ -25,6 +25,36 @@ export const getStyleProfile = createServerFn({ method: "POST" })
     return data as unknown as StyleProfile | null;
   });
 
+/**
+ * Internal helper: returns a short Hebrew block describing the teacher's
+ * personal style, to be injected into AI system prompts. Empty string when
+ * no profile exists yet.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function buildStyleContextString(supabase: SupabaseClient<any, any, any>, userId: string): Promise<string> {
+  try {
+    const { data: prof } = await supabase
+      .from("teacher_style_profile")
+      .select("last_ai_summary,writing_style_sample,tone_keywords,preferred_resource_types,avg_questions_per_worksheet")
+      .eq("user_id", userId).maybeSingle();
+    if (!prof) return "";
+    const p = prof as {
+      last_ai_summary?: string; writing_style_sample?: string;
+      tone_keywords?: string[]; preferred_resource_types?: Record<string, number>;
+      avg_questions_per_worksheet?: number;
+    };
+    const parts: string[] = [];
+    if (p.last_ai_summary) parts.push(`סגנון המלמד: ${p.last_ai_summary}`);
+    if (p.tone_keywords?.length) parts.push(`מילות מפתח אופייניות: ${p.tone_keywords.slice(0, 8).join(", ")}`);
+    if (p.avg_questions_per_worksheet && p.avg_questions_per_worksheet > 0) {
+      parts.push(`ממוצע שאלות בדף עבודה אצלו: ${Math.round(p.avg_questions_per_worksheet)}`);
+    }
+    if (p.writing_style_sample) parts.push(`דוגמה לסגנון כתיבה אישי:\n${p.writing_style_sample.slice(0, 800)}`);
+    if (!parts.length) return "";
+    return `\n\n=== סגנון אישי של המלמד (התאם את הסגנון לזה) ===\n${parts.join("\n")}\n=== סוף סגנון ===`;
+  } catch (e) { console.error("[Style ctx]", e); return ""; }
+}
+
 /** Internal: recompute style profile for a user. Reusable from other server fns (triggers). */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function recomputeStyleProfileFor(supabase: SupabaseClient<any, any, any>, userId: string) {
