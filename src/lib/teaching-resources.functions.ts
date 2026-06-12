@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { recomputeStyleProfileFor } from "./teacher-style.functions";
+import { recomputeStyleProfileFor, buildStyleContextString } from "./teacher-style.functions";
 
 const uuid = z.string().uuid();
 
@@ -252,7 +252,7 @@ export const generateResourceWithAI = createServerFn({ method: "POST" })
     subject: z.string().max(80).default(""),
     grade_level: z.string().max(40).default(""),
   }).parse(d))
-  .handler(async ({ data }): Promise<{
+  .handler(async ({ data, context }): Promise<{
     title: string; description: string; tags: string[]; content: ResourceContent;
   }> => {
     const apiKey = process.env.LOVABLE_API_KEY;
@@ -260,10 +260,12 @@ export const generateResourceWithAI = createServerFn({ method: "POST" })
 
     const typeLabel = RESOURCE_TYPE_LABELS[data.resource_type];
 
+    const styleCtx = await buildStyleContextString(context.supabase, context.userId);
+
     const system = `אתה עוזר של רב/מלמד בתלמוד תורה / חיידר חרדי. אתה מייצר חומרי הוראה ועזרים לכיתה בעברית טהורה ומכובדת.
 השתמש במונחים: "הרב", "המלמד", "התלמידים", "הורי הבית" (לא "מורה", לא "ילדים", לא "סטודנטים").
 מקצועות קודש: גמרא, משנה, חומש, נביא, הלכה, מוסר, תפילה, פרשת שבוע.
-סוג החומר המבוקש: ${typeLabel}${data.subject ? ` במקצוע ${data.subject}` : ""}${data.grade_level ? ` לכיתה ${data.grade_level}` : ""}.
+סוג החומר המבוקש: ${typeLabel}${data.subject ? ` במקצוע ${data.subject}` : ""}${data.grade_level ? ` לכיתה ${data.grade_level}` : ""}.${styleCtx}
 
 החזר אך ורק JSON תקין במבנה הבא — בלי טקסט נוסף:
 {

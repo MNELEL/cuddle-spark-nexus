@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { ArrowRight, Printer, Trash2, Loader2, Library, Sparkles, Tag, Send } from "lucide-react";
+import { ArrowRight, Printer, Trash2, Loader2, Library, Sparkles, Tag, Send, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,7 @@ import {
   getResource, deleteResource, logResourceUsage,
   RESOURCE_TYPE_LABELS,
 } from "@/lib/teaching-resources.functions";
+import { suggestResourceEdits } from "@/lib/teacher-style.functions";
 import { listClasses } from "@/lib/classes.functions";
 
 export const Route = createFileRoute("/_authenticated/resources/$resourceId")({
@@ -29,6 +30,7 @@ function ResourceDetailPage() {
   const delR = useServerFn(deleteResource);
   const logUsage = useServerFn(logResourceUsage);
   const listCls = useServerFn(listClasses);
+  const suggestEdits = useServerFn(suggestResourceEdits);
 
   const { data: resource, isLoading } = useQuery({
     queryKey: ["teaching-resource", resourceId],
@@ -39,6 +41,13 @@ function ResourceDetailPage() {
   });
 
   const [submitClassId, setSubmitClassId] = useState<string>("");
+
+  const editSuggestionsQ = useQuery({
+    queryKey: ["edit-suggestions", resourceId],
+    queryFn: () => suggestEdits({ data: { resource_id: resourceId } }),
+    enabled: !!resource,
+    staleTime: 5 * 60 * 1000,
+  });
 
   const deleteMut = useMutation({
     mutationFn: () => delR({ data: { id: resourceId, file_path: resource?.file_path ?? null } }),
@@ -200,6 +209,30 @@ function ResourceDetailPage() {
           </div>
         </CardContent>
       </Card>
+
+      {editSuggestionsQ.data && editSuggestionsQ.data.suggestions.length > 0 && (
+        <Card className="print:hidden border-amber/40 bg-amber/5">
+          <CardContent className="py-5">
+            <div className="mb-3 flex items-center gap-2">
+              <Wand2 className="h-4 w-4 text-amber" />
+              <h2 className="font-display text-lg font-bold">הצעות לעריכה — לפי הסגנון שלך</h2>
+            </div>
+            <ul className="space-y-2 text-sm">
+              {editSuggestionsQ.data.suggestions.map((s, i) => (
+                <li key={i} className="rounded-md border bg-card p-3">
+                  <div className="font-medium">{s.title}</div>
+                  {s.reason && <div className="mt-1 text-xs text-muted-foreground">{s.reason}</div>}
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
+      {editSuggestionsQ.isLoading && (
+        <div className="print:hidden flex items-center justify-center gap-2 text-xs text-muted-foreground">
+          <Loader2 className="h-3 w-3 animate-spin" /> מחפש הצעות עריכה מותאמות לסגנון שלך…
+        </div>
+      )}
     </div>
   );
 }
