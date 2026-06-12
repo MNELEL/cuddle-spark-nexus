@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { buildStyleContextString } from "./teacher-style.functions";
 
 const uuid = z.string().uuid();
 
@@ -83,11 +84,12 @@ export const generateQuizFromBulletin = createServerFn({ method: "POST" })
     const bul = b as { title: string; study_points: string[]; digest_summary: string;
       start_date: string; end_date: string; class_id: string };
 
+    const styleCtx = await buildStyleContextString(context.supabase, context.userId);
     const system = `אתה עוזר של רב/מלמד בתלמוד תורה. צור מבחן חזרה על החומר שנלמד השבוע.
 השאלות חייבות להיות מבוססות אך ורק על נקודות הלימוד שנמסרו (study_points) ועל סיכום השבוע.
 כתוב בעברית מכובדת לציבור החרדי. החזר אך ורק JSON תקין:
 {"title":"","description":"","questions":[{"q":"","a":""}]}
-8-12 שאלות עם תשובות.`;
+8-12 שאלות עם תשובות.${styleCtx}`;
 
     const user = `כותרת העלון: ${bul.title}\nסיכום השבוע:\n${bul.digest_summary}\nנקודות לימוד:\n${(bul.study_points ?? []).map((p, i) => `${i + 1}. ${p}`).join("\n")}`;
 
