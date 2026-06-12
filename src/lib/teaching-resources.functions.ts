@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { recomputeStyleProfileFor } from "./teacher-style.functions";
+import { recomputeStyleProfileFor, buildStyleContextString } from "./teacher-style.functions";
 
 const uuid = z.string().uuid();
 
