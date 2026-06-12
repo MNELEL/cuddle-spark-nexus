@@ -3,6 +3,8 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+const uuid = z.string().uuid();
+
 export type StyleProfile = {
   user_id: string;
   preferred_subjects: Record<string, number>;
@@ -166,4 +168,54 @@ export const getPersonalRecommendations = createServerFn({ method: "POST" })
       .order("updated_at", { ascending: false })
       .limit(data.limit);
     return (fallback ?? []) as unknown as Array<{ id: string; title: string; resource_type: string; subject: string; description: string }>;
+  });
+
+/**
+ * Suggest concrete edits for a specific resource, based on the teacher's
+ * personal style profile (e.g. "you usually add answers", "you usually
+ * include נקוד"). Returns up to 4 short Hebrew suggestions.
+ */
+export const suggestResourceEdits = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ resource_id: uuid }).parse(d))
+  .handler(async ({ data, context }): Promise<{ suggestions: { title: string; reason: string }[] }> => {
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) return { suggestions: [] };
+
+    const { data: r } = await context.supabase
+      .from("teaching_resources").select("title,description,resource_type,subject,content,tags")
+      .eq("id", data.resource_id).eq("owner_id", context.userId).maybeSingle();
+    if (!r) return { suggestions: [] };
+
+    const styleCtx = await buildStyleContextString(context.supabase, context.userId);
+    if (!styleCtx) return { suggestions: [] };
+
+    const system = `אתה עוזר עריכה של רב/מלמד. על-פי הסגנון האישי של המלמד, הצע עד 4 שיפורים קונקרטיים וקצרים לחומר הנוכחי.
+כל הצעה: כותרת קצרה (עד 8 מילים) + שורת הסבר אחת למה זה מתאים לסגנון שלו.
+אל תציע שיפור שכבר קיים בחומר. כתוב בעברית מכובדת.${styleCtx}
+
+החזר אך ורק JSON:
+{"suggestions":[{"title":"","reason":""}]}`;
+
+    const user = `סוג החומר: ${r.resource_type}\nכותרת: ${r.title}\nתיאור: ${r.description}\nתוכן: ${JSON.stringify(r.content).slice(0, 4000)}`;
+
+    try {
+      const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Lovable-API-Key": apiKey, "X-Lovable-AIG-SDK": "fetch" },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [{ role: "system", content: system }, { role: "user", content: user }],
+          response_format: { type: "json_object" },
+        }),
+      });
+      if (!resp.ok) return { suggestions: [] };
+      const j = (await resp.json()) as { choices?: { message?: { content?: string } }[] };
+      const parsed = JSON.parse(j.choices?.[0]?.message?.content ?? "{}") as { suggestions?: { title?: string; reason?: string }[] };
+      const suggestions = (parsed.suggestions ?? [])
+        .filter((s) => s?.title)
+        .map((s) => ({ title: String(s.title).slice(0, 120), reason: String(s.reason ?? "").slice(0, 240) }))
+        .slice(0, 4);
+      return { suggestions };
+    } catch (e) { console.error("[suggestResourceEdits]", e); return { suggestions: [] }; }
   });
