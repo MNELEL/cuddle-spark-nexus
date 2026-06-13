@@ -116,6 +116,11 @@ function ClassDetail() {
               <FileText className="ms-1 h-4 w-4" /> דוח כיתה
             </Button>
           </Link>
+          <Link to="/daily/$classId" params={{ classId }}>
+            <Button variant="outline" size="sm">
+              <FileText className="ms-1 h-4 w-4" /> סיכום יומי
+            </Button>
+          </Link>
         </div>
       </div>
       <div className="rounded-2xl border bg-card bg-mesh p-6 shadow-sm">
