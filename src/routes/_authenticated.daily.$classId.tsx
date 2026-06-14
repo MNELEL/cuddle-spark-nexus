@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { buildClassReport } from "@/lib/reports.functions";
 import { TEACHER_LABEL } from "@/lib/kodesh-subjects";
+import { ParentEmailComposer } from "@/components/parent-email-composer";
 
 export const Route = createFileRoute("/_authenticated/daily/$classId")({
   component: DailySummaryPage,
@@ -35,6 +36,7 @@ function DailySummaryPage() {
   const [studentId, setStudentId] = useState<string>("");
   const [classNotes, setClassNotes] = useState("");
   const [studentNotes, setStudentNotes] = useState<Record<string, string>>({});
+  const [composer, setComposer] = useState<{ id: string; name: string } | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["daily-report", classId, date],
@@ -251,6 +253,11 @@ function DailySummaryPage() {
                           </span>
                         ) : "—"}
                       </td>
+                      <td className="no-print">
+                        <Button size="sm" variant="ghost" onClick={() => setComposer({ id: s.id, name: s.name })}>
+                          <Mail className="ms-1 h-3.5 w-3.5" /> מייל
+                        </Button>
+                      </td>
                     </tr>
                   );
                 })}
@@ -267,11 +274,15 @@ function DailySummaryPage() {
             <section className="space-y-4">
               <div className="flex flex-wrap items-baseline justify-between gap-3">
                 <h2 className="font-display text-2xl font-bold">{s.name}</h2>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 items-center">
                   <Badge variant="outline">נכח {s.attendance.present}</Badge>
                   <Badge variant="outline">איחור {s.attendance.late}</Badge>
                   <Badge variant="outline">נעדר {s.attendance.absent}</Badge>
                   <Badge variant="outline">התנהגות +{s.behavior.positive} / −{s.behavior.negative}</Badge>
+                  <Button size="sm" variant="outline" className="no-print"
+                    onClick={() => setComposer({ id: s.id, name: s.name })}>
+                    <Mail className="ms-1 h-3.5 w-3.5" /> טיוטת מייל להורים
+                  </Button>
                 </div>
               </div>
 
@@ -331,6 +342,16 @@ function DailySummaryPage() {
           @page { size: A4; margin: 14mm; }
         }
       `}</style>
+
+      {composer && (
+        <ParentEmailComposer
+          open={!!composer}
+          onOpenChange={(o) => !o && setComposer(null)}
+          classId={classId}
+          studentId={composer.id}
+          studentName={composer.name}
+        />
+      )}
     </div>
   );
 }
