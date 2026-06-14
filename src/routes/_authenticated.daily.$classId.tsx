@@ -230,6 +230,7 @@ function DailySummaryPage() {
                   <th className="text-right">נוכחות</th>
                   <th className="text-right">ציונים היום</th>
                   <th className="text-right">התנהגות</th>
+                  <th className="text-right no-print"></th>
                 </tr>
               </thead>
               <tbody>
