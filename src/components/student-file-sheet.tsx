@@ -25,6 +25,7 @@ import {
   listParentCommunications, upsertParentCommunication, deleteParentCommunication,
   listDisciplineEvents, upsertDisciplineEvent, deleteDisciplineEvent,
 } from "@/lib/student-files.functions";
+import { ParentEmailComposer } from "@/components/parent-email-composer";
 
 type Props = {
   open: boolean;
@@ -59,7 +60,8 @@ const channelIcon: Record<string, typeof Phone> = {
 };
 
 export function StudentFileSheet(props: Props) {
-  const { open, onOpenChange, studentName } = props;
+  const { open, onOpenChange, studentName, classId, studentId } = props;
+  const [emailOpen, setEmailOpen] = useState(false);
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="left" className="w-full sm:max-w-2xl overflow-y-auto" dir="rtl">
@@ -68,6 +70,11 @@ export function StudentFileSheet(props: Props) {
           <SheetDescription>
             מסמכים, יומן שיחות עם הורים ויומן אירועים משמעתיים — כל ההיסטוריה במקום אחד.
           </SheetDescription>
+          <div className="mt-2">
+            <Button size="sm" variant="outline" onClick={() => setEmailOpen(true)}>
+              <Mail className="ms-1 h-4 w-4" /> צור מייל להורים
+            </Button>
+          </div>
         </SheetHeader>
         <Tabs defaultValue="documents" dir="rtl" className="mt-4">
           <TabsList className="w-full">
@@ -92,6 +99,13 @@ export function StudentFileSheet(props: Props) {
           </TabsContent>
         </Tabs>
       </SheetContent>
+      <ParentEmailComposer
+        open={emailOpen}
+        onOpenChange={setEmailOpen}
+        classId={classId}
+        studentId={studentId}
+        studentName={studentName}
+      />
     </Sheet>
   );
 }
