@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Copy, Mail, MessageCircle, Sparkles, Wand2 } from "lucide-react";
+import { Copy, Mail, MessageCircle, Sparkles, Wand2, FileText, Download } from "lucide-react";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
@@ -16,6 +16,8 @@ import {
 } from "@/components/ui/select";
 import { PARENT_TEMPLATE_LABELS, type TemplateKey } from "@/lib/parent-email-templates";
 import { draftParentEmail } from "@/lib/parent-emails.functions";
+import { buildClassReport } from "@/lib/reports.functions";
+import { buildStudentDailyPdf, downloadPdfBlob } from "@/lib/pdf/student-daily-pdf";
 
 type Props = {
   open: boolean;
@@ -27,19 +29,45 @@ type Props = {
 
 export function ParentEmailComposer({ open, onOpenChange, classId, studentId, studentName }: Props) {
   const draft = useServerFn(draftParentEmail);
+  const buildReport = useServerFn(buildClassReport);
   const [templateKey, setTemplateKey] = useState<TemplateKey>("weekly_positive");
   const [customNote, setCustomNote] = useState("");
   const [usePolish, setUsePolish] = useState(false);
+  const [attachPdf, setAttachPdf] = useState(true);
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [polished, setPolished] = useState(false);
+  const [pdfReady, setPdfReady] = useState<{ blob: Blob; filename: string } | null>(null);
+
+  const generatePdf = async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const from = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const report = await buildReport({ data: { classId, from, to: today } });
+    const result = await buildStudentDailyPdf({ report, studentId, date: today });
+    downloadPdfBlob(result.blob, result.filename);
+    return result;
+  };
 
   const draftM = useMutation({
-    mutationFn: () => draft({ data: { classId, studentId, templateKey, customNote, usePolish } }),
+    mutationFn: async () => {
+      const res = await draft({ data: { classId, studentId, templateKey, customNote, usePolish } });
+      let pdfRes: { blob: Blob; filename: string } | null = null;
+      if (attachPdf) {
+        try {
+          pdfRes = await generatePdf();
+        } catch (e) {
+          toast.error(e instanceof Error ? `הפקת ה-PDF נכשלה: ${e.message}` : "הפקת ה-PDF נכשלה");
+        }
+      }
+      return { ...res, pdf: pdfRes };
+    },
     onSuccess: (res) => {
+      const suffix = res.pdf ? `\n\n— מצורף קובץ: ${res.pdf.filename} —` : "";
       setSubject(res.subject);
-      setBody(res.body);
+      setBody(res.body + suffix);
       setPolished(res.polished);
+      setPdfReady(res.pdf);
+      if (res.pdf) toast.success("הקובץ ירד — גרור אותו לחלון המייל שייפתח");
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה ביצירת הטיוטה"),
   });
@@ -59,6 +87,9 @@ export function ParentEmailComposer({ open, onOpenChange, classId, studentId, st
   const onWa = () => {
     const url = `https://wa.me/?text=${encodeURIComponent(`*${subject}*\n\n${body}`)}`;
     window.open(url, "_blank");
+  };
+  const onRedownload = () => {
+    if (pdfReady) downloadPdfBlob(pdfReady.blob, pdfReady.filename);
   };
 
   return (
@@ -102,11 +133,33 @@ export function ParentEmailComposer({ open, onOpenChange, classId, studentId, st
             </div>
             <Switch checked={usePolish} onCheckedChange={setUsePolish} />
           </div>
+          <div className="flex items-center justify-between rounded-md border bg-muted/40 p-3">
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-amber" />
+              <div className="text-sm leading-tight">
+                <div>צרף סיכום PDF אישי (30 ימים)</div>
+                <div className="text-xs text-muted-foreground">הקובץ יורד אוטומטית — תגרור אותו לחלון המייל</div>
+              </div>
+            </div>
+            <Switch checked={attachPdf} onCheckedChange={setAttachPdf} />
+          </div>
 
           <Button onClick={() => draftM.mutate()} disabled={draftM.isPending}>
             <Sparkles className="ms-1 h-4 w-4" />
-            {draftM.isPending ? "מרכיב טיוטה..." : "צור טיוטה"}
+            {draftM.isPending ? "מרכיב טיוטה ומפיק PDF..." : "צור טיוטה"}
           </Button>
+
+          {pdfReady && (
+            <div className="flex items-center justify-between rounded-md border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm">
+              <div className="flex items-center gap-2">
+                <FileText className="h-4 w-4 text-emerald-600" />
+                <span className="font-medium">{pdfReady.filename} ירד למחשב</span>
+              </div>
+              <Button size="sm" variant="ghost" onClick={onRedownload}>
+                <Download className="ms-1 h-3.5 w-3.5" /> הורד שוב
+              </Button>
+            </div>
+          )}
 
           {(subject || body) && (
             <div className="space-y-3 border-t pt-3">
