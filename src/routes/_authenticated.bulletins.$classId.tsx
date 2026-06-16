@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import {
-  ArrowRight, Sparkles, Loader2, Save, Trash2, Printer, Plus, FileText,
+  ArrowRight, Sparkles, Loader2, Save, Trash2, Printer, Plus, FileText, FileDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,9 @@ import {
   generateQuizFromBulletin,
 } from "@/lib/bulletin-sync.functions";
 import { Library, Link2, Wand2 } from "lucide-react";
+import { buildBulletinPdf } from "@/lib/pdf/bulletin-pdf";
+import { downloadPdfBlob } from "@/lib/pdf/pdf-builder";
+import { getClass } from "@/lib/classes.functions";
 
 export const Route = createFileRoute("/_authenticated/bulletins/$classId")({
   component: BulletinsPage,
@@ -62,6 +65,7 @@ function BulletinsPage() {
   const gen = useServerFn(generateBulletin);
   const save = useServerFn(saveBulletin);
   const del = useServerFn(deleteBulletin);
+  const getCls = useServerFn(getClass);
 
   const [editing, setEditing] = useState<Editing>(null);
   const [lessonNotes, setLessonNotes] = useState("");
@@ -70,6 +74,24 @@ function BulletinsPage() {
     queryKey: ["bulletins", classId],
     queryFn: () => list({ data: { classId } }),
   });
+
+  const { data: cls } = useQuery({
+    queryKey: ["class", classId],
+    queryFn: () => getCls({ data: { id: classId } }),
+  });
+
+  const onPdf = async () => {
+    if (!editing) return;
+    try {
+      const { blob, filename } = await buildBulletinPdf({
+        bulletin: editing,
+        className: cls?.name ?? "כיתה",
+      });
+      downloadPdfBlob(blob, filename);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "ייצוא ה-PDF נכשל");
+    }
+  };
 
   const generateMut = useMutation({
     mutationFn: () => gen({ data: {
@@ -208,6 +230,9 @@ function BulletinsPage() {
                   </Button>
                   <Button variant="outline" onClick={() => window.print()}>
                     <Printer className="ms-1 h-4 w-4" /> הדפס / PDF
+                  </Button>
+                  <Button variant="outline" onClick={onPdf} disabled={!editing.title}>
+                    <FileDown className="ms-1 h-4 w-4" /> הורד PDF
                   </Button>
                   {editing.id && (
                     <Button variant="ghost" className="text-destructive ms-auto"
