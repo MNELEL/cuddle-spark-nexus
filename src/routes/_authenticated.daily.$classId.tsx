@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
-import { ArrowRight, Printer, Mail, MessageCircle } from "lucide-react";
+import { ArrowRight, Printer, Mail, MessageCircle, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +15,9 @@ import {
 import { buildClassReport } from "@/lib/reports.functions";
 import { TEACHER_LABEL } from "@/lib/kodesh-subjects";
 import { ParentEmailComposer } from "@/components/parent-email-composer";
+import { buildDailyClassPdf } from "@/lib/pdf/daily-class-pdf";
+import { downloadPdfBlob } from "@/lib/pdf/pdf-builder";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/daily/$classId")({
   component: DailySummaryPage,
@@ -85,6 +88,22 @@ function DailySummaryPage() {
   }, [data, mode, list, totals, classNotes, studentNotes, date]);
 
   const onPrint = () => window.print();
+  const onPdf = async () => {
+    if (!data) { toast.error("אין נתונים"); return; }
+    try {
+      const { blob, filename } = await buildDailyClassPdf({
+        report: data,
+        date,
+        mode,
+        studentId: studentId || undefined,
+        classNote: classNotes || undefined,
+        studentNotes,
+      });
+      downloadPdfBlob(blob, filename);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "ייצוא ה-PDF נכשל");
+    }
+  };
   const onEmail = () => {
     const subject = encodeURIComponent(`סיכום יומי — ${data?.class.name ?? ""} — ${date}`);
     const body = encodeURIComponent(shareText);
@@ -138,6 +157,7 @@ function DailySummaryPage() {
           <div className="ms-auto flex flex-wrap gap-2">
             <Button variant="outline" onClick={onEmail}><Mail className="ms-1 h-4 w-4" /> מייל להורים</Button>
             <Button variant="outline" onClick={onWhatsApp}><MessageCircle className="ms-1 h-4 w-4" /> וואטסאפ</Button>
+            <Button variant="outline" onClick={onPdf}><FileDown className="ms-1 h-4 w-4" /> הורד PDF</Button>
             <Button onClick={onPrint}><Printer className="ms-1 h-4 w-4" /> הדפס / PDF (A4)</Button>
           </div>
         </CardContent>
