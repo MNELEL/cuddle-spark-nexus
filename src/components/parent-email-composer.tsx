@@ -94,11 +94,11 @@ export function ParentEmailComposer({ open, onOpenChange, classId, studentId, st
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl" dir="rtl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" dir="rtl">
         <DialogHeader>
-          <DialogTitle className="font-display flex items-center gap-2">
-            <Mail className="h-5 w-5 text-amber" />
-            טיוטת מייל להורי {studentName}
+          <DialogTitle className="font-display flex min-w-0 items-center gap-2">
+            <Mail className="h-5 w-5 shrink-0 text-amber" />
+            <span className="truncate">טיוטת מייל להורי {studentName}</span>
           </DialogTitle>
           <DialogDescription>
             בחר תבנית, הוסף הערה אישית — והמערכת תרכיב מייל אישי לפי הנתונים האחרונים של התלמיד.
@@ -126,22 +126,22 @@ export function ParentEmailComposer({ open, onOpenChange, classId, studentId, st
               placeholder="למשל: ראוי לציון שהשבוע הוא חזר היטב על הסוגיה ואף עזר לחבריו..."
             />
           </div>
-          <div className="flex items-center justify-between rounded-md border bg-muted/40 p-3">
-            <div className="flex items-center gap-2">
-              <Wand2 className="h-4 w-4 text-amber" />
-              <span className="text-sm">שפר עם AI בסגנון האישי שלך</span>
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md border bg-muted/40 p-3">
+            <div className="flex min-w-0 items-center gap-2">
+              <Wand2 className="h-4 w-4 shrink-0 text-amber" />
+              <span className="truncate text-sm">שפר עם AI בסגנון האישי שלך</span>
             </div>
-            <Switch checked={usePolish} onCheckedChange={setUsePolish} />
+            <Switch className="shrink-0" checked={usePolish} onCheckedChange={setUsePolish} />
           </div>
-          <div className="flex items-center justify-between rounded-md border bg-muted/40 p-3">
-            <div className="flex items-center gap-2">
-              <FileText className="h-4 w-4 text-amber" />
-              <div className="text-sm leading-tight">
-                <div>צרף סיכום PDF אישי (30 ימים)</div>
-                <div className="text-xs text-muted-foreground">הקובץ יורד אוטומטית — תגרור אותו לחלון המייל</div>
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md border bg-muted/40 p-3">
+            <div className="flex min-w-0 items-center gap-2">
+              <FileText className="h-4 w-4 shrink-0 text-amber" />
+              <div className="min-w-0 text-sm leading-tight">
+                <div className="truncate">צרף סיכום PDF אישי (30 ימים)</div>
+                <div className="truncate text-xs text-muted-foreground">הקובץ יורד אוטומטית — תגרור אותו לחלון המייל</div>
               </div>
             </div>
-            <Switch checked={attachPdf} onCheckedChange={setAttachPdf} />
+            <Switch className="shrink-0" checked={attachPdf} onCheckedChange={setAttachPdf} />
           </div>
 
           <Button onClick={() => draftM.mutate()} disabled={draftM.isPending}>
@@ -150,12 +150,12 @@ export function ParentEmailComposer({ open, onOpenChange, classId, studentId, st
           </Button>
 
           {pdfReady && (
-            <div className="flex items-center justify-between rounded-md border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm">
-              <div className="flex items-center gap-2">
-                <FileText className="h-4 w-4 text-emerald-600" />
-                <span className="font-medium">{pdfReady.filename} ירד למחשב</span>
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm">
+              <div className="flex min-w-0 items-center gap-2">
+                <FileText className="h-4 w-4 shrink-0 text-emerald-600" />
+                <span className="truncate font-medium">{pdfReady.filename} ירד למחשב</span>
               </div>
-              <Button size="sm" variant="ghost" onClick={onRedownload}>
+              <Button className="shrink-0" size="sm" variant="ghost" onClick={onRedownload}>
                 <Download className="ms-1 h-3.5 w-3.5" /> הורד שוב
               </Button>
             </div>
