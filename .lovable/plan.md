@@ -1,48 +1,72 @@
-
 ## מטרה
-לשפר את `src/lib/pdf/student-daily-pdf.ts` כך שהפלט יישמר זהה ועקבי בכל מכשיר שממנו מופעלת ההפקה (A4 קבוע, ללא תלות ברוחב המסך של הדפדפן), עם יישור RTL נקי, כותרות ממוספרות וטיפול נכון בעטיפת טקסט עברי.
+לוודא ש-RTL מדויק, כותרות ממוספרות (§1, §2...) ושבירת שורות טבעית בעברית מיושמים אחיד **בכל** הדוחות והייצוא ל-PDF — לא רק ב-PDF סיכום אישי.
 
-## שינויים ב-`student-daily-pdf.ts`
+## מיפוי המצב הקיים
 
-### 1. RTL מדויק עבור כל הטקסטים
-- כל קריאות `doc.text(...)` יקבלו במפורש `{ align: "right" }` (כיום נשענות על `setR2L` בלבד — לעיתים גורם לסטיות עיגון בכותרות).
-- הוספת קבועי פריסה: `marginLeft = 14`, `marginRight = 14`, `contentWidth = pageW - marginLeft - marginRight`, ועיגון אחיד מימין ל-`pageW - marginRight`.
-- ב-`autoTable`: הוספת `theme: "grid"`, `cellPadding: 2.5`, ו-`halign: "right"` כברירת מחדל לכל ה-`body` (גם בטבלאות שכיום ב-`center` נשאיר מספרים ב-`center` אך טקסטים מימין).
+| מקור PDF | מנגנון | RTL/§/שבירה היום |
+|---|---|---|
+| `src/lib/pdf/student-daily-pdf.ts` (סיכום תלמיד 30 ימים) | jsPDF + autoTable + Heebo | ✅ מלא |
+| `_authenticated.reports.$classId` (דוח כיתה לטווח) | `window.print()` על HTML | ⚠️ HTML RTL בלבד, ללא §, ללא שליטה מדויקת |
+| `_authenticated.daily.$classId` (סיכום יומי כיתתי) | `window.print()` | ⚠️ אותו דבר |
+| `_authenticated.bulletins.$classId` (עלון שבועי) | `window.print()` | ⚠️ אותו דבר |
+| `import-export.tsx` exportPDF (גריד הושבה) | html2canvas → תמונה ב-jsPDF | ✅ לא רלוונטי (תמונה) |
 
-### 2. פונט מלא — Regular + Bold
-- הוספת `Heebo-Bold.ttf` ל-`public/fonts/` ולפונקציית הטעינה (cache לשניהם במקביל).
-- רישום שני סגנונות: `addFont("Heebo-Regular.ttf","Heebo","normal")` ו-`addFont("Heebo-Bold.ttf","Heebo","bold")`.
-- כותרות סקציה ישתמשו ב-`setFont("Heebo","bold")`; גוף ב-`normal`.
+## תכנון השינויים
 
-### 3. כותרות ממוספרות
-- מערך סקציות: `["נוכחות (30 ימים אחרונים)", "ציונים אחרונים", "התנהגות ונקודות", "הערות הרב"]`.
-- פונקציית עזר `sectionHeader(num, title)` שתצייר:
-  - רקע עדין `setFillColor(241,245,249)` מלבן ברוחב `contentWidth`,
-  - פס אמבר `2mm` בצד ימין (RTL — בולט בקצה הימני),
-  - טקסט `"§{num}. {title}"` ב-`bold 12pt`, צבע Midnight Slate, מיושר ל-`pageW - marginRight - 4`.
-- כל סקציה מקבלת מספר רץ; אם סקציית הערות ריקה — לא נספרת.
+### 1. חילוץ ליבת PDF משותפת — `src/lib/pdf/pdf-builder.ts`
+מוציא מ-`student-daily-pdf.ts` ל-helper משותף שכל מחולל PDF ישתמש בו:
+- `createHebrewDoc()` — טוען Heebo Regular+Bold, `setR2L(true)`, מחזיר `{ doc, layout }` (marginL/R, rightX, contentW, pageW/H, SLATE/AMBER/SOFT).
+- `drawBrandHeader(doc, layout, { title, subtitle, meta })` — פס מותג + כותרת ראשית מיושרת לימין, מטא-נתונים, splitTextToSize למעטפת רב-שורתית.
+- `sectionHeaderFactory(doc, layout)` — סוגר מונה `sectionNum` ומחזיר `section(title)` שמדפיס `§N. כותרת` עם רקע SOFT, פס AMBER, יישור ימין מדויק.
+- `tablePresets(layout)` — `baseTable` עם `font:"Heebo"`, `halign:"right"`, `overflow:"linebreak"`, `cellPadding:2.5`, `theme:"grid"`.
+- `ensureSpaceFactory(doc, layout)` ו-`afterTable(doc)`.
+- `drawFooter(doc, layout, { meta })` — קו מפריד, מטא + `ClassAlign Studio · עמ׳ X מתוך Y`, `setR2L(true)` בכל עמוד.
 
-### 4. שבירת שורות טבעית בעברית
-- בלוק ההערות יעבור ל-`autoTable` עם תא יחיד (`overflow: "linebreak"`, `cellWidth: contentWidth`, `halign: "right"`) במקום `splitTextToSize` — autoTable שובר נכון לפי רוחב התא ושומר RTL, ומונע "בליעת" רווחים בעברית.
-- גם תא "תיאור" בטבלת המשמעת יקבל `cellWidth: "wrap"` עם `minCellWidth` ו-`overflow: "linebreak"` כדי שתיאורים ארוכים לא יחתכו.
-- בכל מקום שמשתמשים ב-`doc.text` למחרוזות אפשריות-ארוכות (subheader bits) — נריץ דרך `splitTextToSize(text, contentWidth)` ונצייר כמערך שורות.
+עדכון `student-daily-pdf.ts` להישען על ה-helper (ללא שינוי תוצאה).
 
-### 5. ניהול שבירת עמוד
-- פונקציית עזר `ensureSpace(needed)` שמוסיפה עמוד כשנשאר פחות מ-`needed` ל-`pageHeight - 20`. תיקרא לפני כל `sectionHeader`.
+### 2. PDF מקורי לדוח טווח כיתה — `src/lib/pdf/class-report-pdf.ts`
+מחליף את `window.print()` ב-`reports.$classId` (משאיר כפתור הדפסה כגיבוי):
+- כותרת `דוח כיתה — {name}` + מטא: תקופה, תאריך הפקה, מורה, ביה״ס.
+- לכל תלמיד `section(`${index}. ${name}`)` עם:
+  - §X.1 נוכחות (טבלת present/late/absent/excused).
+  - §X.2 ציונים (אם יש) — autoTable, ממוצע ב-foot.
+  - §X.3 התנהגות/משמעת (אם יש).
+- `pageBreak` אוטומטי, footer אחיד.
+- כפתור חדש בעמוד "הורד PDF" לצד "הדפס".
 
-### 6. Footer ו-Header עקביים
-- ה-Footer יצויר בלולאה הסופית עם `setR2L(true)` כדי שמספר העמודים יישאר תקין (`עמ׳ X מתוך Y`).
-- הוספת מספר עמוד גם בפינה השמאלית-תחתונה ושם בית הספר/כיתה בימנית-תחתונה (font 7pt).
+### 3. PDF מקורי לסיכום יומי כיתתי — `src/lib/pdf/daily-class-pdf.ts`
+מחליף את `window.print()` ב-`daily.$classId`:
+- §1 סיכום נוכחות הכיתה (נכחו/נעדרו/איחור/אחוז).
+- §2 פירוט תלמידים (טבלה: שם · נוכחות · ציון יום · אירועים).
+- §3 הערות הרב (`classNotes` או `studentNotes[id]`), עם `splitTextToSize` לשבירת שורות עברית טבעית.
+- כפתור "הורד PDF" לצד "הדפס".
 
-## קבצים שיתעדכנו
-- `src/lib/pdf/student-daily-pdf.ts` — שכתוב הפונקציה לפי הנ"ל.
-- `public/fonts/Heebo-Bold.ttf` — תוספת קובץ פונט (יורד מ-Google Fonts בזמן build).
+### 4. PDF מקורי לעלון שבועי — `src/lib/pdf/bulletin-pdf.ts`
+מחליף את `window.print()` ב-`bulletins.$classId`:
+- כותרת העלון + טווח תאריכים.
+- §1 סיכום השבוע (טקסט חופשי, `splitTextToSize`).
+- §2 נקודות לימוד (רשימה ממוספרת כתת-סעיפים §2.1, §2.2…).
+- §3 הודעות / קישורים (אם קיימים).
+- כפתור "הורד PDF" לצד "הדפס".
 
-## ללא שינוי
-- חתימת `buildStudentDailyPdf` ו-`downloadPdfBlob` נשארות זהות → `parent-email-composer.tsx` לא משתנה.
-- אין שינויי DB, אין מיגרציות, אין שינוי תלויות npm.
+### 5. אחידות RTL בנתיב ה-HTML print fallback
+ב-`reports`, `daily`, `bulletins` — מוסיף ב-block ה-`@media print`:
+- `body { direction: rtl; }` במפורש.
+- כותרות ה-`<section>` ב-HTML מקבלות גם הן `§N.` (מספור עקבי בין HTML ל-PDF) דרך CSS counter (`counter-reset` + `counter-increment` + `::before { content: "§" counter(sec) ". "; }`).
+- `word-break: normal; overflow-wrap: anywhere;` על תאי טבלאות עברית כדי שבדפדפן ייעשו שבירות טבעיות גם בהדפסה.
 
-## QA לאחר ההטמעה
-1. הפקת PDF לתלמיד עם הערות ארוכות + 20 ציונים + 10 אירועי משמעת.
-2. בדיקה ב-3 רוחבי מסך (320, 768, 1440) שהפלט זהה בייט-לבייט (אותו A4).
-3. בדיקה ש-Bold נטען (כותרות מודגשות) ושאין "ריבועים שחורים".
+### 6. ולידציה
+- `bun run build` עובר.
+- בדיקה ויזואלית: יוצר PDF מכל אחד מהשלושה במצב פיתוח, מאמת:
+  - כותרות עיקריות ביישור ימין מדויק (`align: "right"` + `rightX`).
+  - מספור רץ §1, §2, §3 בכל מסמך.
+  - מחרוזות עבריות ארוכות נשברות בתוך תאים בלי חיתוך.
+  - footer ב-RTL בכל עמוד.
+
+## פרטים טכניים
+- כל הקבצים החדשים תחת `src/lib/pdf/` ומייצאים `build*Pdf(args): Promise<{ blob, filename }>` + שימוש ב-`downloadPdfBlob` הקיים.
+- אין שינוי בסכמת נתונים / server functions — רק תצוגה.
+- שמות קבצים: `דוח_כיתה_{name}_{from}_{to}.pdf`, `סיכום_יומי_{name}_{date}.pdf`, `עלון_{name}_{startDate}.pdf` עם `safeName()` משותף.
+- שמירת תאימות אחורה: `window.print()` נשאר כאופציה במקביל לכפתור החדש.
+
+מאשר/ת להתחיל?
