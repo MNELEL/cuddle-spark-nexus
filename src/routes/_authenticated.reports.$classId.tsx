@@ -14,6 +14,8 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { buildClassReport } from "@/lib/reports.functions";
 import { TEACHER_LABEL } from "@/lib/kodesh-subjects";
+import { buildClassReportPdf } from "@/lib/pdf/class-report-pdf";
+import { downloadPdfBlob } from "@/lib/pdf/pdf-builder";
 
 export const Route = createFileRoute("/_authenticated/reports/$classId")({
   component: ReportsPage,
@@ -57,6 +59,18 @@ function ReportsPage() {
   }, [data, filtered]);
 
   const onPrint = () => window.print();
+  const onPdf = async () => {
+    if (!data) { toast.error("אין נתונים"); return; }
+    try {
+      const filtered = studentFilter === "all"
+        ? data
+        : { ...data, students: data.students.filter((s) => s.id === studentFilter) };
+      const { blob, filename } = await buildClassReportPdf({ report: filtered });
+      downloadPdfBlob(blob, filename);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "ייצוא ה-PDF נכשל");
+    }
+  };
   const onWhatsApp = () => {
     const url = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
     window.open(url, "_blank");
@@ -108,6 +122,7 @@ function ReportsPage() {
             <Button variant="outline" onClick={onCopy}><FileDown className="ms-1 h-4 w-4" /> העתק טקסט</Button>
             <Button variant="outline" onClick={onEmail}><Mail className="ms-1 h-4 w-4" /> מייל</Button>
             <Button variant="outline" onClick={onWhatsApp}><MessageCircle className="ms-1 h-4 w-4" /> וואטסאפ</Button>
+            <Button variant="outline" onClick={onPdf}><FileDown className="ms-1 h-4 w-4" /> הורד PDF</Button>
             <Button onClick={onPrint}><Printer className="ms-1 h-4 w-4" /> הדפס / PDF</Button>
           </div>
         </CardContent>
