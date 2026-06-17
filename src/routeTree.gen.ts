@@ -16,6 +16,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as PTokenRouteImport } from './routes/p.$token'
+import { Route as BlogDigitalHallPassGuideRouteImport } from './routes/blog.digital-hall-pass-guide'
 import { Route as AuthenticatedToolkitRouteImport } from './routes/_authenticated.toolkit'
 import { Route as AuthenticatedSoundBoardRouteImport } from './routes/_authenticated.sound-board'
 import { Route as AuthenticatedResourcesRouteImport } from './routes/_authenticated.resources'
@@ -63,6 +64,12 @@ const PTokenRoute = PTokenRouteImport.update({
   path: '/p/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BlogDigitalHallPassGuideRoute =
+  BlogDigitalHallPassGuideRouteImport.update({
+    id: '/digital-hall-pass-guide',
+    path: '/digital-hall-pass-guide',
+    getParentRoute: () => BlogRoute,
+  } as any)
 const AuthenticatedToolkitRoute = AuthenticatedToolkitRouteImport.update({
   id: '/toolkit',
   path: '/toolkit',
@@ -141,6 +148,7 @@ export interface FileRoutesByFullPath {
   '/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/sound-board': typeof AuthenticatedSoundBoardRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
+  '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
   '/p/$token': typeof PTokenRoute
   '/blog/': typeof BlogIndexRoute
   '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
@@ -160,6 +168,7 @@ export interface FileRoutesByTo {
   '/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/sound-board': typeof AuthenticatedSoundBoardRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
+  '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
   '/p/$token': typeof PTokenRoute
   '/blog': typeof BlogIndexRoute
   '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
@@ -182,6 +191,7 @@ export interface FileRoutesById {
   '/_authenticated/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/_authenticated/sound-board': typeof AuthenticatedSoundBoardRoute
   '/_authenticated/toolkit': typeof AuthenticatedToolkitRoute
+  '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
   '/p/$token': typeof PTokenRoute
   '/blog/': typeof BlogIndexRoute
   '/_authenticated/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
@@ -204,6 +214,7 @@ export interface FileRouteTypes {
     | '/resources'
     | '/sound-board'
     | '/toolkit'
+    | '/blog/digital-hall-pass-guide'
     | '/p/$token'
     | '/blog/'
     | '/bulletins/$classId'
@@ -223,6 +234,7 @@ export interface FileRouteTypes {
     | '/resources'
     | '/sound-board'
     | '/toolkit'
+    | '/blog/digital-hall-pass-guide'
     | '/p/$token'
     | '/blog'
     | '/bulletins/$classId'
@@ -244,6 +256,7 @@ export interface FileRouteTypes {
     | '/_authenticated/resources'
     | '/_authenticated/sound-board'
     | '/_authenticated/toolkit'
+    | '/blog/digital-hall-pass-guide'
     | '/p/$token'
     | '/blog/'
     | '/_authenticated/bulletins/$classId'
@@ -316,6 +329,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/p/$token'
       preLoaderRoute: typeof PTokenRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/blog/digital-hall-pass-guide': {
+      id: '/blog/digital-hall-pass-guide'
+      path: '/digital-hall-pass-guide'
+      fullPath: '/blog/digital-hall-pass-guide'
+      preLoaderRoute: typeof BlogDigitalHallPassGuideRouteImport
+      parentRoute: typeof BlogRoute
     }
     '/_authenticated/toolkit': {
       id: '/_authenticated/toolkit'
@@ -466,10 +486,12 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 )
 
 interface BlogRouteChildren {
+  BlogDigitalHallPassGuideRoute: typeof BlogDigitalHallPassGuideRoute
   BlogIndexRoute: typeof BlogIndexRoute
 }
 
 const BlogRouteChildren: BlogRouteChildren = {
+  BlogDigitalHallPassGuideRoute: BlogDigitalHallPassGuideRoute,
   BlogIndexRoute: BlogIndexRoute,
 }
 
