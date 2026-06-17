@@ -11,9 +11,12 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as BlogRouteImport } from './routes/blog'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as PTokenRouteImport } from './routes/p.$token'
+import { Route as BlogDigitalHallPassGuideRouteImport } from './routes/blog.digital-hall-pass-guide'
 import { Route as AuthenticatedToolkitRouteImport } from './routes/_authenticated.toolkit'
 import { Route as AuthenticatedSoundBoardRouteImport } from './routes/_authenticated.sound-board'
 import { Route as AuthenticatedResourcesRouteImport } from './routes/_authenticated.resources'
@@ -37,6 +40,11 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BlogRoute = BlogRouteImport.update({
+  id: '/blog',
+  path: '/blog',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
@@ -46,11 +54,22 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BlogIndexRoute = BlogIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => BlogRoute,
+} as any)
 const PTokenRoute = PTokenRouteImport.update({
   id: '/p/$token',
   path: '/p/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BlogDigitalHallPassGuideRoute =
+  BlogDigitalHallPassGuideRouteImport.update({
+    id: '/digital-hall-pass-guide',
+    path: '/digital-hall-pass-guide',
+    getParentRoute: () => BlogRoute,
+  } as any)
 const AuthenticatedToolkitRoute = AuthenticatedToolkitRouteImport.update({
   id: '/toolkit',
   path: '/toolkit',
@@ -123,12 +142,15 @@ const AuthenticatedClassesClassIdDisplayRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/blog': typeof BlogRouteWithChildren
   '/login': typeof LoginRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/sound-board': typeof AuthenticatedSoundBoardRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
+  '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
   '/p/$token': typeof PTokenRoute
+  '/blog/': typeof BlogIndexRoute
   '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
   '/classes/$classId': typeof AuthenticatedClassesClassIdRouteWithChildren
   '/daily/$classId': typeof AuthenticatedDailyClassIdRoute
@@ -146,7 +168,9 @@ export interface FileRoutesByTo {
   '/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/sound-board': typeof AuthenticatedSoundBoardRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
+  '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
   '/p/$token': typeof PTokenRoute
+  '/blog': typeof BlogIndexRoute
   '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
   '/classes/$classId': typeof AuthenticatedClassesClassIdRouteWithChildren
   '/daily/$classId': typeof AuthenticatedDailyClassIdRoute
@@ -161,12 +185,15 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/blog': typeof BlogRouteWithChildren
   '/login': typeof LoginRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/_authenticated/sound-board': typeof AuthenticatedSoundBoardRoute
   '/_authenticated/toolkit': typeof AuthenticatedToolkitRoute
+  '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
   '/p/$token': typeof PTokenRoute
+  '/blog/': typeof BlogIndexRoute
   '/_authenticated/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
   '/_authenticated/classes/$classId': typeof AuthenticatedClassesClassIdRouteWithChildren
   '/_authenticated/daily/$classId': typeof AuthenticatedDailyClassIdRoute
@@ -181,12 +208,15 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/blog'
     | '/login'
     | '/sitemap.xml'
     | '/resources'
     | '/sound-board'
     | '/toolkit'
+    | '/blog/digital-hall-pass-guide'
     | '/p/$token'
+    | '/blog/'
     | '/bulletins/$classId'
     | '/classes/$classId'
     | '/daily/$classId'
@@ -204,7 +234,9 @@ export interface FileRouteTypes {
     | '/resources'
     | '/sound-board'
     | '/toolkit'
+    | '/blog/digital-hall-pass-guide'
     | '/p/$token'
+    | '/blog'
     | '/bulletins/$classId'
     | '/classes/$classId'
     | '/daily/$classId'
@@ -218,12 +250,15 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/blog'
     | '/login'
     | '/sitemap.xml'
     | '/_authenticated/resources'
     | '/_authenticated/sound-board'
     | '/_authenticated/toolkit'
+    | '/blog/digital-hall-pass-guide'
     | '/p/$token'
+    | '/blog/'
     | '/_authenticated/bulletins/$classId'
     | '/_authenticated/classes/$classId'
     | '/_authenticated/daily/$classId'
@@ -238,6 +273,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  BlogRoute: typeof BlogRouteWithChildren
   LoginRoute: typeof LoginRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   PTokenRoute: typeof PTokenRoute
@@ -259,6 +295,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/blog': {
+      id: '/blog'
+      path: '/blog'
+      fullPath: '/blog'
+      preLoaderRoute: typeof BlogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated': {
       id: '/_authenticated'
       path: ''
@@ -273,12 +316,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/blog/': {
+      id: '/blog/'
+      path: '/'
+      fullPath: '/blog/'
+      preLoaderRoute: typeof BlogIndexRouteImport
+      parentRoute: typeof BlogRoute
+    }
     '/p/$token': {
       id: '/p/$token'
       path: '/p/$token'
       fullPath: '/p/$token'
       preLoaderRoute: typeof PTokenRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/blog/digital-hall-pass-guide': {
+      id: '/blog/digital-hall-pass-guide'
+      path: '/digital-hall-pass-guide'
+      fullPath: '/blog/digital-hall-pass-guide'
+      preLoaderRoute: typeof BlogDigitalHallPassGuideRouteImport
+      parentRoute: typeof BlogRoute
     }
     '/_authenticated/toolkit': {
       id: '/_authenticated/toolkit'
@@ -428,9 +485,22 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
 
+interface BlogRouteChildren {
+  BlogDigitalHallPassGuideRoute: typeof BlogDigitalHallPassGuideRoute
+  BlogIndexRoute: typeof BlogIndexRoute
+}
+
+const BlogRouteChildren: BlogRouteChildren = {
+  BlogDigitalHallPassGuideRoute: BlogDigitalHallPassGuideRoute,
+  BlogIndexRoute: BlogIndexRoute,
+}
+
+const BlogRouteWithChildren = BlogRoute._addFileChildren(BlogRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  BlogRoute: BlogRouteWithChildren,
   LoginRoute: LoginRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   PTokenRoute: PTokenRoute,
