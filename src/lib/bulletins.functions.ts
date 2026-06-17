@@ -143,13 +143,15 @@ export const saveBulletin = createServerFn({ method: "POST" })
       startDate: DateStr,
       endDate: DateStr,
       title: z.string().max(280),
-      digest_summary: z.string(),
-      study_points: z.array(z.string()),
-      recap_questions: z.array(z.object({ question: z.string(), answer: z.string() })),
-      weekly_riddle: z.string(),
-      weekly_riddle_answer: z.string(),
-      activities: z.array(z.string()),
-      notes: z.string().default(""),
+      digest_summary: z.string().max(20000),
+      study_points: z.array(z.string().max(500)).max(20),
+      recap_questions: z
+        .array(z.object({ question: z.string().max(500), answer: z.string().max(1000) }))
+        .max(20),
+      weekly_riddle: z.string().max(2000),
+      weekly_riddle_answer: z.string().max(2000),
+      activities: z.array(z.string().max(500)).max(20),
+      notes: z.string().max(5000).default(""),
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
