@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_security: {
+        Row: {
+          pin_enabled: boolean
+          pin_hash: string | null
+          pin_salt: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          pin_enabled?: boolean
+          pin_hash?: string | null
+          pin_salt?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          pin_enabled?: boolean
+          pin_hash?: string | null
+          pin_salt?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       attendance: {
         Row: {
           class_id: string
