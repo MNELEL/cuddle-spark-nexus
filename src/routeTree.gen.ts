@@ -9,7 +9,9 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SupportRouteImport } from './routes/support'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as BlogRouteImport } from './routes/blog'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
@@ -30,9 +32,19 @@ import { Route as AuthenticatedClassesClassIdRouteImport } from './routes/_authe
 import { Route as AuthenticatedBulletinsClassIdRouteImport } from './routes/_authenticated.bulletins.$classId'
 import { Route as AuthenticatedClassesClassIdDisplayRouteImport } from './routes/_authenticated.classes.$classId.display'
 
+const SupportRoute = SupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -144,7 +156,9 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/blog': typeof BlogRouteWithChildren
   '/login': typeof LoginRoute
+  '/privacy': typeof PrivacyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/support': typeof SupportRoute
   '/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/sound-board': typeof AuthenticatedSoundBoardRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
@@ -164,7 +178,9 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/privacy': typeof PrivacyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/support': typeof SupportRoute
   '/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/sound-board': typeof AuthenticatedSoundBoardRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
@@ -187,7 +203,9 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/blog': typeof BlogRouteWithChildren
   '/login': typeof LoginRoute
+  '/privacy': typeof PrivacyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/support': typeof SupportRoute
   '/_authenticated/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/_authenticated/sound-board': typeof AuthenticatedSoundBoardRoute
   '/_authenticated/toolkit': typeof AuthenticatedToolkitRoute
@@ -210,7 +228,9 @@ export interface FileRouteTypes {
     | '/'
     | '/blog'
     | '/login'
+    | '/privacy'
     | '/sitemap.xml'
+    | '/support'
     | '/resources'
     | '/sound-board'
     | '/toolkit'
@@ -230,7 +250,9 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/privacy'
     | '/sitemap.xml'
+    | '/support'
     | '/resources'
     | '/sound-board'
     | '/toolkit'
@@ -252,7 +274,9 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/blog'
     | '/login'
+    | '/privacy'
     | '/sitemap.xml'
+    | '/support'
     | '/_authenticated/resources'
     | '/_authenticated/sound-board'
     | '/_authenticated/toolkit'
@@ -275,17 +299,33 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   BlogRoute: typeof BlogRouteWithChildren
   LoginRoute: typeof LoginRoute
+  PrivacyRoute: typeof PrivacyRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  SupportRoute: typeof SupportRoute
   PTokenRoute: typeof PTokenRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/support': {
+      id: '/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof SupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sitemap.xml': {
       id: '/sitemap.xml'
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -502,7 +542,9 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   BlogRoute: BlogRouteWithChildren,
   LoginRoute: LoginRoute,
+  PrivacyRoute: PrivacyRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  SupportRoute: SupportRoute,
   PTokenRoute: PTokenRoute,
 }
 export const routeTree = rootRouteImport

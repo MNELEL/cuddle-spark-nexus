@@ -4,7 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Play, Pause, RotateCcw, Shuffle, ChevronRight, ChevronLeft, Mic, MicOff } from "lucide-react";
+import { Play, Pause, RotateCcw, Shuffle, ChevronRight, ChevronLeft, Mic, MicOff, Wrench, ShieldCheck } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SecuritySettings } from "@/components/security-settings";
 
 export const Route = createFileRoute("/_authenticated/toolkit")({
   component: ToolkitPage,
@@ -15,14 +17,25 @@ function ToolkitPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">ארגז כלים לכיתה</h1>
-        <p className="text-sm text-muted-foreground">כלים מהירים להוראה ולניהול הכיתה — הכל פועל בדפדפן.</p>
+        <p className="text-sm text-muted-foreground">כלים מהירים להוראה, לניהול הכיתה ולאבטחת לוח הבקרה.</p>
       </div>
-      <div className="grid gap-4 md:grid-cols-2">
-        <LessonTimer />
-        <RandomPicker />
-        <NoiseMeter />
-        <FlashCards />
-      </div>
+      <Tabs defaultValue="tools" dir="rtl">
+        <TabsList>
+          <TabsTrigger value="tools"><Wrench className="ms-1 h-4 w-4" /> כלים</TabsTrigger>
+          <TabsTrigger value="security"><ShieldCheck className="ms-1 h-4 w-4" /> אבטחה</TabsTrigger>
+        </TabsList>
+        <TabsContent value="tools" className="mt-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <LessonTimer />
+            <RandomPicker />
+            <NoiseMeter />
+            <FlashCards />
+          </div>
+        </TabsContent>
+        <TabsContent value="security" className="mt-4">
+          <SecuritySettings />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
