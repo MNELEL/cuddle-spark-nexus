@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getClass } from "@/lib/classes.functions";
 import { listStudents } from "@/lib/students.functions";
 import { listClassScoreInputs } from "@/lib/scoring.functions";
@@ -26,6 +26,18 @@ const PRESETS: Record<Preset, { pitch: number; yaw: number; zoom: number; label:
   side:    { pitch: 45, yaw: 45,  zoom: 0.95, label: "מהצד" },
 };
 
+// Detect weak devices once on mount, before paint, to keep the first render light.
+function detectLowPower(): boolean {
+  if (typeof window === "undefined") return false;
+  const nav = navigator as Navigator & { deviceMemory?: number; connection?: { saveData?: boolean; effectiveType?: string } };
+  const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  const cores = nav.hardwareConcurrency ?? 8;
+  const mem = nav.deviceMemory ?? 8;
+  const saveData = nav.connection?.saveData === true;
+  const slowNet = nav.connection?.effectiveType === "2g" || nav.connection?.effectiveType === "slow-2g";
+  return Boolean(reduce) || cores <= 4 || mem <= 4 || saveData || slowNet;
+}
+
 function DisplayMode() {
   const { classId } = Route.useParams();
   const getC = useServerFn(getClass);
@@ -48,14 +60,42 @@ function DisplayMode() {
   const [pitch, setPitch] = useState(PRESETS.normal.pitch);
   const [yaw, setYaw] = useState(PRESETS.normal.yaw);
   const [zoom, setZoom] = useState(PRESETS.normal.zoom);
+  const [lowPower, setLowPower] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const stageRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => { setLowPower(detectLowPower()); }, []);
+
+  // rAF-throttled setters for slider drags — avoid React re-renders on every input event.
+  const rafRef = useRef<number | null>(null);
+  const pendingRef = useRef<{ pitch?: number; yaw?: number; zoom?: number }>({});
+  const flush = useCallback(() => {
+    rafRef.current = null;
+    const p = pendingRef.current;
+    pendingRef.current = {};
+    if (p.pitch !== undefined) setPitch(p.pitch);
+    if (p.yaw !== undefined) setYaw(p.yaw);
+    if (p.zoom !== undefined) setZoom(p.zoom);
+  }, []);
+  const schedule = useCallback((patch: { pitch?: number; yaw?: number; zoom?: number }) => {
+    Object.assign(pendingRef.current, patch);
+    if (rafRef.current == null) rafRef.current = requestAnimationFrame(flush);
+  }, [flush]);
+  useEffect(() => () => { if (rafRef.current != null) cancelAnimationFrame(rafRef.current); }, []);
 
   const rows = cls?.grid_rows ?? 5;
   const cols = cls?.grid_cols ?? 6;
-  const hidden = new Set<string>(((cls?.hidden_seats as string[] | undefined) ?? []));
-  const seated = new Map<string, Student>();
-  for (const s of students) {
-    if (s.seat_row !== null && s.seat_col !== null) seated.set(`${s.seat_row}:${s.seat_col}`, s);
-  }
+  const hidden = useMemo(
+    () => new Set<string>(((cls?.hidden_seats as string[] | undefined) ?? [])),
+    [cls?.hidden_seats],
+  );
+  const seated = useMemo(() => {
+    const m = new Map<string, Student>();
+    for (const s of students) {
+      if (s.seat_row !== null && s.seat_col !== null) m.set(`${s.seat_row}:${s.seat_col}`, s);
+    }
+    return m;
+  }, [students]);
 
   // sequential seat numbers row-major
   const seatNumber = useMemo(() => {
@@ -68,12 +108,15 @@ function DisplayMode() {
     return m;
   }, [rows, cols, hidden]);
 
-  const scoreFor = useMemo(() => {
-    return (sid: string) => {
-      if (!scoreInputs) return null;
-      return computeStudentScore(sid, scoreInputs.grades, scoreInputs.attendance, scoreInputs.behavior);
-    };
-  }, [scoreInputs]);
+  // Pre-compute every student's score once per scoreInputs change instead of on every cell render.
+  const scoreByStudent = useMemo(() => {
+    const m = new Map<string, ReturnType<typeof computeStudentScore>>();
+    if (!scoreInputs) return m;
+    for (const s of students) {
+      m.set(s.id, computeStudentScore(s.id, scoreInputs.grades, scoreInputs.attendance, scoreInputs.behavior));
+    }
+    return m;
+  }, [students, scoreInputs]);
 
   const applyPreset = (p: Preset) => {
     setIs3D(true);
@@ -81,6 +124,10 @@ function DisplayMode() {
     setYaw(PRESETS[p].yaw);
     setZoom(PRESETS[p].zoom);
   };
+
+  // Only enable smooth transition when preset jumps (not while dragging sliders).
+  const transitionClass = dragging ? "" : "transition-transform duration-500 ease-out";
+  const stopDrag = () => setDragging(false);
 
   return (
     <div dir="rtl" className="min-h-screen bg-background p-4 md:p-8 print:p-0">
@@ -111,24 +158,35 @@ function DisplayMode() {
 
         {/* Stage */}
         <div
+          ref={stageRef}
           className="rounded-2xl border-2 border-amber/40 bg-card p-6 md:p-10 shadow-lg print:shadow-none print:border-foreground overflow-hidden"
-          style={is3D ? { perspective: "1250px", perspectiveOrigin: "50% 30%" } : undefined}
+          style={is3D ? {
+            perspective: lowPower ? "1800px" : "1250px",
+            perspectiveOrigin: "50% 30%",
+            contain: "layout paint",
+          } : undefined}
         >
           <div className="mb-4 rounded-md bg-amber/15 py-2 text-center text-sm md:text-lg font-bold tracking-wide text-amber">
             חזית הכיתה · לוח
           </div>
 
           <div
-            className="transition-transform duration-500 ease-out"
+            className={transitionClass}
             style={is3D ? {
               transformStyle: "preserve-3d",
-              transform: `rotateX(${pitch}deg) rotateY(${yaw}deg) scale(${zoom})`,
+              transform: `translateZ(0) rotateX(${pitch}deg) rotateY(${yaw}deg) scale(${zoom})`,
               transformOrigin: "50% 50%",
+              willChange: dragging ? "transform" : "auto",
+              backfaceVisibility: "hidden",
             } : undefined}
           >
             <div
               className="grid gap-2 md:gap-3"
-              style={{ gridTemplateColumns: `repeat(${cols}, minmax(0,1fr))`, transformStyle: is3D ? "preserve-3d" : undefined }}
+              style={{
+                gridTemplateColumns: `repeat(${cols}, minmax(0,1fr))`,
+                transformStyle: is3D ? "preserve-3d" : undefined,
+                contentVisibility: "auto",
+              }}
             >
               {Array.from({ length: rows }).flatMap((_, r) =>
                 Array.from({ length: cols }).map((__, c) => {
@@ -138,7 +196,7 @@ function DisplayMode() {
                   }
                   const child = seated.get(k);
                   const num = seatNumber.get(k);
-                  const sc = child ? scoreFor(child.id) : null;
+                  const sc = child ? scoreByStudent.get(child.id) ?? null : null;
                   const tc = sc ? tierColorClasses(sc.tier) : null;
                   const display = child ? (showNames ? child.name : `שולחן ${num}`) : null;
                   return (
@@ -147,7 +205,7 @@ function DisplayMode() {
                       className={`relative flex aspect-[5/3] items-center justify-center rounded-lg border p-2 text-center transition ${
                         child ? "border-amber/40 bg-amber/5" : "border-dashed border-muted bg-muted/10"
                       }`}
-                      style={is3D ? { transformStyle: "preserve-3d" } : undefined}
+                      style={is3D ? { transformStyle: "preserve-3d", backfaceVisibility: "hidden" } : undefined}
                     >
                       {/* Seat number badge */}
                       {showLabels && !hidden.has(k) && (
@@ -156,8 +214,8 @@ function DisplayMode() {
                         </span>
                       )}
 
-                      {/* Score tooltip floating above (3D only) */}
-                      {is3D && child && sc && tc && (
+                      {/* Score tooltip floating above (3D only, skipped while dragging or on low-power devices) */}
+                      {is3D && !dragging && !lowPower && child && sc && tc && (
                         <div
                           className={`absolute -top-2 left-1/2 -translate-x-1/2 -translate-y-full rounded-md border ${tc.border} ${tc.bg} px-2 py-1 text-xs font-bold ${tc.text} shadow-md print:hidden whitespace-nowrap`}
                           style={{ transform: "translateX(-50%) translateY(-100%) translateZ(15px)" }}
@@ -190,7 +248,7 @@ function DisplayMode() {
       {/* HUD — presentation control bar */}
       {is3D && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 print:hidden animate-fade-in">
-          <div className="rounded-2xl border border-amber/30 bg-card/95 backdrop-blur-md shadow-2xl px-3 py-2 md:px-4 md:py-3 flex flex-wrap items-center gap-2 md:gap-3">
+          <div className={`rounded-2xl border border-amber/30 ${lowPower ? "bg-card" : "bg-card/95 backdrop-blur-md"} shadow-2xl px-3 py-2 md:px-4 md:py-3 flex flex-wrap items-center gap-2 md:gap-3`}>
             <Button size="sm" variant={showLabels ? "default" : "outline"} onClick={() => setShowLabels((v) => !v)}>
               <Hash className="ms-1 h-4 w-4" /> מספרים
             </Button>
@@ -214,17 +272,26 @@ function DisplayMode() {
             <div className="w-px h-6 bg-border" />
             <label className="flex items-center gap-2 text-xs text-muted-foreground">
               <span className="font-mono w-10">{pitch}°</span>
-              <input type="range" min={0} max={90} value={pitch} onChange={(e) => setPitch(+e.target.value)} className="w-24 accent-amber" />
+              <input type="range" min={0} max={90} value={pitch}
+                onPointerDown={() => setDragging(true)} onPointerUp={stopDrag} onPointerCancel={stopDrag}
+                onChange={(e) => schedule({ pitch: +e.target.value })}
+                className="w-24 accent-amber" />
               <span>גובה</span>
             </label>
             <label className="flex items-center gap-2 text-xs text-muted-foreground">
               <span className="font-mono w-10">{yaw}°</span>
-              <input type="range" min={-180} max={180} value={yaw} onChange={(e) => setYaw(+e.target.value)} className="w-24 accent-amber" />
+              <input type="range" min={-180} max={180} value={yaw}
+                onPointerDown={() => setDragging(true)} onPointerUp={stopDrag} onPointerCancel={stopDrag}
+                onChange={(e) => schedule({ yaw: +e.target.value })}
+                className="w-24 accent-amber" />
               <span>סטייה</span>
             </label>
             <label className="flex items-center gap-2 text-xs text-muted-foreground">
               <span className="font-mono w-10">{zoom.toFixed(2)}x</span>
-              <input type="range" min={0.5} max={1.5} step={0.05} value={zoom} onChange={(e) => setZoom(+e.target.value)} className="w-20 accent-amber" />
+              <input type="range" min={0.5} max={1.5} step={0.05} value={zoom}
+                onPointerDown={() => setDragging(true)} onPointerUp={stopDrag} onPointerCancel={stopDrag}
+                onChange={(e) => schedule({ zoom: +e.target.value })}
+                className="w-20 accent-amber" />
               <span>זום</span>
             </label>
           </div>
