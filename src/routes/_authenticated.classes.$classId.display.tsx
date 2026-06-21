@@ -132,22 +132,22 @@ function DisplayMode() {
   return (
     <div dir="rtl" className="min-h-screen bg-background p-4 md:p-8 print:p-0">
       <div className="mx-auto max-w-7xl space-y-6">
-        <div className="flex items-center justify-between print:hidden">
-          <Link to="/classes/$classId" params={{ classId }}>
+        <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 print:hidden sm:flex sm:flex-wrap sm:justify-between">
+          <Link to="/classes/$classId" params={{ classId }} className="shrink-0">
             <Button variant="ghost" size="sm">
-              <ArrowRight className="ms-1 h-4 w-4" /> חזרה לכיתה
+              <ArrowRight className="ms-1 h-4 w-4" /> <span className="hidden sm:inline">חזרה לכיתה</span>
             </Button>
           </Link>
-          <h1 className="font-display text-2xl md:text-4xl font-bold tracking-tight">
+          <h1 className="min-w-0 truncate font-display text-lg sm:text-2xl md:text-4xl font-bold tracking-tight order-first col-span-2 sm:order-none sm:col-span-1">
             {cls?.name ?? "..."} — סידור הושבה
           </h1>
-          <div className="flex gap-2">
+          <div className="flex shrink-0 flex-wrap gap-2 col-span-2 sm:col-span-1">
             <Button size="sm" variant={is3D ? "default" : "outline"} onClick={() => setIs3D((v) => !v)}>
               {is3D ? <Square className="ms-1 h-4 w-4" /> : <Box className="ms-1 h-4 w-4" />}
-              {is3D ? "מצב דו-ממד" : "מצב תלת-ממד"}
+              <span className="hidden xs:inline">{is3D ? "מצב דו-ממד" : "מצב תלת-ממד"}</span>
             </Button>
             <Button size="sm" variant="outline" onClick={() => window.print()}>
-              <Printer className="ms-1 h-4 w-4" /> הדפסה
+              <Printer className="ms-1 h-4 w-4" /> <span className="hidden xs:inline">הדפסה</span>
             </Button>
           </div>
         </div>
