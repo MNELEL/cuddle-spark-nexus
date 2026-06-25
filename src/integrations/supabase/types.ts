@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           pin_enabled: boolean
           pin_hash: string | null
+          pin_plain: string | null
           pin_salt: string | null
           updated_at: string
           user_id: string
@@ -25,6 +26,7 @@ export type Database = {
         Insert: {
           pin_enabled?: boolean
           pin_hash?: string | null
+          pin_plain?: string | null
           pin_salt?: string | null
           updated_at?: string
           user_id: string
@@ -32,6 +34,7 @@ export type Database = {
         Update: {
           pin_enabled?: boolean
           pin_hash?: string | null
+          pin_plain?: string | null
           pin_salt?: string | null
           updated_at?: string
           user_id?: string

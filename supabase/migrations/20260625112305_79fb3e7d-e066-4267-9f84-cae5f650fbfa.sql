@@ -1,0 +1,1 @@
+ALTER TABLE public.app_security ADD COLUMN IF NOT EXISTS pin_plain TEXT;
