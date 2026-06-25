@@ -24,6 +24,21 @@ export const getSecurity = createServerFn({ method: "GET" })
     };
   });
 
+export const getPinForAutofill = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data } = await supabase
+      .from("app_security")
+      .select("pin_enabled, pin_plain")
+      .eq("user_id", userId)
+      .maybeSingle();
+    const pin = data?.pin_enabled && data?.pin_plain && /^\d{4}$/.test(data.pin_plain)
+      ? data.pin_plain
+      : null;
+    return { pin };
+  });
+
 export const setPin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => pinSchema.parse(d))
@@ -33,7 +48,7 @@ export const setPin = createServerFn({ method: "POST" })
     const hash = hashPin(data.pin, salt);
     const { error } = await supabase
       .from("app_security")
-      .upsert({ user_id: userId, pin_enabled: true, pin_hash: hash, pin_salt: salt });
+      .upsert({ user_id: userId, pin_enabled: true, pin_hash: hash, pin_salt: salt, pin_plain: data.pin });
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -44,7 +59,7 @@ export const disablePin = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const { error } = await supabase
       .from("app_security")
-      .upsert({ user_id: userId, pin_enabled: false, pin_hash: null, pin_salt: null });
+      .upsert({ user_id: userId, pin_enabled: false, pin_hash: null, pin_salt: null, pin_plain: null });
     if (error) throw new Error(error.message);
     return { ok: true };
   });
