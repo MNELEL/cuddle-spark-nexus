@@ -30,6 +30,13 @@ export function PinLockScreen({ onUnlock }: { onUnlock: () => void }) {
 
   function finishUnlock() {
     sessionStorage.setItem("ca_pin_unlocked", "1");
+    // Warm additional dashboard routes so the next click is instant.
+    Promise.all([
+      router.preloadRoute({ to: "/classes" }),
+      router.preloadRoute({ to: "/resources" }),
+      router.preloadRoute({ to: "/toolkit" }),
+      router.preloadRoute({ to: "/sound-board" }),
+    ]).catch(() => {});
     setExiting(true);
     setTimeout(() => onUnlock(), 280);
   }
