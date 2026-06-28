@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Lock, LogOut, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, useRouter } from "@tanstack/react-router";
+import { warmDashboardMedia } from "@/lib/warm-dashboard-media";
 
 export function PinLockScreen({ onUnlock }: { onUnlock: () => void }) {
   const [pin, setPin] = useState("");
