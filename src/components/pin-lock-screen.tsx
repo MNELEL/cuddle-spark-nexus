@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Lock, LogOut, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouter } from "@tanstack/react-router";
 
 export function PinLockScreen({ onUnlock }: { onUnlock: () => void }) {
   const [pin, setPin] = useState("");
@@ -13,17 +13,26 @@ export function PinLockScreen({ onUnlock }: { onUnlock: () => void }) {
   const [busy, setBusy] = useState(false);
   const [autofilling, setAutofilling] = useState(false);
   const [savedPin, setSavedPin] = useState<string | null>(null);
+  const [exiting, setExiting] = useState(false);
   const verify = useServerFn(verifyPin);
   const fetchPin = useServerFn(getPinForAutofill);
   const navigate = useNavigate();
+  const router = useRouter();
 
   useEffect(() => {
     let cancelled = false;
     fetchPin()
       .then((r) => { if (!cancelled) setSavedPin(r.pin); })
       .catch(() => {});
+    router.preloadRoute({ to: "/classes" }).catch(() => {});
     return () => { cancelled = true; };
-  }, [fetchPin]);
+  }, [fetchPin, router]);
+
+  function finishUnlock() {
+    sessionStorage.setItem("ca_pin_unlocked", "1");
+    setExiting(true);
+    setTimeout(() => onUnlock(), 280);
+  }
 
   async function submit(e?: React.FormEvent) {
     e?.preventDefault();
@@ -36,8 +45,7 @@ export function PinLockScreen({ onUnlock }: { onUnlock: () => void }) {
     try {
       const r = await verify({ data: { pin } });
       if (r.ok) {
-        sessionStorage.setItem("ca_pin_unlocked", "1");
-        onUnlock();
+        finishUnlock();
       } else {
         setError("PIN שגוי");
         setPin("");
@@ -63,8 +71,7 @@ export function PinLockScreen({ onUnlock }: { onUnlock: () => void }) {
     try {
       const r = await verify({ data: { pin: savedPin } });
       if (r.ok) {
-        sessionStorage.setItem("ca_pin_unlocked", "1");
-        onUnlock();
+        finishUnlock();
       } else {
         setError("הקוד שמור לא תקין — הזן ידנית");
         setPin("");
@@ -80,11 +87,11 @@ export function PinLockScreen({ onUnlock }: { onUnlock: () => void }) {
   return (
     <div
       dir="rtl"
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-md p-4"
+      className={`fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-md p-4 transition-opacity duration-300 ${exiting ? "opacity-0 pointer-events-none" : "opacity-100 animate-fade-in"}`}
     >
       <form
         onSubmit={submit}
-        className="w-full max-w-sm space-y-6 rounded-2xl border-2 border-amber/40 bg-card p-6 sm:p-8 shadow-glow-amber text-center"
+        className={`w-full max-w-sm space-y-6 rounded-2xl border-2 border-amber/40 bg-card p-6 sm:p-8 shadow-glow-amber text-center transition-all duration-300 ${exiting ? "scale-95 opacity-0" : "scale-100 opacity-100 animate-scale-in"}`}
       >
         <div className="grid place-items-center">
           <div className="grid h-16 w-16 place-items-center rounded-full bg-gradient-to-br from-amber to-amber-glow text-primary-foreground shadow-lg">
