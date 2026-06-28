@@ -37,6 +37,8 @@ export function PinLockScreen({ onUnlock }: { onUnlock: () => void }) {
       router.preloadRoute({ to: "/toolkit" }),
       router.preloadRoute({ to: "/sound-board" }),
     ]).catch(() => {});
+    // Warm media resources used by the dashboard.
+    warmDashboardMedia();
     setExiting(true);
     setTimeout(() => onUnlock(), 280);
   }
