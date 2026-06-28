@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Lock, LogOut, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, useRouter } from "@tanstack/react-router";
+import { warmDashboardMedia } from "@/lib/warm-dashboard-media";
 
 export function PinLockScreen({ onUnlock }: { onUnlock: () => void }) {
   const [pin, setPin] = useState("");
@@ -37,6 +38,8 @@ export function PinLockScreen({ onUnlock }: { onUnlock: () => void }) {
       router.preloadRoute({ to: "/toolkit" }),
       router.preloadRoute({ to: "/sound-board" }),
     ]).catch(() => {});
+    // Warm media resources used by the dashboard.
+    warmDashboardMedia();
     setExiting(true);
     setTimeout(() => onUnlock(), 280);
   }
