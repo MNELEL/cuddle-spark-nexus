@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { getSharedAudioContext } from "@/lib/warm-dashboard-media";
 
 export const Route = createFileRoute("/_authenticated/sound-board")({
   component: SoundBoardPage,
@@ -50,20 +51,18 @@ export default function SoundBoardPage() {
 
 function play(s: Sound) {
   try {
-    const ctx = new AudioContext();
+    const ctx = getSharedAudioContext() ?? new AudioContext();
+    ctx.resume?.().catch(() => {});
     if (s.kind === "beep") {
       tone(ctx, s.freq, s.duration, s.type ?? "sine", 0);
-      setTimeout(() => ctx.close(), (s.duration + 0.1) * 1000);
     } else if (s.kind === "chime") {
       const gap = s.gap ?? 0.15;
       s.notes.forEach((f, i) => tone(ctx, f, 0.4, "sine", i * gap));
-      setTimeout(() => ctx.close(), (s.notes.length * gap + 0.6) * 1000);
     } else {
       for (let i = 0; i < s.cycles; i++) {
         tone(ctx, 880, 0.18, "square", i * 0.45);
         tone(ctx, 660, 0.18, "square", i * 0.45 + 0.22);
       }
-      setTimeout(() => ctx.close(), s.cycles * 500 + 300);
     }
   } catch { /* ignore */ }
 }
