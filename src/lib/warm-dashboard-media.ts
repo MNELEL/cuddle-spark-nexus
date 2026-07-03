@@ -5,6 +5,7 @@
 let warmed = false;
 
 type Win = Window & {
+  AudioContext?: typeof AudioContext;
   webkitAudioContext?: typeof AudioContext;
   __caAudioCtx?: AudioContext;
 };
