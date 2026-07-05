@@ -22,6 +22,7 @@ import { Route as BlogDigitalHallPassGuideRouteImport } from './routes/blog.digi
 import { Route as AuthenticatedToolkitRouteImport } from './routes/_authenticated.toolkit'
 import { Route as AuthenticatedSoundBoardRouteImport } from './routes/_authenticated.sound-board'
 import { Route as AuthenticatedResourcesRouteImport } from './routes/_authenticated.resources'
+import { Route as AuthenticatedIngestRouteImport } from './routes/_authenticated.ingest'
 import { Route as AuthenticatedClassesIndexRouteImport } from './routes/_authenticated.classes.index'
 import { Route as AuthenticatedResourcesResourceIdRouteImport } from './routes/_authenticated.resources.$resourceId'
 import { Route as AuthenticatedReportsClassIdRouteImport } from './routes/_authenticated.reports.$classId'
@@ -97,6 +98,11 @@ const AuthenticatedResourcesRoute = AuthenticatedResourcesRouteImport.update({
   path: '/resources',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedIngestRoute = AuthenticatedIngestRouteImport.update({
+  id: '/ingest',
+  path: '/ingest',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedClassesIndexRoute =
   AuthenticatedClassesIndexRouteImport.update({
     id: '/classes/',
@@ -159,6 +165,7 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
+  '/ingest': typeof AuthenticatedIngestRoute
   '/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/sound-board': typeof AuthenticatedSoundBoardRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
@@ -181,6 +188,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
+  '/ingest': typeof AuthenticatedIngestRoute
   '/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/sound-board': typeof AuthenticatedSoundBoardRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
@@ -206,6 +214,7 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
+  '/_authenticated/ingest': typeof AuthenticatedIngestRoute
   '/_authenticated/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/_authenticated/sound-board': typeof AuthenticatedSoundBoardRoute
   '/_authenticated/toolkit': typeof AuthenticatedToolkitRoute
@@ -231,6 +240,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/sitemap.xml'
     | '/support'
+    | '/ingest'
     | '/resources'
     | '/sound-board'
     | '/toolkit'
@@ -253,6 +263,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/sitemap.xml'
     | '/support'
+    | '/ingest'
     | '/resources'
     | '/sound-board'
     | '/toolkit'
@@ -277,6 +288,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/sitemap.xml'
     | '/support'
+    | '/_authenticated/ingest'
     | '/_authenticated/resources'
     | '/_authenticated/sound-board'
     | '/_authenticated/toolkit'
@@ -398,6 +410,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedResourcesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/ingest': {
+      id: '/_authenticated/ingest'
+      path: '/ingest'
+      fullPath: '/ingest'
+      preLoaderRoute: typeof AuthenticatedIngestRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/classes/': {
       id: '/_authenticated/classes/'
       path: '/classes'
@@ -495,6 +514,7 @@ const AuthenticatedClassesClassIdRouteWithChildren =
   )
 
 interface AuthenticatedRouteChildren {
+  AuthenticatedIngestRoute: typeof AuthenticatedIngestRoute
   AuthenticatedResourcesRoute: typeof AuthenticatedResourcesRouteWithChildren
   AuthenticatedSoundBoardRoute: typeof AuthenticatedSoundBoardRoute
   AuthenticatedToolkitRoute: typeof AuthenticatedToolkitRoute
@@ -508,6 +528,7 @@ interface AuthenticatedRouteChildren {
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedIngestRoute: AuthenticatedIngestRoute,
   AuthenticatedResourcesRoute: AuthenticatedResourcesRouteWithChildren,
   AuthenticatedSoundBoardRoute: AuthenticatedSoundBoardRoute,
   AuthenticatedToolkitRoute: AuthenticatedToolkitRoute,
@@ -550,13 +571,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

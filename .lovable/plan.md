@@ -1,44 +1,85 @@
-# כניסה מהירה במסך הנעילה
+## מה בונים
 
-## מה ייבנה
+מרכז "העלאה חכמה" (Smart Ingest) — אזור אחד שאליו מעלים כל קובץ (תמונה, PDF, DOCX, Excel, טקסט, אודיו) והמערכת:
+1. מזהה אוטומטית מה סוג התוכן
+2. מפיקה את הנתונים באמצעות AI (Lovable AI Gateway — Gemini לראייה/טקסט, gpt-4o-mini-transcribe לאודיו)
+3. מציגה טבלת תצוגה מקדימה עריכה
+4. לאחר אישור המורה — משבצת ליעד הנכון במסד הנתונים
 
-כפתור "כניסה מהירה" יופיע במסך הנעילה כאשר משתמש מחובר הגדיר קוד PIN. בלחיצה:
-1. 4 הספרות של הקוד המוגדר ימולאו אוטומטית בתאי הקלט באנימציית הקלדה (כ-80ms בין ספרה לספרה).
-2. בסיום המילוי תתבצע אימות אוטומטי מול השרת.
-3. במידה והקוד תקין — המסך נסגר, ה-session מסומן כפתוח והמשתמש ממשיך ללוח הבקרה.
+## סוגי קלט וניתוב
 
-הכפתור יוצג **תמיד כשקוד פעיל** (גם אם המכשיר משותף — באחריות המשתמש; זו בקשה מפורשת).
+| סוג קובץ | AI מזהה | יעד |
+|---|---|---|
+| רשימת תלמידים (תמונה/PDF/Excel) | שמות, ת.ז., ת.לידה, כתובת, שם+ת.ז.+טלפון אב, שם+ת.ז.+טלפון אם | `students` + `parent_communications` (איש קשר לכל הורה) |
+| חומר לימוד (PDF/DOCX/תמונה/טקסט) | כותרת, מקצוע (מתוך `kodesh-subjects`), כיתה, נושא, סיכום, תגיות | `teaching_resources` + storage bucket + embedding |
+| הקלטת שיעור (mp3/m4a/wav/webm) | תמלול מלא, סיכום, נקודות מרכזיות, מקצוע, כיתה | `lesson_transcripts` + storage bucket |
+| בקשה "צור מבחן/דף עבודה" מחומר קיים | שאלות פתוחות + רב-ברירה עם מפתח תשובות | קובץ PDF ב-`/mnt/documents` להורדה, ואופציה לשמירה כ-teaching_resource |
 
-## שינוי מודל הנתונים
+## מיקום במסך
 
-עד עכשיו `app_security` שמר רק `pin_hash` + `pin_salt` (חד-כיווני) — לא ניתן לשחזר את הקוד. כדי לאפשר מילוי אוטומטי נוסיף עמודה `pin_plain TEXT` שתחזיק את 4 הספרות. הגישה מוגנת ע"י RLS קיים (קריאה רק לבעלי השורה דרך `auth.uid()`), ושרת-פונקציה ייעודית `getPinForAutofill()` שמחייבת `requireSupabaseAuth` ומחזירה את הקוד רק לבעליו.
+- **עמוד חדש** `/ingest` — נגיש מתפריט ראשי (סרגל עליון בדשבורד) עם כרטיסי drag-and-drop לכל סוג קלט + היסטוריית העלאות אחרונות
+- **כפתור מהיר** בכל עמוד כיתה (`/classes/$classId`) — "העלאה חכמה לכיתה זו" שפותח את אותו UI עם `classId` מוגדר מראש (כך העלאת רשימת תלמידים משבצת ישירות לכיתה הנכונה)
 
-- מיגרציה: `ALTER TABLE public.app_security ADD COLUMN pin_plain TEXT;`
-- `setPin()` יעדכן גם את `pin_plain` בנוסף ל-hash+salt (ה-hash נשמר לתאימות אחורה ולאימות מהיר).
-- `disablePin()` ינקה את `pin_plain` ל-NULL.
+## זרימת המשתמש
 
-## שינויי קוד
+```text
+1. גרירת קובץ → העלאה ל-Supabase Storage (bucket זמני "ingest-staging")
+2. server fn `analyzeUpload` → קורא לגייטווי AI המתאים לסוג הקובץ
+3. מחזיר JSON מובנה (schema לכל סוג) + הצעת יעד
+4. UI מציג טבלה עריכה (או תמלול עריך לאודיו)
+5. המורה מסמנת שורות/עורכת ולוחצת "אשר ושבץ"
+6. server fn `commitIngest` כותב לטבלאות היעד, מוחק את הקובץ הזמני
+7. Toast: "23 תלמידים נוספו לכיתה ה'1" + קישור לתוצאה
+```
 
-### `src/lib/security.functions.ts`
-- עדכון `setPin` לכתיבת `pin_plain`.
-- עדכון `disablePin` לאיפוס `pin_plain`.
-- פונקציה חדשה `getPinForAutofill` — `requireSupabaseAuth`, מחזירה `{ pin: string | null }` מהשורה של המשתמש המחובר.
+## פרטים טכניים
 
-### `src/components/pin-lock-screen.tsx`
-- `useQuery(['security','autofillPin'])` שטוען את הקוד פעם אחת בכניסה למסך.
-- אם `pin` קיים → להציג כפתור `<Button variant="outline">כניסה מהירה</Button>` עם אייקון `Zap` ו-`shadow-glow-amber`, מתחת לתאי ה-PIN.
-- handler: מחזיק `isAutofilling`, רץ על 4 הספרות עם `setTimeout(80ms)`, מעדכן את state של התאים בכל צעד (אנימציית `animate-scale-in` על תא פעיל), ובסיום קורא ל-`verifyPin` הקיים. בהצלחה — מסמן `sessionStorage('pin_verified','1')` ומסיר את ה-overlay (כפי שעובד היום).
-- בזמן האנימציה הכפתור והקלט disabled כדי למנוע double-trigger.
+**מסד נתונים**
+- migration חדש: טבלה `ingest_jobs` (id, owner_id, class_id nullable, kind, source_storage_path, status, extracted_json, target_summary, created_at, committed_at) + RLS per-owner + GRANTs
+- bucket חדש `ingest-staging` (פרטי, TTL ידני — מחיקה אחרי commit)
+- שדות חדשים ב-`students` אם חסרים: `national_id`, `birth_date`, `address`, `father_name`, `father_id`, `father_phone`, `mother_name`, `mother_id`, `mother_phone` (בדיקה מול הסכימה הקיימת קודם; יתווספו רק החסרים)
 
-### Toolkit > אבטחה (`src/components/security-settings.tsx`)
-- הסבר קצר תחת הגדרת הקוד: "כניסה מהירה פעילה — הקוד יוצג כפתור במסך הנעילה". ניתן לבטל ע"י השבתת הקוד.
+**Server functions חדשים** ב-`src/lib/ingest.functions.ts`:
+- `createIngestJob({ storagePath, kind, classId? })` — יוצר רשומה
+- `analyzeIngestJob({ jobId })` — קורא ל-AI לפי kind, מחזיר `extracted_json`
+  - `roster`: Gemini vision → schema של תלמידים
+  - `resource`: Gemini text/vision → כותרת/מקצוע/סיכום + embedding
+  - `lesson_audio`: gpt-4o-mini-transcribe → תמלול → Gemini סיכום
+  - `exam_generation`: Gemini → שאלות + תשובות
+- `commitIngestJob({ jobId, editedJson })` — כותב לטבלת היעד
 
-## אבטחה
-- `pin_plain` מוגן ע"י RLS — רק `auth.uid() = user_id` קורא/כותב.
-- שרת-פונקציית האחזור מחייבת bearer token; אין endpoint ציבורי.
-- ה-hash הקיים נשאר ומשמש כ-fallback ל-`verifyPin` (אם משתמש הקליד ידנית).
-- אין log של ה-PIN, אין החזרה ב-error messages.
+**רכיבי UI חדשים**
+- `src/routes/_authenticated.ingest.tsx` — עמוד ראשי (dropzone + היסטוריה)
+- `src/components/ingest/upload-dropzone.tsx` — אזור גרירה
+- `src/components/ingest/roster-preview-table.tsx` — טבלה עריכה לתלמידים
+- `src/components/ingest/resource-preview-card.tsx` — מטא-נתונים לחומר
+- `src/components/ingest/lesson-transcript-preview.tsx` — תמלול + סיכום
+- `src/components/ingest/exam-generator-dialog.tsx` — יצירת מבחן מחומר קיים
+- כפתור `SmartIngestButton` שמוטמע ב-`_authenticated.classes.$classId.tsx`
 
-## מה לא נכלל
-- אין שינוי לערכת הצבעים/לתפקוד שאר מסך הנעילה.
-- אין שינוי לזרימת ה-onboarding של הקוד הראשוני.
+**AI Gateway**
+- שימוש ב-`google/gemini-2.5-flash-image` לקבצי תמונה (OCR עברי מצוין)
+- `google/gemini-3-flash-preview` לטקסט/PDF/סיכום
+- `openai/gpt-4o-mini-transcribe` לאודיו
+- `google/gemini-embedding-2` להטמעה של חומרי לימוד (כמו הקיים)
+- הפעלות עם zod schema על התגובה כדי להבטיח מבנה נכון
+
+**בטיחות**
+- כל server fn: `requireSupabaseAuth`
+- כל rows ב-ingest_jobs וב-storage: owner_id של המורה
+- Zod validation על ה-editedJson לפני commit
+- מחיקה של הקובץ הזמני מ-Storage אחרי commit או ביטול
+
+## מחוץ להיקף השלב הראשון
+
+- ייבוא מרובה-כיתות בבת אחת (יטופל דרך העלאות נפרדות)
+- עריכת מבחנים אחרי יצירה (יורד להורדה כ-PDF; עריכה עתידית)
+- OCR של כתב יד ילדותי (Gemini עושה זאת סביר, ללא הבטחה)
+
+## שלבי מימוש (סדר ביצוע)
+
+1. Migration: `ingest_jobs` + עמודות חסרות ב-`students` + bucket `ingest-staging`
+2. `src/lib/ingest.functions.ts` — 4 ה-server functions עם schemas
+3. `src/routes/_authenticated.ingest.tsx` + רכיבי preview
+4. `SmartIngestButton` בעמוד כיתה + קישור מהתפריט הראשי
+5. QA: העלאת התמונה שסופקה, לוודא ש-32 התלמידים מזוהים נכון עם כל הפרטים

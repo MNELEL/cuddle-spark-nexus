@@ -21,7 +21,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Heart, Ban, MoveHorizontal, Pencil, Plus, Trash2, FolderOpen, FileText, Sparkles, Trophy, Users, Library, Monitor } from "lucide-react";
+import { ArrowRight, Heart, Ban, MoveHorizontal, Pencil, Plus, Trash2, FolderOpen, FileText, Sparkles, Trophy, Users, Library, Monitor, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { SeatingGrid } from "@/components/seating-grid";
 import { GroupsTab } from "@/components/groups-tab";
@@ -86,6 +86,11 @@ function ClassDetail() {
           <ArrowRight className="h-4 w-4" /> חזרה לכיתות
         </Link>
         <div className="ms-auto flex gap-2">
+          <Link to="/ingest" search={{ classId }}>
+            <Button variant="default" size="sm">
+              <Upload className="ms-1 h-4 w-4" /> העלאה חכמה
+            </Button>
+          </Link>
           <Link to="/resources">
             <Button variant="outline" size="sm">
               <Library className="ms-1 h-4 w-4" /> ספריית עזרים
