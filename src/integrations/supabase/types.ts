@@ -346,6 +346,65 @@ export type Database = {
         }
         Relationships: []
       }
+      ingest_jobs: {
+        Row: {
+          class_id: string | null
+          committed_at: string | null
+          created_at: string
+          error: string | null
+          extracted: Json
+          file_name: string
+          id: string
+          kind: string
+          mime_type: string
+          owner_id: string
+          source_path: string
+          status: string
+          summary: string
+          updated_at: string
+        }
+        Insert: {
+          class_id?: string | null
+          committed_at?: string | null
+          created_at?: string
+          error?: string | null
+          extracted?: Json
+          file_name?: string
+          id?: string
+          kind: string
+          mime_type?: string
+          owner_id: string
+          source_path: string
+          status?: string
+          summary?: string
+          updated_at?: string
+        }
+        Update: {
+          class_id?: string | null
+          committed_at?: string | null
+          created_at?: string
+          error?: string | null
+          extracted?: Json
+          file_name?: string
+          id?: string
+          kind?: string
+          mime_type?: string
+          owner_id?: string
+          source_path?: string
+          status?: string
+          summary?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingest_jobs_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lesson_transcripts: {
         Row: {
           audio_path: string | null
@@ -789,13 +848,22 @@ export type Database = {
       }
       students: {
         Row: {
+          address: string | null
+          birth_date: string | null
           class_id: string
           corner_pref: boolean
           created_at: string
+          father_id: string | null
+          father_name: string | null
+          father_phone: string | null
           gender: string | null
           height: string
           id: string
+          mother_id: string | null
+          mother_name: string | null
+          mother_phone: string | null
           name: string
+          national_id: string | null
           notes: string | null
           row_pref: string
           seat_col: number | null
@@ -803,13 +871,22 @@ export type Database = {
           seat_row: number | null
         }
         Insert: {
+          address?: string | null
+          birth_date?: string | null
           class_id: string
           corner_pref?: boolean
           created_at?: string
+          father_id?: string | null
+          father_name?: string | null
+          father_phone?: string | null
           gender?: string | null
           height?: string
           id?: string
+          mother_id?: string | null
+          mother_name?: string | null
+          mother_phone?: string | null
           name: string
+          national_id?: string | null
           notes?: string | null
           row_pref?: string
           seat_col?: number | null
@@ -817,13 +894,22 @@ export type Database = {
           seat_row?: number | null
         }
         Update: {
+          address?: string | null
+          birth_date?: string | null
           class_id?: string
           corner_pref?: boolean
           created_at?: string
+          father_id?: string | null
+          father_name?: string | null
+          father_phone?: string | null
           gender?: string | null
           height?: string
           id?: string
+          mother_id?: string | null
+          mother_name?: string | null
+          mother_phone?: string | null
           name?: string
+          national_id?: string | null
           notes?: string | null
           row_pref?: string
           seat_col?: number | null
