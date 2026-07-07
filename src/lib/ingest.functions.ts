@@ -55,6 +55,16 @@ export type LessonExtracted = {
   transcript: string;
   summary: string;
   key_points: string[];
+  exam_questions: LessonExamQuestion[];
+};
+
+export type LessonExamQuestion = {
+  q: string;
+  a?: string;
+  difficulty: "easy" | "medium" | "hard";
+  topic?: string;
+  confidence: number; // 0..1
+  include?: boolean;
 };
 
 /* ------------------------ upload URL ------------------------ */
@@ -339,16 +349,26 @@ async function analyzeResource(b64: string, mime: string, apiKey: string): Promi
 }
 
 async function analyzeLessonAudio(b64: string, mime: string, apiKey: string): Promise<LessonExtracted> {
-  const system = `אתה עוזר של רב/מלמד. תמלל את השיעור (עברית), הפק סיכום 3-5 פסקאות ו-5-10 נקודות מפתח.
-החזר JSON: {"title":"כותרת קצרה","transcript":"...","summary":"...","key_points":["..."]}`;
+  const format = mime.includes("mp3") ? "mp3"
+    : mime.includes("wav") ? "wav"
+    : mime.includes("m4a") || mime.includes("mp4") ? "m4a"
+    : "webm";
 
-  const format = mime.includes("mp3") ? "mp3" : mime.includes("wav") ? "wav" : mime.includes("m4a") || mime.includes("mp4") ? "m4a" : "webm";
-  const raw = await callGateway({
+  // Step 1 — transcribe + summarize + extract key points from the actual audio.
+  const transcribeSystem = `אתה עוזר של רב/מלמד בתלמוד תורה חרדי. מצורפת הקלטת שיעור בעברית.
+1. תמלל במדויק את דברי הרב (transcript) — שמור על ניקוד רק אם קיים, ללא הוספות שלך.
+2. הצע כותרת תמציתית (title) של עד 8 מילים המשקפת את הנושא (למשל: "גמרא ברכות ב' – שיעור על ברכת אילנות").
+3. כתוב סיכום (summary) של 3–5 פסקאות המסביר את מהלך השיעור והרעיונות המרכזיים בשפה של תלמוד תורה.
+4. הפק 6–10 נקודות מפתח (key_points) — משפט אחד כל אחת, ממוקדות ומעשיות.
+השתמש במונחים "הרב", "המלמד", "התלמידים". החזר JSON תקין בלבד לפי הסכימה:
+{"title":"","transcript":"","summary":"","key_points":["..."]}`;
+
+  const rawStep1 = await callGateway({
     model: "google/gemini-2.5-pro",
     messages: [
-      { role: "system", content: system },
+      { role: "system", content: transcribeSystem },
       { role: "user", content: [
-        { type: "text", text: "תמלל וסכם את השיעור המצורף:" },
+        { type: "text", text: "תמלל, כותר, סכם והפק נקודות מפתח מהשיעור המצורף:" },
         { type: "input_audio", input_audio: { data: b64, format } },
       ] },
     ],
@@ -356,14 +376,80 @@ async function analyzeLessonAudio(b64: string, mime: string, apiKey: string): Pr
   }, apiKey);
 
   let p: Partial<LessonExtracted> = {};
-  try { p = JSON.parse(raw); } catch { /* ignore */ }
+  try { p = JSON.parse(rawStep1); } catch { /* ignore */ }
+  const title = String(p.title ?? "הקלטת שיעור").slice(0, 200);
+  const transcript = String(p.transcript ?? "").slice(0, 100000);
+  const summary = String(p.summary ?? "").slice(0, 8000);
+  const key_points = Array.isArray(p.key_points)
+    ? p.key_points.map((k) => String(k).slice(0, 500)).filter(Boolean).slice(0, 20)
+    : [];
+
+  // Step 2 — generate focused exam questions grounded in the transcript.
+  const exam_questions = transcript.length >= 40
+    ? await generateExamQuestions({ title, transcript, summary, key_points }, apiKey)
+    : [];
+
   return {
     kind: "lesson_audio",
-    title: String(p.title ?? "הקלטת שיעור").slice(0, 200),
-    transcript: String(p.transcript ?? "").slice(0, 100000),
-    summary: String(p.summary ?? "").slice(0, 8000),
-    key_points: Array.isArray(p.key_points) ? p.key_points.map((k) => String(k).slice(0, 500)).slice(0, 20) : [],
+    title,
+    transcript,
+    summary,
+    key_points,
+    exam_questions,
   };
+}
+
+async function generateExamQuestions(
+  ctx: { title: string; transcript: string; summary: string; key_points: string[] },
+  apiKey: string,
+): Promise<LessonExamQuestion[]> {
+  const system = `אתה בונה מבחני בקיאות והבנה עבור תלמידי תלמוד תורה על סמך תמלול שיעור.
+כללים קריטיים:
+- כל שאלה חייבת להתבסס אך ורק על מה שנאמר בפועל בשיעור (בתמלול / בסיכום / בנקודות המפתח). אין להמציא עובדות.
+- כתוב 8–12 שאלות ממוקדות בעברית, קצרות וברורות, שמכסות רעיונות שונים מהשיעור.
+- לכל שאלה כלול תשובה קצרה מדויקת (a) המבוססת על התוכן.
+- קבע רמת קושי (difficulty): "easy" לזיהוי/הגדרות, "medium" להבנה/הסבר, "hard" לניתוח/יישום.
+- ציין נושא-משנה קצר (topic) של עד 4 מילים.
+- ציין confidence בין 0 ל-1 — כמה השאלה מעוגנת בבירור בתמלול (1 = מופיע במפורש; 0.5 = הסקה סבירה).
+השתמש במונחים "הרב", "המלמד", "התלמידים". החזר JSON תקין בלבד:
+{"questions":[{"q":"","a":"","difficulty":"easy|medium|hard","topic":"","confidence":0.9}]}`;
+
+  const userPayload = [
+    `כותרת השיעור: ${ctx.title}`,
+    `סיכום:\n${ctx.summary}`,
+    `נקודות מפתח:\n- ${ctx.key_points.join("\n- ")}`,
+    `תמלול (עד 12,000 תווים):\n${ctx.transcript.slice(0, 12000)}`,
+  ].join("\n\n");
+
+  const raw = await callGateway({
+    model: "google/gemini-2.5-flash",
+    messages: [
+      { role: "system", content: system },
+      { role: "user", content: userPayload },
+    ],
+    response_format: { type: "json_object" },
+  }, apiKey);
+
+  let parsed: { questions?: Partial<LessonExamQuestion>[] } = {};
+  try { parsed = JSON.parse(raw); } catch { /* ignore */ }
+  const items = Array.isArray(parsed.questions) ? parsed.questions : [];
+  return items
+    .filter((it) => it && typeof it.q === "string" && it.q.trim())
+    .map<LessonExamQuestion>((it) => {
+      const diff = it.difficulty === "easy" || it.difficulty === "medium" || it.difficulty === "hard"
+        ? it.difficulty : "medium";
+      const confRaw = typeof it.confidence === "number" ? it.confidence : 0.6;
+      const confidence = Math.max(0, Math.min(1, confRaw));
+      return {
+        q: String(it.q).slice(0, 500).trim(),
+        a: it.a ? String(it.a).slice(0, 2000).trim() : undefined,
+        difficulty: diff,
+        topic: it.topic ? String(it.topic).slice(0, 60).trim() : undefined,
+        confidence,
+        include: confidence >= 0.4,
+      };
+    })
+    .slice(0, 20);
 }
 
 /* ------------------------ commit ------------------------ */
@@ -467,6 +553,14 @@ export const commitLessonAudio = createServerFn({ method: "POST" })
     transcript: z.string().max(100000).default(""),
     summary: z.string().max(8000).default(""),
     key_points: z.array(z.string().max(500)).max(20).default([]),
+    exam_questions: z.array(z.object({
+      q: z.string().min(1).max(500),
+      a: z.string().max(2000).optional(),
+      difficulty: z.enum(["easy", "medium", "hard"]).default("medium"),
+      topic: z.string().max(60).optional(),
+      confidence: z.number().min(0).max(1).default(0.6),
+    })).max(20).default([]),
+    save_as_resource: z.boolean().default(true),
   }).parse(d))
   .handler(async ({ data, context }) => {
     const { data: cls } = await context.supabase
@@ -486,10 +580,37 @@ export const commitLessonAudio = createServerFn({ method: "POST" })
       } as never).select("id").single();
     if (error) { console.error("[DB]", error); throw new Error("הפעולה נכשלה."); }
 
+    // If exam questions were kept, save them as a question-bank teaching resource.
+    let questionBankId: string | null = null;
+    if (data.save_as_resource && data.exam_questions.length > 0) {
+      const { data: qb, error: qbErr } = await context.supabase
+        .from("teaching_resources").insert({
+          owner_id: context.userId,
+          title: `שאלות מבחן — ${data.title}`,
+          description: `הופק אוטומטית מהקלטת שיעור. ${data.exam_questions.length} שאלות.`,
+          subject: "",
+          grade_level: "",
+          resource_type: "question_bank",
+          tags: ["מהקלטה", "אוטומטי"],
+          content: {
+            source: "lesson_audio",
+            lesson_transcript_id: (ins as { id: string }).id,
+            questions: data.exam_questions.map((q) => ({
+              q: q.q, a: q.a ?? "", difficulty: q.difficulty,
+              topic: q.topic ?? "", confidence: q.confidence,
+            })),
+          },
+          ai_generated: true,
+          source_prompt: "מקור: הקלטת שיעור (העלאה חכמה)",
+        } as never).select("id").single();
+      if (qbErr) { console.error("[DB question_bank]", qbErr); }
+      else questionBankId = (qb as { id: string }).id;
+    }
+
     await context.supabase.storage.from("ingest-staging")
       .remove([(await context.supabase.from("ingest_jobs").select("source_path").eq("id", data.jobId).maybeSingle()).data?.source_path ?? ""]).catch(() => {});
     await context.supabase.from("ingest_jobs")
       .update({ status: "committed", committed_at: new Date().toISOString() } as never)
       .eq("id", data.jobId);
-    return { ok: true, id: (ins as { id: string }).id };
+    return { ok: true, id: (ins as { id: string }).id, question_bank_id: questionBankId };
   });

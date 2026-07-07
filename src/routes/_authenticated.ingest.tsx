@@ -8,6 +8,7 @@ import {
   getIngestUploadUrl, createIngestJob, analyzeIngestJob, getIngestJob,
   listIngestJobs, deleteIngestJob, commitRoster, commitResource, commitLessonAudio,
   type IngestJob, type IngestKind, type RosterExtracted, type ResourceExtracted, type LessonExtracted,
+  type LessonExamQuestion,
 } from "@/lib/ingest.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Sparkles, Upload, Users, FileText, Mic, Loader2, Trash2, CheckCircle2, XCircle } from "lucide-react";
+import { Sparkles, Upload, Users, FileText, Mic, Loader2, Trash2, CheckCircle2, XCircle, HelpCircle, Sigma } from "lucide-react";
 import { z } from "zod";
 import { RosterReviewTable } from "@/components/ingest/roster-review-table";
 
@@ -383,18 +384,49 @@ function LessonPreview({ job, classes, preferredClassId, onDone }: {
   job: IngestJob; classes: { id: string; name: string }[]; preferredClassId?: string; onDone: () => void;
 }) {
   const ex = job.extracted as LessonExtracted;
-  const [form, setForm] = useState(ex);
+  const [form, setForm] = useState<LessonExtracted>({
+    ...ex,
+    exam_questions: (ex.exam_questions ?? []).map((q) => ({ ...q, include: q.include !== false })),
+  });
+  const [saveAsResource, setSaveAsResource] = useState(true);
   const [classId, setClassId] = useState<string>(preferredClassId ?? job.class_id ?? "");
   const commit = useServerFn(commitLessonAudio);
   const commitM = useMutation({
     mutationFn: () => {
       if (!classId) throw new Error("בחר כיתה");
-      return commit({ data: { jobId: job.id, class_id: classId,
-        title: form.title, transcript: form.transcript, summary: form.summary, key_points: form.key_points } });
+      const included = (form.exam_questions ?? []).filter((q) => q.include !== false).map((q) => ({
+        q: q.q, a: q.a, difficulty: q.difficulty, topic: q.topic, confidence: q.confidence,
+      }));
+      return commit({ data: {
+        jobId: job.id, class_id: classId,
+        title: form.title, transcript: form.transcript,
+        summary: form.summary, key_points: form.key_points,
+        exam_questions: included, save_as_resource: saveAsResource,
+      } });
     },
-    onSuccess: () => { toast.success("השיעור נשמר"); onDone(); },
+    onSuccess: (r) => {
+      toast.success(r.question_bank_id ? "השיעור ומאגר השאלות נשמרו" : "השיעור נשמר");
+      onDone();
+    },
     onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
   });
+
+  const questions = form.exam_questions ?? [];
+  const includedCount = questions.filter((q) => q.include !== false).length;
+  const avgConf = questions.length
+    ? Math.round((questions.reduce((s, q) => s + (q.confidence ?? 0), 0) / questions.length) * 100)
+    : 0;
+
+  function updateQ(i: number, patch: Partial<LessonExamQuestion>) {
+    const next = [...questions];
+    next[i] = { ...next[i], ...patch };
+    setForm({ ...form, exam_questions: next });
+  }
+  function addQ() {
+    setForm({ ...form, exam_questions: [...questions, {
+      q: "", a: "", difficulty: "medium", confidence: 1, include: true,
+    }] });
+  }
 
   return (
     <Card>
@@ -415,6 +447,69 @@ function LessonPreview({ job, classes, preferredClassId, onDone }: {
             onChange={(e) => setForm({ ...form, key_points: e.target.value.split("\n").filter(Boolean) })} />
         </div>
         <div><Label>תמלול</Label><Textarea rows={8} value={form.transcript} onChange={(e) => setForm({ ...form, transcript: e.target.value })} /></div>
+
+        <div className="rounded-lg border p-3 space-y-3 bg-muted/20">
+          <div className="flex items-center gap-2 flex-wrap">
+            <HelpCircle className="h-4 w-4 text-primary" />
+            <span className="font-semibold text-sm">שאלות למבחן שהופקו מהשיעור</span>
+            <Badge variant="outline">{includedCount}/{questions.length} נכללות</Badge>
+            {questions.length > 0 && (
+              <Badge variant="secondary" className="gap-1">
+                <Sigma className="h-3 w-3" /> ביטחון ממוצע {avgConf}%
+              </Badge>
+            )}
+            <label className="ms-auto flex items-center gap-2 text-xs text-muted-foreground">
+              <input type="checkbox" checked={saveAsResource} onChange={(e) => setSaveAsResource(e.target.checked)} />
+              שמור גם כמאגר שאלות בספריית העזרים
+            </label>
+          </div>
+
+          {questions.length === 0 && (
+            <p className="text-xs text-muted-foreground">
+              לא הופקו שאלות אוטומטית (ייתכן שהתמלול קצר מדי). ניתן להוסיף שאלה ידנית.
+            </p>
+          )}
+
+          <div className="space-y-2 max-h-96 overflow-y-auto pe-1">
+            {questions.map((q, i) => {
+              const confPct = Math.round((q.confidence ?? 0) * 100);
+              const confColor = confPct >= 80 ? "bg-green-500" : confPct >= 50 ? "bg-amber-500" : "bg-destructive";
+              return (
+                <div key={i}
+                  className={`rounded-md border p-2 space-y-1.5 ${q.include === false ? "opacity-50 bg-muted/30" : "bg-card"}`}>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <input type="checkbox" checked={q.include !== false}
+                      onChange={(e) => updateQ(i, { include: e.target.checked })} />
+                    <span className="text-xs text-muted-foreground">#{i + 1}</span>
+                    <Select value={q.difficulty}
+                      onValueChange={(v) => updateQ(i, { difficulty: v as LessonExamQuestion["difficulty"] })}>
+                      <SelectTrigger className="h-7 w-24 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="easy">קל</SelectItem>
+                        <SelectItem value="medium">בינוני</SelectItem>
+                        <SelectItem value="hard">מאתגר</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {q.topic && <Badge variant="outline" className="text-[10px]">{q.topic}</Badge>}
+                    <div className="ms-auto flex items-center gap-1.5" title={`ביטחון ${confPct}%`}>
+                      <div className="h-1.5 w-20 rounded-full bg-muted overflow-hidden">
+                        <div className={`h-full ${confColor}`} style={{ width: `${confPct}%` }} />
+                      </div>
+                      <span className="text-[10px] text-muted-foreground w-8 text-end">{confPct}%</span>
+                    </div>
+                  </div>
+                  <Input value={q.q} placeholder="שאלה"
+                    onChange={(e) => updateQ(i, { q: e.target.value })} />
+                  <Input value={q.a ?? ""} placeholder="תשובה מצופה (אופציונלי)"
+                    onChange={(e) => updateQ(i, { a: e.target.value })} />
+                </div>
+              );
+            })}
+          </div>
+
+          <Button variant="outline" size="sm" onClick={addQ}>+ הוסף שאלה</Button>
+        </div>
+
         <div className="flex gap-2 justify-end pt-2">
           <Button variant="ghost" onClick={onDone}>ביטול</Button>
           <Button onClick={() => commitM.mutate()} disabled={commitM.isPending}>
