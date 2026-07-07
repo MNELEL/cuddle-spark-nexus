@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { Sparkles, Upload, Users, FileText, Mic, Loader2, Trash2, CheckCircle2, XCircle } from "lucide-react";
 import { z } from "zod";
+import { RosterReviewTable } from "@/components/ingest/roster-review-table";
 
 type SearchParams = { classId?: string };
 
