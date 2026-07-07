@@ -253,6 +253,7 @@ function RosterPreview({ job, classes, preferredClassId, onDone }: {
 }) {
   const initial = (job.extracted as RosterExtracted).students ?? [];
   const [rows, setRows] = useState(initial.map((s) => ({ ...s, include: s.include !== false })));
+  const [errorCount, setErrorCount] = useState(0);
   const [classId, setClassId] = useState<string>(preferredClassId ?? job.class_id ?? "");
   const commit = useServerFn(commitRoster);
   const commitM = useMutation({
@@ -277,10 +278,6 @@ function RosterPreview({ job, classes, preferredClassId, onDone }: {
     onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
   });
 
-  function update(i: number, key: keyof typeof rows[number], val: string | boolean) {
-    setRows((prev) => prev.map((r, idx) => idx === i ? { ...r, [key]: val } : r));
-  }
-
   return (
     <Card>
       <CardHeader>
@@ -297,49 +294,21 @@ function RosterPreview({ job, classes, preferredClassId, onDone }: {
               <SelectContent>{classes.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
             </Select>
           </div>
-          <div className="ms-auto text-xs text-muted-foreground">
-            {rows.filter((r) => r.include).length} נבחרו
-          </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="border-b text-muted-foreground">
-                <th className="p-2 text-start">✓</th>
-                <th className="p-2 text-start">שם</th>
-                <th className="p-2 text-start">ת.ז.</th>
-                <th className="p-2 text-start">ת. לידה</th>
-                <th className="p-2 text-start">כתובת</th>
-                <th className="p-2 text-start">אב · טלפון</th>
-                <th className="p-2 text-start">אם · טלפון</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r, i) => (
-                <tr key={i} className={`border-b ${r.include ? "" : "opacity-40"}`}>
-                  <td className="p-1"><input type="checkbox" checked={!!r.include} onChange={(e) => update(i, "include", e.target.checked)} /></td>
-                  <td className="p-1"><Input className="h-7 text-xs" value={r.name} onChange={(e) => update(i, "name", e.target.value)} /></td>
-                  <td className="p-1"><Input className="h-7 text-xs w-24" value={r.national_id ?? ""} onChange={(e) => update(i, "national_id", e.target.value)} /></td>
-                  <td className="p-1"><Input className="h-7 text-xs w-28" value={r.birth_date ?? ""} onChange={(e) => update(i, "birth_date", e.target.value)} /></td>
-                  <td className="p-1"><Input className="h-7 text-xs" value={r.address ?? ""} onChange={(e) => update(i, "address", e.target.value)} /></td>
-                  <td className="p-1 space-y-1">
-                    <Input className="h-7 text-xs" placeholder="שם אב" value={r.father_name ?? ""} onChange={(e) => update(i, "father_name", e.target.value)} />
-                    <Input className="h-7 text-xs" placeholder="טלפון" value={r.father_phone ?? ""} onChange={(e) => update(i, "father_phone", e.target.value)} />
-                  </td>
-                  <td className="p-1 space-y-1">
-                    <Input className="h-7 text-xs" placeholder="שם אם" value={r.mother_name ?? ""} onChange={(e) => update(i, "mother_name", e.target.value)} />
-                    <Input className="h-7 text-xs" placeholder="טלפון" value={r.mother_phone ?? ""} onChange={(e) => update(i, "mother_phone", e.target.value)} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <RosterReviewTable
+          initialRows={initial}
+          onChange={(next, errs) => { setRows(next); setErrorCount(errs); }}
+        />
 
         <div className="flex gap-2 justify-end pt-2">
+          {errorCount > 0 && (
+            <div className="me-auto text-xs text-destructive self-center">
+              {errorCount} שורות שנבחרו מכילות שגיאות ולידציה — תקן או החרג לפני שמירה.
+            </div>
+          )}
           <Button variant="ghost" onClick={onDone}>ביטול</Button>
-          <Button onClick={() => commitM.mutate()} disabled={commitM.isPending}>
+          <Button onClick={() => commitM.mutate()} disabled={commitM.isPending || errorCount > 0}>
             {commitM.isPending ? <><Loader2 className="ms-1 h-4 w-4 animate-spin" /> משבץ...</> : "אשר ושבץ לכיתה"}
           </Button>
         </div>
