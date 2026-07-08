@@ -33,7 +33,7 @@ export const setPin = createServerFn({ method: "POST" })
     const hash = hashPin(data.pin, salt);
     const { error } = await supabase
       .from("app_security")
-      .upsert({ user_id: userId, pin_enabled: true, pin_hash: hash, pin_salt: salt, pin_plain: null });
+      .upsert({ user_id: userId, pin_enabled: true, pin_hash: hash, pin_salt: salt });
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -44,7 +44,7 @@ export const disablePin = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const { error } = await supabase
       .from("app_security")
-      .upsert({ user_id: userId, pin_enabled: false, pin_hash: null, pin_salt: null, pin_plain: null });
+      .upsert({ user_id: userId, pin_enabled: false, pin_hash: null, pin_salt: null });
     if (error) throw new Error(error.message);
     return { ok: true };
   });
