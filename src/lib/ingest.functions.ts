@@ -383,9 +383,10 @@ async function suggestMapping(headers: string[], sampleRows: string[][], apiKey:
       response_format: { type: "json_object" },
     }, apiKey);
     const parsed = JSON.parse(raw) as { mapping?: unknown };
-    if (Array.isArray(parsed.mapping)) {
+    const arr = Array.isArray(parsed.mapping) ? parsed.mapping : null;
+    if (arr) {
       mapping = headers.map((_, i) => {
-        const v = parsed.mapping?.[i];
+        const v = arr[i];
         return (ROSTER_TARGET_FIELDS as readonly string[]).includes(String(v))
           ? (v as RosterTargetField) : "ignore";
       });
@@ -466,8 +467,9 @@ export const remapRosterTabular = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: row } = await context.supabase
       .from("ingest_jobs").select("extracted, kind, owner_id").eq("id", data.id).maybeSingle();
-    if (!row || (row as { owner_id: string }).owner_id !== context.userId) throw new Error("המשימה לא נמצאה");
-    const extracted = (row as { extracted: RosterExtractedWithTabular }).extracted;
+    const typed = row as unknown as { extracted: RosterExtractedWithTabular; owner_id: string } | null;
+    if (!typed || typed.owner_id !== context.userId) throw new Error("המשימה לא נמצאה");
+    const extracted = typed.extracted;
     const tab = extracted?.tabular;
     if (!tab) throw new Error("אין נתונים טבלאיים למיפוי");
     if (data.mapping.length !== tab.headers.length) throw new Error("אורך המיפוי לא תואם למספר העמודות");
