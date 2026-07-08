@@ -1,0 +1,1 @@
+ALTER TABLE public.app_security DROP COLUMN IF EXISTS pin_plain;
