@@ -38,6 +38,21 @@ export type RosterStudentDraft = {
 };
 
 export type RosterExtracted = { kind: "roster"; students: RosterStudentDraft[] };
+
+export const ROSTER_TARGET_FIELDS = [
+  "ignore", "name", "national_id", "birth_date", "address",
+  "father_name", "father_id", "father_phone",
+  "mother_name", "mother_id", "mother_phone",
+] as const;
+export type RosterTargetField = typeof ROSTER_TARGET_FIELDS[number];
+
+export type RosterTabular = {
+  headers: string[];
+  rows: string[][];
+  mapping: RosterTargetField[]; // one per header column
+};
+
+export type RosterExtractedWithTabular = RosterExtracted & { tabular?: RosterTabular };
 export type ResourceExtracted = {
   kind: "resource";
   title: string;
@@ -201,8 +216,11 @@ export const analyzeIngestJob = createServerFn({ method: "POST" })
       let summary = "";
 
       if (job.kind === "roster") {
-        extracted = await analyzeRoster(b64, mime, apiKey);
-        summary = `${extracted.students.length} תלמידים זוהו`;
+        extracted = await analyzeRoster(b64, mime, job.file_name, apiKey);
+        const tab = (extracted as RosterExtractedWithTabular).tabular;
+        summary = tab
+          ? `${extracted.students.length} שורות, ${tab.headers.length} עמודות — נדרשת סקירת מיפוי`
+          : `${extracted.students.length} תלמידים זוהו`;
       } else if (job.kind === "resource") {
         extracted = await analyzeResource(b64, mime, apiKey);
         summary = extracted.title || "חומר לימוד";
@@ -224,9 +242,18 @@ export const analyzeIngestJob = createServerFn({ method: "POST" })
     }
   });
 
-async function analyzeRoster(b64: string, mime: string, apiKey: string): Promise<RosterExtracted> {
+async function analyzeRoster(b64: string, mime: string, fileName: string, apiKey: string): Promise<RosterExtractedWithTabular> {
   const isImage = mime.startsWith("image/");
   const isPdf = mime === "application/pdf";
+  const lower = fileName.toLowerCase();
+  const isXlsx = /\.(xlsx|xls|xlsm)$/.test(lower)
+    || mime.includes("spreadsheetml") || mime.includes("ms-excel");
+  const isCsv = /\.csv$/.test(lower) || mime === "text/csv";
+
+  if (isXlsx || isCsv) {
+    return await analyzeRosterTabular(b64, isXlsx ? "xlsx" : "csv", apiKey);
+  }
+
   const system = `אתה עוזר של רב/מלמד בתלמוד תורה. מצורפת רשימת תלמידים (טבלה בעברית). חלץ את כל השורות בקפדנות.
 כל טלפון יופיע במבנה 0XX-XXXXXXX או 05X-XXXXXXX. תעודות זהות באורך 8-9 ספרות.
 שם משפחה + שם פרטי צריכים להתמזג לשדה name (למשל "אורדמן נתן").
