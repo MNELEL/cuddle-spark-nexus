@@ -332,6 +332,160 @@ function normDate(v: unknown): string | undefined {
   return undefined;
 }
 
+/* ------------------------ tabular (XLSX/CSV) roster ------------------------ */
+
+async function parseTabular(b64: string, kind: "xlsx" | "csv"): Promise<{ headers: string[]; rows: string[][] }> {
+  const XLSX = await import("xlsx");
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  const wb = kind === "csv"
+    ? XLSX.read(new TextDecoder("utf-8").decode(bytes), { type: "string" })
+    : XLSX.read(bytes, { type: "array" });
+  const sheet = wb.Sheets[wb.SheetNames[0]];
+  if (!sheet) return { headers: [], rows: [] };
+  const aoa = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, blankrows: false, defval: "" });
+  const trimmed = aoa.map((r) => (r ?? []).map((c) => String(c ?? "").trim()));
+  // Find first row that looks like a header (has ≥2 non-empty text cells).
+  let headerIdx = 0;
+  for (let i = 0; i < Math.min(5, trimmed.length); i++) {
+    const nonEmpty = trimmed[i].filter(Boolean).length;
+    if (nonEmpty >= 2) { headerIdx = i; break; }
+  }
+  const rawHeaders = trimmed[headerIdx] ?? [];
+  const width = rawHeaders.length;
+  const headers = rawHeaders.map((h, i) => h || `עמודה ${i + 1}`).slice(0, 40);
+  const rows = trimmed.slice(headerIdx + 1)
+    .map((r) => Array.from({ length: width }, (_, i) => String(r[i] ?? "")))
+    .filter((r) => r.some((c) => c.trim().length > 0))
+    .slice(0, 300);
+  return { headers, rows };
+}
+
+async function suggestMapping(headers: string[], sampleRows: string[][], apiKey: string): Promise<RosterTargetField[]> {
+  if (headers.length === 0) return [];
+  const system = `אתה מנתח כותרות של רשימת תלמידים בעברית ומחזיר מיפוי לשדות היעד.
+שדות אפשריים בלבד: ${ROSTER_TARGET_FIELDS.join(", ")}.
+"ignore" עבור עמודה שאינה רלוונטית (מס' סידורי, ריק וכד'). "name" = שם התלמיד (מלא). דע להבדיל בין שם/ת.ז./טלפון של אב, אם והתלמיד עצמו.
+החזר JSON תקין בלבד: {"mapping": ["name","national_id",...]} באורך זהה למספר העמודות.`;
+  const preview = headers.map((h, i) => {
+    const samples = sampleRows.slice(0, 4).map((r) => r[i] ?? "").filter(Boolean).slice(0, 3);
+    return `${i + 1}. "${h}" — דוגמאות: ${samples.join(" | ") || "(ריק)"}`;
+  }).join("\n");
+  let mapping: RosterTargetField[] = headers.map(() => "ignore");
+  try {
+    const raw = await callGateway({
+      model: "google/gemini-2.5-flash",
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: `עמודות (${headers.length}):\n${preview}` },
+      ],
+      response_format: { type: "json_object" },
+    }, apiKey);
+    const parsed = JSON.parse(raw) as { mapping?: unknown };
+    if (Array.isArray(parsed.mapping)) {
+      mapping = headers.map((_, i) => {
+        const v = parsed.mapping?.[i];
+        return (ROSTER_TARGET_FIELDS as readonly string[]).includes(String(v))
+          ? (v as RosterTargetField) : "ignore";
+      });
+    }
+  } catch { /* ignore, fall back to heuristics below */ }
+  // Heuristic fallback / augmentation by header text.
+  mapping = mapping.map((m, i) => m !== "ignore" ? m : guessFieldFromHeader(headers[i]));
+  return mapping;
+}
+
+function guessFieldFromHeader(h: string): RosterTargetField {
+  const s = h.trim();
+  if (!s) return "ignore";
+  if (/ת\.?ז|תעודת\s*זהות|ID/i.test(s)) {
+    if (/אב|אבא|father/i.test(s)) return "father_id";
+    if (/אם|אמא|mother/i.test(s)) return "mother_id";
+    return "national_id";
+  }
+  if (/טל|phone|נייד|פלאפון/i.test(s)) {
+    if (/אב|אבא|father/i.test(s)) return "father_phone";
+    if (/אם|אמא|mother/i.test(s)) return "mother_phone";
+    return "father_phone";
+  }
+  if (/אב|אבא|father/i.test(s)) return "father_name";
+  if (/אם|אמא|mother/i.test(s)) return "mother_name";
+  if (/כתובת|רחוב|address/i.test(s)) return "address";
+  if (/תאריך|לידה|birth/i.test(s)) return "birth_date";
+  if (/שם|name/i.test(s)) return "name";
+  return "ignore";
+}
+
+export function applyRosterMapping(headers: string[], rows: string[][], mapping: RosterTargetField[]): RosterStudentDraft[] {
+  const idx: Partial<Record<Exclude<RosterTargetField, "ignore">, number[]>> = {};
+  mapping.forEach((f, i) => {
+    if (f === "ignore") return;
+    (idx[f] ??= []).push(i);
+  });
+  const pick = (row: string[], f: Exclude<RosterTargetField, "ignore">): string => {
+    const cols = idx[f];
+    if (!cols) return "";
+    for (const c of cols) { const v = (row[c] ?? "").trim(); if (v) return v; }
+    return "";
+  };
+  return rows.map((row) => {
+    const name = pick(row, "name");
+    if (!name) return null;
+    return {
+      name: name.slice(0, 100),
+      national_id: cleanStr(pick(row, "national_id"), 20),
+      birth_date: normDate(pick(row, "birth_date")),
+      address: cleanStr(pick(row, "address"), 200),
+      father_name: cleanStr(pick(row, "father_name"), 100),
+      father_id: cleanStr(pick(row, "father_id"), 20),
+      father_phone: cleanPhone(pick(row, "father_phone")),
+      mother_name: cleanStr(pick(row, "mother_name"), 100),
+      mother_id: cleanStr(pick(row, "mother_id"), 20),
+      mother_phone: cleanPhone(pick(row, "mother_phone")),
+      include: true,
+    } as RosterStudentDraft;
+  }).filter((s): s is RosterStudentDraft => Boolean(s)).slice(0, 300);
+}
+
+async function analyzeRosterTabular(b64: string, kind: "xlsx" | "csv", apiKey: string): Promise<RosterExtractedWithTabular> {
+  const { headers, rows } = await parseTabular(b64, kind);
+  if (headers.length === 0) return { kind: "roster", students: [] };
+  const mapping = await suggestMapping(headers, rows, apiKey);
+  const students = applyRosterMapping(headers, rows, mapping);
+  return { kind: "roster", students, tabular: { headers, rows, mapping } };
+}
+
+/* Remap tabular roster with a manually-adjusted mapping (called from the UI). */
+export const remapRosterTabular = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({
+    id: uuid,
+    mapping: z.array(z.enum(ROSTER_TARGET_FIELDS)).min(1).max(40),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: row } = await context.supabase
+      .from("ingest_jobs").select("extracted, kind, owner_id").eq("id", data.id).maybeSingle();
+    if (!row || (row as { owner_id: string }).owner_id !== context.userId) throw new Error("המשימה לא נמצאה");
+    const extracted = (row as { extracted: RosterExtractedWithTabular }).extracted;
+    const tab = extracted?.tabular;
+    if (!tab) throw new Error("אין נתונים טבלאיים למיפוי");
+    if (data.mapping.length !== tab.headers.length) throw new Error("אורך המיפוי לא תואם למספר העמודות");
+    const students = applyRosterMapping(tab.headers, tab.rows, data.mapping);
+    const next: RosterExtractedWithTabular = {
+      kind: "roster",
+      students,
+      tabular: { ...tab, mapping: data.mapping },
+    };
+    const summary = `${students.length} שורות מופו — סקור ואשר`;
+    const { error } = await context.supabase
+      .from("ingest_jobs")
+      .update({ extracted: next as never, summary } as never)
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true, students, summary };
+  });
+
 async function analyzeResource(b64: string, mime: string, apiKey: string): Promise<ResourceExtracted> {
   const system = `אתה עוזר של רב/מלמד בתלמוד תורה חרדי. נתח את החומר המצורף וסווג אותו כחומר לימוד:
 - זהה כותרת, תיאור קצר (1-2 משפטים), מקצוע (גמרא/משנה/חומש/נביא/הלכה/מוסר/תפילה/פרשת שבוע), כיתה (א-ח), סוג (worksheet/question_bank/riddle/story/song/game/visual_aid/lesson_plan/activity/other), תגיות.
