@@ -7,8 +7,9 @@ import { listClasses } from "@/lib/classes.functions";
 import {
   getIngestUploadUrl, createIngestJob, analyzeIngestJob, getIngestJob,
   listIngestJobs, deleteIngestJob, commitRoster, commitResource, commitLessonAudio,
+  remapRosterTabular,
   type IngestJob, type IngestKind, type RosterExtracted, type ResourceExtracted, type LessonExtracted,
-  type LessonExamQuestion,
+  type LessonExamQuestion, type RosterTabular, type RosterTargetField,
 } from "@/lib/ingest.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,7 @@ import { toast } from "sonner";
 import { Sparkles, Upload, Users, FileText, Mic, Loader2, Trash2, CheckCircle2, XCircle, HelpCircle, Sigma } from "lucide-react";
 import { z } from "zod";
 import { RosterReviewTable } from "@/components/ingest/roster-review-table";
+import { ColumnMapper } from "@/components/ingest/column-mapper";
 
 type SearchParams = { classId?: string };
 
@@ -67,7 +69,7 @@ function IngestPage() {
 
       <div className="grid gap-4 md:grid-cols-3">
         <UploadCard kind="roster" icon={<Users className="h-6 w-6" />}
-          title="רשימת תלמידים" desc="תמונה, PDF או Excel של רשימת כיתה"
+          title="רשימת תלמידים" desc="תמונה, PDF או Excel/CSV — עמודות טבלאיות ימופו אוטומטית לשדות המערכת עם אפשרות תיקון ידני"
           accept="image/*,application/pdf,.csv,.xlsx,.xls,.txt"
           onCreated={(id) => { setSelectedJobId(id); refetch(); }}
           classes={classes as { id: string; name: string }[]}
@@ -252,11 +254,26 @@ function JobDetail({ jobId, classes, preferredClassId, onClose }: {
 function RosterPreview({ job, classes, preferredClassId, onDone }: {
   job: IngestJob; classes: { id: string; name: string }[]; preferredClassId?: string; onDone: () => void;
 }) {
-  const initial = (job.extracted as RosterExtracted).students ?? [];
-  const [rows, setRows] = useState(initial.map((s) => ({ ...s, include: s.include !== false })));
+  const ex = job.extracted as RosterExtracted & { tabular?: RosterTabular };
+  const [initialRows, setInitialRows] = useState(ex.students ?? []);
+  const [tabular, setTabular] = useState<RosterTabular | undefined>(ex.tabular);
+  const [mapping, setMapping] = useState<RosterTargetField[]>(ex.tabular?.mapping ?? []);
+  const [rows, setRows] = useState((ex.students ?? []).map((s) => ({ ...s, include: s.include !== false })));
   const [errorCount, setErrorCount] = useState(0);
   const [classId, setClassId] = useState<string>(preferredClassId ?? job.class_id ?? "");
   const commit = useServerFn(commitRoster);
+  const remap = useServerFn(remapRosterTabular);
+  const remapM = useMutation({
+    mutationFn: () => remap({ data: { id: job.id, mapping } }),
+    onSuccess: (r) => {
+      const students = r.students.map((s) => ({ ...s, include: true }));
+      setInitialRows(students);
+      setRows(students);
+      if (tabular) setTabular({ ...tabular, mapping });
+      toast.success(r.summary);
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
+  });
   const commitM = useMutation({
     mutationFn: () => {
       const included = rows.filter((r) => r.include).map((r) => ({
@@ -297,8 +314,19 @@ function RosterPreview({ job, classes, preferredClassId, onDone }: {
           </div>
         </div>
 
+        {tabular && (
+          <ColumnMapper
+            tabular={tabular}
+            mapping={mapping}
+            onChange={setMapping}
+            onApply={() => remapM.mutate()}
+            applying={remapM.isPending}
+          />
+        )}
+
         <RosterReviewTable
-          initialRows={initial}
+          key={initialRows.length + ":" + (tabular?.mapping.join(",") ?? "")}
+          initialRows={initialRows}
           onChange={(next, errs) => { setRows(next); setErrorCount(errs); }}
         />
 
