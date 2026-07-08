@@ -69,7 +69,7 @@ function IngestPage() {
 
       <div className="grid gap-4 md:grid-cols-3">
         <UploadCard kind="roster" icon={<Users className="h-6 w-6" />}
-          title="רשימת תלמידים" desc="תמונה, PDF או Excel של רשימת כיתה"
+          title="רשימת תלמידים" desc="תמונה, PDF או Excel/CSV — עמודות טבלאיות ימופו אוטומטית לשדות המערכת עם אפשרות תיקון ידני"
           accept="image/*,application/pdf,.csv,.xlsx,.xls,.txt"
           onCreated={(id) => { setSelectedJobId(id); refetch(); }}
           classes={classes as { id: string; name: string }[]}
