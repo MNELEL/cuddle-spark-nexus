@@ -464,7 +464,7 @@ export function applyRosterMapping(headers: string[], rows: string[][], mapping:
     for (const c of cols) { const v = (row[c] ?? "").trim(); if (v) return v; }
     return "";
   };
-  return rows.map((row) => {
+  return rows.map<RosterStudentDraft | null>((row) => {
     const name = pick(row, "name");
     if (!name) return null;
     const draft: RosterStudentDraft = {
