@@ -19,10 +19,11 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Sparkles, Upload, Users, FileText, Mic, Loader2, Trash2, CheckCircle2, XCircle, HelpCircle, Sigma } from "lucide-react";
+import { Sparkles, Upload, Users, FileText, Mic, Loader2, Trash2, CheckCircle2, XCircle, HelpCircle, Sigma, FileDown } from "lucide-react";
 import { z } from "zod";
 import { RosterReviewTable } from "@/components/ingest/roster-review-table";
 import { ColumnMapper } from "@/components/ingest/column-mapper";
+import { exportLessonSummaryPdf } from "@/lib/pdf/lesson-summary-pdf";
 
 type SearchParams = { classId?: string };
 
@@ -579,6 +580,7 @@ function LessonPreview({ job, classes, preferredClassId, onDone }: {
   });
   const [saveAsResource, setSaveAsResource] = useState(true);
   const [classId, setClassId] = useState<string>(preferredClassId ?? job.class_id ?? "");
+  const [exporting, setExporting] = useState(false);
   const commit = useServerFn(commitLessonAudio);
   const commitM = useMutation({
     mutationFn: () => {
@@ -617,6 +619,18 @@ function LessonPreview({ job, classes, preferredClassId, onDone }: {
     }] });
   }
   const [qThreshold, setQThreshold] = useState<number>(50);
+  const className = classes.find((c) => c.id === classId)?.name;
+  async function exportPdf(onlyIncluded: boolean) {
+    setExporting(true);
+    try {
+      await exportLessonSummaryPdf(form, { className, onlyIncluded });
+      toast.success("קובץ PDF נוצר");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "יצירת PDF נכשלה");
+    } finally {
+      setExporting(false);
+    }
+  }
   function excludeQsBelowThreshold() {
     const min = qThreshold / 100;
     setForm({ ...form, exam_questions: questions.map((q) =>
@@ -728,6 +742,14 @@ function LessonPreview({ job, classes, preferredClassId, onDone }: {
         </div>
 
         <div className="flex gap-2 justify-end pt-2">
+          <Button variant="outline" onClick={() => exportPdf(true)} disabled={exporting}>
+            {exporting
+              ? <><Loader2 className="ms-1 h-4 w-4 animate-spin" /> יוצר PDF...</>
+              : <><FileDown className="ms-1 h-4 w-4" /> ייצוא PDF (נכללות בלבד)</>}
+          </Button>
+          <Button variant="ghost" onClick={() => exportPdf(false)} disabled={exporting}>
+            <FileDown className="ms-1 h-4 w-4" /> PDF מלא
+          </Button>
           <Button variant="ghost" onClick={onDone}>ביטול</Button>
           <Button onClick={() => commitM.mutate()} disabled={commitM.isPending}>
             {commitM.isPending ? <><Loader2 className="ms-1 h-4 w-4 animate-spin" /> שומר...</> : "אשר ושמור"}
