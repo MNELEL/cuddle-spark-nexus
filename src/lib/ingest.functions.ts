@@ -35,6 +35,7 @@ export type RosterStudentDraft = {
   mother_id?: string;
   mother_phone?: string;
   include?: boolean;
+  confidence?: number; // 0..1 — how confident we are in this extracted row
 };
 
 export type RosterExtracted = { kind: "roster"; students: RosterStudentDraft[] };
@@ -291,21 +292,54 @@ async function analyzeRoster(b64: string, mime: string, fileName: string, apiKey
   const students = Array.isArray(parsed.students) ? parsed.students : [];
   const clean = students
     .filter((s) => s && typeof s.name === "string" && s.name.trim())
-    .map((s) => ({
-      name: String(s.name).slice(0, 100).trim(),
-      national_id: cleanStr(s.national_id, 20),
-      birth_date: normDate(s.birth_date),
-      address: cleanStr(s.address, 200),
-      father_name: cleanStr(s.father_name, 100),
-      father_id: cleanStr(s.father_id, 20),
-      father_phone: cleanPhone(s.father_phone),
-      mother_name: cleanStr(s.mother_name, 100),
-      mother_id: cleanStr(s.mother_id, 20),
-      mother_phone: cleanPhone(s.mother_phone),
-      include: true,
-    }))
+    .map((s) => {
+      const row: RosterStudentDraft = {
+        name: String(s.name).slice(0, 100).trim(),
+        national_id: cleanStr(s.national_id, 20),
+        birth_date: normDate(s.birth_date),
+        address: cleanStr(s.address, 200),
+        father_name: cleanStr(s.father_name, 100),
+        father_id: cleanStr(s.father_id, 20),
+        father_phone: cleanPhone(s.father_phone),
+        mother_name: cleanStr(s.mother_name, 100),
+        mother_id: cleanStr(s.mother_id, 20),
+        mother_phone: cleanPhone(s.mother_phone),
+      };
+      const confidence = scoreRosterRow(row);
+      return { ...row, confidence, include: confidence >= 0.35 };
+    })
     .slice(0, 200);
   return { kind: "roster", students: clean };
+}
+
+/** Heuristic confidence for a roster row: rewards name quality + populated,
+ *  well-formed optional fields; penalises validation-obvious errors. */
+function scoreRosterRow(r: RosterStudentDraft): number {
+  const trim = (v?: string) => (v ?? "").trim();
+  let score = 0;
+  const name = trim(r.name);
+  if (!name) return 0;
+  score += name.length >= 3 && /\s/.test(name) ? 0.45 : 0.3; // full name >> single token
+
+  const idRe = /^\d{5,9}$/;
+  const phoneRe = /^0\d{8,9}$/;
+  const optional: Array<[string | undefined, (v: string) => boolean, number]> = [
+    [r.national_id, (v) => idRe.test(v.replace(/\D/g, "")), 0.1],
+    [r.birth_date, (v) => /^\d{4}-\d{2}-\d{2}$/.test(v), 0.08],
+    [r.address, (v) => v.length >= 4, 0.06],
+    [r.father_name, (v) => v.length >= 2, 0.05],
+    [r.mother_name, (v) => v.length >= 2, 0.05],
+    [r.father_phone, (v) => phoneRe.test(v.replace(/\D/g, "")), 0.06],
+    [r.mother_phone, (v) => phoneRe.test(v.replace(/\D/g, "")), 0.06],
+    [r.father_id, (v) => idRe.test(v.replace(/\D/g, "")), 0.04],
+    [r.mother_id, (v) => idRe.test(v.replace(/\D/g, "")), 0.04],
+  ];
+  for (const [val, ok, weight] of optional) {
+    const v = trim(val);
+    if (!v) continue;
+    score += ok(v) ? weight : -weight * 0.6; // present-and-valid boosts, malformed slightly penalises
+  }
+  return Math.max(0, Math.min(1, score));
 }
 
 function safeText(b64: string): string {
@@ -433,7 +467,7 @@ export function applyRosterMapping(headers: string[], rows: string[][], mapping:
   return rows.map((row) => {
     const name = pick(row, "name");
     if (!name) return null;
-    return {
+    const draft: RosterStudentDraft = {
       name: name.slice(0, 100),
       national_id: cleanStr(pick(row, "national_id"), 20),
       birth_date: normDate(pick(row, "birth_date")),
@@ -444,8 +478,9 @@ export function applyRosterMapping(headers: string[], rows: string[][], mapping:
       mother_name: cleanStr(pick(row, "mother_name"), 100),
       mother_id: cleanStr(pick(row, "mother_id"), 20),
       mother_phone: cleanPhone(pick(row, "mother_phone")),
-      include: true,
-    } as RosterStudentDraft;
+    };
+    const confidence = scoreRosterRow(draft);
+    return { ...draft, confidence, include: confidence >= 0.35 };
   }).filter((s): s is RosterStudentDraft => Boolean(s)).slice(0, 300);
 }
 
