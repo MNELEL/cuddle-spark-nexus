@@ -616,6 +616,15 @@ function LessonPreview({ job, classes, preferredClassId, onDone }: {
       q: "", a: "", difficulty: "medium", confidence: 1, include: true,
     }] });
   }
+  const [qThreshold, setQThreshold] = useState<number>(50);
+  function excludeQsBelowThreshold() {
+    const min = qThreshold / 100;
+    setForm({ ...form, exam_questions: questions.map((q) =>
+      (q.confidence ?? 0) < min ? { ...q, include: false } : q) });
+  }
+  function includeAllQs() {
+    setForm({ ...form, exam_questions: questions.map((q) => ({ ...q, include: true })) });
+  }
 
   return (
     <Card>
@@ -652,6 +661,25 @@ function LessonPreview({ job, classes, preferredClassId, onDone }: {
               שמור גם כמאגר שאלות בספריית העזרים
             </label>
           </div>
+
+          {questions.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 rounded-md border bg-background/60 p-2 text-xs">
+              <Sigma className="h-3 w-3 text-muted-foreground" />
+              <span className="text-muted-foreground">סף ביטחון:</span>
+              <input type="range" min={0} max={100} step={5}
+                value={qThreshold}
+                onChange={(e) => setQThreshold(Number(e.target.value))}
+                className="h-1 w-24 accent-primary"
+                aria-label="סף ביטחון לשאלות" />
+              <span className="tabular-nums w-8">{qThreshold}%</span>
+              <Button size="sm" variant="ghost" className="h-6 px-2" onClick={excludeQsBelowThreshold}>
+                החרג שאלות מתחת לסף
+              </Button>
+              <Button size="sm" variant="ghost" className="h-6 px-2" onClick={includeAllQs}>
+                כלול הכל
+              </Button>
+            </div>
+          )}
 
           {questions.length === 0 && (
             <p className="text-xs text-muted-foreground">
