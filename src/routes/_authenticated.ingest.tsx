@@ -45,6 +45,18 @@ const KIND_LABEL: Record<IngestKind, string> = {
   lesson_audio: "הקלטת שיעור",
 };
 
+const KIND_FORMATS: Record<IngestKind, string[]> = {
+  roster: ["תמונה (JPG/PNG)", "PDF", "Excel (XLSX/XLS)", "CSV", "TXT"],
+  resource: ["תמונה", "PDF", "DOCX", "TXT / Markdown"],
+  lesson_audio: ["MP3", "WAV", "M4A", "WEBM"],
+};
+
+const KIND_HINT: Record<IngestKind, string> = {
+  roster: "לדוגמה: צילום רשימת כיתה עם שמות, ת.ז., תאריכי לידה, טלפוני הורים.",
+  resource: "לדוגמה: דף עבודה בגמרא, מערך שיעור בהלכה או חידה לפרשת השבוע.",
+  lesson_audio: "לדוגמה: הקלטת שיעור של 20–40 דקות; יופקו תמלול, סיכום ושאלות מבחן.",
+};
+
 function IngestPage() {
   const search = useSearch({ from: "/_authenticated/ingest" });
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
@@ -86,6 +98,13 @@ function IngestPage() {
           classId={classId} setClassId={setClassId} requiresClass />
       </div>
 
+      <DropZone
+        classes={classes as { id: string; name: string }[]}
+        classId={classId}
+        setClassId={setClassId}
+        onCreated={(id) => { setSelectedJobId(id); refetch(); }}
+      />
+
       {selectedJobId && (
         <JobDetail jobId={selectedJobId} classes={classes as { id: string; name: string }[]}
           preferredClassId={classId} onClose={() => { setSelectedJobId(null); refetch(); }} />
@@ -117,6 +136,7 @@ function UploadCard({
   requiresClass?: boolean;
 }) {
   const [busy, setBusy] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const getUrl = useServerFn(getIngestUploadUrl);
   const create = useServerFn(createIngestJob);
@@ -147,10 +167,24 @@ function UploadCard({
   }
 
   return (
-    <Card className="transition hover:border-primary/40 hover:shadow-md">
+    <Card
+      className={`transition hover:border-primary/40 hover:shadow-md ${dragOver ? "border-primary ring-2 ring-primary/30 bg-primary/5" : ""}`}
+      onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={(e) => {
+        e.preventDefault(); setDragOver(false);
+        const f = e.dataTransfer.files?.[0]; if (f) void onFile(f);
+      }}
+    >
       <CardContent className="pt-6 space-y-3">
         <div className="flex items-center gap-2 text-primary">{icon}<span className="font-semibold text-foreground">{title}</span></div>
         <p className="text-xs text-muted-foreground min-h-8">{desc}</p>
+        <div className="flex flex-wrap gap-1">
+          {KIND_FORMATS[kind].map((f) => (
+            <Badge key={f} variant="secondary" className="text-[10px] font-normal">{f}</Badge>
+          ))}
+        </div>
+        <p className="text-[11px] text-muted-foreground italic">{KIND_HINT[kind]}</p>
         {requiresClass && (
           <div>
             <Label className="text-xs">כיתה</Label>
@@ -165,8 +199,135 @@ function UploadCard({
         <input ref={inputRef} type="file" accept={accept} className="hidden"
           onChange={(e) => { const f = e.target.files?.[0]; if (f) void onFile(f); }} />
         <Button className="w-full" disabled={busy} onClick={() => inputRef.current?.click()}>
-          {busy ? <><Loader2 className="ms-1 h-4 w-4 animate-spin" /> מעלה...</> : <><Upload className="ms-1 h-4 w-4" /> בחר קובץ</>}
+          {busy ? <><Loader2 className="ms-1 h-4 w-4 animate-spin" /> מעלה...</> : <><Upload className="ms-1 h-4 w-4" /> בחר קובץ או גרור לכאן</>}
         </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+/* ---------------- Universal DropZone ---------------- */
+
+function DropZone({
+  classes, classId, setClassId, onCreated,
+}: {
+  classes: { id: string; name: string }[];
+  classId?: string;
+  setClassId: (v: string) => void;
+  onCreated: (jobId: string) => void;
+}) {
+  const [kind, setKind] = useState<IngestKind>("roster");
+  const [busy, setBusy] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const getUrl = useServerFn(getIngestUploadUrl);
+  const create = useServerFn(createIngestJob);
+  const analyze = useServerFn(analyzeIngestJob);
+
+  const accept =
+    kind === "roster" ? "image/*,application/pdf,.csv,.xlsx,.xls,.txt" :
+    kind === "resource" ? "image/*,application/pdf,.txt,.md,.docx" :
+    "audio/*";
+  const requiresClass = kind === "roster" || kind === "lesson_audio";
+
+  async function onFile(file: File) {
+    if (requiresClass && !classId) { toast.error("בחר כיתה קודם"); return; }
+    if (file.size > 20 * 1024 * 1024) { toast.error("הקובץ גדול מ-20MB"); return; }
+    setBusy(true);
+    try {
+      const safeName = file.name.replace(/[^a-zA-Z0-9._\- ]/g, "_");
+      const { path, token } = await getUrl({ data: { filename: safeName } });
+      const up = await supabase.storage.from("ingest-staging").uploadToSignedUrl(path, token, file, { contentType: file.type });
+      if (up.error) throw new Error(up.error.message);
+      const { id } = await create({ data: {
+        kind, source_path: path, file_name: file.name, mime_type: file.type,
+        class_id: requiresClass ? (classId ?? null) : null,
+      }});
+      toast.success("הועלה, מנתח...");
+      onCreated(id);
+      await analyze({ data: { id } }).catch((e) => toast.error(e instanceof Error ? e.message : "שגיאה בניתוח"));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "שגיאה בהעלאה");
+    } finally {
+      setBusy(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2">
+          <Upload className="h-5 w-5 text-primary" /> אזור העלאה מהיר (גרור ושחרר)
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-3 md:grid-cols-[1fr_1fr] md:items-end">
+          <div>
+            <Label className="text-xs">סוג הקובץ</Label>
+            <Select value={kind} onValueChange={(v) => setKind(v as IngestKind)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="roster">רשימת תלמידים</SelectItem>
+                <SelectItem value="resource">חומר לימוד</SelectItem>
+                <SelectItem value="lesson_audio">הקלטת שיעור</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {requiresClass && (
+            <div>
+              <Label className="text-xs">כיתה</Label>
+              <Select value={classId ?? ""} onValueChange={setClassId}>
+                <SelectTrigger><SelectValue placeholder="בחר כיתה" /></SelectTrigger>
+                <SelectContent>
+                  {classes.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </div>
+
+        <input ref={inputRef} type="file" accept={accept} className="hidden"
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) void onFile(f); }} />
+
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => !busy && inputRef.current?.click()}
+          onKeyDown={(e) => { if ((e.key === "Enter" || e.key === " ") && !busy) inputRef.current?.click(); }}
+          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault(); setDragOver(false);
+            const f = e.dataTransfer.files?.[0]; if (f) void onFile(f);
+          }}
+          className={`flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-8 text-center cursor-pointer transition ${
+            dragOver ? "border-primary bg-primary/5" : "border-muted-foreground/30 hover:border-primary/60 hover:bg-muted/30"
+          } ${busy ? "opacity-60 pointer-events-none" : ""}`}
+        >
+          {busy ? (
+            <><Loader2 className="h-8 w-8 animate-spin text-primary" /><span className="text-sm">מעלה ומנתח...</span></>
+          ) : (
+            <>
+              <Upload className="h-8 w-8 text-primary" />
+              <div className="text-sm font-medium">גרור קובץ לכאן או לחץ לבחירה</div>
+              <div className="text-xs text-muted-foreground">קובץ אחד עד 20MB</div>
+            </>
+          )}
+        </div>
+
+        <div className="grid gap-2 rounded-lg bg-muted/40 p-3 text-xs">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-medium">פורמטים נתמכים ל{KIND_LABEL[kind]}:</span>
+            {KIND_FORMATS[kind].map((f) => (
+              <Badge key={f} variant="outline" className="font-normal">{f}</Badge>
+            ))}
+          </div>
+          <div className="flex items-start gap-1.5 text-muted-foreground">
+            <HelpCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+            <span>{KIND_HINT[kind]}</span>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
