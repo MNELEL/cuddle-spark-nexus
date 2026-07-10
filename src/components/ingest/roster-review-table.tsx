@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { AlertTriangle, CheckCircle2, Filter, EyeOff, Eye } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Filter, EyeOff, Eye, Gauge } from "lucide-react";
 import type { RosterStudentDraft } from "@/lib/ingest.functions";
 
 /* ------- target fields ------- */
@@ -90,6 +90,7 @@ export function RosterReviewTable({
   );
   const [columns, setColumns] = useState<FieldKey[]>([...FIELD_KEYS]);
   const [filter, setFilter] = useState<"all" | "errors" | "missing">("all");
+  const [threshold, setThreshold] = useState<number>(50);
 
   function commit(next: Row[]) {
     setRows(next);
@@ -108,6 +109,10 @@ export function RosterReviewTable({
     commit(rows.map((r) => (rowHasError(r) ? { ...r, include: false } : r)));
   }
   function includeAll() { commit(rows.map((r) => ({ ...r, include: true }))); }
+  function excludeBelowThreshold() {
+    const min = threshold / 100;
+    commit(rows.map((r) => ((r.confidence ?? 1) < min ? { ...r, include: false } : r)));
+  }
 
   /** swap the field at column position `colIdx` with `newKey` — moves values with it */
   function remapColumn(colIdx: number, newKey: FieldKey) {
@@ -147,7 +152,11 @@ export function RosterReviewTable({
     const included = rows.filter((r) => r.include).length;
     const withErrors = rows.filter(rowHasError).length;
     const withMissing = rows.filter(rowHasMissing).length;
-    return { total: rows.length, included, withErrors, withMissing };
+    const withConf = rows.filter((r) => typeof r.confidence === "number");
+    const avg = withConf.length
+      ? Math.round((withConf.reduce((s, r) => s + (r.confidence ?? 0), 0) / withConf.length) * 100)
+      : 0;
+    return { total: rows.length, included, withErrors, withMissing, avgConf: avg };
   }, [rows]);
 
   return (
@@ -168,6 +177,9 @@ export function RosterReviewTable({
           </div>
           <Badge variant="outline" className="gap-1"><CheckCircle2 className="h-3 w-3 text-emerald-600" />{stats.included} נבחרו</Badge>
           <Badge variant="outline" className="gap-1"><AlertTriangle className="h-3 w-3 text-destructive" />{stats.withErrors} שגיאות</Badge>
+          {stats.avgConf > 0 && (
+            <Badge variant="secondary" className="gap-1"><Gauge className="h-3 w-3" />ביטחון ממוצע {stats.avgConf}%</Badge>
+          )}
           <div className="ms-auto flex gap-1">
             <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={includeAll}>
               <Eye className="ms-1 h-3 w-3" />כלול הכל
@@ -176,6 +188,21 @@ export function RosterReviewTable({
               disabled={stats.withErrors === 0}>
               <EyeOff className="ms-1 h-3 w-3" />החרג שורות עם שגיאות
             </Button>
+            <div className="flex items-center gap-1 rounded-md border px-2 h-7">
+              <Gauge className="h-3 w-3 text-muted-foreground" />
+              <span className="text-[11px] text-muted-foreground">סף</span>
+              <input
+                type="range" min={0} max={100} step={5}
+                value={threshold}
+                onChange={(e) => setThreshold(Number(e.target.value))}
+                className="h-1 w-20 accent-primary"
+                aria-label="סף ביטחון"
+              />
+              <span className="text-[11px] tabular-nums w-8 text-end">{threshold}%</span>
+              <Button size="sm" variant="ghost" className="h-6 px-1 text-[11px]" onClick={excludeBelowThreshold}>
+                החרג מתחת לסף
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -186,6 +213,7 @@ export function RosterReviewTable({
               <tr className="border-b bg-muted/50">
                 <th className="p-2 text-center w-8">✓</th>
                 <th className="p-2 text-center w-10">#</th>
+                <th className="p-2 text-center w-24">ביטחון</th>
                 {columns.map((col, colIdx) => (
                   <th key={colIdx} className="p-1 min-w-[130px] text-start">
                     <Select value={col} onValueChange={(v) => remapColumn(colIdx, v as FieldKey)}>
@@ -207,11 +235,13 @@ export function RosterReviewTable({
             </thead>
             <tbody>
               {visibleRows.length === 0 ? (
-                <tr><td colSpan={columns.length + 3} className="p-6 text-center text-muted-foreground">אין שורות להצגה בסינון הנוכחי</td></tr>
+                <tr><td colSpan={columns.length + 4} className="p-6 text-center text-muted-foreground">אין שורות להצגה בסינון הנוכחי</td></tr>
               ) : visibleRows.map(({ r, i }) => {
                 const rowErr = rowErrors(r);
                 const hasErr = rowErr.size > 0;
                 const missing = rowMissingCount(r);
+                const confPct = Math.round(((r.confidence ?? 1)) * 100);
+                const confColor = confPct >= 80 ? "bg-emerald-500" : confPct >= 50 ? "bg-amber-500" : "bg-destructive";
                 return (
                   <tr key={i} className={`border-b transition ${r.include ? "" : "opacity-40 bg-muted/20"}`}>
                     <td className="p-1 text-center">
@@ -220,6 +250,21 @@ export function RosterReviewTable({
                         className="h-4 w-4 rounded border-input accent-primary" />
                     </td>
                     <td className="p-1 text-center text-muted-foreground">{i + 1}</td>
+                    <td className="p-1">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-center gap-1.5" aria-label={`ביטחון ${confPct}%`}>
+                            <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden min-w-[40px]">
+                              <div className={`h-full ${confColor}`} style={{ width: `${confPct}%` }} />
+                            </div>
+                            <span className="text-[10px] text-muted-foreground tabular-nums w-8 text-end">{confPct}%</span>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="text-xs">
+                          מדד איכות השיבוץ (מבוסס על שלמות ופורמט השדות)
+                        </TooltipContent>
+                      </Tooltip>
+                    </td>
                     {columns.map((col) => {
                       const val = (r[col] as string | undefined) ?? "";
                       const err = rowErr.get(col);
