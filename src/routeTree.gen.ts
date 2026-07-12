@@ -22,6 +22,7 @@ import { Route as BlogDigitalHallPassGuideRouteImport } from './routes/blog.digi
 import { Route as AuthenticatedToolkitRouteImport } from './routes/_authenticated.toolkit'
 import { Route as AuthenticatedSoundBoardRouteImport } from './routes/_authenticated.sound-board'
 import { Route as AuthenticatedResourcesRouteImport } from './routes/_authenticated.resources'
+import { Route as AuthenticatedQuestionsRouteImport } from './routes/_authenticated.questions'
 import { Route as AuthenticatedIngestRouteImport } from './routes/_authenticated.ingest'
 import { Route as AuthenticatedClassesIndexRouteImport } from './routes/_authenticated.classes.index'
 import { Route as AuthenticatedResourcesResourceIdRouteImport } from './routes/_authenticated.resources.$resourceId'
@@ -98,6 +99,11 @@ const AuthenticatedResourcesRoute = AuthenticatedResourcesRouteImport.update({
   path: '/resources',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedQuestionsRoute = AuthenticatedQuestionsRouteImport.update({
+  id: '/questions',
+  path: '/questions',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedIngestRoute = AuthenticatedIngestRouteImport.update({
   id: '/ingest',
   path: '/ingest',
@@ -166,6 +172,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
   '/ingest': typeof AuthenticatedIngestRoute
+  '/questions': typeof AuthenticatedQuestionsRoute
   '/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/sound-board': typeof AuthenticatedSoundBoardRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
@@ -189,6 +196,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
   '/ingest': typeof AuthenticatedIngestRoute
+  '/questions': typeof AuthenticatedQuestionsRoute
   '/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/sound-board': typeof AuthenticatedSoundBoardRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
@@ -215,6 +223,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
   '/_authenticated/ingest': typeof AuthenticatedIngestRoute
+  '/_authenticated/questions': typeof AuthenticatedQuestionsRoute
   '/_authenticated/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/_authenticated/sound-board': typeof AuthenticatedSoundBoardRoute
   '/_authenticated/toolkit': typeof AuthenticatedToolkitRoute
@@ -241,6 +250,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/support'
     | '/ingest'
+    | '/questions'
     | '/resources'
     | '/sound-board'
     | '/toolkit'
@@ -264,6 +274,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/support'
     | '/ingest'
+    | '/questions'
     | '/resources'
     | '/sound-board'
     | '/toolkit'
@@ -289,6 +300,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/support'
     | '/_authenticated/ingest'
+    | '/_authenticated/questions'
     | '/_authenticated/resources'
     | '/_authenticated/sound-board'
     | '/_authenticated/toolkit'
@@ -410,6 +422,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedResourcesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/questions': {
+      id: '/_authenticated/questions'
+      path: '/questions'
+      fullPath: '/questions'
+      preLoaderRoute: typeof AuthenticatedQuestionsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/ingest': {
       id: '/_authenticated/ingest'
       path: '/ingest'
@@ -515,6 +534,7 @@ const AuthenticatedClassesClassIdRouteWithChildren =
 
 interface AuthenticatedRouteChildren {
   AuthenticatedIngestRoute: typeof AuthenticatedIngestRoute
+  AuthenticatedQuestionsRoute: typeof AuthenticatedQuestionsRoute
   AuthenticatedResourcesRoute: typeof AuthenticatedResourcesRouteWithChildren
   AuthenticatedSoundBoardRoute: typeof AuthenticatedSoundBoardRoute
   AuthenticatedToolkitRoute: typeof AuthenticatedToolkitRoute
@@ -529,6 +549,7 @@ interface AuthenticatedRouteChildren {
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedIngestRoute: AuthenticatedIngestRoute,
+  AuthenticatedQuestionsRoute: AuthenticatedQuestionsRoute,
   AuthenticatedResourcesRoute: AuthenticatedResourcesRouteWithChildren,
   AuthenticatedSoundBoardRoute: AuthenticatedSoundBoardRoute,
   AuthenticatedToolkitRoute: AuthenticatedToolkitRoute,

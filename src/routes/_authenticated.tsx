@@ -56,6 +56,9 @@ function AuthLayout() {
             <Link to="/resources" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
               ספרייה
             </Link>
+            <Link to="/questions" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
+              שאלות
+            </Link>
             <Link to="/ingest" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
               <Sparkles className="me-1 inline h-4 w-4" />העלאה חכמה
             </Link>
