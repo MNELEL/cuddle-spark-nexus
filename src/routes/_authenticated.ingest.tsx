@@ -707,7 +707,15 @@ function LessonPreview({ job, classes, preferredClassId, onDone, onReanalyze, re
           <Textarea rows={4} value={form.key_points.join("\n")}
             onChange={(e) => setForm({ ...form, key_points: e.target.value.split("\n").filter(Boolean) })} />
         </div>
-        <div><Label>תמלול</Label><Textarea rows={8} value={form.transcript} onChange={(e) => setForm({ ...form, transcript: e.target.value })} /></div>
+        <TranscriptEditor
+          value={form.transcript}
+          onChange={(v) => setForm({ ...form, transcript: v })}
+          originalValue={origTranscript}
+          onRegenerate={() => regenM.mutate()}
+          regenerating={regenM.isPending}
+          canUndo={!!lastRegen}
+          onUndo={undoRegen}
+        />
 
         <div className="rounded-lg border p-3 space-y-3 bg-muted/20">
           <div className="flex items-center gap-2 flex-wrap">
