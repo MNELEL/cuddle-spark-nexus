@@ -820,6 +820,71 @@ function LessonPreview({ job, classes, preferredClassId, onDone, onReanalyze, re
 // silence unused imports guard
 void z; void Link;
 
+/* ---------------- Transcript editor ---------------- */
+
+function TranscriptEditor({
+  value, onChange, originalValue,
+  onRegenerate, regenerating, canUndo, onUndo,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  originalValue: string;
+  onRegenerate: () => void;
+  regenerating: boolean;
+  canUndo: boolean;
+  onUndo: () => void;
+}) {
+  const dirty = value !== originalValue;
+  const chars = value.length;
+  const words = value.trim() ? value.trim().split(/\s+/).length : 0;
+  const canRegen = chars >= 40 && !regenerating;
+  return (
+    <div className="space-y-2 rounded-lg border p-3 bg-muted/10">
+      <div className="flex items-center gap-2 flex-wrap">
+        <Label className="text-sm font-semibold">עריכת תמלול</Label>
+        <Badge variant="outline" className="text-[11px] tabular-nums">
+          {words.toLocaleString("he-IL")} מילים · {chars.toLocaleString("he-IL")} תווים
+        </Badge>
+        {dirty && (
+          <Badge variant="secondary" className="text-[11px] text-amber-700 border-amber-500/40">
+            <AlertTriangle className="h-3 w-3 me-1" /> יש שינויים שלא שוקפו בסיכום
+          </Badge>
+        )}
+        <div className="ms-auto flex flex-wrap items-center gap-1.5">
+          {dirty && (
+            <Button size="sm" variant="ghost" onClick={() => onChange(originalValue)} disabled={regenerating}
+              title="חזור לתמלול המקורי שנוצר על ידי המערכת">
+              <Undo2 className="ms-1 h-3.5 w-3.5" /> החזר לתמלול המקורי
+            </Button>
+          )}
+          {canUndo && (
+            <Button size="sm" variant="ghost" onClick={onUndo} disabled={regenerating}>
+              <Undo2 className="ms-1 h-3.5 w-3.5" /> בטל שחזור
+            </Button>
+          )}
+          <Button size="sm" onClick={onRegenerate} disabled={!canRegen}
+            title={chars < 40 ? "התמלול קצר מדי" : "צור מחדש סיכום ונקודות מפתח מהתמלול המעודכן"}>
+            {regenerating
+              ? <><Loader2 className="ms-1 h-3.5 w-3.5 animate-spin" /> משחזר סיכום...</>
+              : <><Wand2 className="ms-1 h-3.5 w-3.5" /> שחזר סיכום ונקודות מפתח</>}
+          </Button>
+        </div>
+      </div>
+      <Textarea
+        rows={12}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        dir="rtl"
+        className="font-mono text-[13px] leading-relaxed whitespace-pre-wrap"
+        placeholder="ערוך את התמלול כאן. לאחר תיקונים לחץ 'שחזר סיכום ונקודות מפתח' כדי שהמערכת תעדכן את הסיכום בהתאם."
+      />
+      <p className="text-[11px] text-muted-foreground">
+        טיפ: תקן תעתיקים, פסיקים ופסקאות. שינויים נשמרים אוטומטית עם שאר הטופס. שחזור הסיכום לא מוחק את השאלות הקיימות — כדי להפיק גם שאלות מחדש השתמש בכפתור "נסה שוב: שאלות" בסטטוס הניתוח.
+      </p>
+    </div>
+  );
+}
+
 /* ---------------- Lesson stage status ---------------- */
 
 type StageStatus = "ok" | "warn" | "fail";
