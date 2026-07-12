@@ -103,6 +103,70 @@ export const getResource = createServerFn({ method: "POST" })
     return row;
   });
 
+/* ----------------------------- question bank ----------------------------- */
+
+export type QuestionItem = {
+  resource_id: string;
+  resource_title: string;
+  resource_type: ResourceType;
+  subject: string;
+  grade_level: string;
+  tags: string[];
+  index: number;
+  q: string;
+  a: string;
+  updated_at: string;
+};
+
+export const listResourceQuestions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z.object({
+      search: z.string().max(120).optional(),
+      resource_type: z.enum(RESOURCE_TYPES).optional(),
+      subject: z.string().max(80).optional(),
+      grade_level: z.string().max(40).optional(),
+      tag: z.string().max(40).optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }): Promise<QuestionItem[]> => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let q: any = context.supabase
+      .from("teaching_resources")
+      .select("id,title,resource_type,subject,grade_level,tags,content,updated_at");
+    if (data.resource_type) q = q.eq("resource_type", data.resource_type);
+    if (data.subject) q = q.eq("subject", data.subject);
+    if (data.grade_level) q = q.eq("grade_level", data.grade_level);
+    if (data.tag) q = q.contains("tags", [data.tag]);
+    const { data: rows, error } = await q.order("updated_at", { ascending: false });
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    const s = (data.search ?? "").trim().toLowerCase();
+    const out: QuestionItem[] = [];
+    for (const r of (rows ?? []) as Array<{
+      id: string; title: string; resource_type: ResourceType; subject: string;
+      grade_level: string; tags: string[] | null; content: ResourceContent | null; updated_at: string;
+    }>) {
+      const qs = r.content?.questions ?? [];
+      qs.forEach((qq, i) => {
+        if (!qq?.q) return;
+        if (s && !`${qq.q} ${qq.a ?? ""}`.toLowerCase().includes(s)) return;
+        out.push({
+          resource_id: r.id,
+          resource_title: r.title,
+          resource_type: r.resource_type,
+          subject: r.subject ?? "",
+          grade_level: r.grade_level ?? "",
+          tags: r.tags ?? [],
+          index: i,
+          q: qq.q,
+          a: qq.a ?? "",
+          updated_at: r.updated_at,
+        });
+      });
+    }
+    return out;
+  });
+
 /* ----------------------------- write ----------------------------- */
 
 const contentSchema = z.object({
