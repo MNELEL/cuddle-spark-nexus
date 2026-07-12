@@ -408,7 +408,10 @@ function JobDetail({ jobId, classes, preferredClassId, onClose }: {
 
   if (job.kind === "roster") return <RosterPreview job={job} classes={classes} preferredClassId={preferredClassId} onDone={onClose} />;
   if (job.kind === "resource") return <ResourcePreview job={job} onDone={onClose} />;
-  return <LessonPreview job={job} classes={classes} preferredClassId={preferredClassId} onDone={onClose} />;
+  return <LessonPreview
+    job={job} classes={classes} preferredClassId={preferredClassId} onDone={onClose}
+    onReanalyze={() => reAnalyze.mutate()} reanalyzing={reAnalyze.isPending || isFetching}
+  />;
 }
 
 /* ---------------- Roster Preview ---------------- */
@@ -570,8 +573,9 @@ function ResourcePreview({ job, onDone }: { job: IngestJob; onDone: () => void }
 
 /* ---------------- Lesson Preview ---------------- */
 
-function LessonPreview({ job, classes, preferredClassId, onDone }: {
+function LessonPreview({ job, classes, preferredClassId, onDone, onReanalyze, reanalyzing }: {
   job: IngestJob; classes: { id: string; name: string }[]; preferredClassId?: string; onDone: () => void;
+  onReanalyze: () => void; reanalyzing: boolean;
 }) {
   const ex = job.extracted as LessonExtracted;
   const [form, setForm] = useState<LessonExtracted>({
@@ -582,6 +586,18 @@ function LessonPreview({ job, classes, preferredClassId, onDone }: {
   const [classId, setClassId] = useState<string>(preferredClassId ?? job.class_id ?? "");
   const [exporting, setExporting] = useState(false);
   const commit = useServerFn(commitLessonAudio);
+  const retryQs = useServerFn(retryLessonQuestions);
+  const retryQsM = useMutation({
+    mutationFn: () => retryQs({ data: { id: job.id } }),
+    onSuccess: (r) => {
+      setForm((f) => ({
+        ...f,
+        exam_questions: r.exam_questions.map((q) => ({ ...q, include: q.include !== false })),
+      }));
+      toast.success(`הופקו ${r.exam_questions.length} שאלות מחדש`);
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה בהפקת שאלות"),
+  });
   const commitM = useMutation({
     mutationFn: () => {
       if (!classId) throw new Error("בחר כיתה");
