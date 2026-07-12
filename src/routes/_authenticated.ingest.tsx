@@ -588,6 +588,9 @@ function LessonPreview({ job, classes, preferredClassId, onDone, onReanalyze, re
   const [exporting, setExporting] = useState(false);
   const commit = useServerFn(commitLessonAudio);
   const retryQs = useServerFn(retryLessonQuestions);
+  const regenSum = useServerFn(regenerateLessonSummary);
+  const [origTranscript] = useState<string>(ex.transcript ?? "");
+  const [lastRegen, setLastRegen] = useState<{ summary: string; key_points: string[]; title: string } | null>(null);
   const retryQsM = useMutation({
     mutationFn: () => retryQs({ data: { id: job.id } }),
     onSuccess: (r) => {
@@ -599,6 +602,28 @@ function LessonPreview({ job, classes, preferredClassId, onDone, onReanalyze, re
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה בהפקת שאלות"),
   });
+  const regenM = useMutation({
+    mutationFn: () => regenSum({ data: {
+      id: job.id, transcript: form.transcript, title: form.title,
+    } }),
+    onSuccess: (r) => {
+      setLastRegen({ summary: form.summary, key_points: form.key_points, title: form.title });
+      setForm((f) => ({
+        ...f,
+        title: r.title || f.title,
+        summary: r.summary,
+        key_points: r.key_points,
+      }));
+      toast.success("סיכום ונקודות מפתח שוחזרו מהתמלול המעודכן");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "שחזור נכשל"),
+  });
+  function undoRegen() {
+    if (!lastRegen) return;
+    setForm((f) => ({ ...f, title: lastRegen.title, summary: lastRegen.summary, key_points: lastRegen.key_points }));
+    setLastRegen(null);
+    toast.success("השחזור בוטל");
+  }
   const commitM = useMutation({
     mutationFn: () => {
       if (!classId) throw new Error("בחר כיתה");
