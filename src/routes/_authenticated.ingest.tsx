@@ -7,7 +7,7 @@ import { listClasses } from "@/lib/classes.functions";
 import {
   getIngestUploadUrl, createIngestJob, analyzeIngestJob, getIngestJob,
   listIngestJobs, deleteIngestJob, commitRoster, commitResource, commitLessonAudio,
-  remapRosterTabular,
+  remapRosterTabular, retryLessonQuestions,
   type IngestJob, type IngestKind, type RosterExtracted, type ResourceExtracted, type LessonExtracted,
   type LessonExamQuestion, type RosterTabular, type RosterTargetField,
 } from "@/lib/ingest.functions";
@@ -19,7 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Sparkles, Upload, Users, FileText, Mic, Loader2, Trash2, CheckCircle2, XCircle, HelpCircle, Sigma, FileDown } from "lucide-react";
+import { Sparkles, Upload, Users, FileText, Mic, Loader2, Trash2, CheckCircle2, XCircle, HelpCircle, Sigma, FileDown, AlertTriangle, RefreshCw } from "lucide-react";
 import { z } from "zod";
 import { RosterReviewTable } from "@/components/ingest/roster-review-table";
 import { ColumnMapper } from "@/components/ingest/column-mapper";
@@ -408,7 +408,10 @@ function JobDetail({ jobId, classes, preferredClassId, onClose }: {
 
   if (job.kind === "roster") return <RosterPreview job={job} classes={classes} preferredClassId={preferredClassId} onDone={onClose} />;
   if (job.kind === "resource") return <ResourcePreview job={job} onDone={onClose} />;
-  return <LessonPreview job={job} classes={classes} preferredClassId={preferredClassId} onDone={onClose} />;
+  return <LessonPreview
+    job={job} classes={classes} preferredClassId={preferredClassId} onDone={onClose}
+    onReanalyze={() => reAnalyze.mutate()} reanalyzing={reAnalyze.isPending || isFetching}
+  />;
 }
 
 /* ---------------- Roster Preview ---------------- */
@@ -570,8 +573,9 @@ function ResourcePreview({ job, onDone }: { job: IngestJob; onDone: () => void }
 
 /* ---------------- Lesson Preview ---------------- */
 
-function LessonPreview({ job, classes, preferredClassId, onDone }: {
+function LessonPreview({ job, classes, preferredClassId, onDone, onReanalyze, reanalyzing }: {
   job: IngestJob; classes: { id: string; name: string }[]; preferredClassId?: string; onDone: () => void;
+  onReanalyze: () => void; reanalyzing: boolean;
 }) {
   const ex = job.extracted as LessonExtracted;
   const [form, setForm] = useState<LessonExtracted>({
@@ -582,6 +586,18 @@ function LessonPreview({ job, classes, preferredClassId, onDone }: {
   const [classId, setClassId] = useState<string>(preferredClassId ?? job.class_id ?? "");
   const [exporting, setExporting] = useState(false);
   const commit = useServerFn(commitLessonAudio);
+  const retryQs = useServerFn(retryLessonQuestions);
+  const retryQsM = useMutation({
+    mutationFn: () => retryQs({ data: { id: job.id } }),
+    onSuccess: (r) => {
+      setForm((f) => ({
+        ...f,
+        exam_questions: r.exam_questions.map((q) => ({ ...q, include: q.include !== false })),
+      }));
+      toast.success(`הופקו ${r.exam_questions.length} שאלות מחדש`);
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה בהפקת שאלות"),
+  });
   const commitM = useMutation({
     mutationFn: () => {
       if (!classId) throw new Error("בחר כיתה");
@@ -644,6 +660,13 @@ function LessonPreview({ job, classes, preferredClassId, onDone }: {
     <Card>
       <CardHeader><CardTitle className="text-base flex items-center gap-2"><Mic className="h-5 w-5" /> סקירת הקלטת שיעור</CardTitle></CardHeader>
       <CardContent className="space-y-3">
+        <LessonStages
+          form={form}
+          onRetryAll={onReanalyze}
+          retryingAll={reanalyzing}
+          onRetryQuestions={() => retryQsM.mutate()}
+          retryingQuestions={retryQsM.isPending}
+        />
         <div className="grid gap-3 md:grid-cols-2">
           <div><Label>כותרת</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
           <div><Label>כיתה</Label>
@@ -762,3 +785,107 @@ function LessonPreview({ job, classes, preferredClassId, onDone }: {
 
 // silence unused imports guard
 void z; void Link;
+
+/* ---------------- Lesson stage status ---------------- */
+
+type StageStatus = "ok" | "warn" | "fail";
+type Stage = { key: string; label: string; status: StageStatus; hint: string };
+
+function computeLessonStages(f: LessonExtracted): Stage[] {
+  const t = (f.transcript ?? "").trim();
+  const s = (f.summary ?? "").trim();
+  const kp = f.key_points ?? [];
+  const qs = f.exam_questions ?? [];
+  return [
+    {
+      key: "transcript", label: "תמלול",
+      status: t.length >= 200 ? "ok" : t.length > 0 ? "warn" : "fail",
+      hint: t.length ? `${t.length.toLocaleString("he-IL")} תווים` : "לא הופק תמלול",
+    },
+    {
+      key: "summary", label: "סיכום",
+      status: s.length >= 120 ? "ok" : s.length > 0 ? "warn" : "fail",
+      hint: s.length ? `${s.length.toLocaleString("he-IL")} תווים` : "לא נוצר סיכום",
+    },
+    {
+      key: "key_points", label: "נקודות מפתח",
+      status: kp.length >= 3 ? "ok" : kp.length > 0 ? "warn" : "fail",
+      hint: `${kp.length} נקודות`,
+    },
+    {
+      key: "questions", label: "שאלות מבחן",
+      status: qs.length >= 4 ? "ok" : qs.length > 0 ? "warn" : "fail",
+      hint: `${qs.length} שאלות`,
+    },
+  ];
+}
+
+function StageIcon({ status }: { status: StageStatus }) {
+  if (status === "ok") return <CheckCircle2 className="h-4 w-4 text-green-600" />;
+  if (status === "warn") return <AlertTriangle className="h-4 w-4 text-amber-500" />;
+  return <XCircle className="h-4 w-4 text-destructive" />;
+}
+
+function LessonStages({
+  form, onRetryAll, retryingAll, onRetryQuestions, retryingQuestions,
+}: {
+  form: LessonExtracted;
+  onRetryAll: () => void; retryingAll: boolean;
+  onRetryQuestions: () => void; retryingQuestions: boolean;
+}) {
+  const stages = computeLessonStages(form);
+  const anyFail = stages.some((s) => s.status !== "ok");
+  const questionsStage = stages.find((s) => s.key === "questions")!;
+  const transcriptStage = stages.find((s) => s.key === "transcript")!;
+  return (
+    <div className={`rounded-lg border p-3 space-y-2 ${anyFail ? "bg-amber-500/5 border-amber-500/30" : "bg-green-500/5 border-green-500/20"}`}>
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-sm font-semibold">סטטוס ניתוח</span>
+        {anyFail
+          ? <Badge variant="outline" className="text-amber-700 border-amber-500/50">חלק מהשלבים חסרים</Badge>
+          : <Badge variant="outline" className="text-green-700 border-green-500/50">כל השלבים הושלמו</Badge>}
+        <div className="ms-auto flex flex-wrap items-center gap-1.5">
+          <Button size="sm" variant="outline"
+            onClick={onRetryQuestions}
+            disabled={retryingQuestions || retryingAll || transcriptStage.status === "fail"}
+            title={transcriptStage.status === "fail" ? "אין תמלול — הרץ ניתוח מלא קודם" : "הפק שאלות מחדש מהתמלול"}>
+            {retryingQuestions
+              ? <><Loader2 className="ms-1 h-3.5 w-3.5 animate-spin" /> מפיק שאלות...</>
+              : <><RefreshCw className="ms-1 h-3.5 w-3.5" /> נסה שוב: שאלות</>}
+          </Button>
+          <Button size="sm" variant={anyFail ? "default" : "ghost"}
+            onClick={onRetryAll} disabled={retryingAll || retryingQuestions}>
+            {retryingAll
+              ? <><Loader2 className="ms-1 h-3.5 w-3.5 animate-spin" /> מריץ מחדש...</>
+              : <><RefreshCw className="ms-1 h-3.5 w-3.5" /> הרץ ניתוח מלא מחדש</>}
+          </Button>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        {stages.map((s) => (
+          <div key={s.key} className="flex items-center gap-2 rounded-md border bg-background/60 p-2">
+            <StageIcon status={s.status} />
+            <div className="min-w-0">
+              <div className="text-xs font-medium truncate">{s.label}</div>
+              <div className="text-[11px] text-muted-foreground truncate">{s.hint}</div>
+            </div>
+            {s.key === "questions" && s.status !== "ok" && (
+              <button
+                onClick={onRetryQuestions}
+                disabled={retryingQuestions || retryingAll || transcriptStage.status === "fail"}
+                className="ms-auto text-[10px] text-primary hover:underline disabled:opacity-40"
+                title="הפק שאלות מחדש">
+                נסה שוב
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+      {questionsStage.status === "fail" && transcriptStage.status !== "fail" && (
+        <p className="text-[11px] text-muted-foreground">
+          לא הופקו שאלות. ניתן ללחוץ "נסה שוב: שאלות" כדי לרוץ מחדש רק על שלב זה, בלי לתמלל שוב.
+        </p>
+      )}
+    </div>
+  );
+}

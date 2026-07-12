@@ -243,6 +243,34 @@ export const analyzeIngestJob = createServerFn({ method: "POST" })
     }
   });
 
+/* ------------------ retry a single lesson stage ------------------ */
+
+export const retryLessonQuestions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ id: uuid }).parse(d))
+  .handler(async ({ data, context }) => {
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) throw new Error("חסר LOVABLE_API_KEY");
+
+    const { data: jobRow } = await context.supabase
+      .from("ingest_jobs").select("*").eq("id", data.id).maybeSingle();
+    const job = jobRow as unknown as IngestJob | null;
+    if (!job || job.kind !== "lesson_audio") throw new Error("המשימה לא נמצאה");
+    const ex = job.extracted as LessonExtracted;
+    if (!ex?.transcript || ex.transcript.length < 40) {
+      throw new Error("אין תמלול מספק להפקת שאלות. הרץ ניתוח מחדש כדי לתמלל תחילה.");
+    }
+    const exam_questions = await generateExamQuestions(
+      { title: ex.title, transcript: ex.transcript, summary: ex.summary, key_points: ex.key_points ?? [] },
+      apiKey,
+    );
+    const next: LessonExtracted = { ...ex, exam_questions };
+    const { error } = await context.supabase.from("ingest_jobs")
+      .update({ extracted: next as never } as never).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true, exam_questions };
+  });
+
 async function analyzeRoster(b64: string, mime: string, fileName: string, apiKey: string): Promise<RosterExtractedWithTabular> {
   const isImage = mime.startsWith("image/");
   const isPdf = mime === "application/pdf";
