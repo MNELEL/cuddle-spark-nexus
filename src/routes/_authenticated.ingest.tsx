@@ -660,6 +660,13 @@ function LessonPreview({ job, classes, preferredClassId, onDone, onReanalyze, re
     <Card>
       <CardHeader><CardTitle className="text-base flex items-center gap-2"><Mic className="h-5 w-5" /> סקירת הקלטת שיעור</CardTitle></CardHeader>
       <CardContent className="space-y-3">
+        <LessonStages
+          form={form}
+          onRetryAll={onReanalyze}
+          retryingAll={reanalyzing}
+          onRetryQuestions={() => retryQsM.mutate()}
+          retryingQuestions={retryQsM.isPending}
+        />
         <div className="grid gap-3 md:grid-cols-2">
           <div><Label>כותרת</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
           <div><Label>כיתה</Label>
