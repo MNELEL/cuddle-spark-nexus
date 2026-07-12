@@ -8,6 +8,7 @@ import {
   getIngestUploadUrl, createIngestJob, analyzeIngestJob, getIngestJob,
   listIngestJobs, deleteIngestJob, commitRoster, commitResource, commitLessonAudio,
   remapRosterTabular, retryLessonQuestions,
+  regenerateLessonSummary,
   type IngestJob, type IngestKind, type RosterExtracted, type ResourceExtracted, type LessonExtracted,
   type LessonExamQuestion, type RosterTabular, type RosterTargetField,
 } from "@/lib/ingest.functions";
@@ -19,7 +20,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Sparkles, Upload, Users, FileText, Mic, Loader2, Trash2, CheckCircle2, XCircle, HelpCircle, Sigma, FileDown, AlertTriangle, RefreshCw } from "lucide-react";
+import { Sparkles, Upload, Users, FileText, Mic, Loader2, Trash2, CheckCircle2, XCircle, HelpCircle, Sigma, FileDown, AlertTriangle, RefreshCw, Wand2, Undo2 } from "lucide-react";
 import { z } from "zod";
 import { RosterReviewTable } from "@/components/ingest/roster-review-table";
 import { ColumnMapper } from "@/components/ingest/column-mapper";
@@ -587,6 +588,9 @@ function LessonPreview({ job, classes, preferredClassId, onDone, onReanalyze, re
   const [exporting, setExporting] = useState(false);
   const commit = useServerFn(commitLessonAudio);
   const retryQs = useServerFn(retryLessonQuestions);
+  const regenSum = useServerFn(regenerateLessonSummary);
+  const [origTranscript] = useState<string>(ex.transcript ?? "");
+  const [lastRegen, setLastRegen] = useState<{ summary: string; key_points: string[]; title: string } | null>(null);
   const retryQsM = useMutation({
     mutationFn: () => retryQs({ data: { id: job.id } }),
     onSuccess: (r) => {
@@ -598,6 +602,28 @@ function LessonPreview({ job, classes, preferredClassId, onDone, onReanalyze, re
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה בהפקת שאלות"),
   });
+  const regenM = useMutation({
+    mutationFn: () => regenSum({ data: {
+      id: job.id, transcript: form.transcript, title: form.title,
+    } }),
+    onSuccess: (r) => {
+      setLastRegen({ summary: form.summary, key_points: form.key_points, title: form.title });
+      setForm((f) => ({
+        ...f,
+        title: r.title || f.title,
+        summary: r.summary,
+        key_points: r.key_points,
+      }));
+      toast.success("סיכום ונקודות מפתח שוחזרו מהתמלול המעודכן");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "שחזור נכשל"),
+  });
+  function undoRegen() {
+    if (!lastRegen) return;
+    setForm((f) => ({ ...f, title: lastRegen.title, summary: lastRegen.summary, key_points: lastRegen.key_points }));
+    setLastRegen(null);
+    toast.success("השחזור בוטל");
+  }
   const commitM = useMutation({
     mutationFn: () => {
       if (!classId) throw new Error("בחר כיתה");
@@ -681,7 +707,15 @@ function LessonPreview({ job, classes, preferredClassId, onDone, onReanalyze, re
           <Textarea rows={4} value={form.key_points.join("\n")}
             onChange={(e) => setForm({ ...form, key_points: e.target.value.split("\n").filter(Boolean) })} />
         </div>
-        <div><Label>תמלול</Label><Textarea rows={8} value={form.transcript} onChange={(e) => setForm({ ...form, transcript: e.target.value })} /></div>
+        <TranscriptEditor
+          value={form.transcript}
+          onChange={(v) => setForm({ ...form, transcript: v })}
+          originalValue={origTranscript}
+          onRegenerate={() => regenM.mutate()}
+          regenerating={regenM.isPending}
+          canUndo={!!lastRegen}
+          onUndo={undoRegen}
+        />
 
         <div className="rounded-lg border p-3 space-y-3 bg-muted/20">
           <div className="flex items-center gap-2 flex-wrap">
@@ -785,6 +819,71 @@ function LessonPreview({ job, classes, preferredClassId, onDone, onReanalyze, re
 
 // silence unused imports guard
 void z; void Link;
+
+/* ---------------- Transcript editor ---------------- */
+
+function TranscriptEditor({
+  value, onChange, originalValue,
+  onRegenerate, regenerating, canUndo, onUndo,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  originalValue: string;
+  onRegenerate: () => void;
+  regenerating: boolean;
+  canUndo: boolean;
+  onUndo: () => void;
+}) {
+  const dirty = value !== originalValue;
+  const chars = value.length;
+  const words = value.trim() ? value.trim().split(/\s+/).length : 0;
+  const canRegen = chars >= 40 && !regenerating;
+  return (
+    <div className="space-y-2 rounded-lg border p-3 bg-muted/10">
+      <div className="flex items-center gap-2 flex-wrap">
+        <Label className="text-sm font-semibold">עריכת תמלול</Label>
+        <Badge variant="outline" className="text-[11px] tabular-nums">
+          {words.toLocaleString("he-IL")} מילים · {chars.toLocaleString("he-IL")} תווים
+        </Badge>
+        {dirty && (
+          <Badge variant="secondary" className="text-[11px] text-amber-700 border-amber-500/40">
+            <AlertTriangle className="h-3 w-3 me-1" /> יש שינויים שלא שוקפו בסיכום
+          </Badge>
+        )}
+        <div className="ms-auto flex flex-wrap items-center gap-1.5">
+          {dirty && (
+            <Button size="sm" variant="ghost" onClick={() => onChange(originalValue)} disabled={regenerating}
+              title="חזור לתמלול המקורי שנוצר על ידי המערכת">
+              <Undo2 className="ms-1 h-3.5 w-3.5" /> החזר לתמלול המקורי
+            </Button>
+          )}
+          {canUndo && (
+            <Button size="sm" variant="ghost" onClick={onUndo} disabled={regenerating}>
+              <Undo2 className="ms-1 h-3.5 w-3.5" /> בטל שחזור
+            </Button>
+          )}
+          <Button size="sm" onClick={onRegenerate} disabled={!canRegen}
+            title={chars < 40 ? "התמלול קצר מדי" : "צור מחדש סיכום ונקודות מפתח מהתמלול המעודכן"}>
+            {regenerating
+              ? <><Loader2 className="ms-1 h-3.5 w-3.5 animate-spin" /> משחזר סיכום...</>
+              : <><Wand2 className="ms-1 h-3.5 w-3.5" /> שחזר סיכום ונקודות מפתח</>}
+          </Button>
+        </div>
+      </div>
+      <Textarea
+        rows={12}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        dir="rtl"
+        className="font-mono text-[13px] leading-relaxed whitespace-pre-wrap"
+        placeholder="ערוך את התמלול כאן. לאחר תיקונים לחץ 'שחזר סיכום ונקודות מפתח' כדי שהמערכת תעדכן את הסיכום בהתאם."
+      />
+      <p className="text-[11px] text-muted-foreground">
+        טיפ: תקן תעתיקים, פסיקים ופסקאות. שינויים נשמרים אוטומטית עם שאר הטופס. שחזור הסיכום לא מוחק את השאלות הקיימות — כדי להפיק גם שאלות מחדש השתמש בכפתור "נסה שוב: שאלות" בסטטוס הניתוח.
+      </p>
+    </div>
+  );
+}
 
 /* ---------------- Lesson stage status ---------------- */
 

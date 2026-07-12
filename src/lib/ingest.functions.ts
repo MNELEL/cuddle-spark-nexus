@@ -271,6 +271,76 @@ export const retryLessonQuestions = createServerFn({ method: "POST" })
     return { ok: true, exam_questions };
   });
 
+/* ------------------ regenerate summary + key_points from edited transcript ------------------ */
+
+export const regenerateLessonSummary = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z.object({
+      id: uuid,
+      transcript: z.string().min(40).max(100000),
+      title: z.string().max(200).optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) throw new Error("חסר LOVABLE_API_KEY");
+
+    const { data: jobRow } = await context.supabase
+      .from("ingest_jobs").select("*").eq("id", data.id).maybeSingle();
+    const job = jobRow as unknown as IngestJob | null;
+    if (!job || job.kind !== "lesson_audio") throw new Error("המשימה לא נמצאה");
+    const ex = job.extracted as LessonExtracted;
+
+    const { summary, key_points, title } = await regenSummaryFromTranscript(
+      { transcript: data.transcript, title: data.title || ex.title || "" },
+      apiKey,
+    );
+    const next: LessonExtracted = {
+      ...ex,
+      title: title || ex.title,
+      transcript: data.transcript,
+      summary,
+      key_points,
+    };
+    const { error } = await context.supabase.from("ingest_jobs")
+      .update({ extracted: next as never } as never).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true, summary, key_points, title: next.title };
+  });
+
+async function regenSummaryFromTranscript(
+  ctx: { transcript: string; title: string },
+  apiKey: string,
+): Promise<{ summary: string; key_points: string[]; title: string }> {
+  const system = `אתה עוזר של רב/מלמד בתלמוד תורה חרדי. לפניך תמלול שיעור לאחר עריכה ידנית.
+כתוב:
+1. title קצר (עד 8 מילים) המשקף את הנושא.
+2. summary של 3–5 פסקאות המסביר את מהלך השיעור והרעיונות המרכזיים.
+3. key_points — 6–10 נקודות מפתח, כל אחת משפט אחד ממוקד.
+התבסס אך ורק על התוכן שבתמלול. אל תמציא עובדות. השתמש במונחים "הרב", "המלמד", "התלמידים".
+החזר JSON בלבד: {"title":"","summary":"","key_points":["..."]}`;
+
+  const raw = await callGateway({
+    model: "google/gemini-2.5-flash",
+    messages: [
+      { role: "system", content: system },
+      { role: "user", content: `כותרת מוצעת נוכחית: ${ctx.title || "(אין)"}\n\nתמלול (עד 40,000 תווים):\n${ctx.transcript.slice(0, 40000)}` },
+    ],
+    response_format: { type: "json_object" },
+  }, apiKey);
+
+  let p: { title?: string; summary?: string; key_points?: unknown[] } = {};
+  try { p = JSON.parse(raw); } catch { /* ignore */ }
+  return {
+    title: String(p.title ?? ctx.title ?? "").slice(0, 200),
+    summary: String(p.summary ?? "").slice(0, 8000),
+    key_points: Array.isArray(p.key_points)
+      ? p.key_points.map((k) => String(k).slice(0, 500)).filter(Boolean).slice(0, 20)
+      : [],
+  };
+}
+
 async function analyzeRoster(b64: string, mime: string, fileName: string, apiKey: string): Promise<RosterExtractedWithTabular> {
   const isImage = mime.startsWith("image/");
   const isPdf = mime === "application/pdf";
