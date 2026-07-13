@@ -125,8 +125,8 @@ function DisplayMode() {
     setZoom(PRESETS[p].zoom);
   };
 
-  // Only enable smooth transition when preset jumps (not while dragging sliders).
-  const transitionClass = dragging ? "" : "transition-transform duration-500 ease-out";
+  // Only enable smooth transition when preset jumps (not while dragging sliders or on weak devices).
+  const transitionClass = dragging || lowPower ? "" : "transition-transform duration-500 ease-out";
   const stopDrag = () => setDragging(false);
 
   return (
