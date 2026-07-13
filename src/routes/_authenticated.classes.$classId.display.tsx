@@ -125,8 +125,8 @@ function DisplayMode() {
     setZoom(PRESETS[p].zoom);
   };
 
-  // Only enable smooth transition when preset jumps (not while dragging sliders).
-  const transitionClass = dragging ? "" : "transition-transform duration-500 ease-out";
+  // Only enable smooth transition when preset jumps (not while dragging sliders or on weak devices).
+  const transitionClass = dragging || lowPower ? "" : "transition-transform duration-500 ease-out";
   const stopDrag = () => setDragging(false);
 
   return (
@@ -205,7 +205,9 @@ function DisplayMode() {
                       className={`relative flex aspect-[5/3] items-center justify-center rounded-lg border p-2 text-center transition ${
                         child ? "border-amber/40 bg-amber/5" : "border-dashed border-muted bg-muted/10"
                       }`}
-                      style={is3D ? { transformStyle: "preserve-3d", backfaceVisibility: "hidden" } : undefined}
+                      style={is3D
+                        ? { transformStyle: "preserve-3d", backfaceVisibility: "hidden", contentVisibility: "auto", containIntrinsicSize: "80px 120px" }
+                        : { contentVisibility: "auto", containIntrinsicSize: "80px 120px" }}
                     >
                       {/* Seat number badge */}
                       {showLabels && !hidden.has(k) && (
