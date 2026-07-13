@@ -96,7 +96,8 @@ export async function createHebrewDoc(): Promise<HebrewDoc> {
   const section = (title: string) => {
     sectionNum += 1;
     subNum = 0;
-    ensureSpace(14);
+    // Widow control: reserve room for the section header + a couple of content lines.
+    ensureSpace(14 + 12);
     doc.setFillColor(...SOFT);
     doc.rect(layout.marginL, y - 1, layout.contentW, 8, "F");
     doc.setFillColor(...AMBER);
