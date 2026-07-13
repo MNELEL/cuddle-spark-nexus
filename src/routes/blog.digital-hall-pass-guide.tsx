@@ -3,7 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 const URL = "https://cuddle-spark-nexus.lovable.app/blog/digital-hall-pass-guide";
 const TITLE = "ניהול אישורי יציאה דיגיטליים בתלמוד תורה — מדריך מלא";
 const DESCRIPTION =
-  "מדריך מעשי לרבנים ומנהלי תלמודי תורה: איך מערכת אישורי יציאה דיגיטלית מצמצמת הפרעות, שומרת על סדר וביטחון, ומחליפה את הפתק הישן. כולל השוואה לחלופות כמו eHallPass.";
+  "מדריך לרבנים ומנהלי תלמודי תורה: איך מערכת אישורי יציאה דיגיטלית מצמצמת הפרעות, שומרת על סדר וביטחון, ומחליפה את eHallPass.";
 
 const FAQ = [
   {

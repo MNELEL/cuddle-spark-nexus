@@ -6,7 +6,12 @@ export const Route = createFileRoute("/privacy")({
     meta: [
       { title: "מדיניות פרטיות — ClassAlign Studio" },
       { name: "description", content: "מדיניות הפרטיות של ClassAlign Studio — איזה מידע נאסף, איך הוא נשמר ומה הזכויות שלך." },
+      { property: "og:title", content: "מדיניות פרטיות — ClassAlign Studio" },
+      { property: "og:description", content: "מדיניות הפרטיות של ClassAlign Studio — איזה מידע נאסף, איך הוא נשמר ומה הזכויות שלך." },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://cuddle-spark-nexus.lovable.app/privacy" },
     ],
+    links: [{ rel: "canonical", href: "https://cuddle-spark-nexus.lovable.app/privacy" }],
   }),
 });
 

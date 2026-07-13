@@ -11,7 +11,7 @@ export function ThemeSwitcher() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" title="ערכת נושא">
+        <Button variant="ghost" size="sm" title="ערכת נושא" aria-label="ערכת נושא">
           <Palette className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
