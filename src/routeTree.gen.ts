@@ -17,6 +17,7 @@ import { Route as BlogRouteImport } from './routes/blog'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BlogIndexRouteImport } from './routes/blog.index'
+import { Route as ToolsGroupMakerRouteImport } from './routes/tools.group-maker'
 import { Route as PTokenRouteImport } from './routes/p.$token'
 import { Route as BlogDigitalHallPassGuideRouteImport } from './routes/blog.digital-hall-pass-guide'
 import { Route as AuthenticatedToolkitRouteImport } from './routes/_authenticated.toolkit'
@@ -72,6 +73,11 @@ const BlogIndexRoute = BlogIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => BlogRoute,
+} as any)
+const ToolsGroupMakerRoute = ToolsGroupMakerRouteImport.update({
+  id: '/tools/group-maker',
+  path: '/tools/group-maker',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const PTokenRoute = PTokenRouteImport.update({
   id: '/p/$token',
@@ -178,6 +184,7 @@ export interface FileRoutesByFullPath {
   '/toolkit': typeof AuthenticatedToolkitRoute
   '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
   '/p/$token': typeof PTokenRoute
+  '/tools/group-maker': typeof ToolsGroupMakerRoute
   '/blog/': typeof BlogIndexRoute
   '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
   '/classes/$classId': typeof AuthenticatedClassesClassIdRouteWithChildren
@@ -202,6 +209,7 @@ export interface FileRoutesByTo {
   '/toolkit': typeof AuthenticatedToolkitRoute
   '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
   '/p/$token': typeof PTokenRoute
+  '/tools/group-maker': typeof ToolsGroupMakerRoute
   '/blog': typeof BlogIndexRoute
   '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
   '/classes/$classId': typeof AuthenticatedClassesClassIdRouteWithChildren
@@ -229,6 +237,7 @@ export interface FileRoutesById {
   '/_authenticated/toolkit': typeof AuthenticatedToolkitRoute
   '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
   '/p/$token': typeof PTokenRoute
+  '/tools/group-maker': typeof ToolsGroupMakerRoute
   '/blog/': typeof BlogIndexRoute
   '/_authenticated/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
   '/_authenticated/classes/$classId': typeof AuthenticatedClassesClassIdRouteWithChildren
@@ -256,6 +265,7 @@ export interface FileRouteTypes {
     | '/toolkit'
     | '/blog/digital-hall-pass-guide'
     | '/p/$token'
+    | '/tools/group-maker'
     | '/blog/'
     | '/bulletins/$classId'
     | '/classes/$classId'
@@ -280,6 +290,7 @@ export interface FileRouteTypes {
     | '/toolkit'
     | '/blog/digital-hall-pass-guide'
     | '/p/$token'
+    | '/tools/group-maker'
     | '/blog'
     | '/bulletins/$classId'
     | '/classes/$classId'
@@ -306,6 +317,7 @@ export interface FileRouteTypes {
     | '/_authenticated/toolkit'
     | '/blog/digital-hall-pass-guide'
     | '/p/$token'
+    | '/tools/group-maker'
     | '/blog/'
     | '/_authenticated/bulletins/$classId'
     | '/_authenticated/classes/$classId'
@@ -327,6 +339,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SupportRoute: typeof SupportRoute
   PTokenRoute: typeof PTokenRoute
+  ToolsGroupMakerRoute: typeof ToolsGroupMakerRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -386,6 +399,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/blog/'
       preLoaderRoute: typeof BlogIndexRouteImport
       parentRoute: typeof BlogRoute
+    }
+    '/tools/group-maker': {
+      id: '/tools/group-maker'
+      path: '/tools/group-maker'
+      fullPath: '/tools/group-maker'
+      preLoaderRoute: typeof ToolsGroupMakerRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/p/$token': {
       id: '/p/$token'
@@ -588,6 +608,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SupportRoute: SupportRoute,
   PTokenRoute: PTokenRoute,
+  ToolsGroupMakerRoute: ToolsGroupMakerRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
