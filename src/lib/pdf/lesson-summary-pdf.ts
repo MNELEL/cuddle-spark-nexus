@@ -53,6 +53,8 @@ export async function buildLessonSummaryPdf(
     hd.table({
       head: [["#", "נקודה"]],
       body: kp.map((p, i) => [String(i + 1), p]),
+      rowPageBreak: "avoid",
+      showHead: "everyPage",
       columnStyles: {
         0: { cellWidth: 12, halign: "center" },
         1: { halign: "right" },
