@@ -3,16 +3,29 @@ import {
   createHebrewDoc, drawBrandHeader, drawFooter, downloadPdfBlob, safeName,
 } from "./pdf-builder";
 
+function todayIso(): string {
+  const d = new Date();
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+export function lessonPdfFileName(lesson: LessonExtracted): string {
+  const base = safeName(lesson.title?.trim() || "סיכום-שיעור");
+  return `${base}__${todayIso()}.pdf`;
+}
+
 const DIFF_LABEL: Record<LessonExamQuestion["difficulty"], string> = {
   easy: "קל",
   medium: "בינוני",
   hard: "מאתגר",
 };
 
-export async function exportLessonSummaryPdf(
+export type LessonPdfResult = { blob: Blob; filename: string };
+
+export async function buildLessonSummaryPdf(
   lesson: LessonExtracted,
   opts?: { className?: string; onlyIncluded?: boolean },
-): Promise<void> {
+): Promise<LessonPdfResult> {
   const hd = await createHebrewDoc();
 
   const meta = [
@@ -67,6 +80,8 @@ export async function exportLessonSummaryPdf(
         q.topic ?? "—",
         `${Math.round((q.confidence ?? 0) * 100)}%`,
       ]),
+      rowPageBreak: "avoid",
+      showHead: "everyPage",
       columnStyles: {
         0: { cellWidth: 9, halign: "center" },
         1: { cellWidth: 62, halign: "right" },
@@ -88,5 +103,13 @@ export async function exportLessonSummaryPdf(
 
   drawFooter(hd, lesson.title || "סיכום שיעור");
   const blob = hd.doc.output("blob");
-  downloadPdfBlob(blob, `${safeName(lesson.title || "lesson-summary")}.pdf`);
+  return { blob, filename: lessonPdfFileName(lesson) };
+}
+
+export async function exportLessonSummaryPdf(
+  lesson: LessonExtracted,
+  opts?: { className?: string; onlyIncluded?: boolean },
+): Promise<void> {
+  const { blob, filename } = await buildLessonSummaryPdf(lesson, opts);
+  downloadPdfBlob(blob, filename);
 }
