@@ -6,6 +6,38 @@ export const Route = createFileRoute("/support")({
     meta: [
       { title: "תמיכה — ClassAlign Studio" },
       { name: "description", content: "תמיכה למשתמשי ClassAlign Studio — שאלות נפוצות, יצירת קשר וקישורים שימושיים." },
+      { property: "og:title", content: "תמיכה — ClassAlign Studio" },
+      { property: "og:description", content: "תמיכה למשתמשי ClassAlign Studio — שאלות נפוצות, יצירת קשר וקישורים שימושיים." },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://cuddle-spark-nexus.lovable.app/support" },
+    ],
+    links: [{ rel: "canonical", href: "https://cuddle-spark-nexus.lovable.app/support" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          inLanguage: "he",
+          mainEntity: [
+            {
+              "@type": "Question",
+              name: "איך מאפסים PIN שנשכח?",
+              acceptedAnswer: { "@type": "Answer", text: "צא מהחשבון מהמסך הראשי, התחבר מחדש דרך המייל, ובהגדרות → אבטחה תוכל להגדיר PIN חדש." },
+            },
+            {
+              "@type": "Question",
+              name: "איך מוחקים נתוני כיתה?",
+              acceptedAnswer: { "@type": "Answer", text: "בתוך כל כיתה יש כפתור מחיקה. למחיקת חשבון מלא — שלח בקשה למייל התמיכה." },
+            },
+            {
+              "@type": "Question",
+              name: "האם המידע משותף?",
+              acceptedAnswer: { "@type": "Answer", text: "לא. ראה את מדיניות הפרטיות באתר." },
+            },
+          ],
+        }),
+      },
     ],
   }),
 });

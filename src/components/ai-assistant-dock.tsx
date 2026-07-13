@@ -87,6 +87,7 @@ export function AiAssistantDock({ classId }: { classId: string }) {
           size="lg"
           className="fixed bottom-6 start-6 z-40 h-14 w-14 rounded-full shadow-lg p-0 bg-gradient-to-br from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700"
           title="עוזר הרב"
+          aria-label="עוזר הרב — פתח מסייע AI"
         >
           <Sparkles className="h-6 w-6" />
         </Button>
@@ -109,7 +110,7 @@ export function AiAssistantDock({ classId }: { classId: string }) {
               className="pe-20"
             />
             <div className="absolute top-2 end-2 flex gap-1">
-              <Button type="button" size="icon" variant={recording ? "destructive" : "outline"} onClick={toggleRec} title="הקלטה">
+              <Button type="button" size="icon" variant={recording ? "destructive" : "outline"} onClick={toggleRec} title="הקלטה" aria-label={recording ? "עצור הקלטה" : "התחל הקלטה קולית"}>
                 {recording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
               </Button>
             </div>
@@ -147,10 +148,10 @@ export function AiAssistantDock({ classId }: { classId: string }) {
                       <div className="text-sm">{a.summary}</div>
                     </div>
                     <div className="flex gap-1 shrink-0">
-                      <Button size="icon" variant="outline" onClick={() => exec.mutate(a, { onSuccess: () => setPending((p) => p.filter((_, j) => j !== i)) })}>
+                      <Button size="icon" variant="outline" aria-label="אשר פעולה" onClick={() => exec.mutate(a, { onSuccess: () => setPending((p) => p.filter((_, j) => j !== i)) })}>
                         <Check className="h-4 w-4" />
                       </Button>
-                      <Button size="icon" variant="ghost" onClick={() => setPending((p) => p.filter((_, j) => j !== i))}>
+                      <Button size="icon" variant="ghost" aria-label="דחה פעולה" onClick={() => setPending((p) => p.filter((_, j) => j !== i))}>
                         <X className="h-4 w-4" />
                       </Button>
                     </div>
