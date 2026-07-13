@@ -137,9 +137,22 @@ export async function createHebrewDoc(): Promise<HebrewDoc> {
     doc.setTextColor(opts?.muted ? 110 : 30);
     const lines = doc.splitTextToSize(text, layout.contentW) as string[];
     const lineH = size * 0.45;
-    ensureSpace(lines.length * lineH + 2);
-    doc.text(lines, layout.rightX, y + lineH, { align: "right" });
-    y += lines.length * lineH + (opts?.gap ?? 3);
+    // Paginate: draw as many lines as fit, break page, continue.
+    let i = 0;
+    while (i < lines.length) {
+      const avail = pageH - 18 - y;
+      const canFit = Math.max(1, Math.floor(avail / lineH));
+      const chunk = lines.slice(i, i + canFit);
+      doc.text(chunk, layout.rightX, y + lineH, { align: "right" });
+      y += chunk.length * lineH;
+      i += chunk.length;
+      if (i < lines.length) {
+        doc.addPage();
+        doc.setR2L(true);
+        y = 16;
+      }
+    }
+    y += opts?.gap ?? 3;
   };
 
   return {
