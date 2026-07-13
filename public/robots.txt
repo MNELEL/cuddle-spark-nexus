@@ -9,6 +9,8 @@ Disallow: /parents/
 Disallow: /reports/
 Disallow: /toolkit
 Disallow: /sound-board
+Disallow: /ingest
+Disallow: /questions
 Disallow: /p/
 
 Sitemap: https://cuddle-spark-nexus.lovable.app/sitemap.xml
