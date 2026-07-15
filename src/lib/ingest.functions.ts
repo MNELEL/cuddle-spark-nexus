@@ -83,6 +83,45 @@ export type LessonExamQuestion = {
   include?: boolean;
 };
 
+/* ------------------------ Auto (smart classification) ------------------------ */
+
+export type AutoCategory = "grades" | "behavior" | "journal" | "parent_letter" | "resource" | "other";
+
+export const AUTO_CATEGORY_LABEL: Record<AutoCategory, string> = {
+  grades: "ציונים",
+  behavior: "הערת התנהגות",
+  journal: "יומן כיתה",
+  parent_letter: "מכתב / שיחת הורים",
+  resource: "חומר לימוד",
+  other: "אחר",
+};
+
+export type AutoStudentMatch = { name: string; student_id: string | null; confidence: number };
+
+export type AutoItem = {
+  id: string;
+  category: AutoCategory;
+  student: AutoStudentMatch | null;
+  // Category-specific fields (all optional so a single UI can render them)
+  subject?: string;
+  value?: number;
+  max_value?: number;
+  behavior_type?: "positive" | "negative" | "neutral";
+  channel?: "phone" | "meeting" | "whatsapp" | "email";
+  title?: string;
+  description?: string;
+  date?: string; // YYYY-MM-DD
+  confidence: number; // 0..1
+  include: boolean;
+};
+
+export type AutoExtracted = {
+  kind: "auto";
+  detected: AutoCategory;
+  reasoning: string;
+  items: AutoItem[];
+};
+
 /* ------------------------ upload URL ------------------------ */
 
 export const getIngestUploadUrl = createServerFn({ method: "POST" })
