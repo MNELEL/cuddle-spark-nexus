@@ -76,16 +76,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "ClassAlign Studio · ניהול כיתה חכם עם AI" },
-      { name: "description", content: "סטודיו ניהול כיתה לרוח המודרנית — סידור הושבה AI, מעקב פדגוגי, דוחות חכמים, וחוויית 3D עוצרת נשימה." },
-      { property: "og:title", content: "ClassAlign Studio · ניהול כיתה חכם עם AI" },
-      { property: "og:description", content: "סטודיו ניהול כיתה לרוח המודרנית — סידור הושבה AI, מעקב פדגוגי, דוחות חכמים, וחוויית 3D עוצרת נשימה." },
+      { title: "ClassAlign Studio" },
       { property: "og:type", content: "website" },
+      { property: "og:site_name", content: "ClassAlign Studio" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:title", content: "ClassAlign Studio · ניהול כיתה חכם עם AI" },
-      { name: "twitter:description", content: "סטודיו ניהול כיתה לרוח המודרנית — סידור הושבה AI, מעקב פדגוגי, דוחות חכמים, וחוויית 3D עוצרת נשימה." },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/05baaa1b-2e2c-4979-b6f1-619d01883919" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/05baaa1b-2e2c-4979-b6f1-619d01883919" },
     ],
     links: [
       {
