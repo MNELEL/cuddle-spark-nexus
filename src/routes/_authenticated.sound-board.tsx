@@ -5,6 +5,16 @@ import { getSharedAudioContext } from "@/lib/warm-dashboard-media";
 
 export const Route = createFileRoute("/_authenticated/sound-board")({
   component: SoundBoardPage,
+  head: () => ({
+    meta: [
+      { title: "לוח צלילים לכיתה · ClassAlign Studio" },
+      { name: "description", content: "לוח צלילים מהיר לפתיחת שיעור, סיום, שקט, מחיאות כפיים והתראות — הכל בלחיצת כפתור." },
+      { property: "og:title", content: "לוח צלילים לכיתה · ClassAlign Studio" },
+      { property: "og:description", content: "צלילי כיתה בלחיצה — פתיחה, סיום, שקט, מחיאות והתראות." },
+      { property: "og:url", content: "https://cuddle-spark-nexus.lovable.app/sound-board" },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
 });
 
 type Sound =
