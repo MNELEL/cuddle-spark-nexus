@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const uuid = z.string().uuid();
-const KIND = z.enum(["roster", "resource", "lesson_audio"]);
+const KIND = z.enum(["roster", "resource", "lesson_audio", "auto"]);
 export type IngestKind = z.infer<typeof KIND>;
 
 export type IngestJob = {
@@ -15,7 +15,7 @@ export type IngestJob = {
   file_name: string;
   mime_type: string;
   status: "uploaded" | "analyzing" | "ready" | "committed" | "failed" | "canceled";
-  extracted: RosterExtracted | ResourceExtracted | LessonExtracted | Record<string, never>;
+  extracted: RosterExtracted | ResourceExtracted | LessonExtracted | AutoExtracted | Record<string, never>;
   summary: string;
   error: string | null;
   created_at: string;
