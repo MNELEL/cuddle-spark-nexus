@@ -10,8 +10,9 @@ export const Route = createFileRoute("/p/$token")({
   component: ParentPage,
   head: () => ({
     meta: [
-      { title: "פורטל הורים" },
-      { name: "description", content: "צפייה בהתקדמות התלמיד — נשלח על ידי הרב המלמד." },
+      { title: "פורטל הורים · ClassAlign Studio" },
+      { name: "description", content: "צפייה בהתקדמות התלמיד — ציונים, נוכחות והתנהגות — קישור אישי מהרב המלמד." },
+      { name: "robots", content: "noindex" },
     ],
   }),
 });
