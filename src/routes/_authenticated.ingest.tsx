@@ -8,9 +8,11 @@ import {
   getIngestUploadUrl, createIngestJob, analyzeIngestJob, getIngestJob,
   listIngestJobs, deleteIngestJob, commitRoster, commitResource, commitLessonAudio,
   remapRosterTabular, retryLessonQuestions,
-  regenerateLessonSummary,
+  regenerateLessonSummary, commitAuto,
+  AUTO_CATEGORY_LABEL,
   type IngestJob, type IngestKind, type RosterExtracted, type ResourceExtracted, type LessonExtracted,
   type LessonExamQuestion, type RosterTabular, type RosterTargetField,
+  type AutoExtracted, type AutoItem, type AutoCategory,
 } from "@/lib/ingest.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,7 +22,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Sparkles, Upload, Users, FileText, Mic, Loader2, Trash2, CheckCircle2, XCircle, HelpCircle, Sigma, FileDown, AlertTriangle, RefreshCw, Wand2, Undo2, Eye } from "lucide-react";
+import { Sparkles, Upload, Users, FileText, Mic, Loader2, Trash2, CheckCircle2, XCircle, HelpCircle, Sigma, FileDown, AlertTriangle, RefreshCw, Wand2, Undo2, Eye, ScanLine, GraduationCap, Heart, BookMarked, MailOpen, Wand } from "lucide-react";
 import { z } from "zod";
 import { RosterReviewTable } from "@/components/ingest/roster-review-table";
 import { ColumnMapper } from "@/components/ingest/column-mapper";
@@ -47,18 +49,21 @@ export const Route = createFileRoute("/_authenticated/ingest")({
 });
 
 const KIND_LABEL: Record<IngestKind, string> = {
+  auto: "זיהוי אוטומטי",
   roster: "רשימת תלמידים",
   resource: "חומר לימוד",
   lesson_audio: "הקלטת שיעור",
 };
 
 const KIND_FORMATS: Record<IngestKind, string[]> = {
+  auto: ["תמונה", "PDF", "טקסט"],
   roster: ["תמונה (JPG/PNG)", "PDF", "Excel (XLSX/XLS)", "CSV", "TXT"],
   resource: ["תמונה", "PDF", "DOCX", "TXT / Markdown"],
   lesson_audio: ["MP3", "WAV", "M4A", "WEBM"],
 };
 
 const KIND_HINT: Record<IngestKind, string> = {
+  auto: "המערכת תזהה לבד אם זה ציונים, הערות, יומן, מכתב הורים או חומר לימוד — ותשבץ למקום הנכון.",
   roster: "לדוגמה: צילום רשימת כיתה עם שמות, ת.ז., תאריכי לידה, טלפוני הורים.",
   resource: "לדוגמה: דף עבודה בגמרא, מערך שיעור בהלכה או חידה לפרשת השבוע.",
   lesson_audio: "לדוגמה: הקלטת שיעור של 20–40 דקות; יופקו תמלול, סיכום ושאלות מבחן.",
