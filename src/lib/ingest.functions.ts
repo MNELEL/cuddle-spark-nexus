@@ -264,9 +264,15 @@ export const analyzeIngestJob = createServerFn({ method: "POST" })
       } else if (job.kind === "resource") {
         extracted = await analyzeResource(b64, mime, apiKey);
         summary = extracted.title || "חומר לימוד";
-      } else {
+      } else if (job.kind === "lesson_audio") {
         extracted = await analyzeLessonAudio(b64, mime, apiKey);
         summary = extracted.title || "הקלטת שיעור";
+      } else {
+        // auto — classify + extract, matching students in scope.
+        const auto = await analyzeAuto(b64, mime, job.file_name, job.class_id, context.supabase, context.userId, apiKey);
+        extracted = auto as unknown as ResourceExtracted; // stored as JSON; typed as AutoExtracted at read time
+        const primary = AUTO_CATEGORY_LABEL[auto.detected] ?? "אחר";
+        summary = `זוהה: ${primary} — ${auto.items.length} פריטים לסקירה`;
       }
 
       const { error } = await context.supabase.from("ingest_jobs")
