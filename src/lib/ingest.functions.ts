@@ -975,3 +975,305 @@ export const commitLessonAudio = createServerFn({ method: "POST" })
       .eq("id", data.jobId);
     return { ok: true, id: (ins as { id: string }).id, question_bank_id: questionBankId };
   });
+
+/* ------------------------ auto (smart classify) ------------------------ */
+
+type SupaLike = {
+  from: (t: string) => { select: (c: string) => { eq: (col: string, v: string) => unknown } };
+};
+
+async function analyzeAuto(
+  b64: string,
+  mime: string,
+  fileName: string,
+  classId: string | null,
+  supabase: SupaLike,
+  ownerId: string,
+  apiKey: string,
+): Promise<AutoExtracted> {
+  // Fetch candidate students (scoped to class if given, else all owner's classes).
+  type StudentRow = { id: string; name: string; class_id: string };
+  type ClassRow = { id: string; name: string };
+  let students: StudentRow[] = [];
+  let classes: ClassRow[] = [];
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sbAny = supabase as any;
+    if (classId) {
+      const r = await sbAny.from("students").select("id,name,class_id").eq("class_id", classId);
+      students = (r.data ?? []) as StudentRow[];
+      const rc = await sbAny.from("classes").select("id,name").eq("id", classId);
+      classes = (rc.data ?? []) as ClassRow[];
+    } else {
+      const rc = await sbAny.from("classes").select("id,name").eq("owner_id", ownerId);
+      classes = (rc.data ?? []) as ClassRow[];
+      if (classes.length) {
+        const ids = classes.map((c) => c.id);
+        const rs = await sbAny.from("students").select("id,name,class_id").in("class_id", ids);
+        students = (rs.data ?? []) as StudentRow[];
+      }
+    }
+  } catch { /* fall through with empty lists */ }
+
+  const studentList = students.slice(0, 400).map((s) => `- ${s.name} [id:${s.id}]`).join("\n") || "(אין תלמידים)";
+  const classList = classes.slice(0, 40).map((c) => `- ${c.name} [id:${c.id}]`).join("\n") || "(אין כיתות)";
+
+  const system = `אתה עוזר של רב/מלמד בתלמוד תורה חרדי במערכת ClassAlign. קיבלת קובץ חופשי מהמלמד — צילום, PDF או טקסט — ועליך לזהות באיזה סוג תוכן מדובר ולחלץ פריטים מובנים.
+
+קטגוריות אפשריות (בחר אחת ראשית ב-"detected"):
+- grades — טבלת ציונים / מבחן / רשימת ציונים לתלמידים.
+- behavior — הערות התנהגות (חיוביות/שליליות/ניטרליות) לתלמיד/ים ספציפיים.
+- journal — יומן/רשימות כיתה כלליות ללא תלמיד ספציפי (סיכום יום, אירועים כלליים).
+- parent_letter — מכתב/סיכום שיחה/הודעה שנשלחו או התקבלו מהורים לגבי תלמיד.
+- resource — חומר לימוד, דף עבודה, מערך שיעור, חידה.
+- other — כל דבר אחר.
+
+התאם כל פריט לתלמיד מהרשימה כשמזוהה שם (גם בשיבוש קל / כינוי). אם אין התאמה — student_id=null.
+
+שדות לכל פריט לפי הקטגוריה (השאר ריק/undefined מה שלא רלוונטי):
+- grades: student_id, subject, value (מספר), max_value (100 אם לא צוין), notes, date (YYYY-MM-DD, ברירת מחדל היום).
+- behavior: student_id, behavior_type ("positive"|"negative"|"neutral"), description, date.
+- journal: description, date. student_id רק אם באמת מוזכר ספציפית.
+- parent_letter: student_id, channel ("phone"|"meeting"|"whatsapp"|"email"), title (נושא), description (תמצית), date.
+- resource: title, description.
+- other: title, description.
+
+לכל פריט קבע confidence (0..1) לפי בהירות הזיהוי. השתמש במונחים "הרב", "המלמד", "התלמידים".
+
+החזר JSON תקין בלבד:
+{"detected":"grades|behavior|journal|parent_letter|resource|other","reasoning":"...","items":[{"category":"grades","student_id":"uuid או null","student_name":"","subject":"","value":0,"max_value":100,"behavior_type":"","channel":"","title":"","description":"","date":"YYYY-MM-DD","confidence":0.0}]}`;
+
+  const isImage = mime.startsWith("image/");
+  const isPdf = mime === "application/pdf";
+  const userContent = isImage
+    ? [{ type: "text", text: "זהה, סווג וחלץ פריטים מהקובץ המצורף:" }, { type: "image_url", image_url: { url: `data:${mime};base64,${b64}` } }]
+    : isPdf
+    ? [{ type: "text", text: "זהה, סווג וחלץ פריטים מהקובץ המצורף:" }, { type: "file", file: { filename: fileName || "file.pdf", file_data: `data:application/pdf;base64,${b64}` } }]
+    : [{ type: "text", text: "זהה, סווג וחלץ פריטים מהטקסט הבא:\n\n" + safeText(b64) }];
+
+  const raw = await callGateway({
+    model: "google/gemini-2.5-flash",
+    messages: [
+      { role: "system", content: system },
+      { role: "user", content: [
+        { type: "text", text: `כיתות אפשריות:\n${classList}\n\nתלמידי הכיתה/ות:\n${studentList}` },
+        ...userContent,
+      ] },
+    ],
+    response_format: { type: "json_object" },
+  }, apiKey);
+
+  type RawItem = {
+    category?: string; student_id?: string | null; student_name?: string;
+    subject?: string; value?: unknown; max_value?: unknown;
+    behavior_type?: string; channel?: string;
+    title?: string; description?: string; date?: string; confidence?: unknown;
+  };
+  let p: { detected?: string; reasoning?: string; items?: RawItem[] } = {};
+  try { p = JSON.parse(raw); } catch { /* ignore */ }
+
+  const validCats: AutoCategory[] = ["grades", "behavior", "journal", "parent_letter", "resource", "other"];
+  const detected = (validCats.includes(p.detected as AutoCategory) ? p.detected : "other") as AutoCategory;
+  const studentById = new Map(students.map((s) => [s.id, s.name]));
+  const nameToId = new Map(students.map((s) => [s.name.trim(), s.id]));
+
+  const items: AutoItem[] = (p.items ?? []).map((it, i): AutoItem => {
+    const cat = (validCats.includes(it.category as AutoCategory) ? it.category : detected) as AutoCategory;
+    let sid: string | null = null;
+    let sname = "";
+    if (typeof it.student_id === "string" && studentById.has(it.student_id)) {
+      sid = it.student_id;
+      sname = studentById.get(sid) || "";
+    } else if (typeof it.student_name === "string" && nameToId.has(it.student_name.trim())) {
+      sname = it.student_name.trim();
+      sid = nameToId.get(sname) || null;
+    } else if (typeof it.student_name === "string") {
+      sname = it.student_name.trim().slice(0, 100);
+    }
+    const conf = Math.max(0, Math.min(1, typeof it.confidence === "number" ? it.confidence : 0.6));
+    const student: AutoStudentMatch | null = (sid || sname)
+      ? { name: sname, student_id: sid, confidence: sid ? Math.max(conf, 0.9) : Math.min(conf, 0.5) }
+      : null;
+    const val = typeof it.value === "number" ? it.value : (typeof it.value === "string" ? parseFloat(it.value) : undefined);
+    const maxv = typeof it.max_value === "number" ? it.max_value : (typeof it.max_value === "string" ? parseFloat(it.max_value) : undefined);
+    const behavior_type: AutoItem["behavior_type"] | undefined =
+      it.behavior_type === "positive" || it.behavior_type === "negative" || it.behavior_type === "neutral" ? it.behavior_type : undefined;
+    const channel: AutoItem["channel"] | undefined =
+      it.channel === "phone" || it.channel === "meeting" || it.channel === "whatsapp" || it.channel === "email" ? it.channel : undefined;
+    return {
+      id: `auto-${i}-${Math.random().toString(36).slice(2, 8)}`,
+      category: cat,
+      student,
+      subject: cleanStr(it.subject, 80),
+      value: Number.isFinite(val) ? val : undefined,
+      max_value: Number.isFinite(maxv) ? maxv : (cat === "grades" ? 100 : undefined),
+      behavior_type,
+      channel,
+      title: cleanStr(it.title, 200),
+      description: cleanStr(it.description, 2000),
+      date: normDate(it.date) ?? new Date().toISOString().slice(0, 10),
+      confidence: conf,
+      include: conf >= 0.4 && (cat === "journal" || cat === "resource" || cat === "other" || !!sid),
+    };
+  }).slice(0, 200);
+
+  return {
+    kind: "auto",
+    detected,
+    reasoning: String(p.reasoning ?? "").slice(0, 800),
+    items,
+  };
+}
+
+/* Commit auto items — routes each item to its appropriate table. */
+
+const AutoItemSchema = z.object({
+  id: z.string().max(60),
+  category: z.enum(["grades", "behavior", "journal", "parent_letter", "resource", "other"]),
+  student: z.object({
+    name: z.string().max(100),
+    student_id: z.string().uuid().nullable(),
+    confidence: z.number().min(0).max(1),
+  }).nullable(),
+  subject: z.string().max(80).optional(),
+  value: z.number().optional(),
+  max_value: z.number().positive().optional(),
+  behavior_type: z.enum(["positive", "negative", "neutral"]).optional(),
+  channel: z.enum(["phone", "meeting", "whatsapp", "email"]).optional(),
+  title: z.string().max(200).optional(),
+  description: z.string().max(2000).optional(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  confidence: z.number().min(0).max(1),
+  include: z.boolean(),
+});
+
+export const commitAuto = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({
+    jobId: uuid,
+    class_id: uuid.nullable().optional(),
+    items: z.array(AutoItemSchema).min(1).max(200),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const results = { grades: 0, behavior: 0, journal: 0, parent_letter: 0, resource: 0, other: 0, skipped: 0 };
+
+    // Fetch student -> class_id map for any student_ids referenced (RLS-scoped).
+    const sids = Array.from(new Set(data.items
+      .filter((i) => i.include && i.student?.student_id)
+      .map((i) => i.student!.student_id!)));
+    const studentClass = new Map<string, string>();
+    if (sids.length) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const q = await (context.supabase as any).from("students").select("id,class_id").in("id", sids);
+      for (const r of (q.data ?? []) as { id: string; class_id: string }[]) {
+        studentClass.set(r.id, r.class_id);
+      }
+    }
+
+    for (const it of data.items) {
+      if (!it.include) { results.skipped++; continue; }
+      const sid = it.student?.student_id ?? null;
+      const cid = (sid && studentClass.get(sid)) || data.class_id || null;
+
+      try {
+        if (it.category === "grades") {
+          if (!sid || !cid || typeof it.value !== "number") { results.skipped++; continue; }
+          await context.supabase.from("grades").insert({
+            class_id: cid, student_id: sid,
+            subject: it.subject ?? "", value: it.value,
+            max_value: it.max_value ?? 100,
+            notes: it.description ?? "",
+            date: it.date ?? today,
+          } as never);
+          results.grades++;
+        } else if (it.category === "behavior") {
+          if (!sid || !cid) { results.skipped++; continue; }
+          await context.supabase.from("discipline_events").insert({
+            class_id: cid, student_id: sid,
+            type: it.behavior_type ?? "neutral",
+            category: it.subject ?? "note",
+            description: it.description ?? "",
+            date: it.date ?? today,
+          } as never);
+          results.behavior++;
+        } else if (it.category === "parent_letter") {
+          if (!sid || !cid) { results.skipped++; continue; }
+          await context.supabase.from("parent_communications").insert({
+            class_id: cid, student_id: sid,
+            channel: it.channel ?? "phone",
+            subject: it.title ?? "",
+            summary: it.description ?? "",
+            date: it.date ?? today,
+          } as never);
+          results.parent_letter++;
+        } else if (it.category === "journal") {
+          // Attach journal to class — if we have a student, use them; else attach to first student of class as owner-only note.
+          if (!cid) { results.skipped++; continue; }
+          if (sid) {
+            await context.supabase.from("discipline_events").insert({
+              class_id: cid, student_id: sid,
+              type: "neutral", category: "journal",
+              description: it.description ?? "",
+              date: it.date ?? today,
+            } as never);
+          } else {
+            // No student — store as resource note tagged "יומן".
+            await context.supabase.from("teaching_resources").insert({
+              owner_id: context.userId,
+              title: it.title || `יומן כיתה — ${it.date ?? today}`,
+              description: it.description ?? "",
+              subject: "", grade_level: "",
+              resource_type: "other",
+              tags: ["יומן"],
+              content: { body: it.description ?? "", questions: [] },
+              ai_generated: true,
+              source_prompt: "מקור: העלאה חכמה (יומן)",
+            } as never);
+          }
+          results.journal++;
+        } else if (it.category === "resource") {
+          await context.supabase.from("teaching_resources").insert({
+            owner_id: context.userId,
+            title: it.title || "חומר לימוד",
+            description: it.description ?? "",
+            subject: it.subject ?? "", grade_level: "",
+            resource_type: "other",
+            tags: [],
+            content: { body: it.description ?? "", questions: [] },
+            ai_generated: true,
+            source_prompt: "מקור: העלאה חכמה",
+          } as never);
+          results.resource++;
+        } else {
+          // other — save as resource-note
+          await context.supabase.from("teaching_resources").insert({
+            owner_id: context.userId,
+            title: it.title || "פריט מהעלאה חכמה",
+            description: it.description ?? "",
+            subject: "", grade_level: "",
+            resource_type: "other",
+            tags: ["אחר"],
+            content: { body: it.description ?? "", questions: [] },
+            ai_generated: true,
+            source_prompt: "מקור: העלאה חכמה",
+          } as never);
+          results.other++;
+        }
+      } catch (e) {
+        console.error("[commitAuto item]", e);
+        results.skipped++;
+      }
+    }
+
+    // cleanup staging + mark job committed
+    const { data: jobRow } = await context.supabase
+      .from("ingest_jobs").select("source_path").eq("id", data.jobId).maybeSingle();
+    const path = (jobRow as { source_path: string } | null)?.source_path;
+    if (path) await context.supabase.storage.from("ingest-staging").remove([path]).catch(() => {});
+    await context.supabase.from("ingest_jobs")
+      .update({ status: "committed", committed_at: new Date().toISOString() } as never)
+      .eq("id", data.jobId);
+
+    return { ok: true, results };
+  });
