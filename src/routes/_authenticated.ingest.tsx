@@ -426,6 +426,7 @@ function JobDetail({ jobId, classes, preferredClassId, onClose }: {
 
   if (job.kind === "roster") return <RosterPreview job={job} classes={classes} preferredClassId={preferredClassId} onDone={onClose} />;
   if (job.kind === "resource") return <ResourcePreview job={job} onDone={onClose} />;
+  if (job.kind === "auto") return <AutoPreview job={job} classes={classes} preferredClassId={preferredClassId} onDone={onClose} />;
   return <LessonPreview
     job={job} classes={classes} preferredClassId={preferredClassId} onDone={onClose}
     onReanalyze={() => reAnalyze.mutate()} reanalyzing={reAnalyze.isPending || isFetching}
