@@ -81,15 +81,22 @@ function IngestPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <div className="rounded-2xl border bg-card bg-mesh p-6 shadow-sm">
+      <div className="rounded-2xl border bg-card bg-mesh p-4 sm:p-6 shadow-sm">
         <div className="flex items-center gap-2">
           <Sparkles className="h-6 w-6 text-primary" />
-          <h1 className="font-display text-3xl font-bold tracking-tight">העלאה חכמה</h1>
+          <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight">העלאה חכמה</h1>
         </div>
         <p className="mt-1 text-sm text-muted-foreground">
-          העלה כל קובץ — רשימת תלמידים, חומר לימוד או הקלטה — והמערכת תזהה, תחלץ ותציע היכן לשבץ.
+          העלה כל קובץ — ציונים, הערות, יומן, מכתב הורים, חומר לימוד או הקלטה — והמערכת תזהה ותשבץ אוטומטית.
         </p>
       </div>
+
+      <SmartAutoCard
+        classes={classes as { id: string; name: string }[]}
+        classId={classId}
+        setClassId={setClassId}
+        onCreated={(id) => { setSelectedJobId(id); refetch(); }}
+      />
 
       <div className="grid gap-4 md:grid-cols-3">
         <UploadCard kind="roster" icon={<Users className="h-6 w-6" />}
