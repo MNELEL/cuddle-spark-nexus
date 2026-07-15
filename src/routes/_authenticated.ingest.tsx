@@ -8,9 +8,11 @@ import {
   getIngestUploadUrl, createIngestJob, analyzeIngestJob, getIngestJob,
   listIngestJobs, deleteIngestJob, commitRoster, commitResource, commitLessonAudio,
   remapRosterTabular, retryLessonQuestions,
-  regenerateLessonSummary,
+  regenerateLessonSummary, commitAuto,
+  AUTO_CATEGORY_LABEL,
   type IngestJob, type IngestKind, type RosterExtracted, type ResourceExtracted, type LessonExtracted,
   type LessonExamQuestion, type RosterTabular, type RosterTargetField,
+  type AutoExtracted, type AutoItem, type AutoCategory,
 } from "@/lib/ingest.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,7 +22,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Sparkles, Upload, Users, FileText, Mic, Loader2, Trash2, CheckCircle2, XCircle, HelpCircle, Sigma, FileDown, AlertTriangle, RefreshCw, Wand2, Undo2, Eye } from "lucide-react";
+import { Sparkles, Upload, Users, FileText, Mic, Loader2, Trash2, CheckCircle2, XCircle, HelpCircle, Sigma, FileDown, AlertTriangle, RefreshCw, Wand2, Undo2, Eye, ScanLine, GraduationCap, Heart, BookMarked, MailOpen, Wand } from "lucide-react";
 import { z } from "zod";
 import { RosterReviewTable } from "@/components/ingest/roster-review-table";
 import { ColumnMapper } from "@/components/ingest/column-mapper";
@@ -47,18 +49,21 @@ export const Route = createFileRoute("/_authenticated/ingest")({
 });
 
 const KIND_LABEL: Record<IngestKind, string> = {
+  auto: "זיהוי אוטומטי",
   roster: "רשימת תלמידים",
   resource: "חומר לימוד",
   lesson_audio: "הקלטת שיעור",
 };
 
 const KIND_FORMATS: Record<IngestKind, string[]> = {
+  auto: ["תמונה", "PDF", "טקסט"],
   roster: ["תמונה (JPG/PNG)", "PDF", "Excel (XLSX/XLS)", "CSV", "TXT"],
   resource: ["תמונה", "PDF", "DOCX", "TXT / Markdown"],
   lesson_audio: ["MP3", "WAV", "M4A", "WEBM"],
 };
 
 const KIND_HINT: Record<IngestKind, string> = {
+  auto: "המערכת תזהה לבד אם זה ציונים, הערות, יומן, מכתב הורים או חומר לימוד — ותשבץ למקום הנכון.",
   roster: "לדוגמה: צילום רשימת כיתה עם שמות, ת.ז., תאריכי לידה, טלפוני הורים.",
   resource: "לדוגמה: דף עבודה בגמרא, מערך שיעור בהלכה או חידה לפרשת השבוע.",
   lesson_audio: "לדוגמה: הקלטת שיעור של 20–40 דקות; יופקו תמלול, סיכום ושאלות מבחן.",
@@ -76,15 +81,22 @@ function IngestPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <div className="rounded-2xl border bg-card bg-mesh p-6 shadow-sm">
+      <div className="rounded-2xl border bg-card bg-mesh p-4 sm:p-6 shadow-sm">
         <div className="flex items-center gap-2">
           <Sparkles className="h-6 w-6 text-primary" />
-          <h1 className="font-display text-3xl font-bold tracking-tight">העלאה חכמה</h1>
+          <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight">העלאה חכמה</h1>
         </div>
         <p className="mt-1 text-sm text-muted-foreground">
-          העלה כל קובץ — רשימת תלמידים, חומר לימוד או הקלטה — והמערכת תזהה, תחלץ ותציע היכן לשבץ.
+          העלה כל קובץ — ציונים, הערות, יומן, מכתב הורים, חומר לימוד או הקלטה — והמערכת תזהה ותשבץ אוטומטית.
         </p>
       </div>
+
+      <SmartAutoCard
+        classes={classes as { id: string; name: string }[]}
+        classId={classId}
+        setClassId={setClassId}
+        onCreated={(id) => { setSelectedJobId(id); refetch(); }}
+      />
 
       <div className="grid gap-4 md:grid-cols-3">
         <UploadCard kind="roster" icon={<Users className="h-6 w-6" />}
@@ -414,6 +426,7 @@ function JobDetail({ jobId, classes, preferredClassId, onClose }: {
 
   if (job.kind === "roster") return <RosterPreview job={job} classes={classes} preferredClassId={preferredClassId} onDone={onClose} />;
   if (job.kind === "resource") return <ResourcePreview job={job} onDone={onClose} />;
+  if (job.kind === "auto") return <AutoPreview job={job} classes={classes} preferredClassId={preferredClassId} onDone={onClose} />;
   return <LessonPreview
     job={job} classes={classes} preferredClassId={preferredClassId} onDone={onClose}
     onReanalyze={() => reAnalyze.mutate()} reanalyzing={reAnalyze.isPending || isFetching}
@@ -1003,5 +1016,322 @@ function LessonStages({
         </p>
       )}
     </div>
+  );
+}
+
+/* ---------------- Smart Auto Card (primary CTA, mobile-friendly) ---------------- */
+
+function SmartAutoCard({
+  classes, classId, setClassId, onCreated,
+}: {
+  classes: { id: string; name: string }[];
+  classId?: string;
+  setClassId: (v: string) => void;
+  onCreated: (jobId: string) => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const getUrl = useServerFn(getIngestUploadUrl);
+  const create = useServerFn(createIngestJob);
+  const analyze = useServerFn(analyzeIngestJob);
+
+  async function onFile(file: File) {
+    if (file.size > 20 * 1024 * 1024) { toast.error("הקובץ גדול מ-20MB"); return; }
+    setBusy(true);
+    try {
+      const safeName = file.name.replace(/[^a-zA-Z0-9._\- ]/g, "_");
+      const { path, token } = await getUrl({ data: { filename: safeName } });
+      const up = await supabase.storage.from("ingest-staging").uploadToSignedUrl(path, token, file, { contentType: file.type });
+      if (up.error) throw new Error(up.error.message);
+      const { id } = await create({ data: {
+        kind: "auto", source_path: path, file_name: file.name, mime_type: file.type,
+        class_id: classId ?? null,
+      }});
+      toast.success("הועלה — ה-AI מזהה ומסווג...");
+      onCreated(id);
+      await analyze({ data: { id } }).catch((e) => toast.error(e instanceof Error ? e.message : "שגיאה בניתוח"));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "שגיאה בהעלאה");
+    } finally {
+      setBusy(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  }
+
+  return (
+    <Card className="relative overflow-hidden border-primary/40 bg-gradient-to-br from-primary/5 via-card to-accent/5">
+      <div className="pointer-events-none absolute -top-16 -end-16 h-40 w-40 rounded-full bg-primary/10 blur-3xl" />
+      <CardContent className="relative space-y-4 p-4 sm:p-6">
+        <div className="flex items-start gap-3">
+          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-primary/15 text-primary">
+            <Wand className="h-6 w-6" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <h2 className="truncate text-lg sm:text-xl font-bold">זיהוי אוטומטי</h2>
+              <Badge variant="secondary" className="text-[10px]">מומלץ</Badge>
+            </div>
+            <p className="mt-0.5 text-xs sm:text-sm text-muted-foreground">
+              העלה כל קובץ — ציונים, הערה, יומן, מכתב הורים או חומר לימוד — וה-AI יבחר לבד לאיזה תלמיד ולאן לשבץ.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+          {([
+            ["grades", GraduationCap, "ציונים"],
+            ["behavior", Heart, "הערות"],
+            ["journal", BookMarked, "יומן"],
+            ["parent_letter", MailOpen, "הורים"],
+            ["resource", FileText, "חומר"],
+          ] as const).map(([key, Icon, label]) => (
+            <div key={key} className="flex items-center gap-1.5 rounded-lg border bg-background/50 px-2 py-1.5 text-xs">
+              <Icon className="h-3.5 w-3.5 text-primary shrink-0" />
+              <span className="truncate">{label}</span>
+            </div>
+          ))}
+        </div>
+
+        {classes.length > 0 && (
+          <div>
+            <Label className="text-xs">כיתה (אופציונלי — ה-AI ינסה לזהות לבד)</Label>
+            <Select value={classId ?? ""} onValueChange={setClassId}>
+              <SelectTrigger className="h-10"><SelectValue placeholder="בחר כיתה או השאר ריק" /></SelectTrigger>
+              <SelectContent>
+                {classes.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*,application/pdf,.txt,.md,.csv,.xlsx,.xls,.docx"
+          className="hidden"
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) void onFile(f); }}
+        />
+
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => !busy && inputRef.current?.click()}
+          onKeyDown={(e) => { if ((e.key === "Enter" || e.key === " ") && !busy) inputRef.current?.click(); }}
+          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault(); setDragOver(false);
+            const f = e.dataTransfer.files?.[0]; if (f) void onFile(f);
+          }}
+          className={`flex min-h-32 sm:min-h-40 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed p-6 text-center transition ${
+            dragOver ? "border-primary bg-primary/10" : "border-primary/30 hover:border-primary/60 hover:bg-primary/5"
+          } ${busy ? "opacity-60 pointer-events-none" : "cursor-pointer active:scale-[0.99]"}`}
+        >
+          {busy ? (
+            <>
+              <Loader2 className="h-10 w-10 animate-spin text-primary" />
+              <span className="text-sm font-medium">ה-AI מזהה ומסווג את הקובץ...</span>
+              <span className="text-xs text-muted-foreground">זה יכול לקחת 10–30 שניות</span>
+            </>
+          ) : (
+            <>
+              <div className="grid h-14 w-14 place-items-center rounded-full bg-primary/15 text-primary">
+                <ScanLine className="h-7 w-7" />
+              </div>
+              <div className="text-base sm:text-lg font-semibold">גרור קובץ או לחץ להעלאה</div>
+              <div className="text-xs text-muted-foreground">תמונה, PDF, טקסט או Excel — עד 20MB</div>
+            </>
+          )}
+        </div>
+
+        <Button
+          size="lg"
+          className="w-full h-12 text-base font-semibold sm:hidden"
+          disabled={busy}
+          onClick={() => inputRef.current?.click()}
+        >
+          {busy ? <><Loader2 className="ms-1 h-5 w-5 animate-spin" /> מעלה ומנתח...</> : <><Upload className="ms-1 h-5 w-5" /> בחר קובץ להעלאה</>}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+/* ---------------- Auto Preview (post-classification review) ---------------- */
+
+const CATEGORY_ICON: Record<AutoCategory, React.ComponentType<{ className?: string }>> = {
+  grades: GraduationCap,
+  behavior: Heart,
+  journal: BookMarked,
+  parent_letter: MailOpen,
+  resource: FileText,
+  other: Sparkles,
+};
+
+function AutoPreview({ job, classes, preferredClassId, onDone }: {
+  job: IngestJob; classes: { id: string; name: string }[]; preferredClassId?: string; onDone: () => void;
+}) {
+  const ex = job.extracted as unknown as AutoExtracted;
+  const [items, setItems] = useState<AutoItem[]>(ex?.items ?? []);
+  const [classId, setClassId] = useState<string>(preferredClassId ?? job.class_id ?? "");
+  const commit = useServerFn(commitAuto);
+  const commitM = useMutation({
+    mutationFn: () => commit({ data: {
+      jobId: job.id,
+      class_id: classId ? classId : null,
+      items,
+    }}),
+    onSuccess: (r) => {
+      const parts: string[] = [];
+      const s = (r as { results: Record<string, number> }).results;
+      if (s.grades) parts.push(`${s.grades} ציונים`);
+      if (s.behavior) parts.push(`${s.behavior} הערות`);
+      if (s.journal) parts.push(`${s.journal} יומן`);
+      if (s.parent_letter) parts.push(`${s.parent_letter} מכתבי הורים`);
+      if (s.resource) parts.push(`${s.resource} חומרים`);
+      if (s.other) parts.push(`${s.other} אחר`);
+      toast.success(parts.length ? `נשמר: ${parts.join(" · ")}` : "לא נשמרו פריטים");
+      onDone();
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
+  });
+
+  const included = items.filter((i) => i.include).length;
+  const DetectedIcon = CATEGORY_ICON[ex?.detected ?? "other"];
+
+  function updateItem(id: string, patch: Partial<AutoItem>) {
+    setItems((prev) => prev.map((it) => it.id === id ? { ...it, ...patch } : it));
+  }
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base flex flex-wrap items-center gap-2">
+          <ScanLine className="h-5 w-5 text-primary" />
+          <span>סקירת זיהוי אוטומטי</span>
+          <Badge variant="secondary" className="gap-1"><DetectedIcon className="h-3 w-3" />{AUTO_CATEGORY_LABEL[ex?.detected ?? "other"]}</Badge>
+          <span className="text-xs text-muted-foreground">· {included}/{items.length} נבחרו</span>
+        </CardTitle>
+        {ex?.reasoning && (
+          <p className="text-xs text-muted-foreground italic">{ex.reasoning}</p>
+        )}
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {classes.length > 0 && (
+          <div className="rounded-lg bg-muted/40 p-3">
+            <Label className="text-xs">כיתת ברירת מחדל (אם לא זוהתה מהתוכן)</Label>
+            <Select value={classId} onValueChange={setClassId}>
+              <SelectTrigger className="h-9"><SelectValue placeholder="בחר כיתה" /></SelectTrigger>
+              <SelectContent>
+                {classes.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {items.length === 0 ? (
+          <div className="rounded-lg border-2 border-dashed p-8 text-center text-sm text-muted-foreground">
+            לא זוהו פריטים בקובץ.
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {items.map((it) => {
+              const Icon = CATEGORY_ICON[it.category];
+              const confPct = Math.round(it.confidence * 100);
+              const confColor = it.confidence >= 0.7 ? "text-green-600" : it.confidence >= 0.4 ? "text-amber-600" : "text-destructive";
+              return (
+                <div key={it.id} className={`rounded-xl border p-3 transition ${it.include ? "bg-card" : "bg-muted/30 opacity-70"}`}>
+                  <div className="flex items-start gap-3">
+                    <label className="flex items-center pt-1 shrink-0">
+                      <input
+                        type="checkbox"
+                        checked={it.include}
+                        onChange={(e) => updateItem(it.id, { include: e.target.checked })}
+                        className="h-5 w-5 accent-primary"
+                      />
+                    </label>
+                    <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0 flex-1 space-y-1.5">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Select value={it.category} onValueChange={(v) => updateItem(it.id, { category: v as AutoCategory })}>
+                          <SelectTrigger className="h-7 w-auto min-w-32 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {(Object.keys(AUTO_CATEGORY_LABEL) as AutoCategory[]).map((k) => (
+                              <SelectItem key={k} value={k}>{AUTO_CATEGORY_LABEL[k]}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {it.student?.name && (
+                          <Badge variant={it.student.student_id ? "default" : "outline"} className="text-[10px]">
+                            {it.student.student_id ? "✓" : "?"} {it.student.name}
+                          </Badge>
+                        )}
+                        <span className={`ms-auto text-[11px] font-medium ${confColor}`}>{confPct}%</span>
+                      </div>
+
+                      {it.category === "grades" ? (
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                          <Input className="h-8 text-sm" placeholder="מקצוע" value={it.subject ?? ""} onChange={(e) => updateItem(it.id, { subject: e.target.value })} />
+                          <Input className="h-8 text-sm" type="number" placeholder="ציון" value={it.value ?? ""} onChange={(e) => updateItem(it.id, { value: e.target.value === "" ? undefined : Number(e.target.value) })} />
+                          <Input className="h-8 text-sm" type="number" placeholder="מקס'" value={it.max_value ?? 100} onChange={(e) => updateItem(it.id, { max_value: Number(e.target.value) })} />
+                          <Input className="h-8 text-sm" type="date" value={it.date ?? ""} onChange={(e) => updateItem(it.id, { date: e.target.value })} />
+                        </div>
+                      ) : it.category === "behavior" ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <Select value={it.behavior_type ?? "neutral"} onValueChange={(v) => updateItem(it.id, { behavior_type: v as AutoItem["behavior_type"] })}>
+                            <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="positive">חיובית</SelectItem>
+                              <SelectItem value="neutral">ניטרלית</SelectItem>
+                              <SelectItem value="negative">שלילית</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Input className="h-8 text-sm" type="date" value={it.date ?? ""} onChange={(e) => updateItem(it.id, { date: e.target.value })} />
+                          <Textarea className="text-sm sm:col-span-2" rows={2} placeholder="תיאור" value={it.description ?? ""} onChange={(e) => updateItem(it.id, { description: e.target.value })} />
+                        </div>
+                      ) : it.category === "parent_letter" ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <Select value={it.channel ?? "phone"} onValueChange={(v) => updateItem(it.id, { channel: v as AutoItem["channel"] })}>
+                            <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="phone">טלפון</SelectItem>
+                              <SelectItem value="meeting">פגישה</SelectItem>
+                              <SelectItem value="whatsapp">וואטסאפ</SelectItem>
+                              <SelectItem value="email">אימייל</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Input className="h-8 text-sm" type="date" value={it.date ?? ""} onChange={(e) => updateItem(it.id, { date: e.target.value })} />
+                          <Input className="h-8 text-sm sm:col-span-2" placeholder="נושא" value={it.title ?? ""} onChange={(e) => updateItem(it.id, { title: e.target.value })} />
+                          <Textarea className="text-sm sm:col-span-2" rows={2} placeholder="תמצית" value={it.description ?? ""} onChange={(e) => updateItem(it.id, { description: e.target.value })} />
+                        </div>
+                      ) : (
+                        <div className="grid gap-2">
+                          <Input className="h-8 text-sm" placeholder="כותרת" value={it.title ?? ""} onChange={(e) => updateItem(it.id, { title: e.target.value })} />
+                          <Textarea className="text-sm" rows={2} placeholder="תיאור" value={it.description ?? ""} onChange={(e) => updateItem(it.id, { description: e.target.value })} />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <div className="sticky bottom-0 -mx-4 sm:-mx-6 -mb-4 sm:-mb-6 border-t bg-card/95 backdrop-blur px-4 sm:px-6 py-3 flex flex-col sm:flex-row gap-2 justify-end">
+          <Button variant="ghost" onClick={onDone} className="order-2 sm:order-1">ביטול</Button>
+          <Button
+            onClick={() => commitM.mutate()}
+            disabled={commitM.isPending || included === 0}
+            className="order-1 sm:order-2 h-11 sm:h-10 text-base sm:text-sm"
+          >
+            {commitM.isPending ? <><Loader2 className="ms-1 h-4 w-4 animate-spin" /> שומר...</> : `אשר ושבץ (${included})`}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
