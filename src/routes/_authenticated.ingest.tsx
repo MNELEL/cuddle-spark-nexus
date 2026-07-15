@@ -38,6 +38,10 @@ export const Route = createFileRoute("/_authenticated/ingest")({
     meta: [
       { title: "העלאה חכמה · ClassAlign Studio" },
       { name: "description", content: "העלאה חכמה של קבצים – רשימות תלמידים, חומרי לימוד והקלטות שיעור מנותחים אוטומטית ומשובצים למקומם." },
+      { property: "og:title", content: "העלאה חכמה · ClassAlign Studio" },
+      { property: "og:description", content: "רשימות תלמידים, חומרי לימוד והקלטות שיעור — מנותחים ומשובצים אוטומטית." },
+      { property: "og:url", content: "https://cuddle-spark-nexus.lovable.app/ingest" },
+      { name: "robots", content: "noindex" },
     ],
   }),
 });
