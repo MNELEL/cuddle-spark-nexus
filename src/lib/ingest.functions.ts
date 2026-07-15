@@ -269,7 +269,7 @@ export const analyzeIngestJob = createServerFn({ method: "POST" })
         summary = extracted.title || "הקלטת שיעור";
       } else {
         // auto — classify + extract, matching students in scope.
-        const auto = await analyzeAuto(b64, mime, job.file_name, job.class_id, context.supabase, context.userId, apiKey);
+        const auto = await analyzeAuto(b64, mime, job.file_name, job.class_id, context.supabase as unknown as SupaLike, context.userId, apiKey);
         extracted = auto as unknown as ResourceExtracted; // stored as JSON; typed as AutoExtracted at read time
         const primary = AUTO_CATEGORY_LABEL[auto.detected] ?? "אחר";
         summary = `זוהה: ${primary} — ${auto.items.length} פריטים לסקירה`;
@@ -978,9 +978,8 @@ export const commitLessonAudio = createServerFn({ method: "POST" })
 
 /* ------------------------ auto (smart classify) ------------------------ */
 
-type SupaLike = {
-  from: (t: string) => { select: (c: string) => { eq: (col: string, v: string) => unknown } };
-};
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type SupaLike = any;
 
 async function analyzeAuto(
   b64: string,
