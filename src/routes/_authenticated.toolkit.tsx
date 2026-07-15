@@ -10,6 +10,16 @@ import { SecuritySettings } from "@/components/security-settings";
 
 export const Route = createFileRoute("/_authenticated/toolkit")({
   component: ToolkitPage,
+  head: () => ({
+    meta: [
+      { title: "ארגז כלים לכיתה · ClassAlign Studio" },
+      { name: "description", content: "כלים מהירים לניהול השיעור — טיימר, בוחר תלמיד אקראי, הקראה, והגדרות אבטחה." },
+      { property: "og:title", content: "ארגז כלים לכיתה · ClassAlign Studio" },
+      { property: "og:description", content: "כלים מהירים לניהול השיעור: טיימר, בוחר אקראי, הקראה ואבטחה." },
+      { property: "og:url", content: "https://cuddle-spark-nexus.lovable.app/toolkit" },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
 });
 
 function ToolkitPage() {

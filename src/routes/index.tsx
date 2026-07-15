@@ -11,6 +11,11 @@ export const Route = createFileRoute("/")({
       { property: "og:title", content: "ClassAlign Studio · ניהול כיתה חכם עם AI" },
       { property: "og:description", content: "סטודיו ניהול כיתה לרוח המודרנית — סידור הושבה AI, מעקב פדגוגי, דוחות חכמים, וחוויית 3D עוצרת נשימה." },
       { property: "og:url", content: "https://cuddle-spark-nexus.lovable.app/" },
+      { property: "og:type", content: "website" },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/05baaa1b-2e2c-4979-b6f1-619d01883919" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/05baaa1b-2e2c-4979-b6f1-619d01883919" },
+      { name: "twitter:title", content: "ClassAlign Studio · ניהול כיתה חכם עם AI" },
+      { name: "twitter:description", content: "סטודיו ניהול כיתה לרוח המודרנית — סידור הושבה AI, מעקב פדגוגי, דוחות חכמים, וחוויית 3D עוצרת נשימה." },
     ],
     links: [{ rel: "canonical", href: "https://cuddle-spark-nexus.lovable.app/" }],
     scripts: [
