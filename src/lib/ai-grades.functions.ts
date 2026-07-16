@@ -15,6 +15,79 @@ const ParsedGrade = z.object({
 export type ParsedGradeRow = z.infer<typeof ParsedGrade> & { matched: boolean };
 
 /**
+ * OCR + context extraction from an image of a grades sheet.
+ * Returns free text in the format "שם תלמיד: ציון" (one per line),
+ * ready to be piped into parseGradesFromText.
+ */
+export const ocrGradesImage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z.object({
+      classId: z.string().uuid(),
+      imageBase64: z.string().min(20).max(15_000_000), // ~11MB base64
+      mimeType: z.string().max(80).default("image/jpeg"),
+      defaultSubject: z.string().max(80).optional().default(""),
+      defaultMax: z.number().positive().max(1000).optional().default(100),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }): Promise<{ text: string }> => {
+    const { supabase } = context;
+    const { data: students, error } = await supabase
+      .from("students").select("id,name").eq("class_id", data.classId);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    if (!students || students.length === 0) throw new Error("אין תלמידים בכיתה");
+
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) throw new Error("חסר מפתח LOVABLE_API_KEY");
+
+    const studentList = students.map((s) => `- ${s.name}`).join("\n");
+    const system = `אתה עוזר של רב/מלמד בתלמוד תורה. קיבלת צילום של דף ציונים (בכתב יד או מודפס, בעברית).
+המטרה: לזהות מהתמונה את שמות התלמידים והציונים שלהם, ולהחזיר טקסט חופשי בפורמט אחיד — שורה לכל תלמיד:
+"שם התלמיד: ציון"
+
+הנחיות:
+- התאם שמות לרשימת התלמידים בכיתה (למטה). אם השם בתמונה שונה מעט (שיבוש/כינוי/ר"ת), החזר את השם המלא מהרשימה.
+- אם לא ניתן לפענח שם או ציון בבירור, דלג על השורה הזו.
+- אם מצוין "מתוך X" ליד ציון, כתוב "שם: ציון מתוך X".
+- אל תוסיף שום טקסט נוסף, כותרות או הסברים — רק שורות של "שם: ציון".
+- מקצוע ברירת מחדל: "${data.defaultSubject}". מקסימום ברירת מחדל: ${data.defaultMax}.`;
+
+    const body = {
+      model: "google/gemini-2.5-flash",
+      messages: [
+        { role: "system", content: system },
+        {
+          role: "user",
+          content: [
+            { type: "text", text: `רשימת תלמידי הכיתה:\n${studentList}\n\nזהה את הציונים מהתמונה והחזר טקסט בפורמט המבוקש.` },
+            { type: "image_url", image_url: { url: `data:${data.mimeType};base64,${data.imageBase64}` } },
+          ],
+        },
+      ],
+    };
+
+    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Lovable-API-Key": apiKey,
+        "X-Lovable-AIG-SDK": "fetch",
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (resp.status === 429) throw new Error("חרגת ממכסת בקשות AI. נסה שוב בעוד דקה.");
+    if (resp.status === 402) throw new Error("נגמרו קרדיטים ב-Lovable AI. הוסף קרדיטים בהגדרות.");
+    if (!resp.ok) {
+      console.error("[AI Gateway Error]", resp.status, await resp.text());
+      throw new Error(`שגיאת AI: ${resp.status}`);
+    }
+    const json = await resp.json() as { choices?: { message?: { content?: string } }[] };
+    const text = (json.choices?.[0]?.message?.content ?? "").trim();
+    return { text };
+  });
+
+/**
  * Parses free text describing test results / grades for many students
  * and matches them to the class's student list using Lovable AI.
  */
