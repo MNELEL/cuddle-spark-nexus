@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Mic, MicOff, Sparkles, Loader2, Check, X } from "lucide-react";
+import { Mic, MicOff, Sparkles, Loader2, Check, X, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,7 +16,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { KODESH_SUBJECTS } from "@/lib/kodesh-subjects";
-import { parseGradesFromText, bulkInsertGrades, type ParsedGradeRow } from "@/lib/ai-grades.functions";
+import { parseGradesFromText, bulkInsertGrades, ocrGradesImage, type ParsedGradeRow } from "@/lib/ai-grades.functions";
 
 type Student = { id: string; name: string };
 
@@ -70,6 +70,7 @@ function Inner({ classId, students, onClose }: { classId: string; students: Stud
   const qc = useQueryClient();
   const parse = useServerFn(parseGradesFromText);
   const save = useServerFn(bulkInsertGrades);
+  const ocr = useServerFn(ocrGradesImage);
 
   const [text, setText] = useState("");
   const [subject, setSubject] = useState("");
@@ -78,8 +79,44 @@ function Inner({ classId, students, onClose }: { classId: string; students: Stud
   const [rows, setRows] = useState<ParsedGradeRow[] | null>(null);
   const [listening, setListening] = useState(false);
   const recRef = useRef<SpeechRec | null>(null);
+  const fileRef = useRef<HTMLInputElement | null>(null);
+  const [ocrLoading, setOcrLoading] = useState(false);
 
   useEffect(() => () => { recRef.current?.stop(); }, []);
+
+  const onPickImage = () => fileRef.current?.click();
+
+  const onImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { toast.error("יש לבחור קובץ תמונה"); return; }
+    if (file.size > 10 * 1024 * 1024) { toast.error("התמונה גדולה מדי (מקסימום 10MB)"); return; }
+    setOcrLoading(true);
+    try {
+      const b64 = await new Promise<string>((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => {
+          const s = String(r.result || "");
+          const i = s.indexOf(",");
+          resolve(i >= 0 ? s.slice(i + 1) : s);
+        };
+        r.onerror = () => reject(new Error("קריאת הקובץ נכשלה"));
+        r.readAsDataURL(file);
+      });
+      const res = await ocr({ data: {
+        classId, imageBase64: b64, mimeType: file.type,
+        defaultSubject: subject, defaultMax: Number(maxVal) || 100,
+      }});
+      if (!res.text) { toast.warning("לא זוהו ציונים בתמונה"); return; }
+      setText((t) => (t ? t + "\n" : "") + res.text);
+      toast.success("הציונים מהתמונה נוספו לטקסט");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "שגיאה בעיבוד התמונה");
+    } finally {
+      setOcrLoading(false);
+    }
+  };
 
   const toggleMic = () => {
     if (listening) { recRef.current?.stop(); return; }
@@ -167,15 +204,35 @@ function Inner({ classId, students, onClose }: { classId: string; students: Stud
           <div>
             <div className="mb-1 flex items-center justify-between">
               <Label>טקסט חופשי</Label>
-              <Button
-                type="button"
-                size="sm"
-                variant={listening ? "destructive" : "outline"}
-                onClick={toggleMic}
-              >
-                {listening ? <MicOff className="ms-1 h-4 w-4" /> : <Mic className="ms-1 h-4 w-4" />}
-                {listening ? "עצור הקלטה" : "הקלט"}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={onPickImage}
+                  disabled={ocrLoading}
+                >
+                  {ocrLoading
+                    ? <><Loader2 className="ms-1 h-4 w-4 animate-spin" /> מזהה תמונה...</>
+                    : <><ImageIcon className="ms-1 h-4 w-4" /> העלה תמונה</>}
+                </Button>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={onImageChange}
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={listening ? "destructive" : "outline"}
+                  onClick={toggleMic}
+                >
+                  {listening ? <MicOff className="ms-1 h-4 w-4" /> : <Mic className="ms-1 h-4 w-4" />}
+                  {listening ? "עצור הקלטה" : "הקלט"}
+                </Button>
+              </div>
             </div>
             <Textarea
               rows={6}
@@ -184,7 +241,7 @@ function Inner({ classId, students, onClose }: { classId: string; students: Stud
               placeholder='לדוגמה: "משה כהן 85, יוסי לוי קיבל 92, חיים 78 מתוך 100, אברהם נכשל עם 55"'
             />
             <p className="mt-1 text-xs text-muted-foreground">
-              הכיתה: {students.length} תלמידים. ה-AI יתאים אוטומטית לפי שם.
+              הכיתה: {students.length} תלמידים. ה-AI יתאים אוטומטית לפי שם. ניתן להעלות צילום דף ציונים.
             </p>
           </div>
 
