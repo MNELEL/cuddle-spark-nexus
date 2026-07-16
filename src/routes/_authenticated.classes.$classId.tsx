@@ -21,8 +21,9 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Heart, Ban, MoveHorizontal, Pencil, Plus, Trash2, FolderOpen, FileText, Sparkles, Trophy, Users, Library, Monitor, Upload } from "lucide-react";
+import { ArrowRight, Heart, Ban, MoveHorizontal, Pencil, Plus, Trash2, FolderOpen, FileText, Sparkles, Trophy, Users, Library, Monitor, Upload, Printer, Copy, Dices } from "lucide-react";
 import { toast } from "sonner";
+import { copyList, printList } from "@/lib/print-list";
 import { SeatingGrid } from "@/components/seating-grid";
 import { GroupsTab } from "@/components/groups-tab";
 import { ImportExportBar } from "@/components/import-export";
@@ -111,6 +112,11 @@ function ClassDetail() {
               <Trophy className="ms-1 h-4 w-4" /> גיימיפיקציה
             </Button>
           </Link>
+          <Link to="/raffle/$classId" params={{ classId }}>
+            <Button variant="outline" size="sm">
+              <Dices className="ms-1 h-4 w-4" /> הגרלות
+            </Button>
+          </Link>
           <Link to="/parents/$classId" params={{ classId }}>
             <Button variant="outline" size="sm">
               <Users className="ms-1 h-4 w-4" /> פורטל הורים
@@ -195,10 +201,23 @@ function StudentsTab({
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Student | null>(null);
   const [fileFor, setFileFor] = useState<Student | null>(null);
+  const className = "רשימת תלמידים";
+
+  const doPrint = () => {
+    if (!students.length) return toast.error("אין תלמידים");
+    printList(className, [{ title: className, items: students.map((s) => s.name) }]);
+  };
+  const doCopy = async () => {
+    if (!students.length) return toast.error("אין תלמידים");
+    await navigator.clipboard.writeText(copyList([{ title: className, items: students.map((s) => s.name) }]));
+    toast.success("הועתק");
+  };
 
   return (
     <div className="space-y-3">
-      <div className="flex justify-end">
+      <div className="flex flex-wrap justify-end gap-2">
+        <Button variant="outline" size="sm" onClick={doPrint}><Printer className="ms-1 h-4 w-4" /> הדפסה</Button>
+        <Button variant="outline" size="sm" onClick={doCopy}><Copy className="ms-1 h-4 w-4" /> העתק שמות</Button>
         <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
           <DialogTrigger asChild>
             <Button><Plus className="ms-1 h-4 w-4" /> הוסף תלמיד</Button>
