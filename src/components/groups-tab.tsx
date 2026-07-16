@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Plus, Trash2, Pencil } from "lucide-react";
+import { Plus, Trash2, Pencil, Printer, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { toast } from "sonner";
 import { listGroups, upsertGroup, deleteGroup, setStudentGroups } from "@/lib/groups.functions";
 import { listStudents } from "@/lib/students.functions";
+import { copyList, printList, type PrintSection } from "@/lib/print-list";
 
 type Group = { id: string; class_id: string; name: string; color: string };
 type Membership = { student_id: string; group_id: string };
@@ -50,9 +51,27 @@ export function GroupsTab({ classId }: { classId: string }) {
 
   const nameOf = (id: string) => students.find((s) => s.id === id)?.name ?? "?";
 
+  const sections = (): PrintSection[] =>
+    groups.map((g) => ({
+      title: g.name,
+      items: (membersByGroup.get(g.id) ?? []).map(nameOf),
+    }));
+
+  const doPrint = () => {
+    if (!groups.length) return toast.error("אין קבוצות");
+    printList("קבוצות הכיתה", sections());
+  };
+  const doCopy = async () => {
+    if (!groups.length) return toast.error("אין קבוצות");
+    await navigator.clipboard.writeText(copyList(sections()));
+    toast.success("הועתק");
+  };
+
   return (
     <div className="space-y-3">
-      <div className="flex justify-end">
+      <div className="flex flex-wrap justify-end gap-2">
+        <Button variant="outline" size="sm" onClick={doPrint}><Printer className="ms-1 h-4 w-4" /> הדפסה</Button>
+        <Button variant="outline" size="sm" onClick={doCopy}><Copy className="ms-1 h-4 w-4" /> העתק שמות</Button>
         <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
           <DialogTrigger asChild>
             <Button><Plus className="ms-1 h-4 w-4" /> קבוצה חדשה</Button>
