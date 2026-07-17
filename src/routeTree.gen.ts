@@ -19,6 +19,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as ToolsGroupMakerRouteImport } from './routes/tools.group-maker'
+import { Route as PartnersDistrictsRouteImport } from './routes/partners.districts'
 import { Route as PTokenRouteImport } from './routes/p.$token'
 import { Route as BlogDigitalHallPassGuideRouteImport } from './routes/blog.digital-hall-pass-guide'
 import { Route as AuthenticatedToolkitRouteImport } from './routes/_authenticated.toolkit'
@@ -85,6 +86,11 @@ const ToolsGroupMakerRoute = ToolsGroupMakerRouteImport.update({
   id: '/tools/group-maker',
   path: '/tools/group-maker',
   getParentRoute: () => rootRouteImport,
+} as any)
+const PartnersDistrictsRoute = PartnersDistrictsRouteImport.update({
+  id: '/districts',
+  path: '/districts',
+  getParentRoute: () => PartnersRoute,
 } as any)
 const PTokenRoute = PTokenRouteImport.update({
   id: '/p/$token',
@@ -187,7 +193,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/blog': typeof BlogRouteWithChildren
   '/login': typeof LoginRoute
-  '/partners': typeof PartnersRoute
+  '/partners': typeof PartnersRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
@@ -198,6 +204,7 @@ export interface FileRoutesByFullPath {
   '/toolkit': typeof AuthenticatedToolkitRoute
   '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
   '/p/$token': typeof PTokenRoute
+  '/partners/districts': typeof PartnersDistrictsRoute
   '/tools/group-maker': typeof ToolsGroupMakerRoute
   '/blog/': typeof BlogIndexRoute
   '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
@@ -214,7 +221,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
-  '/partners': typeof PartnersRoute
+  '/partners': typeof PartnersRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
@@ -225,6 +232,7 @@ export interface FileRoutesByTo {
   '/toolkit': typeof AuthenticatedToolkitRoute
   '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
   '/p/$token': typeof PTokenRoute
+  '/partners/districts': typeof PartnersDistrictsRoute
   '/tools/group-maker': typeof ToolsGroupMakerRoute
   '/blog': typeof BlogIndexRoute
   '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
@@ -244,7 +252,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/blog': typeof BlogRouteWithChildren
   '/login': typeof LoginRoute
-  '/partners': typeof PartnersRoute
+  '/partners': typeof PartnersRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
@@ -255,6 +263,7 @@ export interface FileRoutesById {
   '/_authenticated/toolkit': typeof AuthenticatedToolkitRoute
   '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
   '/p/$token': typeof PTokenRoute
+  '/partners/districts': typeof PartnersDistrictsRoute
   '/tools/group-maker': typeof ToolsGroupMakerRoute
   '/blog/': typeof BlogIndexRoute
   '/_authenticated/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
@@ -285,6 +294,7 @@ export interface FileRouteTypes {
     | '/toolkit'
     | '/blog/digital-hall-pass-guide'
     | '/p/$token'
+    | '/partners/districts'
     | '/tools/group-maker'
     | '/blog/'
     | '/bulletins/$classId'
@@ -312,6 +322,7 @@ export interface FileRouteTypes {
     | '/toolkit'
     | '/blog/digital-hall-pass-guide'
     | '/p/$token'
+    | '/partners/districts'
     | '/tools/group-maker'
     | '/blog'
     | '/bulletins/$classId'
@@ -341,6 +352,7 @@ export interface FileRouteTypes {
     | '/_authenticated/toolkit'
     | '/blog/digital-hall-pass-guide'
     | '/p/$token'
+    | '/partners/districts'
     | '/tools/group-maker'
     | '/blog/'
     | '/_authenticated/bulletins/$classId'
@@ -360,7 +372,7 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   BlogRoute: typeof BlogRouteWithChildren
   LoginRoute: typeof LoginRoute
-  PartnersRoute: typeof PartnersRoute
+  PartnersRoute: typeof PartnersRouteWithChildren
   PrivacyRoute: typeof PrivacyRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SupportRoute: typeof SupportRoute
@@ -439,6 +451,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/tools/group-maker'
       preLoaderRoute: typeof ToolsGroupMakerRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/partners/districts': {
+      id: '/partners/districts'
+      path: '/districts'
+      fullPath: '/partners/districts'
+      preLoaderRoute: typeof PartnersDistrictsRouteImport
+      parentRoute: typeof PartnersRoute
     }
     '/p/$token': {
       id: '/p/$token'
@@ -641,12 +660,24 @@ const BlogRouteChildren: BlogRouteChildren = {
 
 const BlogRouteWithChildren = BlogRoute._addFileChildren(BlogRouteChildren)
 
+interface PartnersRouteChildren {
+  PartnersDistrictsRoute: typeof PartnersDistrictsRoute
+}
+
+const PartnersRouteChildren: PartnersRouteChildren = {
+  PartnersDistrictsRoute: PartnersDistrictsRoute,
+}
+
+const PartnersRouteWithChildren = PartnersRoute._addFileChildren(
+  PartnersRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   BlogRoute: BlogRouteWithChildren,
   LoginRoute: LoginRoute,
-  PartnersRoute: PartnersRoute,
+  PartnersRoute: PartnersRouteWithChildren,
   PrivacyRoute: PrivacyRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SupportRoute: SupportRoute,
