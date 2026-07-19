@@ -21,7 +21,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Heart, Ban, MoveHorizontal, Pencil, Plus, Trash2, FolderOpen, FileText, Sparkles, Trophy, Users, Library, Monitor, Upload, Printer, Copy, Dices } from "lucide-react";
+import { ArrowRight, Heart, Ban, MoveHorizontal, Pencil, Plus, Trash2, FolderOpen, FileText, Sparkles, Trophy, Users, Library, Monitor, Upload, Printer, Copy, Dices, Globe2 } from "lucide-react";
 import { toast } from "sonner";
 import { copyList, printList } from "@/lib/print-list";
 import { SeatingGrid } from "@/components/seating-grid";
@@ -120,6 +120,11 @@ function ClassDetail() {
           <Link to="/parents/$classId" params={{ classId }}>
             <Button variant="outline" size="sm">
               <Users className="ms-1 h-4 w-4" /> פורטל הורים
+            </Button>
+          </Link>
+          <Link to="/share/$classId" params={{ classId }}>
+            <Button variant="outline" size="sm">
+              <Globe2 className="ms-1 h-4 w-4" /> דף ציבורי
             </Button>
           </Link>
           <Link to="/reports/$classId" params={{ classId }}>
