@@ -170,9 +170,14 @@ function ShowcasePage() {
             העמוד הזה נבנה עם ClassAlign Studio — מערכת ניהול כיתה, מעקב התקדמות ותקשורת
             עם הורים לתלמודי תורה ובתי ספר.
           </p>
-          <Link to="/" className="mt-2 inline-block text-base font-semibold text-primary hover:underline">
-            גלה את ClassAlign ←
-          </Link>
+          <div className="mt-2 flex flex-wrap gap-4">
+            <Link to="/" className="text-base font-semibold text-primary hover:underline">
+              גלה את ClassAlign ←
+            </Link>
+            <Link to="/parents-guide" className="text-base font-semibold text-primary hover:underline">
+              משאבים להורים ←
+            </Link>
+          </div>
         </section>
       </main>
     </div>
