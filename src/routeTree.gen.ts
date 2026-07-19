@@ -22,6 +22,7 @@ import { Route as ToolsGroupMakerRouteImport } from './routes/tools.group-maker'
 import { Route as PartnersSchoolsRouteImport } from './routes/partners.schools'
 import { Route as PartnersDistrictsRouteImport } from './routes/partners.districts'
 import { Route as PTokenRouteImport } from './routes/p.$token'
+import { Route as BlogProgressTrackingGuideRouteImport } from './routes/blog.progress-tracking-guide'
 import { Route as BlogDigitalHallPassGuideRouteImport } from './routes/blog.digital-hall-pass-guide'
 import { Route as AuthenticatedToolkitRouteImport } from './routes/_authenticated.toolkit'
 import { Route as AuthenticatedSoundBoardRouteImport } from './routes/_authenticated.sound-board'
@@ -103,6 +104,12 @@ const PTokenRoute = PTokenRouteImport.update({
   path: '/p/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BlogProgressTrackingGuideRoute =
+  BlogProgressTrackingGuideRouteImport.update({
+    id: '/progress-tracking-guide',
+    path: '/progress-tracking-guide',
+    getParentRoute: () => BlogRoute,
+  } as any)
 const BlogDigitalHallPassGuideRoute =
   BlogDigitalHallPassGuideRouteImport.update({
     id: '/digital-hall-pass-guide',
@@ -209,6 +216,7 @@ export interface FileRoutesByFullPath {
   '/sound-board': typeof AuthenticatedSoundBoardRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
   '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
+  '/blog/progress-tracking-guide': typeof BlogProgressTrackingGuideRoute
   '/p/$token': typeof PTokenRoute
   '/partners/districts': typeof PartnersDistrictsRoute
   '/partners/schools': typeof PartnersSchoolsRoute
@@ -238,6 +246,7 @@ export interface FileRoutesByTo {
   '/sound-board': typeof AuthenticatedSoundBoardRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
   '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
+  '/blog/progress-tracking-guide': typeof BlogProgressTrackingGuideRoute
   '/p/$token': typeof PTokenRoute
   '/partners/districts': typeof PartnersDistrictsRoute
   '/partners/schools': typeof PartnersSchoolsRoute
@@ -270,6 +279,7 @@ export interface FileRoutesById {
   '/_authenticated/sound-board': typeof AuthenticatedSoundBoardRoute
   '/_authenticated/toolkit': typeof AuthenticatedToolkitRoute
   '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
+  '/blog/progress-tracking-guide': typeof BlogProgressTrackingGuideRoute
   '/p/$token': typeof PTokenRoute
   '/partners/districts': typeof PartnersDistrictsRoute
   '/partners/schools': typeof PartnersSchoolsRoute
@@ -302,6 +312,7 @@ export interface FileRouteTypes {
     | '/sound-board'
     | '/toolkit'
     | '/blog/digital-hall-pass-guide'
+    | '/blog/progress-tracking-guide'
     | '/p/$token'
     | '/partners/districts'
     | '/partners/schools'
@@ -331,6 +342,7 @@ export interface FileRouteTypes {
     | '/sound-board'
     | '/toolkit'
     | '/blog/digital-hall-pass-guide'
+    | '/blog/progress-tracking-guide'
     | '/p/$token'
     | '/partners/districts'
     | '/partners/schools'
@@ -362,6 +374,7 @@ export interface FileRouteTypes {
     | '/_authenticated/sound-board'
     | '/_authenticated/toolkit'
     | '/blog/digital-hall-pass-guide'
+    | '/blog/progress-tracking-guide'
     | '/p/$token'
     | '/partners/districts'
     | '/partners/schools'
@@ -484,6 +497,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/p/$token'
       preLoaderRoute: typeof PTokenRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/blog/progress-tracking-guide': {
+      id: '/blog/progress-tracking-guide'
+      path: '/progress-tracking-guide'
+      fullPath: '/blog/progress-tracking-guide'
+      preLoaderRoute: typeof BlogProgressTrackingGuideRouteImport
+      parentRoute: typeof BlogRoute
     }
     '/blog/digital-hall-pass-guide': {
       id: '/blog/digital-hall-pass-guide'
@@ -669,11 +689,13 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 
 interface BlogRouteChildren {
   BlogDigitalHallPassGuideRoute: typeof BlogDigitalHallPassGuideRoute
+  BlogProgressTrackingGuideRoute: typeof BlogProgressTrackingGuideRoute
   BlogIndexRoute: typeof BlogIndexRoute
 }
 
 const BlogRouteChildren: BlogRouteChildren = {
   BlogDigitalHallPassGuideRoute: BlogDigitalHallPassGuideRoute,
+  BlogProgressTrackingGuideRoute: BlogProgressTrackingGuideRoute,
   BlogIndexRoute: BlogIndexRoute,
 }
 
@@ -708,13 +730,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
