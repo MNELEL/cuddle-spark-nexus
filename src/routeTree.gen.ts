@@ -33,6 +33,7 @@ import { Route as AuthenticatedResourcesRouteImport } from './routes/_authentica
 import { Route as AuthenticatedQuestionsRouteImport } from './routes/_authenticated.questions'
 import { Route as AuthenticatedIngestRouteImport } from './routes/_authenticated.ingest'
 import { Route as AuthenticatedClassesIndexRouteImport } from './routes/_authenticated.classes.index'
+import { Route as AuthenticatedShareClassIdRouteImport } from './routes/_authenticated.share.$classId'
 import { Route as AuthenticatedResourcesResourceIdRouteImport } from './routes/_authenticated.resources.$resourceId'
 import { Route as AuthenticatedReportsClassIdRouteImport } from './routes/_authenticated.reports.$classId'
 import { Route as AuthenticatedRaffleClassIdRouteImport } from './routes/_authenticated.raffle.$classId'
@@ -167,6 +168,12 @@ const AuthenticatedClassesIndexRoute =
     path: '/classes/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedShareClassIdRoute =
+  AuthenticatedShareClassIdRouteImport.update({
+    id: '/share/$classId',
+    path: '/share/$classId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedResourcesResourceIdRoute =
   AuthenticatedResourcesResourceIdRouteImport.update({
     id: '/$resourceId',
@@ -253,6 +260,7 @@ export interface FileRoutesByFullPath {
   '/raffle/$classId': typeof AuthenticatedRaffleClassIdRoute
   '/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/resources/$resourceId': typeof AuthenticatedResourcesResourceIdRoute
+  '/share/$classId': typeof AuthenticatedShareClassIdRoute
   '/classes/': typeof AuthenticatedClassesIndexRoute
   '/classes/$classId/display': typeof AuthenticatedClassesClassIdDisplayRoute
 }
@@ -286,6 +294,7 @@ export interface FileRoutesByTo {
   '/raffle/$classId': typeof AuthenticatedRaffleClassIdRoute
   '/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/resources/$resourceId': typeof AuthenticatedResourcesResourceIdRoute
+  '/share/$classId': typeof AuthenticatedShareClassIdRoute
   '/classes': typeof AuthenticatedClassesIndexRoute
   '/classes/$classId/display': typeof AuthenticatedClassesClassIdDisplayRoute
 }
@@ -322,6 +331,7 @@ export interface FileRoutesById {
   '/_authenticated/raffle/$classId': typeof AuthenticatedRaffleClassIdRoute
   '/_authenticated/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/_authenticated/resources/$resourceId': typeof AuthenticatedResourcesResourceIdRoute
+  '/_authenticated/share/$classId': typeof AuthenticatedShareClassIdRoute
   '/_authenticated/classes/': typeof AuthenticatedClassesIndexRoute
   '/_authenticated/classes/$classId/display': typeof AuthenticatedClassesClassIdDisplayRoute
 }
@@ -358,6 +368,7 @@ export interface FileRouteTypes {
     | '/raffle/$classId'
     | '/reports/$classId'
     | '/resources/$resourceId'
+    | '/share/$classId'
     | '/classes/'
     | '/classes/$classId/display'
   fileRoutesByTo: FileRoutesByTo
@@ -391,6 +402,7 @@ export interface FileRouteTypes {
     | '/raffle/$classId'
     | '/reports/$classId'
     | '/resources/$resourceId'
+    | '/share/$classId'
     | '/classes'
     | '/classes/$classId/display'
   id:
@@ -426,6 +438,7 @@ export interface FileRouteTypes {
     | '/_authenticated/raffle/$classId'
     | '/_authenticated/reports/$classId'
     | '/_authenticated/resources/$resourceId'
+    | '/_authenticated/share/$classId'
     | '/_authenticated/classes/'
     | '/_authenticated/classes/$classId/display'
   fileRoutesById: FileRoutesById
@@ -614,6 +627,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClassesIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/share/$classId': {
+      id: '/_authenticated/share/$classId'
+      path: '/share/$classId'
+      fullPath: '/share/$classId'
+      preLoaderRoute: typeof AuthenticatedShareClassIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/resources/$resourceId': {
       id: '/_authenticated/resources/$resourceId'
       path: '/$resourceId'
@@ -723,6 +743,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedParentsClassIdRoute: typeof AuthenticatedParentsClassIdRoute
   AuthenticatedRaffleClassIdRoute: typeof AuthenticatedRaffleClassIdRoute
   AuthenticatedReportsClassIdRoute: typeof AuthenticatedReportsClassIdRoute
+  AuthenticatedShareClassIdRoute: typeof AuthenticatedShareClassIdRoute
   AuthenticatedClassesIndexRoute: typeof AuthenticatedClassesIndexRoute
 }
 
@@ -740,6 +761,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedParentsClassIdRoute: AuthenticatedParentsClassIdRoute,
   AuthenticatedRaffleClassIdRoute: AuthenticatedRaffleClassIdRoute,
   AuthenticatedReportsClassIdRoute: AuthenticatedReportsClassIdRoute,
+  AuthenticatedShareClassIdRoute: AuthenticatedShareClassIdRoute,
   AuthenticatedClassesIndexRoute: AuthenticatedClassesIndexRoute,
 }
 
