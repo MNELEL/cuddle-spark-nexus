@@ -13,6 +13,7 @@ import { Route as SupportRouteImport } from './routes/support'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PartnersRouteImport } from './routes/partners'
+import { Route as ParentsGuideRouteImport } from './routes/parents-guide'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as BlogRouteImport } from './routes/blog'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
@@ -62,6 +63,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const PartnersRoute = PartnersRouteImport.update({
   id: '/partners',
   path: '/partners',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ParentsGuideRoute = ParentsGuideRouteImport.update({
+  id: '/parents-guide',
+  path: '/parents-guide',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -233,6 +239,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/blog': typeof BlogRouteWithChildren
   '/login': typeof LoginRoute
+  '/parents-guide': typeof ParentsGuideRoute
   '/partners': typeof PartnersRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -267,6 +274,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/parents-guide': typeof ParentsGuideRoute
   '/partners': typeof PartnersRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -304,6 +312,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/blog': typeof BlogRouteWithChildren
   '/login': typeof LoginRoute
+  '/parents-guide': typeof ParentsGuideRoute
   '/partners': typeof PartnersRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -341,6 +350,7 @@ export interface FileRouteTypes {
     | '/'
     | '/blog'
     | '/login'
+    | '/parents-guide'
     | '/partners'
     | '/privacy'
     | '/sitemap.xml'
@@ -375,6 +385,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/parents-guide'
     | '/partners'
     | '/privacy'
     | '/sitemap.xml'
@@ -411,6 +422,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/blog'
     | '/login'
+    | '/parents-guide'
     | '/partners'
     | '/privacy'
     | '/sitemap.xml'
@@ -448,6 +460,7 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   BlogRoute: typeof BlogRouteWithChildren
   LoginRoute: typeof LoginRoute
+  ParentsGuideRoute: typeof ParentsGuideRoute
   PartnersRoute: typeof PartnersRouteWithChildren
   PrivacyRoute: typeof PrivacyRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -485,6 +498,13 @@ declare module '@tanstack/react-router' {
       path: '/partners'
       fullPath: '/partners'
       preLoaderRoute: typeof PartnersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/parents-guide': {
+      id: '/parents-guide'
+      path: '/parents-guide'
+      fullPath: '/parents-guide'
+      preLoaderRoute: typeof ParentsGuideRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -806,6 +826,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   BlogRoute: BlogRouteWithChildren,
   LoginRoute: LoginRoute,
+  ParentsGuideRoute: ParentsGuideRoute,
   PartnersRoute: PartnersRouteWithChildren,
   PrivacyRoute: PrivacyRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
