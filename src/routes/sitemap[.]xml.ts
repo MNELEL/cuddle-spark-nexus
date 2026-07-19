@@ -32,6 +32,11 @@ export const Route = createFileRoute("/sitemap.xml")({
           { path: "/sound-board", changefreq: "monthly", priority: "0.5" },
           { path: "/ingest", changefreq: "monthly", priority: "0.5" },
           { path: "/questions", changefreq: "weekly", priority: "0.6" },
+          { path: "/parents-guide", changefreq: "monthly", priority: "0.8" },
+          { path: "/parents-guide/weekly-report", changefreq: "monthly", priority: "0.7" },
+          { path: "/parents-guide/grading-scale", changefreq: "monthly", priority: "0.7" },
+          { path: "/parents-guide/behavior-points", changefreq: "monthly", priority: "0.7" },
+          { path: "/parents-guide/supporting-progress-at-home", changefreq: "monthly", priority: "0.7" },
         ];
 
         const urls = entries.map((e) =>
