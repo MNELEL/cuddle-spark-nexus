@@ -41,13 +41,41 @@ function BlogIndex() {
         </p>
         <ul className="mt-10 space-y-6">
           <li className="rounded-2xl border border-border/60 bg-card/40 p-6">
-            <Link to="/blog/digital-hall-pass-guide" className="block">
-              <h2 className="text-xl font-semibold">
-                מדריך: ניהול אישורי יציאה דיגיטליים בתלמוד תורה
-              </h2>
+            <Link to="/blog/progress-tracking-guide" className="block">
+              <h2 className="text-xl font-semibold">מעקב התקדמות תלמידים — מדריך מלא</h2>
               <p className="mt-2 text-muted-foreground">
-                איך מערכת מעקב דיגיטלית מחליפה את "הפתק" הישן, מצמצמת הפרעות לסדר השיעור,
-                ושומרת על אחריות וביטחון בחיידר — חלופה ידידותית ל-eHallPass.
+                איך לבנות מערכת מעקב שיטתית: יעדים, אינדיקטורים, דוחות שבועיים ושיחות
+                הורים מבוססות נתונים.
+              </p>
+              <span className="mt-3 inline-block text-sm text-primary">קרא את המדריך ←</span>
+            </Link>
+          </li>
+          <li className="rounded-2xl border border-border/60 bg-card/40 p-6">
+            <Link to="/blog/weekly-report-template" className="block">
+              <h2 className="text-xl font-semibold">תבנית דו״ח שבועי לתלמיד</h2>
+              <p className="mt-2 text-muted-foreground">
+                תבנית מוכנה להעתקה עם דוגמה מלאה — לימודי קודש, מידות, מטרות שבועיות
+                ופורמט להדפסה או שליחה בוואטסאפ.
+              </p>
+              <span className="mt-3 inline-block text-sm text-primary">לתבנית ←</span>
+            </Link>
+          </li>
+          <li className="rounded-2xl border border-border/60 bg-card/40 p-6">
+            <Link to="/blog/classroom-tools-teachers" className="block">
+              <h2 className="text-xl font-semibold">10 כלי הוראה חינמיים שכל מלמד חייב</h2>
+              <p className="mt-2 text-muted-foreground">
+                רשימה מקצועית של כלים מודרניים לניהול כיתה — הגרלות, קבוצות, מבחנים
+                אוטומטיים ומעקב התקדמות.
+              </p>
+              <span className="mt-3 inline-block text-sm text-primary">לרשימה ←</span>
+            </Link>
+          </li>
+          <li className="rounded-2xl border border-border/60 bg-card/40 p-6">
+            <Link to="/blog/digital-hall-pass-guide" className="block">
+              <h2 className="text-xl font-semibold">ניהול אישורי יציאה דיגיטליים</h2>
+              <p className="mt-2 text-muted-foreground">
+                חלופה ידידותית ל-eHallPass — איך "הפתק" הישן מתחלף במערכת מסודרת
+                בתלמוד תורה.
               </p>
               <span className="mt-3 inline-block text-sm text-primary">קרא את המדריך ←</span>
             </Link>
