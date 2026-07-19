@@ -22,7 +22,10 @@ import { Route as ToolsGroupMakerRouteImport } from './routes/tools.group-maker'
 import { Route as PartnersSchoolsRouteImport } from './routes/partners.schools'
 import { Route as PartnersDistrictsRouteImport } from './routes/partners.districts'
 import { Route as PTokenRouteImport } from './routes/p.$token'
+import { Route as BlogWeeklyReportTemplateRouteImport } from './routes/blog.weekly-report-template'
+import { Route as BlogProgressTrackingGuideRouteImport } from './routes/blog.progress-tracking-guide'
 import { Route as BlogDigitalHallPassGuideRouteImport } from './routes/blog.digital-hall-pass-guide'
+import { Route as BlogClassroomToolsTeachersRouteImport } from './routes/blog.classroom-tools-teachers'
 import { Route as AuthenticatedToolkitRouteImport } from './routes/_authenticated.toolkit'
 import { Route as AuthenticatedSoundBoardRouteImport } from './routes/_authenticated.sound-board'
 import { Route as AuthenticatedResourcesRouteImport } from './routes/_authenticated.resources'
@@ -103,10 +106,28 @@ const PTokenRoute = PTokenRouteImport.update({
   path: '/p/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BlogWeeklyReportTemplateRoute =
+  BlogWeeklyReportTemplateRouteImport.update({
+    id: '/weekly-report-template',
+    path: '/weekly-report-template',
+    getParentRoute: () => BlogRoute,
+  } as any)
+const BlogProgressTrackingGuideRoute =
+  BlogProgressTrackingGuideRouteImport.update({
+    id: '/progress-tracking-guide',
+    path: '/progress-tracking-guide',
+    getParentRoute: () => BlogRoute,
+  } as any)
 const BlogDigitalHallPassGuideRoute =
   BlogDigitalHallPassGuideRouteImport.update({
     id: '/digital-hall-pass-guide',
     path: '/digital-hall-pass-guide',
+    getParentRoute: () => BlogRoute,
+  } as any)
+const BlogClassroomToolsTeachersRoute =
+  BlogClassroomToolsTeachersRouteImport.update({
+    id: '/classroom-tools-teachers',
+    path: '/classroom-tools-teachers',
     getParentRoute: () => BlogRoute,
   } as any)
 const AuthenticatedToolkitRoute = AuthenticatedToolkitRouteImport.update({
@@ -208,7 +229,10 @@ export interface FileRoutesByFullPath {
   '/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/sound-board': typeof AuthenticatedSoundBoardRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
+  '/blog/classroom-tools-teachers': typeof BlogClassroomToolsTeachersRoute
   '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
+  '/blog/progress-tracking-guide': typeof BlogProgressTrackingGuideRoute
+  '/blog/weekly-report-template': typeof BlogWeeklyReportTemplateRoute
   '/p/$token': typeof PTokenRoute
   '/partners/districts': typeof PartnersDistrictsRoute
   '/partners/schools': typeof PartnersSchoolsRoute
@@ -237,7 +261,10 @@ export interface FileRoutesByTo {
   '/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/sound-board': typeof AuthenticatedSoundBoardRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
+  '/blog/classroom-tools-teachers': typeof BlogClassroomToolsTeachersRoute
   '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
+  '/blog/progress-tracking-guide': typeof BlogProgressTrackingGuideRoute
+  '/blog/weekly-report-template': typeof BlogWeeklyReportTemplateRoute
   '/p/$token': typeof PTokenRoute
   '/partners/districts': typeof PartnersDistrictsRoute
   '/partners/schools': typeof PartnersSchoolsRoute
@@ -269,7 +296,10 @@ export interface FileRoutesById {
   '/_authenticated/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/_authenticated/sound-board': typeof AuthenticatedSoundBoardRoute
   '/_authenticated/toolkit': typeof AuthenticatedToolkitRoute
+  '/blog/classroom-tools-teachers': typeof BlogClassroomToolsTeachersRoute
   '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
+  '/blog/progress-tracking-guide': typeof BlogProgressTrackingGuideRoute
+  '/blog/weekly-report-template': typeof BlogWeeklyReportTemplateRoute
   '/p/$token': typeof PTokenRoute
   '/partners/districts': typeof PartnersDistrictsRoute
   '/partners/schools': typeof PartnersSchoolsRoute
@@ -301,7 +331,10 @@ export interface FileRouteTypes {
     | '/resources'
     | '/sound-board'
     | '/toolkit'
+    | '/blog/classroom-tools-teachers'
     | '/blog/digital-hall-pass-guide'
+    | '/blog/progress-tracking-guide'
+    | '/blog/weekly-report-template'
     | '/p/$token'
     | '/partners/districts'
     | '/partners/schools'
@@ -330,7 +363,10 @@ export interface FileRouteTypes {
     | '/resources'
     | '/sound-board'
     | '/toolkit'
+    | '/blog/classroom-tools-teachers'
     | '/blog/digital-hall-pass-guide'
+    | '/blog/progress-tracking-guide'
+    | '/blog/weekly-report-template'
     | '/p/$token'
     | '/partners/districts'
     | '/partners/schools'
@@ -361,7 +397,10 @@ export interface FileRouteTypes {
     | '/_authenticated/resources'
     | '/_authenticated/sound-board'
     | '/_authenticated/toolkit'
+    | '/blog/classroom-tools-teachers'
     | '/blog/digital-hall-pass-guide'
+    | '/blog/progress-tracking-guide'
+    | '/blog/weekly-report-template'
     | '/p/$token'
     | '/partners/districts'
     | '/partners/schools'
@@ -485,11 +524,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/blog/weekly-report-template': {
+      id: '/blog/weekly-report-template'
+      path: '/weekly-report-template'
+      fullPath: '/blog/weekly-report-template'
+      preLoaderRoute: typeof BlogWeeklyReportTemplateRouteImport
+      parentRoute: typeof BlogRoute
+    }
+    '/blog/progress-tracking-guide': {
+      id: '/blog/progress-tracking-guide'
+      path: '/progress-tracking-guide'
+      fullPath: '/blog/progress-tracking-guide'
+      preLoaderRoute: typeof BlogProgressTrackingGuideRouteImport
+      parentRoute: typeof BlogRoute
+    }
     '/blog/digital-hall-pass-guide': {
       id: '/blog/digital-hall-pass-guide'
       path: '/digital-hall-pass-guide'
       fullPath: '/blog/digital-hall-pass-guide'
       preLoaderRoute: typeof BlogDigitalHallPassGuideRouteImport
+      parentRoute: typeof BlogRoute
+    }
+    '/blog/classroom-tools-teachers': {
+      id: '/blog/classroom-tools-teachers'
+      path: '/classroom-tools-teachers'
+      fullPath: '/blog/classroom-tools-teachers'
+      preLoaderRoute: typeof BlogClassroomToolsTeachersRouteImport
       parentRoute: typeof BlogRoute
     }
     '/_authenticated/toolkit': {
@@ -668,12 +728,18 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 )
 
 interface BlogRouteChildren {
+  BlogClassroomToolsTeachersRoute: typeof BlogClassroomToolsTeachersRoute
   BlogDigitalHallPassGuideRoute: typeof BlogDigitalHallPassGuideRoute
+  BlogProgressTrackingGuideRoute: typeof BlogProgressTrackingGuideRoute
+  BlogWeeklyReportTemplateRoute: typeof BlogWeeklyReportTemplateRoute
   BlogIndexRoute: typeof BlogIndexRoute
 }
 
 const BlogRouteChildren: BlogRouteChildren = {
+  BlogClassroomToolsTeachersRoute: BlogClassroomToolsTeachersRoute,
   BlogDigitalHallPassGuideRoute: BlogDigitalHallPassGuideRoute,
+  BlogProgressTrackingGuideRoute: BlogProgressTrackingGuideRoute,
+  BlogWeeklyReportTemplateRoute: BlogWeeklyReportTemplateRoute,
   BlogIndexRoute: BlogIndexRoute,
 }
 
