@@ -18,6 +18,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as BlogRouteImport } from './routes/blog'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ParentsGuideIndexRouteImport } from './routes/parents-guide.index'
 import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as ToolsGroupMakerRouteImport } from './routes/tools.group-maker'
 import { Route as PartnersSchoolsRouteImport } from './routes/partners.schools'
@@ -88,6 +89,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ParentsGuideIndexRoute = ParentsGuideIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ParentsGuideRoute,
 } as any)
 const BlogIndexRoute = BlogIndexRouteImport.update({
   id: '/',
@@ -239,7 +245,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/blog': typeof BlogRouteWithChildren
   '/login': typeof LoginRoute
-  '/parents-guide': typeof ParentsGuideRoute
+  '/parents-guide': typeof ParentsGuideRouteWithChildren
   '/partners': typeof PartnersRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -259,6 +265,7 @@ export interface FileRoutesByFullPath {
   '/partners/schools': typeof PartnersSchoolsRoute
   '/tools/group-maker': typeof ToolsGroupMakerRoute
   '/blog/': typeof BlogIndexRoute
+  '/parents-guide/': typeof ParentsGuideIndexRoute
   '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
   '/classes/$classId': typeof AuthenticatedClassesClassIdRouteWithChildren
   '/daily/$classId': typeof AuthenticatedDailyClassIdRoute
@@ -274,7 +281,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
-  '/parents-guide': typeof ParentsGuideRoute
   '/partners': typeof PartnersRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -294,6 +300,7 @@ export interface FileRoutesByTo {
   '/partners/schools': typeof PartnersSchoolsRoute
   '/tools/group-maker': typeof ToolsGroupMakerRoute
   '/blog': typeof BlogIndexRoute
+  '/parents-guide': typeof ParentsGuideIndexRoute
   '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
   '/classes/$classId': typeof AuthenticatedClassesClassIdRouteWithChildren
   '/daily/$classId': typeof AuthenticatedDailyClassIdRoute
@@ -312,7 +319,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/blog': typeof BlogRouteWithChildren
   '/login': typeof LoginRoute
-  '/parents-guide': typeof ParentsGuideRoute
+  '/parents-guide': typeof ParentsGuideRouteWithChildren
   '/partners': typeof PartnersRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -332,6 +339,7 @@ export interface FileRoutesById {
   '/partners/schools': typeof PartnersSchoolsRoute
   '/tools/group-maker': typeof ToolsGroupMakerRoute
   '/blog/': typeof BlogIndexRoute
+  '/parents-guide/': typeof ParentsGuideIndexRoute
   '/_authenticated/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
   '/_authenticated/classes/$classId': typeof AuthenticatedClassesClassIdRouteWithChildren
   '/_authenticated/daily/$classId': typeof AuthenticatedDailyClassIdRoute
@@ -370,6 +378,7 @@ export interface FileRouteTypes {
     | '/partners/schools'
     | '/tools/group-maker'
     | '/blog/'
+    | '/parents-guide/'
     | '/bulletins/$classId'
     | '/classes/$classId'
     | '/daily/$classId'
@@ -385,7 +394,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
-    | '/parents-guide'
     | '/partners'
     | '/privacy'
     | '/sitemap.xml'
@@ -405,6 +413,7 @@ export interface FileRouteTypes {
     | '/partners/schools'
     | '/tools/group-maker'
     | '/blog'
+    | '/parents-guide'
     | '/bulletins/$classId'
     | '/classes/$classId'
     | '/daily/$classId'
@@ -442,6 +451,7 @@ export interface FileRouteTypes {
     | '/partners/schools'
     | '/tools/group-maker'
     | '/blog/'
+    | '/parents-guide/'
     | '/_authenticated/bulletins/$classId'
     | '/_authenticated/classes/$classId'
     | '/_authenticated/daily/$classId'
@@ -460,7 +470,7 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   BlogRoute: typeof BlogRouteWithChildren
   LoginRoute: typeof LoginRoute
-  ParentsGuideRoute: typeof ParentsGuideRoute
+  ParentsGuideRoute: typeof ParentsGuideRouteWithChildren
   PartnersRoute: typeof PartnersRouteWithChildren
   PrivacyRoute: typeof PrivacyRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -534,6 +544,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/parents-guide/': {
+      id: '/parents-guide/'
+      path: '/'
+      fullPath: '/parents-guide/'
+      preLoaderRoute: typeof ParentsGuideIndexRouteImport
+      parentRoute: typeof ParentsGuideRoute
     }
     '/blog/': {
       id: '/blog/'
@@ -807,6 +824,18 @@ const BlogRouteChildren: BlogRouteChildren = {
 
 const BlogRouteWithChildren = BlogRoute._addFileChildren(BlogRouteChildren)
 
+interface ParentsGuideRouteChildren {
+  ParentsGuideIndexRoute: typeof ParentsGuideIndexRoute
+}
+
+const ParentsGuideRouteChildren: ParentsGuideRouteChildren = {
+  ParentsGuideIndexRoute: ParentsGuideIndexRoute,
+}
+
+const ParentsGuideRouteWithChildren = ParentsGuideRoute._addFileChildren(
+  ParentsGuideRouteChildren,
+)
+
 interface PartnersRouteChildren {
   PartnersDistrictsRoute: typeof PartnersDistrictsRoute
   PartnersSchoolsRoute: typeof PartnersSchoolsRoute
@@ -826,7 +855,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   BlogRoute: BlogRouteWithChildren,
   LoginRoute: LoginRoute,
-  ParentsGuideRoute: ParentsGuideRoute,
+  ParentsGuideRoute: ParentsGuideRouteWithChildren,
   PartnersRoute: PartnersRouteWithChildren,
   PrivacyRoute: PrivacyRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
