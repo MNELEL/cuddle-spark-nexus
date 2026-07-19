@@ -22,6 +22,7 @@ import { Route as ToolsGroupMakerRouteImport } from './routes/tools.group-maker'
 import { Route as PartnersSchoolsRouteImport } from './routes/partners.schools'
 import { Route as PartnersDistrictsRouteImport } from './routes/partners.districts'
 import { Route as PTokenRouteImport } from './routes/p.$token'
+import { Route as CSlugRouteImport } from './routes/c.$slug'
 import { Route as BlogWeeklyReportTemplateRouteImport } from './routes/blog.weekly-report-template'
 import { Route as BlogProgressTrackingGuideRouteImport } from './routes/blog.progress-tracking-guide'
 import { Route as BlogDigitalHallPassGuideRouteImport } from './routes/blog.digital-hall-pass-guide'
@@ -104,6 +105,11 @@ const PartnersDistrictsRoute = PartnersDistrictsRouteImport.update({
 const PTokenRoute = PTokenRouteImport.update({
   id: '/p/$token',
   path: '/p/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CSlugRoute = CSlugRouteImport.update({
+  id: '/c/$slug',
+  path: '/c/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BlogWeeklyReportTemplateRoute =
@@ -233,6 +239,7 @@ export interface FileRoutesByFullPath {
   '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
   '/blog/progress-tracking-guide': typeof BlogProgressTrackingGuideRoute
   '/blog/weekly-report-template': typeof BlogWeeklyReportTemplateRoute
+  '/c/$slug': typeof CSlugRoute
   '/p/$token': typeof PTokenRoute
   '/partners/districts': typeof PartnersDistrictsRoute
   '/partners/schools': typeof PartnersSchoolsRoute
@@ -265,6 +272,7 @@ export interface FileRoutesByTo {
   '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
   '/blog/progress-tracking-guide': typeof BlogProgressTrackingGuideRoute
   '/blog/weekly-report-template': typeof BlogWeeklyReportTemplateRoute
+  '/c/$slug': typeof CSlugRoute
   '/p/$token': typeof PTokenRoute
   '/partners/districts': typeof PartnersDistrictsRoute
   '/partners/schools': typeof PartnersSchoolsRoute
@@ -300,6 +308,7 @@ export interface FileRoutesById {
   '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
   '/blog/progress-tracking-guide': typeof BlogProgressTrackingGuideRoute
   '/blog/weekly-report-template': typeof BlogWeeklyReportTemplateRoute
+  '/c/$slug': typeof CSlugRoute
   '/p/$token': typeof PTokenRoute
   '/partners/districts': typeof PartnersDistrictsRoute
   '/partners/schools': typeof PartnersSchoolsRoute
@@ -335,6 +344,7 @@ export interface FileRouteTypes {
     | '/blog/digital-hall-pass-guide'
     | '/blog/progress-tracking-guide'
     | '/blog/weekly-report-template'
+    | '/c/$slug'
     | '/p/$token'
     | '/partners/districts'
     | '/partners/schools'
@@ -367,6 +377,7 @@ export interface FileRouteTypes {
     | '/blog/digital-hall-pass-guide'
     | '/blog/progress-tracking-guide'
     | '/blog/weekly-report-template'
+    | '/c/$slug'
     | '/p/$token'
     | '/partners/districts'
     | '/partners/schools'
@@ -401,6 +412,7 @@ export interface FileRouteTypes {
     | '/blog/digital-hall-pass-guide'
     | '/blog/progress-tracking-guide'
     | '/blog/weekly-report-template'
+    | '/c/$slug'
     | '/p/$token'
     | '/partners/districts'
     | '/partners/schools'
@@ -427,6 +439,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SupportRoute: typeof SupportRoute
+  CSlugRoute: typeof CSlugRoute
   PTokenRoute: typeof PTokenRoute
   ToolsGroupMakerRoute: typeof ToolsGroupMakerRoute
 }
@@ -522,6 +535,13 @@ declare module '@tanstack/react-router' {
       path: '/p/$token'
       fullPath: '/p/$token'
       preLoaderRoute: typeof PTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/c/$slug': {
+      id: '/c/$slug'
+      path: '/c/$slug'
+      fullPath: '/c/$slug'
+      preLoaderRoute: typeof CSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/blog/weekly-report-template': {
@@ -768,6 +788,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SupportRoute: SupportRoute,
+  CSlugRoute: CSlugRoute,
   PTokenRoute: PTokenRoute,
   ToolsGroupMakerRoute: ToolsGroupMakerRoute,
 }
