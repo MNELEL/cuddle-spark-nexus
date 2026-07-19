@@ -23,6 +23,7 @@ import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as ToolsGroupMakerRouteImport } from './routes/tools.group-maker'
 import { Route as PartnersSchoolsRouteImport } from './routes/partners.schools'
 import { Route as PartnersDistrictsRouteImport } from './routes/partners.districts'
+import { Route as ParentsGuideSlugRouteImport } from './routes/parents-guide.$slug'
 import { Route as PTokenRouteImport } from './routes/p.$token'
 import { Route as CSlugRouteImport } from './routes/c.$slug'
 import { Route as BlogWeeklyReportTemplateRouteImport } from './routes/blog.weekly-report-template'
@@ -114,6 +115,11 @@ const PartnersDistrictsRoute = PartnersDistrictsRouteImport.update({
   id: '/districts',
   path: '/districts',
   getParentRoute: () => PartnersRoute,
+} as any)
+const ParentsGuideSlugRoute = ParentsGuideSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => ParentsGuideRoute,
 } as any)
 const PTokenRoute = PTokenRouteImport.update({
   id: '/p/$token',
@@ -261,6 +267,7 @@ export interface FileRoutesByFullPath {
   '/blog/weekly-report-template': typeof BlogWeeklyReportTemplateRoute
   '/c/$slug': typeof CSlugRoute
   '/p/$token': typeof PTokenRoute
+  '/parents-guide/$slug': typeof ParentsGuideSlugRoute
   '/partners/districts': typeof PartnersDistrictsRoute
   '/partners/schools': typeof PartnersSchoolsRoute
   '/tools/group-maker': typeof ToolsGroupMakerRoute
@@ -296,6 +303,7 @@ export interface FileRoutesByTo {
   '/blog/weekly-report-template': typeof BlogWeeklyReportTemplateRoute
   '/c/$slug': typeof CSlugRoute
   '/p/$token': typeof PTokenRoute
+  '/parents-guide/$slug': typeof ParentsGuideSlugRoute
   '/partners/districts': typeof PartnersDistrictsRoute
   '/partners/schools': typeof PartnersSchoolsRoute
   '/tools/group-maker': typeof ToolsGroupMakerRoute
@@ -335,6 +343,7 @@ export interface FileRoutesById {
   '/blog/weekly-report-template': typeof BlogWeeklyReportTemplateRoute
   '/c/$slug': typeof CSlugRoute
   '/p/$token': typeof PTokenRoute
+  '/parents-guide/$slug': typeof ParentsGuideSlugRoute
   '/partners/districts': typeof PartnersDistrictsRoute
   '/partners/schools': typeof PartnersSchoolsRoute
   '/tools/group-maker': typeof ToolsGroupMakerRoute
@@ -374,6 +383,7 @@ export interface FileRouteTypes {
     | '/blog/weekly-report-template'
     | '/c/$slug'
     | '/p/$token'
+    | '/parents-guide/$slug'
     | '/partners/districts'
     | '/partners/schools'
     | '/tools/group-maker'
@@ -409,6 +419,7 @@ export interface FileRouteTypes {
     | '/blog/weekly-report-template'
     | '/c/$slug'
     | '/p/$token'
+    | '/parents-guide/$slug'
     | '/partners/districts'
     | '/partners/schools'
     | '/tools/group-maker'
@@ -447,6 +458,7 @@ export interface FileRouteTypes {
     | '/blog/weekly-report-template'
     | '/c/$slug'
     | '/p/$token'
+    | '/parents-guide/$slug'
     | '/partners/districts'
     | '/partners/schools'
     | '/tools/group-maker'
@@ -579,6 +591,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/partners/districts'
       preLoaderRoute: typeof PartnersDistrictsRouteImport
       parentRoute: typeof PartnersRoute
+    }
+    '/parents-guide/$slug': {
+      id: '/parents-guide/$slug'
+      path: '/$slug'
+      fullPath: '/parents-guide/$slug'
+      preLoaderRoute: typeof ParentsGuideSlugRouteImport
+      parentRoute: typeof ParentsGuideRoute
     }
     '/p/$token': {
       id: '/p/$token'
@@ -825,10 +844,12 @@ const BlogRouteChildren: BlogRouteChildren = {
 const BlogRouteWithChildren = BlogRoute._addFileChildren(BlogRouteChildren)
 
 interface ParentsGuideRouteChildren {
+  ParentsGuideSlugRoute: typeof ParentsGuideSlugRoute
   ParentsGuideIndexRoute: typeof ParentsGuideIndexRoute
 }
 
 const ParentsGuideRouteChildren: ParentsGuideRouteChildren = {
+  ParentsGuideSlugRoute: ParentsGuideSlugRoute,
   ParentsGuideIndexRoute: ParentsGuideIndexRoute,
 }
 

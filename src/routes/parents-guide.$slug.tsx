@@ -203,7 +203,7 @@ export const Route = createFileRoute("/parents-guide/$slug")({
 });
 
 function GuidePage() {
-  const { guide } = Route.useLoaderData();
+  const { guide } = Route.useLoaderData() as { guide: Guide };
   return (
     <div dir="rtl" className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border/60">
