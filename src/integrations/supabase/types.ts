@@ -220,6 +220,10 @@ export type Database = {
           id: string
           name: string
           owner_id: string
+          public_description: string | null
+          public_enabled: boolean
+          public_headline: string | null
+          public_slug: string | null
           updated_at: string
         }
         Insert: {
@@ -230,6 +234,10 @@ export type Database = {
           id?: string
           name: string
           owner_id: string
+          public_description?: string | null
+          public_enabled?: boolean
+          public_headline?: string | null
+          public_slug?: string | null
           updated_at?: string
         }
         Update: {
@@ -240,6 +248,10 @@ export type Database = {
           id?: string
           name?: string
           owner_id?: string
+          public_description?: string | null
+          public_enabled?: boolean
+          public_headline?: string | null
+          public_slug?: string | null
           updated_at?: string
         }
         Relationships: []
