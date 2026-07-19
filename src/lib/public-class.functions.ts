@@ -34,7 +34,7 @@ export const getPublicClassShowcase = createServerFn({ method: "GET" })
       supabaseAdmin.from("students").select("id", { count: "exact", head: true }).eq("class_id", classId),
       supabaseAdmin.from("grades").select("value, max_value, subject, date").eq("class_id", classId).order("date", { ascending: false }).limit(200),
       supabaseAdmin.from("attendance").select("status").eq("class_id", classId).limit(1000),
-      supabaseAdmin.from("weekly_bulletins").select("id, title, digest_summary, study_points, start_date, end_date").eq("class_id", classId).eq("published", true).order("start_date", { ascending: false }).limit(6),
+      supabaseAdmin.from("weekly_bulletins").select("id, title, digest_summary, study_points, start_date, end_date").eq("class_id", classId).order("start_date", { ascending: false }).limit(6),
     ]);
 
     const studentCount = studentsRes.count ?? 0;
