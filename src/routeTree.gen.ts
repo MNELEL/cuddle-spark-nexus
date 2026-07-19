@@ -22,6 +22,7 @@ import { Route as ToolsGroupMakerRouteImport } from './routes/tools.group-maker'
 import { Route as PartnersSchoolsRouteImport } from './routes/partners.schools'
 import { Route as PartnersDistrictsRouteImport } from './routes/partners.districts'
 import { Route as PTokenRouteImport } from './routes/p.$token'
+import { Route as CSlugRouteImport } from './routes/c.$slug'
 import { Route as BlogWeeklyReportTemplateRouteImport } from './routes/blog.weekly-report-template'
 import { Route as BlogProgressTrackingGuideRouteImport } from './routes/blog.progress-tracking-guide'
 import { Route as BlogDigitalHallPassGuideRouteImport } from './routes/blog.digital-hall-pass-guide'
@@ -32,6 +33,7 @@ import { Route as AuthenticatedResourcesRouteImport } from './routes/_authentica
 import { Route as AuthenticatedQuestionsRouteImport } from './routes/_authenticated.questions'
 import { Route as AuthenticatedIngestRouteImport } from './routes/_authenticated.ingest'
 import { Route as AuthenticatedClassesIndexRouteImport } from './routes/_authenticated.classes.index'
+import { Route as AuthenticatedShareClassIdRouteImport } from './routes/_authenticated.share.$classId'
 import { Route as AuthenticatedResourcesResourceIdRouteImport } from './routes/_authenticated.resources.$resourceId'
 import { Route as AuthenticatedReportsClassIdRouteImport } from './routes/_authenticated.reports.$classId'
 import { Route as AuthenticatedRaffleClassIdRouteImport } from './routes/_authenticated.raffle.$classId'
@@ -106,6 +108,11 @@ const PTokenRoute = PTokenRouteImport.update({
   path: '/p/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CSlugRoute = CSlugRouteImport.update({
+  id: '/c/$slug',
+  path: '/c/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BlogWeeklyReportTemplateRoute =
   BlogWeeklyReportTemplateRouteImport.update({
     id: '/weekly-report-template',
@@ -159,6 +166,12 @@ const AuthenticatedClassesIndexRoute =
   AuthenticatedClassesIndexRouteImport.update({
     id: '/classes/',
     path: '/classes/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedShareClassIdRoute =
+  AuthenticatedShareClassIdRouteImport.update({
+    id: '/share/$classId',
+    path: '/share/$classId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedResourcesResourceIdRoute =
@@ -233,6 +246,7 @@ export interface FileRoutesByFullPath {
   '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
   '/blog/progress-tracking-guide': typeof BlogProgressTrackingGuideRoute
   '/blog/weekly-report-template': typeof BlogWeeklyReportTemplateRoute
+  '/c/$slug': typeof CSlugRoute
   '/p/$token': typeof PTokenRoute
   '/partners/districts': typeof PartnersDistrictsRoute
   '/partners/schools': typeof PartnersSchoolsRoute
@@ -246,6 +260,7 @@ export interface FileRoutesByFullPath {
   '/raffle/$classId': typeof AuthenticatedRaffleClassIdRoute
   '/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/resources/$resourceId': typeof AuthenticatedResourcesResourceIdRoute
+  '/share/$classId': typeof AuthenticatedShareClassIdRoute
   '/classes/': typeof AuthenticatedClassesIndexRoute
   '/classes/$classId/display': typeof AuthenticatedClassesClassIdDisplayRoute
 }
@@ -265,6 +280,7 @@ export interface FileRoutesByTo {
   '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
   '/blog/progress-tracking-guide': typeof BlogProgressTrackingGuideRoute
   '/blog/weekly-report-template': typeof BlogWeeklyReportTemplateRoute
+  '/c/$slug': typeof CSlugRoute
   '/p/$token': typeof PTokenRoute
   '/partners/districts': typeof PartnersDistrictsRoute
   '/partners/schools': typeof PartnersSchoolsRoute
@@ -278,6 +294,7 @@ export interface FileRoutesByTo {
   '/raffle/$classId': typeof AuthenticatedRaffleClassIdRoute
   '/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/resources/$resourceId': typeof AuthenticatedResourcesResourceIdRoute
+  '/share/$classId': typeof AuthenticatedShareClassIdRoute
   '/classes': typeof AuthenticatedClassesIndexRoute
   '/classes/$classId/display': typeof AuthenticatedClassesClassIdDisplayRoute
 }
@@ -300,6 +317,7 @@ export interface FileRoutesById {
   '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
   '/blog/progress-tracking-guide': typeof BlogProgressTrackingGuideRoute
   '/blog/weekly-report-template': typeof BlogWeeklyReportTemplateRoute
+  '/c/$slug': typeof CSlugRoute
   '/p/$token': typeof PTokenRoute
   '/partners/districts': typeof PartnersDistrictsRoute
   '/partners/schools': typeof PartnersSchoolsRoute
@@ -313,6 +331,7 @@ export interface FileRoutesById {
   '/_authenticated/raffle/$classId': typeof AuthenticatedRaffleClassIdRoute
   '/_authenticated/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/_authenticated/resources/$resourceId': typeof AuthenticatedResourcesResourceIdRoute
+  '/_authenticated/share/$classId': typeof AuthenticatedShareClassIdRoute
   '/_authenticated/classes/': typeof AuthenticatedClassesIndexRoute
   '/_authenticated/classes/$classId/display': typeof AuthenticatedClassesClassIdDisplayRoute
 }
@@ -335,6 +354,7 @@ export interface FileRouteTypes {
     | '/blog/digital-hall-pass-guide'
     | '/blog/progress-tracking-guide'
     | '/blog/weekly-report-template'
+    | '/c/$slug'
     | '/p/$token'
     | '/partners/districts'
     | '/partners/schools'
@@ -348,6 +368,7 @@ export interface FileRouteTypes {
     | '/raffle/$classId'
     | '/reports/$classId'
     | '/resources/$resourceId'
+    | '/share/$classId'
     | '/classes/'
     | '/classes/$classId/display'
   fileRoutesByTo: FileRoutesByTo
@@ -367,6 +388,7 @@ export interface FileRouteTypes {
     | '/blog/digital-hall-pass-guide'
     | '/blog/progress-tracking-guide'
     | '/blog/weekly-report-template'
+    | '/c/$slug'
     | '/p/$token'
     | '/partners/districts'
     | '/partners/schools'
@@ -380,6 +402,7 @@ export interface FileRouteTypes {
     | '/raffle/$classId'
     | '/reports/$classId'
     | '/resources/$resourceId'
+    | '/share/$classId'
     | '/classes'
     | '/classes/$classId/display'
   id:
@@ -401,6 +424,7 @@ export interface FileRouteTypes {
     | '/blog/digital-hall-pass-guide'
     | '/blog/progress-tracking-guide'
     | '/blog/weekly-report-template'
+    | '/c/$slug'
     | '/p/$token'
     | '/partners/districts'
     | '/partners/schools'
@@ -414,6 +438,7 @@ export interface FileRouteTypes {
     | '/_authenticated/raffle/$classId'
     | '/_authenticated/reports/$classId'
     | '/_authenticated/resources/$resourceId'
+    | '/_authenticated/share/$classId'
     | '/_authenticated/classes/'
     | '/_authenticated/classes/$classId/display'
   fileRoutesById: FileRoutesById
@@ -427,6 +452,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SupportRoute: typeof SupportRoute
+  CSlugRoute: typeof CSlugRoute
   PTokenRoute: typeof PTokenRoute
   ToolsGroupMakerRoute: typeof ToolsGroupMakerRoute
 }
@@ -524,6 +550,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/c/$slug': {
+      id: '/c/$slug'
+      path: '/c/$slug'
+      fullPath: '/c/$slug'
+      preLoaderRoute: typeof CSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/blog/weekly-report-template': {
       id: '/blog/weekly-report-template'
       path: '/weekly-report-template'
@@ -592,6 +625,13 @@ declare module '@tanstack/react-router' {
       path: '/classes'
       fullPath: '/classes/'
       preLoaderRoute: typeof AuthenticatedClassesIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/share/$classId': {
+      id: '/_authenticated/share/$classId'
+      path: '/share/$classId'
+      fullPath: '/share/$classId'
+      preLoaderRoute: typeof AuthenticatedShareClassIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/resources/$resourceId': {
@@ -703,6 +743,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedParentsClassIdRoute: typeof AuthenticatedParentsClassIdRoute
   AuthenticatedRaffleClassIdRoute: typeof AuthenticatedRaffleClassIdRoute
   AuthenticatedReportsClassIdRoute: typeof AuthenticatedReportsClassIdRoute
+  AuthenticatedShareClassIdRoute: typeof AuthenticatedShareClassIdRoute
   AuthenticatedClassesIndexRoute: typeof AuthenticatedClassesIndexRoute
 }
 
@@ -720,6 +761,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedParentsClassIdRoute: AuthenticatedParentsClassIdRoute,
   AuthenticatedRaffleClassIdRoute: AuthenticatedRaffleClassIdRoute,
   AuthenticatedReportsClassIdRoute: AuthenticatedReportsClassIdRoute,
+  AuthenticatedShareClassIdRoute: AuthenticatedShareClassIdRoute,
   AuthenticatedClassesIndexRoute: AuthenticatedClassesIndexRoute,
 }
 
@@ -768,6 +810,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SupportRoute: SupportRoute,
+  CSlugRoute: CSlugRoute,
   PTokenRoute: PTokenRoute,
   ToolsGroupMakerRoute: ToolsGroupMakerRoute,
 }
