@@ -2,8 +2,36 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Building2, BarChart3, ShieldCheck, Users, FileText, Mail, Download, CheckCircle2 } from "lucide-react";
+import { FaqSection, faqJsonLd, type FaqItem } from "@/components/faq-section";
 
 const URL_SELF = "https://cuddle-spark-nexus.lovable.app/partners/districts";
+
+const FAQ: FaqItem[] = [
+  {
+    q: "כמה מוסדות מינימום נדרש כדי לקבל רישיון מחוזי?",
+    a: "רישוי מחוזי מתחיל מ-3 מוסדות. עבור רשתות של 10+ מוסדות יש חבילת Enterprise עם מנהל חשבון ייעודי ותמיכה מועדפת.",
+  },
+  {
+    q: "האם אפשר להטמיע ברשת מוסדות שכל מוסד עובד בשיטה שונה?",
+    a: "כן. כל מוסד ברשת מקבל תצורה עצמאית (תבניות, מקצועות, סגנון AI), בעוד שהמטה רואה דוחות אגרגטיביים אחידים. זה הגישה המומלצת לרשתות חדשות.",
+  },
+  {
+    q: "מה מכיל לוח הבקרה המחוזי?",
+    a: "השוואה בין מוסדות על יעדי דפים, נוכחות, מעורבות הורים, ואחוז דוחות שנשלחו בזמן. אפשר לפלטר לפי שכבת גיל, סוג מוסד או אזור גיאוגרפי.",
+  },
+  {
+    q: "האם יש אינטגרציה עם מערכות ניהול בית ספר קיימות?",
+    a: "יש תמיכה בייבוא/ייצוא CSV, וכן אינטגרציות SSO. עבור מערכות ייחודיות של רשתות אנחנו בונים מחבר מותאם במסגרת חבילת ה-Enterprise.",
+  },
+  {
+    q: "מה לוח הזמנים לפריסה בכל המוסדות?",
+    a: "0-30 יום פיילוט ב-2-3 מוסדות, 31-60 יום הרחבה לחצי מהמוסדות, 61-90 יום פריסה מלאה. תוכנית 90 יום מפורטת מופיעה בעמוד עצמו.",
+  },
+  {
+    q: "האם התמחור המחוזי כולל תמיכה והדרכה בכל המוסדות?",
+    a: "כן. הרישוי המחוזי כולל סדנאות לכל המלמדים ברשת, תמיכה בעברית בימי א׳-ה׳, מנהל חשבון ייעודי, ועדכונים לאורך השנה — ללא עלות נוספת.",
+  },
+];
 
 export const Route = createFileRoute("/partners/districts")({
   component: DistrictsPage,
@@ -17,6 +45,7 @@ export const Route = createFileRoute("/partners/districts")({
       { property: "og:url", content: URL_SELF },
     ],
     links: [{ rel: "canonical", href: URL_SELF }],
+    scripts: [faqJsonLd(FAQ)],
   }),
 });
 
@@ -96,6 +125,8 @@ function DistrictsPage() {
             ))}
           </div>
         </section>
+
+        <FaqSection items={FAQ} intro="שאלות שאנחנו שומעים ממטות מחוזיים וממנהלי רשתות חינוך." />
       </main>
     </div>
   );
