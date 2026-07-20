@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { FaqSection, faqJsonLd, type FaqItem } from "@/components/faq-section";
 
 const BASE = "https://cuddle-spark-nexus.lovable.app";
 const URL = `${BASE}/partners/case-studies`;
@@ -121,6 +122,29 @@ const STUDIES: CaseStudy[] = [
   },
 ];
 
+const FAQ: FaqItem[] = [
+  {
+    q: "התוצאות שמופיעות כאן ריאליסטיות למוסד שלי?",
+    a: "כן. שלושת המקרים מייצגים תמונת מצב טיפוסית של מוסדות שהטמיעו את ClassAlign בעונה מלאה. שיפורים משמעותיים ביותר מופיעים כשמנהל המוסד עצמו מוביל את התהליך ומקצה זמן לסדנאות.",
+  },
+  {
+    q: "כמה זמן לוקח להגיע לתוצאות דומות?",
+    a: "השיפור הראשוני (חיסכון בזמן) מתחיל בשבוע 2-3. מדדים כמו עמידה ביעדי דפים ומעורבות הורים לוקחים 60-90 יום כדי להתגבש. פרטים מלאים בכל Case Study.",
+  },
+  {
+    q: "האם אתם יכולים לחבר אותנו למוסד שכבר משתמש?",
+    a: "כן, בהסכמת המוסדות. אנחנו יכולים לקבוע שיחת עמית לעמית עם מנהל של מוסד דומה בגודל ובזרם החינוכי. פנו אלינו במייל.",
+  },
+  {
+    q: "האם אפשר לראות דמו של לוח הבקרה המחוזי?",
+    a: "כן. במסגרת שיחת ההכרות אנחנו מציגים דמו חי של הדשבורד המחוזי עם נתוני דמו — ומראים איך הוא ייראה עם המוסדות שלכם.",
+  },
+  {
+    q: "מה נדרש כדי להיות Case Study מוצלח?",
+    a: "מחויבות של ההנהלה, מלמד/ר״ם מוביל שאוסף משוב, ומדידה שבועית של מדדים בסיסיים (זמן דוחות, אחוז יעדי דפים). אנחנו מלווים את התהליך מתחילתו ועד סוף שנת הפיילוט.",
+  },
+];
+
 export const Route = createFileRoute("/partners/case-studies")({
   component: CaseStudiesPage,
   head: () => ({
@@ -150,6 +174,7 @@ export const Route = createFileRoute("/partners/case-studies")({
           })),
         }),
       },
+      faqJsonLd(FAQ),
     ],
   }),
 });
@@ -274,6 +299,10 @@ function CaseStudiesPage() {
               דבר איתנו ←
             </a>
           </div>
+        </section>
+
+        <section className="mt-16">
+          <FaqSection items={FAQ} intro="שאלות שאנחנו שומעים לפני קבלת החלטה על הטמעה." />
         </section>
       </main>
     </div>
