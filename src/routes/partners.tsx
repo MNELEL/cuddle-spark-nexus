@@ -104,6 +104,20 @@ function PartnersPage() {
           </Link>
         </section>
 
+        <section className="mb-12">
+          <Link to="/partners/case-studies" className="group block">
+            <Card className="transition hover:border-primary hover:shadow-lg">
+              <CardHeader>
+                <CardTitle className="text-2xl">Case Studies — סיפורי הטמעה אמיתיים</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-muted-foreground">
+                <p>ישיבה קטנה, רשת תלמודי תורה ובית ספר ממ״ד — יעדים, לוח זמנים של 90 יום ותוצאות מדידות לפני ואחרי.</p>
+                <div className="text-primary text-sm group-hover:underline">לצפייה בסיפורי הלקוחות ←</div>
+              </CardContent>
+            </Card>
+          </Link>
+        </section>
+
         <section>
           <h2 className="text-2xl font-bold mb-6 text-center">מה נכלל בשיתוף הפעולה</h2>
           <div className="grid md:grid-cols-3 gap-4">
