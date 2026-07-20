@@ -2,8 +2,36 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, School, BookOpen, Sparkles, Users, Mail, Download, CheckCircle2 } from "lucide-react";
+import { FaqSection, faqJsonLd, type FaqItem } from "@/components/faq-section";
 
 const URL_SELF = "https://cuddle-spark-nexus.lovable.app/partners/schools";
+
+const FAQ: FaqItem[] = [
+  {
+    q: "האם רישיון מוסדי אחד מכסה את כל המלמדים במוסד?",
+    a: "כן. הרישיון המוסדי הוא שנתי וכולל את כל המלמדים והכיתות במוסד — ללא הגבלה על מספר משתמשים. גם צוות ההנהלה והמזכירות מקבל גישה.",
+  },
+  {
+    q: "האם אפשר להתחיל עם כיתה אחת לפני הטמעה מלאה?",
+    a: "בהחלט. אנחנו ממליצים על פיילוט של 2-3 מלמדים בשבועיים הראשונים, ואז הרחבה לכלל המוסד. הפיילוט לא דורש התחייבות שנתית.",
+  },
+  {
+    q: "מה קורה אם רב או מלמד לא רגיל עם טכנולוגיה?",
+    a: "המערכת נבנתה כדי להיות פשוטה גם לרבנים ומלמדים מבוגרים. יש סדנאות פרונטליות בעברית, מדריכי וידאו קצרים, וקליטת ציונים בקול או בצילום דף — בלי צורך להקליד.",
+  },
+  {
+    q: "האם התבניות תואמות לזרם החינוכי שלנו (ליטאי/חסידי/ספרדי/ממ״ד)?",
+    a: "יש תבניות ברירת מחדל לכל זרם, ואפשר להתאים לחלוטין את מונחי הקודש, סגנון העלון, וטופסי הדוחות לרוח המוסד. פרופיל ה-AI לומד את הסגנון מהחומרים שהמלמד עורך.",
+  },
+  {
+    q: "מה קורה בסוף שנה — האם הנתונים נשמרים?",
+    a: "כל הנתונים ההיסטוריים נשמרים בגיבוי מלא. תלמידים עולים לכיתה הבאה, וההיסטוריה נגישה למחנך החדש. אפשר גם לייצא את כל הנתונים בפורמט PDF או Excel בכל זמן.",
+  },
+  {
+    q: "האם יש אפשרות תשלום חודשי במקום שנתי?",
+    a: "הרישיון המוסדי הוא שנתי — זה מאפשר לנו לספק הדרכה מלאה ותמיכה לכל השנה. עבור מוסדות קטנים או פיילוט קצר, יש תוכנית חודשית מוגבלת. פרטים בפנייה.",
+  },
+];
 
 export const Route = createFileRoute("/partners/schools")({
   component: SchoolsPage,
@@ -17,6 +45,7 @@ export const Route = createFileRoute("/partners/schools")({
       { property: "og:url", content: URL_SELF },
     ],
     links: [{ rel: "canonical", href: URL_SELF }],
+    scripts: [faqJsonLd(FAQ)],
   }),
 });
 
@@ -92,6 +121,8 @@ function SchoolsPage() {
             </CardContent>
           </Card>
         </section>
+
+        <FaqSection items={FAQ} intro="שאלות נפוצות ממנהלי מוסדות, רבנים, ומחנכות." />
       </main>
     </div>
   );
