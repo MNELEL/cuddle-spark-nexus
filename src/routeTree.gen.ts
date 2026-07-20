@@ -15,16 +15,19 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PartnersRouteImport } from './routes/partners'
 import { Route as ParentsGuideRouteImport } from './routes/parents-guide'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as HelpRouteImport } from './routes/help'
 import { Route as BlogRouteImport } from './routes/blog'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ParentsGuideIndexRouteImport } from './routes/parents-guide.index'
+import { Route as HelpIndexRouteImport } from './routes/help.index'
 import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as ToolsGroupMakerRouteImport } from './routes/tools.group-maker'
 import { Route as PartnersSchoolsRouteImport } from './routes/partners.schools'
 import { Route as PartnersDistrictsRouteImport } from './routes/partners.districts'
 import { Route as ParentsGuideSlugRouteImport } from './routes/parents-guide.$slug'
 import { Route as PTokenRouteImport } from './routes/p.$token'
+import { Route as HelpSlugRouteImport } from './routes/help.$slug'
 import { Route as CSlugRouteImport } from './routes/c.$slug'
 import { Route as BlogWeeklyReportTemplateRouteImport } from './routes/blog.weekly-report-template'
 import { Route as BlogProgressTrackingGuideRouteImport } from './routes/blog.progress-tracking-guide'
@@ -77,6 +80,11 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HelpRoute = HelpRouteImport.update({
+  id: '/help',
+  path: '/help',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BlogRoute = BlogRouteImport.update({
   id: '/blog',
   path: '/blog',
@@ -95,6 +103,11 @@ const ParentsGuideIndexRoute = ParentsGuideIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => ParentsGuideRoute,
+} as any)
+const HelpIndexRoute = HelpIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => HelpRoute,
 } as any)
 const BlogIndexRoute = BlogIndexRouteImport.update({
   id: '/',
@@ -125,6 +138,11 @@ const PTokenRoute = PTokenRouteImport.update({
   id: '/p/$token',
   path: '/p/$token',
   getParentRoute: () => rootRouteImport,
+} as any)
+const HelpSlugRoute = HelpSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => HelpRoute,
 } as any)
 const CSlugRoute = CSlugRouteImport.update({
   id: '/c/$slug',
@@ -250,6 +268,7 @@ const AuthenticatedClassesClassIdDisplayRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/blog': typeof BlogRouteWithChildren
+  '/help': typeof HelpRouteWithChildren
   '/login': typeof LoginRoute
   '/parents-guide': typeof ParentsGuideRouteWithChildren
   '/partners': typeof PartnersRouteWithChildren
@@ -266,12 +285,14 @@ export interface FileRoutesByFullPath {
   '/blog/progress-tracking-guide': typeof BlogProgressTrackingGuideRoute
   '/blog/weekly-report-template': typeof BlogWeeklyReportTemplateRoute
   '/c/$slug': typeof CSlugRoute
+  '/help/$slug': typeof HelpSlugRoute
   '/p/$token': typeof PTokenRoute
   '/parents-guide/$slug': typeof ParentsGuideSlugRoute
   '/partners/districts': typeof PartnersDistrictsRoute
   '/partners/schools': typeof PartnersSchoolsRoute
   '/tools/group-maker': typeof ToolsGroupMakerRoute
   '/blog/': typeof BlogIndexRoute
+  '/help/': typeof HelpIndexRoute
   '/parents-guide/': typeof ParentsGuideIndexRoute
   '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
   '/classes/$classId': typeof AuthenticatedClassesClassIdRouteWithChildren
@@ -302,12 +323,14 @@ export interface FileRoutesByTo {
   '/blog/progress-tracking-guide': typeof BlogProgressTrackingGuideRoute
   '/blog/weekly-report-template': typeof BlogWeeklyReportTemplateRoute
   '/c/$slug': typeof CSlugRoute
+  '/help/$slug': typeof HelpSlugRoute
   '/p/$token': typeof PTokenRoute
   '/parents-guide/$slug': typeof ParentsGuideSlugRoute
   '/partners/districts': typeof PartnersDistrictsRoute
   '/partners/schools': typeof PartnersSchoolsRoute
   '/tools/group-maker': typeof ToolsGroupMakerRoute
   '/blog': typeof BlogIndexRoute
+  '/help': typeof HelpIndexRoute
   '/parents-guide': typeof ParentsGuideIndexRoute
   '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
   '/classes/$classId': typeof AuthenticatedClassesClassIdRouteWithChildren
@@ -326,6 +349,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/blog': typeof BlogRouteWithChildren
+  '/help': typeof HelpRouteWithChildren
   '/login': typeof LoginRoute
   '/parents-guide': typeof ParentsGuideRouteWithChildren
   '/partners': typeof PartnersRouteWithChildren
@@ -342,12 +366,14 @@ export interface FileRoutesById {
   '/blog/progress-tracking-guide': typeof BlogProgressTrackingGuideRoute
   '/blog/weekly-report-template': typeof BlogWeeklyReportTemplateRoute
   '/c/$slug': typeof CSlugRoute
+  '/help/$slug': typeof HelpSlugRoute
   '/p/$token': typeof PTokenRoute
   '/parents-guide/$slug': typeof ParentsGuideSlugRoute
   '/partners/districts': typeof PartnersDistrictsRoute
   '/partners/schools': typeof PartnersSchoolsRoute
   '/tools/group-maker': typeof ToolsGroupMakerRoute
   '/blog/': typeof BlogIndexRoute
+  '/help/': typeof HelpIndexRoute
   '/parents-guide/': typeof ParentsGuideIndexRoute
   '/_authenticated/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
   '/_authenticated/classes/$classId': typeof AuthenticatedClassesClassIdRouteWithChildren
@@ -366,6 +392,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/blog'
+    | '/help'
     | '/login'
     | '/parents-guide'
     | '/partners'
@@ -382,12 +409,14 @@ export interface FileRouteTypes {
     | '/blog/progress-tracking-guide'
     | '/blog/weekly-report-template'
     | '/c/$slug'
+    | '/help/$slug'
     | '/p/$token'
     | '/parents-guide/$slug'
     | '/partners/districts'
     | '/partners/schools'
     | '/tools/group-maker'
     | '/blog/'
+    | '/help/'
     | '/parents-guide/'
     | '/bulletins/$classId'
     | '/classes/$classId'
@@ -418,12 +447,14 @@ export interface FileRouteTypes {
     | '/blog/progress-tracking-guide'
     | '/blog/weekly-report-template'
     | '/c/$slug'
+    | '/help/$slug'
     | '/p/$token'
     | '/parents-guide/$slug'
     | '/partners/districts'
     | '/partners/schools'
     | '/tools/group-maker'
     | '/blog'
+    | '/help'
     | '/parents-guide'
     | '/bulletins/$classId'
     | '/classes/$classId'
@@ -441,6 +472,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/blog'
+    | '/help'
     | '/login'
     | '/parents-guide'
     | '/partners'
@@ -457,12 +489,14 @@ export interface FileRouteTypes {
     | '/blog/progress-tracking-guide'
     | '/blog/weekly-report-template'
     | '/c/$slug'
+    | '/help/$slug'
     | '/p/$token'
     | '/parents-guide/$slug'
     | '/partners/districts'
     | '/partners/schools'
     | '/tools/group-maker'
     | '/blog/'
+    | '/help/'
     | '/parents-guide/'
     | '/_authenticated/bulletins/$classId'
     | '/_authenticated/classes/$classId'
@@ -481,6 +515,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   BlogRoute: typeof BlogRouteWithChildren
+  HelpRoute: typeof HelpRouteWithChildren
   LoginRoute: typeof LoginRoute
   ParentsGuideRoute: typeof ParentsGuideRouteWithChildren
   PartnersRoute: typeof PartnersRouteWithChildren
@@ -536,6 +571,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/help': {
+      id: '/help'
+      path: '/help'
+      fullPath: '/help'
+      preLoaderRoute: typeof HelpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/blog': {
       id: '/blog'
       path: '/blog'
@@ -563,6 +605,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/parents-guide/'
       preLoaderRoute: typeof ParentsGuideIndexRouteImport
       parentRoute: typeof ParentsGuideRoute
+    }
+    '/help/': {
+      id: '/help/'
+      path: '/'
+      fullPath: '/help/'
+      preLoaderRoute: typeof HelpIndexRouteImport
+      parentRoute: typeof HelpRoute
     }
     '/blog/': {
       id: '/blog/'
@@ -605,6 +654,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/p/$token'
       preLoaderRoute: typeof PTokenRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/help/$slug': {
+      id: '/help/$slug'
+      path: '/$slug'
+      fullPath: '/help/$slug'
+      preLoaderRoute: typeof HelpSlugRouteImport
+      parentRoute: typeof HelpRoute
     }
     '/c/$slug': {
       id: '/c/$slug'
@@ -843,6 +899,18 @@ const BlogRouteChildren: BlogRouteChildren = {
 
 const BlogRouteWithChildren = BlogRoute._addFileChildren(BlogRouteChildren)
 
+interface HelpRouteChildren {
+  HelpSlugRoute: typeof HelpSlugRoute
+  HelpIndexRoute: typeof HelpIndexRoute
+}
+
+const HelpRouteChildren: HelpRouteChildren = {
+  HelpSlugRoute: HelpSlugRoute,
+  HelpIndexRoute: HelpIndexRoute,
+}
+
+const HelpRouteWithChildren = HelpRoute._addFileChildren(HelpRouteChildren)
+
 interface ParentsGuideRouteChildren {
   ParentsGuideSlugRoute: typeof ParentsGuideSlugRoute
   ParentsGuideIndexRoute: typeof ParentsGuideIndexRoute
@@ -875,6 +943,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   BlogRoute: BlogRouteWithChildren,
+  HelpRoute: HelpRouteWithChildren,
   LoginRoute: LoginRoute,
   ParentsGuideRoute: ParentsGuideRouteWithChildren,
   PartnersRoute: PartnersRouteWithChildren,
