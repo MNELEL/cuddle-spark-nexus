@@ -25,6 +25,7 @@ import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as ToolsGroupMakerRouteImport } from './routes/tools.group-maker'
 import { Route as PartnersSchoolsRouteImport } from './routes/partners.schools'
 import { Route as PartnersDistrictsRouteImport } from './routes/partners.districts'
+import { Route as PartnersCaseStudiesRouteImport } from './routes/partners.case-studies'
 import { Route as ParentsGuideSlugRouteImport } from './routes/parents-guide.$slug'
 import { Route as PTokenRouteImport } from './routes/p.$token'
 import { Route as HelpSlugRouteImport } from './routes/help.$slug'
@@ -127,6 +128,11 @@ const PartnersSchoolsRoute = PartnersSchoolsRouteImport.update({
 const PartnersDistrictsRoute = PartnersDistrictsRouteImport.update({
   id: '/districts',
   path: '/districts',
+  getParentRoute: () => PartnersRoute,
+} as any)
+const PartnersCaseStudiesRoute = PartnersCaseStudiesRouteImport.update({
+  id: '/case-studies',
+  path: '/case-studies',
   getParentRoute: () => PartnersRoute,
 } as any)
 const ParentsGuideSlugRoute = ParentsGuideSlugRouteImport.update({
@@ -288,6 +294,7 @@ export interface FileRoutesByFullPath {
   '/help/$slug': typeof HelpSlugRoute
   '/p/$token': typeof PTokenRoute
   '/parents-guide/$slug': typeof ParentsGuideSlugRoute
+  '/partners/case-studies': typeof PartnersCaseStudiesRoute
   '/partners/districts': typeof PartnersDistrictsRoute
   '/partners/schools': typeof PartnersSchoolsRoute
   '/tools/group-maker': typeof ToolsGroupMakerRoute
@@ -326,6 +333,7 @@ export interface FileRoutesByTo {
   '/help/$slug': typeof HelpSlugRoute
   '/p/$token': typeof PTokenRoute
   '/parents-guide/$slug': typeof ParentsGuideSlugRoute
+  '/partners/case-studies': typeof PartnersCaseStudiesRoute
   '/partners/districts': typeof PartnersDistrictsRoute
   '/partners/schools': typeof PartnersSchoolsRoute
   '/tools/group-maker': typeof ToolsGroupMakerRoute
@@ -369,6 +377,7 @@ export interface FileRoutesById {
   '/help/$slug': typeof HelpSlugRoute
   '/p/$token': typeof PTokenRoute
   '/parents-guide/$slug': typeof ParentsGuideSlugRoute
+  '/partners/case-studies': typeof PartnersCaseStudiesRoute
   '/partners/districts': typeof PartnersDistrictsRoute
   '/partners/schools': typeof PartnersSchoolsRoute
   '/tools/group-maker': typeof ToolsGroupMakerRoute
@@ -412,6 +421,7 @@ export interface FileRouteTypes {
     | '/help/$slug'
     | '/p/$token'
     | '/parents-guide/$slug'
+    | '/partners/case-studies'
     | '/partners/districts'
     | '/partners/schools'
     | '/tools/group-maker'
@@ -450,6 +460,7 @@ export interface FileRouteTypes {
     | '/help/$slug'
     | '/p/$token'
     | '/parents-guide/$slug'
+    | '/partners/case-studies'
     | '/partners/districts'
     | '/partners/schools'
     | '/tools/group-maker'
@@ -492,6 +503,7 @@ export interface FileRouteTypes {
     | '/help/$slug'
     | '/p/$token'
     | '/parents-guide/$slug'
+    | '/partners/case-studies'
     | '/partners/districts'
     | '/partners/schools'
     | '/tools/group-maker'
@@ -639,6 +651,13 @@ declare module '@tanstack/react-router' {
       path: '/districts'
       fullPath: '/partners/districts'
       preLoaderRoute: typeof PartnersDistrictsRouteImport
+      parentRoute: typeof PartnersRoute
+    }
+    '/partners/case-studies': {
+      id: '/partners/case-studies'
+      path: '/case-studies'
+      fullPath: '/partners/case-studies'
+      preLoaderRoute: typeof PartnersCaseStudiesRouteImport
       parentRoute: typeof PartnersRoute
     }
     '/parents-guide/$slug': {
@@ -926,11 +945,13 @@ const ParentsGuideRouteWithChildren = ParentsGuideRoute._addFileChildren(
 )
 
 interface PartnersRouteChildren {
+  PartnersCaseStudiesRoute: typeof PartnersCaseStudiesRoute
   PartnersDistrictsRoute: typeof PartnersDistrictsRoute
   PartnersSchoolsRoute: typeof PartnersSchoolsRoute
 }
 
 const PartnersRouteChildren: PartnersRouteChildren = {
+  PartnersCaseStudiesRoute: PartnersCaseStudiesRoute,
   PartnersDistrictsRoute: PartnersDistrictsRoute,
   PartnersSchoolsRoute: PartnersSchoolsRoute,
 }
