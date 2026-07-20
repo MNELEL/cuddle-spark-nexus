@@ -15,6 +15,7 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PartnersRouteImport } from './routes/partners'
 import { Route as ParentsGuideRouteImport } from './routes/parents-guide'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as HelpRouteImport } from './routes/help'
 import { Route as BlogRouteImport } from './routes/blog'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
@@ -75,6 +76,11 @@ const ParentsGuideRoute = ParentsGuideRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HelpRoute = HelpRouteImport.update({
+  id: '/help',
+  path: '/help',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BlogRoute = BlogRouteImport.update({
@@ -250,6 +256,7 @@ const AuthenticatedClassesClassIdDisplayRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/blog': typeof BlogRouteWithChildren
+  '/help': typeof HelpRoute
   '/login': typeof LoginRoute
   '/parents-guide': typeof ParentsGuideRouteWithChildren
   '/partners': typeof PartnersRouteWithChildren
@@ -287,6 +294,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/help': typeof HelpRoute
   '/login': typeof LoginRoute
   '/partners': typeof PartnersRouteWithChildren
   '/privacy': typeof PrivacyRoute
@@ -326,6 +334,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/blog': typeof BlogRouteWithChildren
+  '/help': typeof HelpRoute
   '/login': typeof LoginRoute
   '/parents-guide': typeof ParentsGuideRouteWithChildren
   '/partners': typeof PartnersRouteWithChildren
@@ -366,6 +375,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/blog'
+    | '/help'
     | '/login'
     | '/parents-guide'
     | '/partners'
@@ -403,6 +413,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/help'
     | '/login'
     | '/partners'
     | '/privacy'
@@ -441,6 +452,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/blog'
+    | '/help'
     | '/login'
     | '/parents-guide'
     | '/partners'
@@ -481,6 +493,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   BlogRoute: typeof BlogRouteWithChildren
+  HelpRoute: typeof HelpRoute
   LoginRoute: typeof LoginRoute
   ParentsGuideRoute: typeof ParentsGuideRouteWithChildren
   PartnersRoute: typeof PartnersRouteWithChildren
@@ -534,6 +547,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/help': {
+      id: '/help'
+      path: '/help'
+      fullPath: '/help'
+      preLoaderRoute: typeof HelpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/blog': {
@@ -875,6 +895,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   BlogRoute: BlogRouteWithChildren,
+  HelpRoute: HelpRoute,
   LoginRoute: LoginRoute,
   ParentsGuideRoute: ParentsGuideRouteWithChildren,
   PartnersRoute: PartnersRouteWithChildren,
