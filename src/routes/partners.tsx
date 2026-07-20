@@ -2,8 +2,40 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building2, School, GraduationCap, Handshake, FileText, ShieldCheck, Users, Sparkles, ArrowLeft, Download, Mail } from "lucide-react";
+import { FaqSection, faqJsonLd, type FaqItem } from "@/components/faq-section";
 
 const URL_SELF = "https://cuddle-spark-nexus.lovable.app/partners";
+
+const FAQ: FaqItem[] = [
+  {
+    q: "האם ClassAlign מתאים לחיידרים ותלמודי תורה, ולא רק לבתי ספר?",
+    a: "כן. המערכת נבנתה מלכתחילה לקהל היעד החרדי — מונחי גמרא, משנה וחומש, ממשק RTL מלא, תבניות עלון בסגנון תלמוד תורה, וסידורים לר״מים ולמשגיחים. יש רשימת מקצועות קודש ברירת מחדל שאפשר להתאים לרוח המוסד.",
+  },
+  {
+    q: "מה תהליך ההטמעה למוסד חדש?",
+    a: "מפגש הכרות (30 דק׳), ייבוא רשימות בחורים/תלמידים מ-Excel או צילום, שתי סדנאות למלמדים, וליווי אישי ב-90 הימים הראשונים. תוכנית מלאה מופיעה בעמוד Case Studies.",
+  },
+  {
+    q: "כמה זמן לוקח להטמיע במוסד עם 20 מלמדים?",
+    a: "פיילוט עם 3-5 מלמדים תוך שבוע, פריסה מלאה תוך 3-6 שבועות. תוכנית 90 יום כוללת מדידת תוצאות ובניית תוכנית עבודה שנתית.",
+  },
+  {
+    q: "האם המערכת עומדת בדרישות פרטיות של משרד החינוך?",
+    a: "כן. RLS מלא על כל טבלה, PIN למכשירים משותפים, יומני ביקורת, ואחסון נתונים באזור מוגן. אפשר לקבל טופס אישור הורים לדוגמה ומסמך אבטחת מידע מלא.",
+  },
+  {
+    q: "האם יש רישיון מיוחד למחוזות ורשתות של מספר מוסדות?",
+    a: "כן. רישוי מוסדי אחד כולל הנחות היקף, לוח בקרה מחוזי לדוחות אגרגטיביים, מנהל חשבון ייעודי, וחשבוניות מרוכזות. פרטים בעמוד /partners/districts.",
+  },
+  {
+    q: "האם ה-AI לומד את סגנון הכתיבה של הרב או המלמד?",
+    a: "כן. פרופיל סגנון אישי (Teacher Style Profile) לומד מטקסטים שהמלמד עורך — מונחים, אורך משפט, סגנון פנייה — ומזין את זה אל תבניות העלון, המבחן והסיכום.",
+  },
+  {
+    q: "מה עלות הרישיון ומה כלול בו?",
+    a: "התמחור לפי מספר כיתות/מלמדים ולפי סוג המוסד (מוסד יחיד או רשת). הרישיון כולל את כל הפיצ׳רים, הדרכה, תמיכה בעברית, ועדכונים לאורך השנה. צרו קשר לקבלת הצעת מחיר מותאמת.",
+  },
+];
 
 export const Route = createFileRoute("/partners")({
   component: PartnersPage,
@@ -35,6 +67,7 @@ export const Route = createFileRoute("/partners")({
           url: URL_SELF,
         }),
       },
+      faqJsonLd(FAQ),
     ],
   }),
 });
@@ -150,6 +183,8 @@ function PartnersPage() {
             <Button size="lg" className="gap-2"><Mail className="h-4 w-4" /> קבלת ערכת הטמעה</Button>
           </a>
         </section>
+
+        <FaqSection items={FAQ} intro="התשובות הנפוצות ביותר שאנחנו מקבלים ממנהלי מוסדות, רבנים ומחנכים." />
       </main>
     </div>
   );
