@@ -27,6 +27,7 @@ import { Route as PartnersSchoolsRouteImport } from './routes/partners.schools'
 import { Route as PartnersDistrictsRouteImport } from './routes/partners.districts'
 import { Route as ParentsGuideSlugRouteImport } from './routes/parents-guide.$slug'
 import { Route as PTokenRouteImport } from './routes/p.$token'
+import { Route as HelpSlugRouteImport } from './routes/help.$slug'
 import { Route as CSlugRouteImport } from './routes/c.$slug'
 import { Route as BlogWeeklyReportTemplateRouteImport } from './routes/blog.weekly-report-template'
 import { Route as BlogProgressTrackingGuideRouteImport } from './routes/blog.progress-tracking-guide'
@@ -137,6 +138,11 @@ const PTokenRoute = PTokenRouteImport.update({
   id: '/p/$token',
   path: '/p/$token',
   getParentRoute: () => rootRouteImport,
+} as any)
+const HelpSlugRoute = HelpSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => HelpRoute,
 } as any)
 const CSlugRoute = CSlugRouteImport.update({
   id: '/c/$slug',
@@ -279,6 +285,7 @@ export interface FileRoutesByFullPath {
   '/blog/progress-tracking-guide': typeof BlogProgressTrackingGuideRoute
   '/blog/weekly-report-template': typeof BlogWeeklyReportTemplateRoute
   '/c/$slug': typeof CSlugRoute
+  '/help/$slug': typeof HelpSlugRoute
   '/p/$token': typeof PTokenRoute
   '/parents-guide/$slug': typeof ParentsGuideSlugRoute
   '/partners/districts': typeof PartnersDistrictsRoute
@@ -316,6 +323,7 @@ export interface FileRoutesByTo {
   '/blog/progress-tracking-guide': typeof BlogProgressTrackingGuideRoute
   '/blog/weekly-report-template': typeof BlogWeeklyReportTemplateRoute
   '/c/$slug': typeof CSlugRoute
+  '/help/$slug': typeof HelpSlugRoute
   '/p/$token': typeof PTokenRoute
   '/parents-guide/$slug': typeof ParentsGuideSlugRoute
   '/partners/districts': typeof PartnersDistrictsRoute
@@ -358,6 +366,7 @@ export interface FileRoutesById {
   '/blog/progress-tracking-guide': typeof BlogProgressTrackingGuideRoute
   '/blog/weekly-report-template': typeof BlogWeeklyReportTemplateRoute
   '/c/$slug': typeof CSlugRoute
+  '/help/$slug': typeof HelpSlugRoute
   '/p/$token': typeof PTokenRoute
   '/parents-guide/$slug': typeof ParentsGuideSlugRoute
   '/partners/districts': typeof PartnersDistrictsRoute
@@ -400,6 +409,7 @@ export interface FileRouteTypes {
     | '/blog/progress-tracking-guide'
     | '/blog/weekly-report-template'
     | '/c/$slug'
+    | '/help/$slug'
     | '/p/$token'
     | '/parents-guide/$slug'
     | '/partners/districts'
@@ -437,6 +447,7 @@ export interface FileRouteTypes {
     | '/blog/progress-tracking-guide'
     | '/blog/weekly-report-template'
     | '/c/$slug'
+    | '/help/$slug'
     | '/p/$token'
     | '/parents-guide/$slug'
     | '/partners/districts'
@@ -478,6 +489,7 @@ export interface FileRouteTypes {
     | '/blog/progress-tracking-guide'
     | '/blog/weekly-report-template'
     | '/c/$slug'
+    | '/help/$slug'
     | '/p/$token'
     | '/parents-guide/$slug'
     | '/partners/districts'
@@ -642,6 +654,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/p/$token'
       preLoaderRoute: typeof PTokenRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/help/$slug': {
+      id: '/help/$slug'
+      path: '/$slug'
+      fullPath: '/help/$slug'
+      preLoaderRoute: typeof HelpSlugRouteImport
+      parentRoute: typeof HelpRoute
     }
     '/c/$slug': {
       id: '/c/$slug'
@@ -881,10 +900,12 @@ const BlogRouteChildren: BlogRouteChildren = {
 const BlogRouteWithChildren = BlogRoute._addFileChildren(BlogRouteChildren)
 
 interface HelpRouteChildren {
+  HelpSlugRoute: typeof HelpSlugRoute
   HelpIndexRoute: typeof HelpIndexRoute
 }
 
 const HelpRouteChildren: HelpRouteChildren = {
+  HelpSlugRoute: HelpSlugRoute,
   HelpIndexRoute: HelpIndexRoute,
 }
 
