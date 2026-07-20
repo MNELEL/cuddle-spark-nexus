@@ -20,6 +20,7 @@ import { Route as BlogRouteImport } from './routes/blog'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ParentsGuideIndexRouteImport } from './routes/parents-guide.index'
+import { Route as HelpIndexRouteImport } from './routes/help.index'
 import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as ToolsGroupMakerRouteImport } from './routes/tools.group-maker'
 import { Route as PartnersSchoolsRouteImport } from './routes/partners.schools'
@@ -101,6 +102,11 @@ const ParentsGuideIndexRoute = ParentsGuideIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => ParentsGuideRoute,
+} as any)
+const HelpIndexRoute = HelpIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => HelpRoute,
 } as any)
 const BlogIndexRoute = BlogIndexRouteImport.update({
   id: '/',
@@ -256,7 +262,7 @@ const AuthenticatedClassesClassIdDisplayRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/blog': typeof BlogRouteWithChildren
-  '/help': typeof HelpRoute
+  '/help': typeof HelpRouteWithChildren
   '/login': typeof LoginRoute
   '/parents-guide': typeof ParentsGuideRouteWithChildren
   '/partners': typeof PartnersRouteWithChildren
@@ -279,6 +285,7 @@ export interface FileRoutesByFullPath {
   '/partners/schools': typeof PartnersSchoolsRoute
   '/tools/group-maker': typeof ToolsGroupMakerRoute
   '/blog/': typeof BlogIndexRoute
+  '/help/': typeof HelpIndexRoute
   '/parents-guide/': typeof ParentsGuideIndexRoute
   '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
   '/classes/$classId': typeof AuthenticatedClassesClassIdRouteWithChildren
@@ -294,7 +301,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/help': typeof HelpRoute
   '/login': typeof LoginRoute
   '/partners': typeof PartnersRouteWithChildren
   '/privacy': typeof PrivacyRoute
@@ -316,6 +322,7 @@ export interface FileRoutesByTo {
   '/partners/schools': typeof PartnersSchoolsRoute
   '/tools/group-maker': typeof ToolsGroupMakerRoute
   '/blog': typeof BlogIndexRoute
+  '/help': typeof HelpIndexRoute
   '/parents-guide': typeof ParentsGuideIndexRoute
   '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
   '/classes/$classId': typeof AuthenticatedClassesClassIdRouteWithChildren
@@ -334,7 +341,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/blog': typeof BlogRouteWithChildren
-  '/help': typeof HelpRoute
+  '/help': typeof HelpRouteWithChildren
   '/login': typeof LoginRoute
   '/parents-guide': typeof ParentsGuideRouteWithChildren
   '/partners': typeof PartnersRouteWithChildren
@@ -357,6 +364,7 @@ export interface FileRoutesById {
   '/partners/schools': typeof PartnersSchoolsRoute
   '/tools/group-maker': typeof ToolsGroupMakerRoute
   '/blog/': typeof BlogIndexRoute
+  '/help/': typeof HelpIndexRoute
   '/parents-guide/': typeof ParentsGuideIndexRoute
   '/_authenticated/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
   '/_authenticated/classes/$classId': typeof AuthenticatedClassesClassIdRouteWithChildren
@@ -398,6 +406,7 @@ export interface FileRouteTypes {
     | '/partners/schools'
     | '/tools/group-maker'
     | '/blog/'
+    | '/help/'
     | '/parents-guide/'
     | '/bulletins/$classId'
     | '/classes/$classId'
@@ -413,7 +422,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/help'
     | '/login'
     | '/partners'
     | '/privacy'
@@ -435,6 +443,7 @@ export interface FileRouteTypes {
     | '/partners/schools'
     | '/tools/group-maker'
     | '/blog'
+    | '/help'
     | '/parents-guide'
     | '/bulletins/$classId'
     | '/classes/$classId'
@@ -475,6 +484,7 @@ export interface FileRouteTypes {
     | '/partners/schools'
     | '/tools/group-maker'
     | '/blog/'
+    | '/help/'
     | '/parents-guide/'
     | '/_authenticated/bulletins/$classId'
     | '/_authenticated/classes/$classId'
@@ -493,7 +503,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   BlogRoute: typeof BlogRouteWithChildren
-  HelpRoute: typeof HelpRoute
+  HelpRoute: typeof HelpRouteWithChildren
   LoginRoute: typeof LoginRoute
   ParentsGuideRoute: typeof ParentsGuideRouteWithChildren
   PartnersRoute: typeof PartnersRouteWithChildren
@@ -583,6 +593,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/parents-guide/'
       preLoaderRoute: typeof ParentsGuideIndexRouteImport
       parentRoute: typeof ParentsGuideRoute
+    }
+    '/help/': {
+      id: '/help/'
+      path: '/'
+      fullPath: '/help/'
+      preLoaderRoute: typeof HelpIndexRouteImport
+      parentRoute: typeof HelpRoute
     }
     '/blog/': {
       id: '/blog/'
@@ -863,6 +880,16 @@ const BlogRouteChildren: BlogRouteChildren = {
 
 const BlogRouteWithChildren = BlogRoute._addFileChildren(BlogRouteChildren)
 
+interface HelpRouteChildren {
+  HelpIndexRoute: typeof HelpIndexRoute
+}
+
+const HelpRouteChildren: HelpRouteChildren = {
+  HelpIndexRoute: HelpIndexRoute,
+}
+
+const HelpRouteWithChildren = HelpRoute._addFileChildren(HelpRouteChildren)
+
 interface ParentsGuideRouteChildren {
   ParentsGuideSlugRoute: typeof ParentsGuideSlugRoute
   ParentsGuideIndexRoute: typeof ParentsGuideIndexRoute
@@ -895,7 +922,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   BlogRoute: BlogRouteWithChildren,
-  HelpRoute: HelpRoute,
+  HelpRoute: HelpRouteWithChildren,
   LoginRoute: LoginRoute,
   ParentsGuideRoute: ParentsGuideRouteWithChildren,
   PartnersRoute: PartnersRouteWithChildren,
