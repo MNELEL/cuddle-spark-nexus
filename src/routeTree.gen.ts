@@ -48,6 +48,7 @@ import { Route as AuthenticatedParentsClassIdRouteImport } from './routes/_authe
 import { Route as AuthenticatedGamificationClassIdRouteImport } from './routes/_authenticated.gamification.$classId'
 import { Route as AuthenticatedDailyClassIdRouteImport } from './routes/_authenticated.daily.$classId'
 import { Route as AuthenticatedClassesClassIdRouteImport } from './routes/_authenticated.classes.$classId'
+import { Route as AuthenticatedCertificatesClassIdRouteImport } from './routes/_authenticated.certificates.$classId'
 import { Route as AuthenticatedBulletinsClassIdRouteImport } from './routes/_authenticated.bulletins.$classId'
 import { Route as AuthenticatedClassesClassIdDisplayRouteImport } from './routes/_authenticated.classes.$classId.display'
 
@@ -258,6 +259,12 @@ const AuthenticatedClassesClassIdRoute =
     path: '/classes/$classId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedCertificatesClassIdRoute =
+  AuthenticatedCertificatesClassIdRouteImport.update({
+    id: '/certificates/$classId',
+    path: '/certificates/$classId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedBulletinsClassIdRoute =
   AuthenticatedBulletinsClassIdRouteImport.update({
     id: '/bulletins/$classId',
@@ -302,6 +309,7 @@ export interface FileRoutesByFullPath {
   '/help/': typeof HelpIndexRoute
   '/parents-guide/': typeof ParentsGuideIndexRoute
   '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
+  '/certificates/$classId': typeof AuthenticatedCertificatesClassIdRoute
   '/classes/$classId': typeof AuthenticatedClassesClassIdRouteWithChildren
   '/daily/$classId': typeof AuthenticatedDailyClassIdRoute
   '/gamification/$classId': typeof AuthenticatedGamificationClassIdRoute
@@ -341,6 +349,7 @@ export interface FileRoutesByTo {
   '/help': typeof HelpIndexRoute
   '/parents-guide': typeof ParentsGuideIndexRoute
   '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
+  '/certificates/$classId': typeof AuthenticatedCertificatesClassIdRoute
   '/classes/$classId': typeof AuthenticatedClassesClassIdRouteWithChildren
   '/daily/$classId': typeof AuthenticatedDailyClassIdRoute
   '/gamification/$classId': typeof AuthenticatedGamificationClassIdRoute
@@ -385,6 +394,7 @@ export interface FileRoutesById {
   '/help/': typeof HelpIndexRoute
   '/parents-guide/': typeof ParentsGuideIndexRoute
   '/_authenticated/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
+  '/_authenticated/certificates/$classId': typeof AuthenticatedCertificatesClassIdRoute
   '/_authenticated/classes/$classId': typeof AuthenticatedClassesClassIdRouteWithChildren
   '/_authenticated/daily/$classId': typeof AuthenticatedDailyClassIdRoute
   '/_authenticated/gamification/$classId': typeof AuthenticatedGamificationClassIdRoute
@@ -429,6 +439,7 @@ export interface FileRouteTypes {
     | '/help/'
     | '/parents-guide/'
     | '/bulletins/$classId'
+    | '/certificates/$classId'
     | '/classes/$classId'
     | '/daily/$classId'
     | '/gamification/$classId'
@@ -468,6 +479,7 @@ export interface FileRouteTypes {
     | '/help'
     | '/parents-guide'
     | '/bulletins/$classId'
+    | '/certificates/$classId'
     | '/classes/$classId'
     | '/daily/$classId'
     | '/gamification/$classId'
@@ -511,6 +523,7 @@ export interface FileRouteTypes {
     | '/help/'
     | '/parents-guide/'
     | '/_authenticated/bulletins/$classId'
+    | '/_authenticated/certificates/$classId'
     | '/_authenticated/classes/$classId'
     | '/_authenticated/daily/$classId'
     | '/_authenticated/gamification/$classId'
@@ -814,6 +827,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClassesClassIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/certificates/$classId': {
+      id: '/_authenticated/certificates/$classId'
+      path: '/certificates/$classId'
+      fullPath: '/certificates/$classId'
+      preLoaderRoute: typeof AuthenticatedCertificatesClassIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/bulletins/$classId': {
       id: '/_authenticated/bulletins/$classId'
       path: '/bulletins/$classId'
@@ -868,6 +888,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedSoundBoardRoute: typeof AuthenticatedSoundBoardRoute
   AuthenticatedToolkitRoute: typeof AuthenticatedToolkitRoute
   AuthenticatedBulletinsClassIdRoute: typeof AuthenticatedBulletinsClassIdRoute
+  AuthenticatedCertificatesClassIdRoute: typeof AuthenticatedCertificatesClassIdRoute
   AuthenticatedClassesClassIdRoute: typeof AuthenticatedClassesClassIdRouteWithChildren
   AuthenticatedDailyClassIdRoute: typeof AuthenticatedDailyClassIdRoute
   AuthenticatedGamificationClassIdRoute: typeof AuthenticatedGamificationClassIdRoute
@@ -885,6 +906,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSoundBoardRoute: AuthenticatedSoundBoardRoute,
   AuthenticatedToolkitRoute: AuthenticatedToolkitRoute,
   AuthenticatedBulletinsClassIdRoute: AuthenticatedBulletinsClassIdRoute,
+  AuthenticatedCertificatesClassIdRoute: AuthenticatedCertificatesClassIdRoute,
   AuthenticatedClassesClassIdRoute:
     AuthenticatedClassesClassIdRouteWithChildren,
   AuthenticatedDailyClassIdRoute: AuthenticatedDailyClassIdRoute,
