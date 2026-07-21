@@ -218,6 +218,6 @@ export async function buildConferencePdfBlob(p: ConferencePayload): Promise<Blob
   hd.section("סיכום ותוכנית פעולה");
   hd.paragraph(p.actionItems || "—");
 
-  drawFooter(hd.doc ? hd : hd, `${p.schoolName} · הכנה לפגישת הורים`);
+  drawFooter(hd, `${p.schoolName} · הכנה לפגישת הורים`);
   return hd.doc.output("blob");
 }
