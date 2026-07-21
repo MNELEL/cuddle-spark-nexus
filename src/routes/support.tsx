@@ -54,7 +54,7 @@ function SupportPage() {
           <div className="rounded-lg border bg-card p-4">
             <h2 className="font-semibold">פנייה ישירה</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              דוא"ל תמיכה: <a className="text-amber underline" href="mailto:support@classalign.studio">support@classalign.studio</a>
+              דוא"ל תמיכה: <a className="text-amber underline" href="mailto:nm0527603669@gmail.com">nm0527603669@gmail.com</a>
             </p>
             <p className="mt-1 text-xs text-muted-foreground">זמן מענה ממוצע: עד 48 שעות בימי חול.</p>
           </div>

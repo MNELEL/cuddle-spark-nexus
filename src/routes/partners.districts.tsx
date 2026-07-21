@@ -82,7 +82,7 @@ function DistrictsPage() {
             מחוזי, דוחות אגרגטיביים, וכלים פדגוגיים בקדושת המקצוע — כל זאת תחת רישוי מוסדי אחד.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <a href="mailto:partners@classalign.app?subject=פנייה%20ממחוז%20חינוך">
+            <a href="mailto:nm0527603669@gmail.com?subject=פנייה%20ממחוז%20חינוך">
               <Button size="lg" className="gap-2"><Mail className="h-4 w-4" /> קביעת פגישת הכרות</Button>
             </a>
             <a href="/downloads/classalign-implementation-guide.html" target="_blank" rel="noreferrer">

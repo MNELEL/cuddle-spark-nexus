@@ -168,7 +168,7 @@ function HelpIndex() {
         <section className="mt-12 rounded-2xl border border-border/60 bg-card/40 p-6">
           <h2 className="text-lg font-semibold">לא מצאת תשובה?</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            כתוב לנו ל-<a className="text-primary hover:underline" href="mailto:support@classalign.studio">support@classalign.studio</a>
+            כתוב לנו ל-<a className="text-primary hover:underline" href="mailto:nm0527603669@gmail.com">nm0527603669@gmail.com</a>
             {" "}או עבור ל<Link to="/support" className="text-primary hover:underline">עמוד התמיכה</Link>.
           </p>
         </section>

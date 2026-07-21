@@ -85,7 +85,7 @@ function SchoolsPage() {
             אישית לאורך כל שנת הלימודים.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <a href="mailto:partners@classalign.app?subject=רישיון%20מוסדי">
+            <a href="mailto:nm0527603669@gmail.com?subject=רישיון%20מוסדי">
               <Button size="lg" className="gap-2"><Mail className="h-4 w-4" /> בקשת הצעת מחיר</Button>
             </a>
             <a href="/downloads/classalign-implementation-guide.html" target="_blank" rel="noreferrer">
