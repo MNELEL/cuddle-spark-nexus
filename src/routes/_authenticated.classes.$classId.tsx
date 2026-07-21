@@ -38,71 +38,33 @@ import { LessonsTab } from "@/components/lessons-tab";
 
 /* ---------------- Action grid (responsive toolbar) ---------------- */
 
-type ClassAction = {
-  to:
-    | "/ingest"
-    | "/resources"
-    | "/classes/$classId/display"
-    | "/bulletins/$classId"
-    | "/gamification/$classId"
-    | "/raffle/$classId"
-    | "/parents/$classId"
-    | "/share/$classId"
-    | "/reports/$classId"
-    | "/daily/$classId"
-    | "/certificates/$classId";
-  label: string;
-  icon: typeof Upload;
-  variant?: "default" | "outline";
-  needsParams?: boolean;
-  search?: boolean;
-};
-
-const ACTIONS: ClassAction[] = [
-  { to: "/ingest", label: "העלאה חכמה", icon: Upload, variant: "default", search: true },
-  { to: "/classes/$classId/display", label: "מצב תצוגה", icon: Monitor, needsParams: true },
-  { to: "/certificates/$classId", label: "הפקת תעודות", icon: Award, needsParams: true },
-  { to: "/bulletins/$classId", label: "עלון שבועי", icon: Sparkles, needsParams: true },
-  { to: "/reports/$classId", label: "דוח כיתה", icon: FileText, needsParams: true },
-  { to: "/daily/$classId", label: "סיכום יומי", icon: FileText, needsParams: true },
-  { to: "/gamification/$classId", label: "גיימיפיקציה", icon: Trophy, needsParams: true },
-  { to: "/raffle/$classId", label: "הגרלות", icon: Dices, needsParams: true },
-  { to: "/parents/$classId", label: "פורטל הורים", icon: Users, needsParams: true },
-  { to: "/share/$classId", label: "דף ציבורי", icon: Globe2, needsParams: true },
-  { to: "/resources", label: "ספריית עזרים", icon: Library },
-];
+function ActionBtn({ icon: Icon, label, variant = "outline" }: { icon: typeof Upload; label: string; variant?: "default" | "outline" }) {
+  return (
+    <Button
+      variant={variant}
+      size="sm"
+      className="w-full justify-start whitespace-normal text-start leading-tight"
+    >
+      <Icon className="ms-1 h-4 w-4 shrink-0" />
+      <span className="truncate">{label}</span>
+    </Button>
+  );
+}
 
 function ClassActionGrid({ classId }: { classId: string }) {
   return (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-      {ACTIONS.map((a) => {
-        const Icon = a.icon;
-        const btn = (
-          <Button
-            variant={a.variant ?? "outline"}
-            size="sm"
-            className="w-full justify-start whitespace-normal text-start leading-tight"
-          >
-            <Icon className="ms-1 h-4 w-4 shrink-0" />
-            <span className="truncate">{a.label}</span>
-          </Button>
-        );
-        if (a.search) {
-          return (
-            <Link key={a.to} to="/ingest" search={{ classId }}>{btn}</Link>
-          );
-        }
-        if (a.needsParams) {
-          return (
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            <Link key={a.to} to={a.to as any} params={{ classId }}>{btn}</Link>
-          );
-        }
-        return (
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          <Link key={a.to} to={a.to as any}>{btn}</Link>
-        );
-      })}
+      <Link to="/ingest" search={{ classId }}><ActionBtn icon={Upload} label="העלאה חכמה" variant="default" /></Link>
+      <Link to="/classes/$classId/display" params={{ classId }}><ActionBtn icon={Monitor} label="מצב תצוגה" /></Link>
+      <Link to="/certificates/$classId" params={{ classId }}><ActionBtn icon={Award} label="הפקת תעודות" /></Link>
+      <Link to="/bulletins/$classId" params={{ classId }}><ActionBtn icon={Sparkles} label="עלון שבועי" /></Link>
+      <Link to="/reports/$classId" params={{ classId }}><ActionBtn icon={FileText} label="דוח כיתה" /></Link>
+      <Link to="/daily/$classId" params={{ classId }}><ActionBtn icon={FileText} label="סיכום יומי" /></Link>
+      <Link to="/gamification/$classId" params={{ classId }}><ActionBtn icon={Trophy} label="גיימיפיקציה" /></Link>
+      <Link to="/raffle/$classId" params={{ classId }}><ActionBtn icon={Dices} label="הגרלות" /></Link>
+      <Link to="/parents/$classId" params={{ classId }}><ActionBtn icon={Users} label="פורטל הורים" /></Link>
+      <Link to="/share/$classId" params={{ classId }}><ActionBtn icon={Globe2} label="דף ציבורי" /></Link>
+      <Link to="/resources"><ActionBtn icon={Library} label="ספריית עזרים" /></Link>
     </div>
   );
 }
