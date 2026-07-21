@@ -36,6 +36,77 @@ import { StudentFileSheet } from "@/components/student-file-sheet";
 import { AiAssistantDock } from "@/components/ai-assistant-dock";
 import { LessonsTab } from "@/components/lessons-tab";
 
+/* ---------------- Action grid (responsive toolbar) ---------------- */
+
+type ClassAction = {
+  to:
+    | "/ingest"
+    | "/resources"
+    | "/classes/$classId/display"
+    | "/bulletins/$classId"
+    | "/gamification/$classId"
+    | "/raffle/$classId"
+    | "/parents/$classId"
+    | "/share/$classId"
+    | "/reports/$classId"
+    | "/daily/$classId"
+    | "/certificates/$classId";
+  label: string;
+  icon: typeof Upload;
+  variant?: "default" | "outline";
+  needsParams?: boolean;
+  search?: boolean;
+};
+
+const ACTIONS: ClassAction[] = [
+  { to: "/ingest", label: "העלאה חכמה", icon: Upload, variant: "default", search: true },
+  { to: "/classes/$classId/display", label: "מצב תצוגה", icon: Monitor, needsParams: true },
+  { to: "/certificates/$classId", label: "הפקת תעודות", icon: Award, needsParams: true },
+  { to: "/bulletins/$classId", label: "עלון שבועי", icon: Sparkles, needsParams: true },
+  { to: "/reports/$classId", label: "דוח כיתה", icon: FileText, needsParams: true },
+  { to: "/daily/$classId", label: "סיכום יומי", icon: FileText, needsParams: true },
+  { to: "/gamification/$classId", label: "גיימיפיקציה", icon: Trophy, needsParams: true },
+  { to: "/raffle/$classId", label: "הגרלות", icon: Dices, needsParams: true },
+  { to: "/parents/$classId", label: "פורטל הורים", icon: Users, needsParams: true },
+  { to: "/share/$classId", label: "דף ציבורי", icon: Globe2, needsParams: true },
+  { to: "/resources", label: "ספריית עזרים", icon: Library },
+];
+
+function ClassActionGrid({ classId }: { classId: string }) {
+  return (
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+      {ACTIONS.map((a) => {
+        const Icon = a.icon;
+        const btn = (
+          <Button
+            variant={a.variant ?? "outline"}
+            size="sm"
+            className="w-full justify-start whitespace-normal text-start leading-tight"
+          >
+            <Icon className="ms-1 h-4 w-4 shrink-0" />
+            <span className="truncate">{a.label}</span>
+          </Button>
+        );
+        if (a.search) {
+          return (
+            <Link key={a.to} to="/ingest" search={{ classId }}>{btn}</Link>
+          );
+        }
+        if (a.needsParams) {
+          return (
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            <Link key={a.to} to={a.to as any} params={{ classId }}>{btn}</Link>
+          );
+        }
+        return (
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          <Link key={a.to} to={a.to as any}>{btn}</Link>
+        );
+      })}
+    </div>
+  );
+}
+
 export const Route = createFileRoute("/_authenticated/classes/$classId")({
   component: ClassDetail,
   loader: async ({ params }) => {
