@@ -1093,6 +1093,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      export_my_data: { Args: never; Returns: Json }
       match_resources: {
         Args: {
           exclude_id?: string
