@@ -1,8 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2, School, GraduationCap, Handshake, FileText, ShieldCheck, Users, Sparkles, ArrowLeft, Download, Mail } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Building2, School, GraduationCap, Handshake, FileText, ShieldCheck, Users, Sparkles, ArrowLeft, Download, Mail, Send } from "lucide-react";
 import { FaqSection, faqJsonLd, type FaqItem } from "@/components/faq-section";
+import { toast } from "sonner";
 
 const URL_SELF = "https://cuddle-spark-nexus.lovable.app/partners";
 
@@ -176,19 +182,131 @@ function PartnersPage() {
           </div>
         </section>
 
-        <section className="bg-card border rounded-2xl p-8 text-center max-w-3xl mx-auto">
-          <h2 className="text-2xl font-bold mb-2">רוצים לבחון התאמה למוסד שלכם?</h2>
-          <p className="text-muted-foreground mb-6">
-            שלחו לנו פרטים ונשלח לכם ערכת הטמעה מלאה: מפרט טכני, סילבוס הדרכה, טופס אישור הורים לדוגמה,
-            ותוכנית עבודה ל-90 ימים ראשונים.
-          </p>
-          <a href="mailto:nm0527603669@gmail.com?subject=בקשת%20ערכת%20הטמעה">
-            <Button size="lg" className="gap-2"><Mail className="h-4 w-4" /> קבלת ערכת הטמעה</Button>
-          </a>
-        </section>
+        <PartnerContactForm />
 
         <FaqSection items={FAQ} intro="התשובות הנפוצות ביותר שאנחנו מקבלים ממנהלי מוסדות, רבנים ומחנכים." />
       </main>
     </div>
+  );
+}
+
+function PartnerContactForm() {
+  const [f, setF] = useState({
+    institutionName: "",
+    institutionType: "school",
+    contactName: "",
+    role: "",
+    email: "",
+    phone: "",
+    studentCount: "",
+    teacherCount: "",
+    demoDate: "",
+    message: "",
+  });
+  const set = (k: keyof typeof f, v: string) => setF((p) => ({ ...p, [k]: v }));
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!f.institutionName || !f.contactName || !f.email) {
+      toast.error("נא למלא שם מוסד, שם איש קשר ואימייל");
+      return;
+    }
+    const typeLabel =
+      f.institutionType === "district" ? "מחוז/רשת" :
+      f.institutionType === "yeshiva" ? "ישיבה" :
+      f.institutionType === "cheder" ? "חיידר / ת״ת" : "בית ספר";
+    const body = [
+      `בקשת דמו / שיתוף פעולה`,
+      ``,
+      `מוסד: ${f.institutionName}`,
+      `סוג: ${typeLabel}`,
+      `איש קשר: ${f.contactName}${f.role ? ` (${f.role})` : ""}`,
+      `אימייל: ${f.email}`,
+      `טלפון: ${f.phone || "-"}`,
+      `מספר תלמידים: ${f.studentCount || "-"}`,
+      `מספר מלמדים: ${f.teacherCount || "-"}`,
+      `מועד מועדף לדמו: ${f.demoDate || "-"}`,
+      ``,
+      `הודעה:`,
+      f.message || "-",
+    ].join("\n");
+    const href = `mailto:nm0527603669@gmail.com?subject=${encodeURIComponent(`בקשת דמו: ${f.institutionName}`)}&body=${encodeURIComponent(body)}`;
+    window.location.href = href;
+    toast.success("נפתח לך חלון מייל — שלחו לסיום");
+  };
+
+  return (
+    <section id="contact" className="max-w-3xl mx-auto">
+      <Card className="border-primary/30">
+        <CardHeader>
+          <CardTitle className="text-2xl">בקשת דמו למחוזות ובתי ספר</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            מלאו פרטי מוסד ואיש קשר, ונחזור אליכם עם ערכת הטמעה מלאה ומועד לדמו חי.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <Label>שם המוסד *</Label>
+              <Input value={f.institutionName} onChange={(e) => set("institutionName", e.target.value)} placeholder="ת״ת / ישיבה / רשת" />
+            </div>
+            <div>
+              <Label>סוג המוסד</Label>
+              <Select value={f.institutionType} onValueChange={(v) => set("institutionType", v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="school">בית ספר</SelectItem>
+                  <SelectItem value="cheder">חיידר / תלמוד תורה</SelectItem>
+                  <SelectItem value="yeshiva">ישיבה</SelectItem>
+                  <SelectItem value="district">מחוז / רשת</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>תפקיד</Label>
+              <Input value={f.role} onChange={(e) => set("role", e.target.value)} placeholder="מנהל / מזכיר / רכז" />
+            </div>
+            <div>
+              <Label>שם איש הקשר *</Label>
+              <Input value={f.contactName} onChange={(e) => set("contactName", e.target.value)} />
+            </div>
+            <div>
+              <Label>אימייל *</Label>
+              <Input type="email" value={f.email} onChange={(e) => set("email", e.target.value)} />
+            </div>
+            <div>
+              <Label>טלפון</Label>
+              <Input value={f.phone} onChange={(e) => set("phone", e.target.value)} inputMode="tel" />
+            </div>
+            <div>
+              <Label>מועד מועדף לדמו</Label>
+              <Input type="date" value={f.demoDate} onChange={(e) => set("demoDate", e.target.value)} />
+            </div>
+            <div>
+              <Label>מספר תלמידים</Label>
+              <Input value={f.studentCount} onChange={(e) => set("studentCount", e.target.value)} inputMode="numeric" />
+            </div>
+            <div>
+              <Label>מספר מלמדים</Label>
+              <Input value={f.teacherCount} onChange={(e) => set("teacherCount", e.target.value)} inputMode="numeric" />
+            </div>
+            <div className="sm:col-span-2">
+              <Label>הודעה חופשית</Label>
+              <Textarea rows={4} value={f.message} onChange={(e) => set("message", e.target.value)} placeholder="ספרו לנו על צרכי המוסד — מה הכי חשוב שתראו בדמו?" />
+            </div>
+            <div className="sm:col-span-2 flex flex-wrap gap-2 pt-1">
+              <Button type="submit" size="lg" className="gap-2">
+                <Send className="h-4 w-4" /> שליחת בקשה
+              </Button>
+              <a href="mailto:nm0527603669@gmail.com?subject=בקשת%20ערכת%20הטמעה">
+                <Button type="button" size="lg" variant="outline" className="gap-2">
+                  <Mail className="h-4 w-4" /> שליחת מייל ישיר
+                </Button>
+              </a>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </section>
   );
 }

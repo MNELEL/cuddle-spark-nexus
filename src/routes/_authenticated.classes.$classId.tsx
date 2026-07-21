@@ -21,7 +21,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Heart, Ban, MoveHorizontal, Pencil, Plus, Trash2, FolderOpen, FileText, Sparkles, Trophy, Users, Library, Monitor, Upload, Printer, Copy, Dices, Globe2 } from "lucide-react";
+import { ArrowRight, Heart, Ban, MoveHorizontal, Pencil, Plus, Trash2, FolderOpen, FileText, Sparkles, Trophy, Users, Library, Monitor, Upload, Printer, Copy, Dices, Globe2, Award } from "lucide-react";
 import { toast } from "sonner";
 import { copyList, printList } from "@/lib/print-list";
 import { SeatingGrid } from "@/components/seating-grid";
@@ -35,6 +35,39 @@ import { ScoreBadge } from "@/components/score-badge";
 import { StudentFileSheet } from "@/components/student-file-sheet";
 import { AiAssistantDock } from "@/components/ai-assistant-dock";
 import { LessonsTab } from "@/components/lessons-tab";
+
+/* ---------------- Action grid (responsive toolbar) ---------------- */
+
+function ActionBtn({ icon: Icon, label, variant = "outline" }: { icon: typeof Upload; label: string; variant?: "default" | "outline" }) {
+  return (
+    <Button
+      variant={variant}
+      size="sm"
+      className="w-full justify-start whitespace-normal text-start leading-tight"
+    >
+      <Icon className="ms-1 h-4 w-4 shrink-0" />
+      <span className="truncate">{label}</span>
+    </Button>
+  );
+}
+
+function ClassActionGrid({ classId }: { classId: string }) {
+  return (
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+      <Link to="/ingest" search={{ classId }}><ActionBtn icon={Upload} label="העלאה חכמה" variant="default" /></Link>
+      <Link to="/classes/$classId/display" params={{ classId }}><ActionBtn icon={Monitor} label="מצב תצוגה" /></Link>
+      <Link to="/certificates/$classId" params={{ classId }}><ActionBtn icon={Award} label="הפקת תעודות" /></Link>
+      <Link to="/bulletins/$classId" params={{ classId }}><ActionBtn icon={Sparkles} label="עלון שבועי" /></Link>
+      <Link to="/reports/$classId" params={{ classId }}><ActionBtn icon={FileText} label="דוח כיתה" /></Link>
+      <Link to="/daily/$classId" params={{ classId }}><ActionBtn icon={FileText} label="סיכום יומי" /></Link>
+      <Link to="/gamification/$classId" params={{ classId }}><ActionBtn icon={Trophy} label="גיימיפיקציה" /></Link>
+      <Link to="/raffle/$classId" params={{ classId }}><ActionBtn icon={Dices} label="הגרלות" /></Link>
+      <Link to="/parents/$classId" params={{ classId }}><ActionBtn icon={Users} label="פורטל הורים" /></Link>
+      <Link to="/share/$classId" params={{ classId }}><ActionBtn icon={Globe2} label="דף ציבורי" /></Link>
+      <Link to="/resources"><ActionBtn icon={Library} label="ספריית עזרים" /></Link>
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/_authenticated/classes/$classId")({
   component: ClassDetail,
@@ -86,59 +119,8 @@ function ClassDetail() {
         <Link to="/classes" className="text-sm text-muted-foreground hover:underline flex items-center gap-1">
           <ArrowRight className="h-4 w-4" /> חזרה לכיתות
         </Link>
-        <div className="ms-auto flex gap-2">
-          <Link to="/ingest" search={{ classId }}>
-            <Button variant="default" size="sm">
-              <Upload className="ms-1 h-4 w-4" /> העלאה חכמה
-            </Button>
-          </Link>
-          <Link to="/resources">
-            <Button variant="outline" size="sm">
-              <Library className="ms-1 h-4 w-4" /> ספריית עזרים
-            </Button>
-          </Link>
-          <Link to="/classes/$classId/display" params={{ classId }}>
-            <Button variant="outline" size="sm">
-              <Monitor className="ms-1 h-4 w-4" /> מצב תצוגה
-            </Button>
-          </Link>
-          <Link to="/bulletins/$classId" params={{ classId }}>
-            <Button variant="outline" size="sm">
-              <Sparkles className="ms-1 h-4 w-4" /> עלון שבועי
-            </Button>
-          </Link>
-          <Link to="/gamification/$classId" params={{ classId }}>
-            <Button variant="outline" size="sm">
-              <Trophy className="ms-1 h-4 w-4" /> גיימיפיקציה
-            </Button>
-          </Link>
-          <Link to="/raffle/$classId" params={{ classId }}>
-            <Button variant="outline" size="sm">
-              <Dices className="ms-1 h-4 w-4" /> הגרלות
-            </Button>
-          </Link>
-          <Link to="/parents/$classId" params={{ classId }}>
-            <Button variant="outline" size="sm">
-              <Users className="ms-1 h-4 w-4" /> פורטל הורים
-            </Button>
-          </Link>
-          <Link to="/share/$classId" params={{ classId }}>
-            <Button variant="outline" size="sm">
-              <Globe2 className="ms-1 h-4 w-4" /> דף ציבורי
-            </Button>
-          </Link>
-          <Link to="/reports/$classId" params={{ classId }}>
-            <Button variant="outline" size="sm">
-              <FileText className="ms-1 h-4 w-4" /> דוח כיתה
-            </Button>
-          </Link>
-          <Link to="/daily/$classId" params={{ classId }}>
-            <Button variant="outline" size="sm">
-              <FileText className="ms-1 h-4 w-4" /> סיכום יומי
-            </Button>
-          </Link>
-        </div>
       </div>
+      <ClassActionGrid classId={classId} />
       <div className="rounded-2xl border bg-card bg-mesh p-6 shadow-sm">
         <h1 className="font-display text-3xl font-bold tracking-tight">{cls?.name ?? "..."}</h1>
         <p className="mt-1 text-sm text-muted-foreground font-mono-tabular">
