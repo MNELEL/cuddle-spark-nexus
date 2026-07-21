@@ -100,11 +100,14 @@ function PartnersPage() {
             הגמרא, המשנה והחומש.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <a href="mailto:partners@classalign.app?subject=בקשת%20שיתוף%20פעולה">
+            <a href="mailto:nm0527603669@gmail.com?subject=בקשת%20שיתוף%20פעולה">
               <Button size="lg" className="gap-2"><Mail className="h-4 w-4" /> בקשת שיחת הכרות</Button>
             </a>
+            <a href="/downloads/classalign-implementation-guide.pdf" target="_blank" rel="noreferrer">
+              <Button size="lg" variant="outline" className="gap-2"><Download className="h-4 w-4" /> מסמך הטמעה (PDF)</Button>
+            </a>
             <a href="/downloads/classalign-implementation-guide.html" target="_blank" rel="noreferrer">
-              <Button size="lg" variant="outline" className="gap-2"><Download className="h-4 w-4" /> מסמך הטמעה לדוגמה</Button>
+              <Button size="lg" variant="ghost" className="gap-2"><FileText className="h-4 w-4" /> גרסת HTML</Button>
             </a>
           </div>
         </section>
@@ -179,7 +182,7 @@ function PartnersPage() {
             שלחו לנו פרטים ונשלח לכם ערכת הטמעה מלאה: מפרט טכני, סילבוס הדרכה, טופס אישור הורים לדוגמה,
             ותוכנית עבודה ל-90 ימים ראשונים.
           </p>
-          <a href="mailto:partners@classalign.app?subject=בקשת%20ערכת%20הטמעה">
+          <a href="mailto:nm0527603669@gmail.com?subject=בקשת%20ערכת%20הטמעה">
             <Button size="lg" className="gap-2"><Mail className="h-4 w-4" /> קבלת ערכת הטמעה</Button>
           </a>
         </section>

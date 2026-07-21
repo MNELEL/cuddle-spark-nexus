@@ -295,7 +295,7 @@ function CaseStudiesPage() {
             <Link to="/partners/schools" className="rounded-lg border border-border/60 px-4 py-2 text-sm font-semibold hover:bg-card/60">
               לבתי ספר וישיבות ←
             </Link>
-            <a href="mailto:partners@classalign.studio" className="rounded-lg border border-border/60 px-4 py-2 text-sm font-semibold hover:bg-card/60">
+            <a href="mailto:nm0527603669@gmail.com" className="rounded-lg border border-border/60 px-4 py-2 text-sm font-semibold hover:bg-card/60">
               דבר איתנו ←
             </a>
           </div>
