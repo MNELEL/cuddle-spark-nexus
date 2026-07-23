@@ -32,6 +32,7 @@ import { Route as HelpSlugRouteImport } from './routes/help.$slug'
 import { Route as CSlugRouteImport } from './routes/c.$slug'
 import { Route as BlogWeeklyReportTemplateRouteImport } from './routes/blog.weekly-report-template'
 import { Route as BlogProgressTrackingGuideRouteImport } from './routes/blog.progress-tracking-guide'
+import { Route as BlogFreeToolsComparisonRouteImport } from './routes/blog.free-tools-comparison'
 import { Route as BlogDigitalHallPassGuideRouteImport } from './routes/blog.digital-hall-pass-guide'
 import { Route as BlogClassroomToolsTeachersRouteImport } from './routes/blog.classroom-tools-teachers'
 import { Route as AuthenticatedToolkitRouteImport } from './routes/_authenticated.toolkit'
@@ -168,6 +169,11 @@ const BlogProgressTrackingGuideRoute =
     path: '/progress-tracking-guide',
     getParentRoute: () => BlogRoute,
   } as any)
+const BlogFreeToolsComparisonRoute = BlogFreeToolsComparisonRouteImport.update({
+  id: '/free-tools-comparison',
+  path: '/free-tools-comparison',
+  getParentRoute: () => BlogRoute,
+} as any)
 const BlogDigitalHallPassGuideRoute =
   BlogDigitalHallPassGuideRouteImport.update({
     id: '/digital-hall-pass-guide',
@@ -295,6 +301,7 @@ export interface FileRoutesByFullPath {
   '/toolkit': typeof AuthenticatedToolkitRoute
   '/blog/classroom-tools-teachers': typeof BlogClassroomToolsTeachersRoute
   '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
+  '/blog/free-tools-comparison': typeof BlogFreeToolsComparisonRoute
   '/blog/progress-tracking-guide': typeof BlogProgressTrackingGuideRoute
   '/blog/weekly-report-template': typeof BlogWeeklyReportTemplateRoute
   '/c/$slug': typeof CSlugRoute
@@ -335,6 +342,7 @@ export interface FileRoutesByTo {
   '/toolkit': typeof AuthenticatedToolkitRoute
   '/blog/classroom-tools-teachers': typeof BlogClassroomToolsTeachersRoute
   '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
+  '/blog/free-tools-comparison': typeof BlogFreeToolsComparisonRoute
   '/blog/progress-tracking-guide': typeof BlogProgressTrackingGuideRoute
   '/blog/weekly-report-template': typeof BlogWeeklyReportTemplateRoute
   '/c/$slug': typeof CSlugRoute
@@ -380,6 +388,7 @@ export interface FileRoutesById {
   '/_authenticated/toolkit': typeof AuthenticatedToolkitRoute
   '/blog/classroom-tools-teachers': typeof BlogClassroomToolsTeachersRoute
   '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
+  '/blog/free-tools-comparison': typeof BlogFreeToolsComparisonRoute
   '/blog/progress-tracking-guide': typeof BlogProgressTrackingGuideRoute
   '/blog/weekly-report-template': typeof BlogWeeklyReportTemplateRoute
   '/c/$slug': typeof CSlugRoute
@@ -425,6 +434,7 @@ export interface FileRouteTypes {
     | '/toolkit'
     | '/blog/classroom-tools-teachers'
     | '/blog/digital-hall-pass-guide'
+    | '/blog/free-tools-comparison'
     | '/blog/progress-tracking-guide'
     | '/blog/weekly-report-template'
     | '/c/$slug'
@@ -465,6 +475,7 @@ export interface FileRouteTypes {
     | '/toolkit'
     | '/blog/classroom-tools-teachers'
     | '/blog/digital-hall-pass-guide'
+    | '/blog/free-tools-comparison'
     | '/blog/progress-tracking-guide'
     | '/blog/weekly-report-template'
     | '/c/$slug'
@@ -509,6 +520,7 @@ export interface FileRouteTypes {
     | '/_authenticated/toolkit'
     | '/blog/classroom-tools-teachers'
     | '/blog/digital-hall-pass-guide'
+    | '/blog/free-tools-comparison'
     | '/blog/progress-tracking-guide'
     | '/blog/weekly-report-template'
     | '/c/$slug'
@@ -713,6 +725,13 @@ declare module '@tanstack/react-router' {
       path: '/progress-tracking-guide'
       fullPath: '/blog/progress-tracking-guide'
       preLoaderRoute: typeof BlogProgressTrackingGuideRouteImport
+      parentRoute: typeof BlogRoute
+    }
+    '/blog/free-tools-comparison': {
+      id: '/blog/free-tools-comparison'
+      path: '/free-tools-comparison'
+      fullPath: '/blog/free-tools-comparison'
+      preLoaderRoute: typeof BlogFreeToolsComparisonRouteImport
       parentRoute: typeof BlogRoute
     }
     '/blog/digital-hall-pass-guide': {
@@ -925,6 +944,7 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 interface BlogRouteChildren {
   BlogClassroomToolsTeachersRoute: typeof BlogClassroomToolsTeachersRoute
   BlogDigitalHallPassGuideRoute: typeof BlogDigitalHallPassGuideRoute
+  BlogFreeToolsComparisonRoute: typeof BlogFreeToolsComparisonRoute
   BlogProgressTrackingGuideRoute: typeof BlogProgressTrackingGuideRoute
   BlogWeeklyReportTemplateRoute: typeof BlogWeeklyReportTemplateRoute
   BlogIndexRoute: typeof BlogIndexRoute
@@ -933,6 +953,7 @@ interface BlogRouteChildren {
 const BlogRouteChildren: BlogRouteChildren = {
   BlogClassroomToolsTeachersRoute: BlogClassroomToolsTeachersRoute,
   BlogDigitalHallPassGuideRoute: BlogDigitalHallPassGuideRoute,
+  BlogFreeToolsComparisonRoute: BlogFreeToolsComparisonRoute,
   BlogProgressTrackingGuideRoute: BlogProgressTrackingGuideRoute,
   BlogWeeklyReportTemplateRoute: BlogWeeklyReportTemplateRoute,
   BlogIndexRoute: BlogIndexRoute,

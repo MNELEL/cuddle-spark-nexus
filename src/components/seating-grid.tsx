@@ -115,12 +115,14 @@ function Seat({
       <div className="absolute top-0.5 left-0.5 flex gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
         {child && (
           <button type="button" onClick={onToggleLock}
+            aria-label={lockedChild ? "פתח נעילה" : "נעל מושב"}
             className="rounded p-0.5 hover:bg-accent" title={lockedChild ? "פתח נעילה" : "נעל מושב"}>
             {lockedChild ? <Lock className="h-3 w-3 text-amber-600" /> : <Unlock className="h-3 w-3" />}
           </button>
         )}
         {!child && (
           <button type="button" onClick={onToggleHide}
+            aria-label="הסתר מושב"
             className="rounded p-0.5 hover:bg-accent" title="הסתר מושב">
             <EyeOff className="h-3 w-3" />
           </button>

@@ -69,10 +69,10 @@ export function SeatingSnapshots({ classId }: { classId: string }) {
                     </div>
                   </div>
                   <div className="flex gap-0.5">
-                    <Button size="icon" variant="ghost" className="h-7 w-7" title="טען" onClick={() => loadM.mutate(c.id)}>
+                    <Button size="icon" variant="ghost" aria-label="טען תצורה" className="h-7 w-7" title="טען" onClick={() => loadM.mutate(c.id)}>
                       <Download className="h-3.5 w-3.5" />
                     </Button>
-                    <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" title="מחק" onClick={() => delM.mutate(c.id)}>
+                    <Button size="icon" variant="ghost" aria-label="מחק תצורה" className="h-7 w-7 text-destructive" title="מחק" onClick={() => delM.mutate(c.id)}>
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
