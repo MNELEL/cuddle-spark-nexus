@@ -12,5 +12,14 @@ Disallow: /sound-board
 Disallow: /ingest
 Disallow: /questions
 Disallow: /p/
+Disallow: /bulletins
+Disallow: /certificates
+Disallow: /certificates/
+Disallow: /daily/
+Disallow: /gamification
+Disallow: /parents/
+Disallow: /raffle/
+Disallow: /reports
+Disallow: /share/
 
 Sitemap: https://cuddle-spark-nexus.lovable.app/sitemap.xml

@@ -47,6 +47,23 @@ export const Route = createFileRoute("/sitemap.xml")({
           { path: "/help/privacy-and-pin", changefreq: "monthly", priority: "0.6" },
         ];
 
+        // Add public class showcase pages dynamically
+        try {
+          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+          const { data } = await supabaseAdmin
+            .from("classes")
+            .select("public_slug")
+            .eq("public_enabled", true)
+            .not("public_slug", "is", null);
+          for (const row of data ?? []) {
+            if (row.public_slug) {
+              entries.push({ path: `/c/${row.public_slug}`, changefreq: "weekly", priority: "0.6" });
+            }
+          }
+        } catch {
+          // Silently skip if DB unavailable at build time
+        }
+
         const urls = entries.map((e) =>
           [
             `  <url>`,
