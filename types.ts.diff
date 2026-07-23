@@ -1,0 +1,29 @@
+diff --git a/src/integrations/supabase/types.ts b/src/integrations/supabase/types.ts
+index 4194b4e..e93321f 100644
+--- a/src/integrations/supabase/types.ts
++++ b/src/integrations/supabase/types.ts
+@@ -593,6 +593,24 @@ export type Database = {
+         }
+         Relationships: []
+       }
++      sent_reminder_alerts: {
++        Row: {
++          id: string
++          reminder_id: string
++          sent_at: string
++        }
++        Insert: {
++          id?: string
++          reminder_id: string
++          sent_at?: string
++        }
++        Update: {
++          id?: string
++          reminder_id?: string
++          sent_at?: string
++        }
++        Relationships: []
++      }
+       resource_collection_items: {
+         Row: {
+           added_at: string

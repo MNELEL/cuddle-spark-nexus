@@ -4,4 +4,10 @@
   "compatibility_date": "2025-09-24",
   "compatibility_flags": ["nodejs_compat"],
   "main": "src/server.ts",
+  "triggers": {
+    // Daily overdue-reminders digest. Runs at 03:00 UTC, which lands at
+    // 06:00 Israel time during IDT (summer) and 05:00 during IST (winter) —
+    // an early-morning check either way, well before the school day starts.
+    "crons": ["0 3 * * *"]
+  }
 }
