@@ -1,12 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
-import { ArrowRight, Award, Download, Users } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { ArrowRight, Award, Camera, Download, Loader2, Plus, Settings, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { getClass } from "@/lib/classes.functions";
 import { getCertificateData } from "@/lib/certificates.functions";
+import { analyzeCertificatePhoto } from "@/lib/ai-certificate.functions";
+import { useBrand } from "@/hooks/use-brand";
+import { setPdfBrand } from "@/lib/pdf/pdf-builder";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -137,6 +140,8 @@ function CertificatesPage() {
   const { classId } = Route.useParams();
   const getC = useServerFn(getClass);
   const getData = useServerFn(getCertificateData);
+  const ocrCert = useServerFn(analyzeCertificatePhoto);
+  const { brand } = useBrand();
 
   const [periodKind, setPeriodKind] = useState<PeriodKind>("half_a");
   const [customFrom, setCustomFrom] = useState(periodRange("half_a").from);
@@ -146,6 +151,14 @@ function CertificatesPage() {
   const [teacherName, setTeacherName] = useState("");
   const [principalName, setPrincipalName] = useState("");
   const [isCorrection, setIsCorrection] = useState(false);
+
+  // Pre-fill from brand settings once loaded (only if the field is still empty).
+  useMemo(() => {
+    if (brand.school_name && !schoolName) setSchoolName(brand.school_name);
+    if (brand.teacher_name_default && !teacherName) setTeacherName(brand.teacher_name_default);
+    if (brand.principal_name_default && !principalName) setPrincipalName(brand.principal_name_default);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [brand.school_name, brand.teacher_name_default, brand.principal_name_default]);
 
   const period = useMemo(() => {
     if (periodKind === "custom") return { from: customFrom, to: customTo, label: "טווח מותאם" };
@@ -184,7 +197,69 @@ function CertificatesPage() {
       return { ...r, [id]: { ...row, subjects } };
     });
 
+  const addSubject = (id: string) =>
+    setRows((r) => {
+      const row = r[id]; if (!row) return r;
+      return { ...r, [id]: { ...row, subjects: [...row.subjects, { subject: "", label: "טוב", note: "" }] } };
+    });
+
+  const removeSubject = (id: string, idx: number) =>
+    setRows((r) => {
+      const row = r[id]; if (!row) return r;
+      return { ...r, [id]: { ...row, subjects: row.subjects.filter((_, i) => i !== idx) } };
+    });
+
+  const applyOcrToRow = async (id: string, file: File) => {
+    if (file.size > 10 * 1024 * 1024) { toast.error("התמונה גדולה מ-10MB"); return; }
+    const b64 = await new Promise<string>((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => { const s = String(r.result || ""); const i = s.indexOf(","); res(i >= 0 ? s.slice(i + 1) : s); };
+      r.onerror = () => rej(new Error("קריאה נכשלה"));
+      r.readAsDataURL(file);
+    });
+    const t = toast.loading("מזהה תעודה…");
+    try {
+      const result = await ocrCert({ data: { imageBase64: b64, mimeType: file.type } });
+      setRows((r) => {
+        const row = r[id]; if (!row) return r;
+        const merged = [...row.subjects.filter((s) => s.subject)];
+        for (const s of result.subjects) {
+          const idx = merged.findIndex((m) => m.subject === s.subject);
+          const label = ((GRADE_LABELS as readonly string[]).includes(s.label ?? "")
+            ? (s.label as GradeLabel)
+            : (typeof s.percent === "number" ? labelForPercent(s.percent) : "טוב"));
+          const note = s.note ?? (typeof s.percent === "number" ? `${Math.round(s.percent)}%` : "");
+          const merged_row: CertificateSubject = { subject: s.subject, label, note };
+          if (idx >= 0) merged[idx] = merged_row; else merged.push(merged_row);
+        }
+        const behaviorLike = (v?: string): BehaviorLabel | undefined =>
+          v && (BEHAVIOR_LABELS as readonly string[]).includes(v) ? (v as BehaviorLabel) : undefined;
+        return {
+          ...r,
+          [id]: {
+            ...row,
+            subjects: merged.length ? merged : row.subjects,
+            conduct: behaviorLike(result.conduct) ?? row.conduct,
+            diligence: behaviorLike(result.diligence) ?? row.diligence,
+            manners: behaviorLike(result.manners) ?? row.manners,
+            teacherNote: result.teacherNote || row.teacherNote,
+            principalNote: result.principalNote || row.principalNote,
+          },
+        };
+      });
+      toast.success(result.summary || "הזיהוי הושלם", { id: t });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "הזיהוי נכשל", { id: t });
+    }
+  };
+
   const buildForStudent = async (row: StudentRow, kind: "regular" | "correction" = "regular") => {
+    setPdfBrand({
+      schoolName: brand.school_name || schoolName || "מוסד חינוכי",
+      headerLine: brand.header_line,
+      logoDataUrl: brand.logo_data_url,
+      primaryColor: brand.primary_color,
+    });
     const blob = await buildCertificatePdfBlob({
       schoolName: schoolName || "מוסד חינוכי",
       className: cls?.name ?? "כיתה",
@@ -215,6 +290,12 @@ function CertificatesPage() {
   };
 
   const buildConference = async (row: StudentRow) => {
+    setPdfBrand({
+      schoolName: brand.school_name || schoolName || "מוסד חינוכי",
+      headerLine: brand.header_line,
+      logoDataUrl: brand.logo_data_url,
+      primaryColor: brand.primary_color,
+    });
     const blob = await buildConferencePdfBlob({
       schoolName: schoolName || "מוסד חינוכי",
       className: cls?.name ?? "כיתה",
@@ -234,9 +315,12 @@ function CertificatesPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-5">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-2">
         <Link to="/classes/$classId" params={{ classId }} className="text-sm text-muted-foreground hover:underline flex items-center gap-1">
           <ArrowRight className="h-4 w-4" /> חזרה לכיתה
+        </Link>
+        <Link to="/settings/brand" className="text-sm text-muted-foreground hover:underline flex items-center gap-1">
+          <Settings className="h-4 w-4" /> מיתוג המוסד
         </Link>
       </div>
 
