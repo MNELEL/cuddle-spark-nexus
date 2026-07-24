@@ -35,6 +35,7 @@ import { Route as BlogProgressTrackingGuideRouteImport } from './routes/blog.pro
 import { Route as BlogFreeToolsComparisonRouteImport } from './routes/blog.free-tools-comparison'
 import { Route as BlogDigitalHallPassGuideRouteImport } from './routes/blog.digital-hall-pass-guide'
 import { Route as BlogClassroomToolsTeachersRouteImport } from './routes/blog.classroom-tools-teachers'
+import { Route as BlogClassroomManagementStrategiesRouteImport } from './routes/blog.classroom-management-strategies'
 import { Route as AuthenticatedToolkitRouteImport } from './routes/_authenticated.toolkit'
 import { Route as AuthenticatedSoundBoardRouteImport } from './routes/_authenticated.sound-board'
 import { Route as AuthenticatedResourcesRouteImport } from './routes/_authenticated.resources'
@@ -187,6 +188,12 @@ const BlogClassroomToolsTeachersRoute =
     path: '/classroom-tools-teachers',
     getParentRoute: () => BlogRoute,
   } as any)
+const BlogClassroomManagementStrategiesRoute =
+  BlogClassroomManagementStrategiesRouteImport.update({
+    id: '/classroom-management-strategies',
+    path: '/classroom-management-strategies',
+    getParentRoute: () => BlogRoute,
+  } as any)
 const AuthenticatedToolkitRoute = AuthenticatedToolkitRouteImport.update({
   id: '/toolkit',
   path: '/toolkit',
@@ -306,6 +313,7 @@ export interface FileRoutesByFullPath {
   '/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/sound-board': typeof AuthenticatedSoundBoardRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
+  '/blog/classroom-management-strategies': typeof BlogClassroomManagementStrategiesRoute
   '/blog/classroom-tools-teachers': typeof BlogClassroomToolsTeachersRoute
   '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
   '/blog/free-tools-comparison': typeof BlogFreeToolsComparisonRoute
@@ -348,6 +356,7 @@ export interface FileRoutesByTo {
   '/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/sound-board': typeof AuthenticatedSoundBoardRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
+  '/blog/classroom-management-strategies': typeof BlogClassroomManagementStrategiesRoute
   '/blog/classroom-tools-teachers': typeof BlogClassroomToolsTeachersRoute
   '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
   '/blog/free-tools-comparison': typeof BlogFreeToolsComparisonRoute
@@ -395,6 +404,7 @@ export interface FileRoutesById {
   '/_authenticated/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/_authenticated/sound-board': typeof AuthenticatedSoundBoardRoute
   '/_authenticated/toolkit': typeof AuthenticatedToolkitRoute
+  '/blog/classroom-management-strategies': typeof BlogClassroomManagementStrategiesRoute
   '/blog/classroom-tools-teachers': typeof BlogClassroomToolsTeachersRoute
   '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
   '/blog/free-tools-comparison': typeof BlogFreeToolsComparisonRoute
@@ -442,6 +452,7 @@ export interface FileRouteTypes {
     | '/resources'
     | '/sound-board'
     | '/toolkit'
+    | '/blog/classroom-management-strategies'
     | '/blog/classroom-tools-teachers'
     | '/blog/digital-hall-pass-guide'
     | '/blog/free-tools-comparison'
@@ -484,6 +495,7 @@ export interface FileRouteTypes {
     | '/resources'
     | '/sound-board'
     | '/toolkit'
+    | '/blog/classroom-management-strategies'
     | '/blog/classroom-tools-teachers'
     | '/blog/digital-hall-pass-guide'
     | '/blog/free-tools-comparison'
@@ -530,6 +542,7 @@ export interface FileRouteTypes {
     | '/_authenticated/resources'
     | '/_authenticated/sound-board'
     | '/_authenticated/toolkit'
+    | '/blog/classroom-management-strategies'
     | '/blog/classroom-tools-teachers'
     | '/blog/digital-hall-pass-guide'
     | '/blog/free-tools-comparison'
@@ -761,6 +774,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogClassroomToolsTeachersRouteImport
       parentRoute: typeof BlogRoute
     }
+    '/blog/classroom-management-strategies': {
+      id: '/blog/classroom-management-strategies'
+      path: '/classroom-management-strategies'
+      fullPath: '/blog/classroom-management-strategies'
+      preLoaderRoute: typeof BlogClassroomManagementStrategiesRouteImport
+      parentRoute: typeof BlogRoute
+    }
     '/_authenticated/toolkit': {
       id: '/_authenticated/toolkit'
       path: '/toolkit'
@@ -964,6 +984,7 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 )
 
 interface BlogRouteChildren {
+  BlogClassroomManagementStrategiesRoute: typeof BlogClassroomManagementStrategiesRoute
   BlogClassroomToolsTeachersRoute: typeof BlogClassroomToolsTeachersRoute
   BlogDigitalHallPassGuideRoute: typeof BlogDigitalHallPassGuideRoute
   BlogFreeToolsComparisonRoute: typeof BlogFreeToolsComparisonRoute
@@ -973,6 +994,8 @@ interface BlogRouteChildren {
 }
 
 const BlogRouteChildren: BlogRouteChildren = {
+  BlogClassroomManagementStrategiesRoute:
+    BlogClassroomManagementStrategiesRoute,
   BlogClassroomToolsTeachersRoute: BlogClassroomToolsTeachersRoute,
   BlogDigitalHallPassGuideRoute: BlogDigitalHallPassGuideRoute,
   BlogFreeToolsComparisonRoute: BlogFreeToolsComparisonRoute,
