@@ -749,6 +749,32 @@ export type Database = {
         }
         Relationships: []
       }
+      sent_reminder_alerts: {
+        Row: {
+          id: string
+          reminder_id: string
+          sent_at: string
+        }
+        Insert: {
+          id?: string
+          reminder_id: string
+          sent_at?: string
+        }
+        Update: {
+          id?: string
+          reminder_id?: string
+          sent_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sent_reminder_alerts_reminder_id_fkey"
+            columns: ["reminder_id"]
+            isOneToOne: true
+            referencedRelation: "reminders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_documents: {
         Row: {
           category: string
