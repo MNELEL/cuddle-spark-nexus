@@ -418,6 +418,9 @@ function CertificatesPage() {
                 row={row}
                 onPatch={(p) => patchRow(row.id, p)}
                 onPatchSubject={(i, p) => patchSubject(row.id, i, p)}
+                onAddSubject={() => addSubject(row.id)}
+                onRemoveSubject={(i) => removeSubject(row.id, i)}
+                onOcrPhoto={(f) => applyOcrToRow(row.id, f)}
                 onExport={() => buildForStudent(row, isCorrection ? "correction" : "regular")}
               />
             ))
@@ -453,26 +456,45 @@ function CertificatesPage() {
 }
 
 function StudentCertCard({
-  row, onPatch, onPatchSubject, onExport,
+  row, onPatch, onPatchSubject, onAddSubject, onRemoveSubject, onOcrPhoto, onExport,
 }: {
   row: StudentRow;
   onPatch: (p: Partial<StudentRow>) => void;
   onPatchSubject: (idx: number, p: Partial<CertificateSubject>) => void;
+  onAddSubject: () => void;
+  onRemoveSubject: (idx: number) => void;
+  onOcrPhoto: (f: File) => void;
   onExport: () => void;
 }) {
+  const fileRef = useRef<HTMLInputElement | null>(null);
   return (
     <Card>
       <CardContent className="space-y-3 py-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="font-semibold text-lg">{row.name}</div>
-          <Button size="sm" onClick={onExport}>
-            <Download className="ms-1 h-4 w-4" /> הפק תעודה
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" onClick={() => fileRef.current?.click()}>
+              <Camera className="ms-1 h-4 w-4" /> העלה צילום תעודה
+            </Button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0]; e.target.value = "";
+                if (f) onOcrPhoto(f);
+              }}
+            />
+            <Button size="sm" onClick={onExport}>
+              <Download className="ms-1 h-4 w-4" /> הפק תעודה
+            </Button>
+          </div>
         </div>
 
         <div className="grid gap-2">
           {row.subjects.map((s, i) => (
-            <div key={i} className="grid grid-cols-1 gap-2 rounded-lg border p-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]">
+            <div key={i} className="grid grid-cols-1 gap-2 rounded-lg border p-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
               <Input
                 value={s.subject}
                 onChange={(e) => onPatchSubject(i, { subject: e.target.value })}
@@ -487,10 +509,16 @@ function StudentCertCard({
               <Input
                 value={s.note ?? ""}
                 onChange={(e) => onPatchSubject(i, { note: e.target.value })}
-                placeholder="הערה / אחוז"
+                placeholder="חומרים / הערה / אחוז"
               />
+              <Button variant="ghost" size="icon" aria-label="מחק מקצוע" onClick={() => onRemoveSubject(i)}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
             </div>
           ))}
+          <Button type="button" variant="outline" size="sm" onClick={onAddSubject} className="w-fit">
+            <Plus className="ms-1 h-4 w-4" /> הוסף מקצוע / נושא
+          </Button>
         </div>
 
         <div className="grid gap-2 sm:grid-cols-3">
