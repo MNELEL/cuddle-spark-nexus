@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { FaqSection, faqJsonLd, type FaqItem } from "@/components/faq-section";
 
 const URL = "https://cuddle-spark-nexus.lovable.app/blog/free-tools-comparison";
 const TITLE = "השוואת כלי ניהול כיתה חינמיים למלמדים בתלמודי תורה";
@@ -37,6 +38,33 @@ const ROWS = [
   },
 ];
 
+const FAQ: FaqItem[] = [
+  {
+    q: "האם כל הכלים שמופיעים בהשוואה באמת חינמיים?",
+    a: "כן. פנקס נייר, גיליון Excel/Google Sheets ו-ClassAlign במסלול הבסיסי הם חינמיים לחלוטין. כלים כלליים כמו ClassDojo מציעים חשבון חינמי, אך לרוב מציגים פרסומות וממשק אנגלי שפחות מתאים לחיידר.",
+  },
+  {
+    q: "האם הכלי מתאים לעברית ולכתב ימין-לשמאל?",
+    a: "פנקס וגיליון מאפשרים לכתוב בעברית, אך אינם מותאמים RTL. ClassAlign Studio בנוי מראש בעברית, עם כיוון ימין-לשמאל, גופני Heebo, ומקצועות קודש כברירת מחדל.",
+  },
+  {
+    q: "מה לגבי פרטיות התלמידים?",
+    a: "אפליקציות כלליות בינלאומיות שומרות נתונים בענן שלהן ולעתים משתמשות בדאטה למודלים. ClassAlign נבנה עם גישה של מינימום נתונים, שמות פנימיים בלבד, ואפשרות דפים ציבוריים אנונימיים להורים.",
+  },
+  {
+    q: "אפשר לייצא את הנתונים אם ארצה לעזוב?",
+    a: "כן. ניתן לייצא רשימת תלמידים, ציונים, דו״חות התנהגות וסיכומים כ-PDF או CSV. גיליון נשמר בחשבון Google Drive שלכם, ולכן המעבר חלק.",
+  },
+  {
+    q: "איך עוברים מפנקס נייר לכלי דיגיטלי בלי להתבלבל?",
+    a: "מומלץ לשמור את הפנקס לרישום מיידי במהלך השיעור, ולהעביר סיכומים יומיים ל-ClassAlign ב-5 דקות בסוף היום. כך לא מאבדים את הרגלי הכיתה הקיימים ומקבלים גיבוי דיגיטלי.",
+  },
+  {
+    q: "לאיזה כלי כדאי להתחיל אם יש לי כיתה אחת קטנה?",
+    a: "לכיתה קטנה של עד 12 תלמידים, פנקס נייר או גיליון פשוטים יספיקו בהתחלה. ברגע שהכיתה גדלה או שרוצים הגרלות, קבוצות, דו״חות להורים ומעקב התנהגות — ClassAlign חוסך זמן משמעותי.",
+  },
+];
+
 export const Route = createFileRoute("/blog/free-tools-comparison")({
   component: Article,
   head: () => ({
@@ -62,6 +90,7 @@ export const Route = createFileRoute("/blog/free-tools-comparison")({
           mainEntityOfPage: URL,
         }),
       },
+      faqJsonLd(FAQ),
     ],
   }),
 });
@@ -128,6 +157,10 @@ function Article() {
               פתח כיתה ראשונה ב-ClassAlign ←
             </Link>
           </div>
+
+          <section className="!mt-12">
+            <FaqSection items={FAQ} intro="תשובות לשאלות שמלמדים שואלים לפני שבוחרים כלי ניהול כיתה חינמי." />
+          </section>
 
           <h2 className="!mt-12">מדריכים נוספים</h2>
           <ul className="mt-4 list-disc pr-4">
