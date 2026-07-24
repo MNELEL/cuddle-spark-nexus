@@ -90,6 +90,7 @@ export const Route = createFileRoute("/blog/free-tools-comparison")({
           mainEntityOfPage: URL,
         }),
       },
+      faqJsonLd(FAQ),
     ],
   }),
 });
