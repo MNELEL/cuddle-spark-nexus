@@ -2,6 +2,7 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { checkOverdueReminders } from "./lib/reminder-alerts.server";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -76,5 +77,18 @@ export default {
       console.error(error);
       return brandedErrorResponse();
     }
+  },
+
+  // Cloudflare Cron Trigger entry point (see wrangler.jsonc `triggers.crons`).
+  // Runs once daily; finds overdue reminders and emails each teacher a
+  // single digest. See src/lib/reminder-alerts.server.ts for the full logic
+  // and dedup handling. A failure here must never crash the Worker's normal
+  // request handling, so it is caught and logged rather than rethrown.
+  async scheduled(_controller: unknown, _env: unknown, ctx: { waitUntil: (p: Promise<unknown>) => void }) {
+    ctx.waitUntil(
+      checkOverdueReminders().catch((error) => {
+        console.error("[scheduled] checkOverdueReminders failed:", error);
+      }),
+    );
   },
 };
