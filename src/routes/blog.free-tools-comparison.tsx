@@ -158,6 +158,10 @@ function Article() {
             </Link>
           </div>
 
+          <section className="!mt-12">
+            <FaqSection items={FAQ} intro="תשובות לשאלות שמלמדים שואלים לפני שבוחרים כלי ניהול כיתה חינמי." />
+          </section>
+
           <h2 className="!mt-12">מדריכים נוספים</h2>
           <ul className="mt-4 list-disc pr-4">
             <li><Link to="/blog/classroom-tools-teachers" className="text-primary hover:underline">10 כלי הוראה חינמיים שכל מלמד חייב להכיר</Link></li>
