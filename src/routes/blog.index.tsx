@@ -41,6 +41,16 @@ function BlogIndex() {
         </p>
         <ul className="mt-10 space-y-6">
           <li className="rounded-2xl border border-border/60 bg-card/40 p-6">
+            <Link to="/blog/classroom-management-strategies" className="block">
+              <h2 className="text-xl font-semibold">אסטרטגיות ניהול כיתה — מדריך מקצועי</h2>
+              <p className="mt-2 text-muted-foreground">
+                חמש אסטרטגיות מוכחות לניהול כיתה בתלמוד תורה: תגבור התנהגות חיובית,
+                עיצוב סביבה, שגרות, מעקב מבוסס נתונים ושותפות עם ההורים.
+              </p>
+              <span className="mt-3 inline-block text-sm text-primary">קרא את המדריך ←</span>
+            </Link>
+          </li>
+          <li className="rounded-2xl border border-border/60 bg-card/40 p-6">
             <Link to="/blog/progress-tracking-guide" className="block">
               <h2 className="text-xl font-semibold">מעקב התקדמות תלמידים — מדריך מלא</h2>
               <p className="mt-2 text-muted-foreground">
