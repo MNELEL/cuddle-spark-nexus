@@ -24,6 +24,26 @@ export const SLATE: [number, number, number] = [15, 23, 42];
 export const AMBER: [number, number, number] = [245, 158, 11];
 export const SOFT: [number, number, number] = [241, 245, 249];
 
+/** Institution brand snapshot used by every PDF header. */
+export type PdfBrand = {
+  schoolName?: string;
+  headerLine?: string;
+  logoDataUrl?: string;
+  primaryColor?: string;
+};
+
+let CURRENT_BRAND: PdfBrand = {};
+
+/**
+ * Sets the institution brand used by drawBrandHeader in all subsequent PDFs.
+ * Call this once from the UI (via useBrand) before building a PDF.
+ */
+export function setPdfBrand(brand: PdfBrand): void {
+  CURRENT_BRAND = brand ?? {};
+}
+
+export function getPdfBrand(): PdfBrand { return CURRENT_BRAND; }
+
 export type PdfLayout = {
   pageW: number;
   pageH: number;
@@ -170,12 +190,46 @@ export function drawBrandHeader(
   args: { title: string; meta?: string; subtitle?: string },
 ): void {
   const { doc, layout } = hd;
+  const brand = CURRENT_BRAND;
   doc.setFillColor(...SLATE);
   doc.rect(0, 0, layout.pageW, 10, "F");
   doc.setFillColor(...AMBER);
   doc.rect(0, 10, layout.pageW, 1.5, "F");
 
+  // Institution logo (left) if present.
+  let logoBottom = 16;
+  if (brand.logoDataUrl && brand.logoDataUrl.startsWith("data:image/")) {
+    try {
+      const fmt = brand.logoDataUrl.includes("image/png") ? "PNG" : "JPEG";
+      doc.addImage(brand.logoDataUrl, fmt, layout.marginL, 14, 22, 22, undefined, "FAST");
+      logoBottom = 14 + 22;
+    } catch { /* ignore malformed logo */ }
+  }
+
+  // Institution name banner above the document title, right-aligned.
   hd.setY(16);
+  if (brand.schoolName) {
+    doc.setFont("Heebo", "bold");
+    doc.setFontSize(13);
+    doc.setTextColor(...SLATE);
+    doc.text(brand.schoolName, layout.rightX, hd.currentY(), { align: "right" });
+    hd.advance(5.5);
+  }
+  if (brand.headerLine) {
+    doc.setFont("Heebo", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(120);
+    doc.text(brand.headerLine, layout.rightX, hd.currentY(), { align: "right" });
+    hd.advance(4.5);
+  }
+  if (brand.schoolName || brand.headerLine) {
+    doc.setDrawColor(...AMBER);
+    doc.setLineWidth(0.4);
+    doc.line(layout.marginL, hd.currentY(), layout.rightX, hd.currentY());
+    hd.advance(3);
+  }
+  if (hd.currentY() < logoBottom) hd.setY(logoBottom);
+
   doc.setFont("Heebo", "bold");
   doc.setFontSize(18);
   doc.setTextColor(...SLATE);

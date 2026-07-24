@@ -42,6 +42,7 @@ import { Route as AuthenticatedQuestionsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedIngestRouteImport } from './routes/_authenticated.ingest'
 import { Route as AuthenticatedClassesIndexRouteImport } from './routes/_authenticated.classes.index'
 import { Route as AuthenticatedShareClassIdRouteImport } from './routes/_authenticated.share.$classId'
+import { Route as AuthenticatedSettingsBrandRouteImport } from './routes/_authenticated.settings.brand'
 import { Route as AuthenticatedResourcesResourceIdRouteImport } from './routes/_authenticated.resources.$resourceId'
 import { Route as AuthenticatedReportsClassIdRouteImport } from './routes/_authenticated.reports.$classId'
 import { Route as AuthenticatedRaffleClassIdRouteImport } from './routes/_authenticated.raffle.$classId'
@@ -223,6 +224,12 @@ const AuthenticatedShareClassIdRoute =
     path: '/share/$classId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedSettingsBrandRoute =
+  AuthenticatedSettingsBrandRouteImport.update({
+    id: '/settings/brand',
+    path: '/settings/brand',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedResourcesResourceIdRoute =
   AuthenticatedResourcesResourceIdRouteImport.update({
     id: '/$resourceId',
@@ -324,6 +331,7 @@ export interface FileRoutesByFullPath {
   '/raffle/$classId': typeof AuthenticatedRaffleClassIdRoute
   '/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/resources/$resourceId': typeof AuthenticatedResourcesResourceIdRoute
+  '/settings/brand': typeof AuthenticatedSettingsBrandRoute
   '/share/$classId': typeof AuthenticatedShareClassIdRoute
   '/classes/': typeof AuthenticatedClassesIndexRoute
   '/classes/$classId/display': typeof AuthenticatedClassesClassIdDisplayRoute
@@ -365,6 +373,7 @@ export interface FileRoutesByTo {
   '/raffle/$classId': typeof AuthenticatedRaffleClassIdRoute
   '/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/resources/$resourceId': typeof AuthenticatedResourcesResourceIdRoute
+  '/settings/brand': typeof AuthenticatedSettingsBrandRoute
   '/share/$classId': typeof AuthenticatedShareClassIdRoute
   '/classes': typeof AuthenticatedClassesIndexRoute
   '/classes/$classId/display': typeof AuthenticatedClassesClassIdDisplayRoute
@@ -411,6 +420,7 @@ export interface FileRoutesById {
   '/_authenticated/raffle/$classId': typeof AuthenticatedRaffleClassIdRoute
   '/_authenticated/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/_authenticated/resources/$resourceId': typeof AuthenticatedResourcesResourceIdRoute
+  '/_authenticated/settings/brand': typeof AuthenticatedSettingsBrandRoute
   '/_authenticated/share/$classId': typeof AuthenticatedShareClassIdRoute
   '/_authenticated/classes/': typeof AuthenticatedClassesIndexRoute
   '/_authenticated/classes/$classId/display': typeof AuthenticatedClassesClassIdDisplayRoute
@@ -457,6 +467,7 @@ export interface FileRouteTypes {
     | '/raffle/$classId'
     | '/reports/$classId'
     | '/resources/$resourceId'
+    | '/settings/brand'
     | '/share/$classId'
     | '/classes/'
     | '/classes/$classId/display'
@@ -498,6 +509,7 @@ export interface FileRouteTypes {
     | '/raffle/$classId'
     | '/reports/$classId'
     | '/resources/$resourceId'
+    | '/settings/brand'
     | '/share/$classId'
     | '/classes'
     | '/classes/$classId/display'
@@ -543,6 +555,7 @@ export interface FileRouteTypes {
     | '/_authenticated/raffle/$classId'
     | '/_authenticated/reports/$classId'
     | '/_authenticated/resources/$resourceId'
+    | '/_authenticated/settings/brand'
     | '/_authenticated/share/$classId'
     | '/_authenticated/classes/'
     | '/_authenticated/classes/$classId/display'
@@ -797,6 +810,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedShareClassIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/settings/brand': {
+      id: '/_authenticated/settings/brand'
+      path: '/settings/brand'
+      fullPath: '/settings/brand'
+      preLoaderRoute: typeof AuthenticatedSettingsBrandRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/resources/$resourceId': {
       id: '/_authenticated/resources/$resourceId'
       path: '/$resourceId'
@@ -914,6 +934,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedParentsClassIdRoute: typeof AuthenticatedParentsClassIdRoute
   AuthenticatedRaffleClassIdRoute: typeof AuthenticatedRaffleClassIdRoute
   AuthenticatedReportsClassIdRoute: typeof AuthenticatedReportsClassIdRoute
+  AuthenticatedSettingsBrandRoute: typeof AuthenticatedSettingsBrandRoute
   AuthenticatedShareClassIdRoute: typeof AuthenticatedShareClassIdRoute
   AuthenticatedClassesIndexRoute: typeof AuthenticatedClassesIndexRoute
 }
@@ -933,6 +954,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedParentsClassIdRoute: AuthenticatedParentsClassIdRoute,
   AuthenticatedRaffleClassIdRoute: AuthenticatedRaffleClassIdRoute,
   AuthenticatedReportsClassIdRoute: AuthenticatedReportsClassIdRoute,
+  AuthenticatedSettingsBrandRoute: AuthenticatedSettingsBrandRoute,
   AuthenticatedShareClassIdRoute: AuthenticatedShareClassIdRoute,
   AuthenticatedClassesIndexRoute: AuthenticatedClassesIndexRoute,
 }

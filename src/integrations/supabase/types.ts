@@ -101,6 +101,45 @@ export type Database = {
         }
         Relationships: []
       }
+      brand_settings: {
+        Row: {
+          created_at: string
+          header_line: string | null
+          id: string
+          logo_data_url: string | null
+          primary_color: string | null
+          principal_name_default: string | null
+          school_name: string | null
+          teacher_name_default: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          header_line?: string | null
+          id?: string
+          logo_data_url?: string | null
+          primary_color?: string | null
+          principal_name_default?: string | null
+          school_name?: string | null
+          teacher_name_default?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          header_line?: string | null
+          id?: string
+          logo_data_url?: string | null
+          primary_color?: string | null
+          principal_name_default?: string | null
+          school_name?: string | null
+          teacher_name_default?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       bulletin_resources: {
         Row: {
           bulletin_id: string
