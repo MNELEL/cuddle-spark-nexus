@@ -13,12 +13,6 @@ import { Label } from "@/components/ui/label";
 
 export const Route = createFileRoute("/_authenticated/settings/brand")({
   component: BrandSettingsPage,
-  loader: async ({ context }) => {
-    return context.queryClient.ensureQueryData({
-      queryKey: ["brand-settings"],
-      queryFn: () => {},
-    }).catch(() => null);
-  },
   head: () => ({
     meta: [
       { title: "מיתוג המוסד · ClassAlign Studio" },
