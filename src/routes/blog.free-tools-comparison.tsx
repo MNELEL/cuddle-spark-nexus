@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { FaqSection, faqJsonLd, type FaqItem } from "@/components/faq-section";
 
 const URL = "https://cuddle-spark-nexus.lovable.app/blog/free-tools-comparison";
 const TITLE = "השוואת כלי ניהול כיתה חינמיים למלמדים בתלמודי תורה";
