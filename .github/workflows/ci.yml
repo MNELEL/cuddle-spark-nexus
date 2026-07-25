@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      # Fails if @tanstack/react-start drifts ahead of react-router / router-core,
+      # which historically produced cryptic build errors such as
+      # `"getScriptPreloadAttrs" is not exported by "@tanstack/router-core"`.
+      - name: Check TanStack version alignment
+        run: bun run check:tanstack
+
+      # Type-safety net: TanStack drift often surfaces first as type errors.
+      - name: Typecheck
+        run: bunx tsgo --noEmit
+
+      - name: Production build
+        run: bun run build
