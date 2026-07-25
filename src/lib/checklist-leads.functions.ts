@@ -10,6 +10,9 @@ const schema = z.object({
   email: z.string().trim().email("כתובת אימייל לא תקינה").max(200),
   checklist_slug: z.string().trim().min(1).max(80),
   user_agent: z.string().max(500).optional().default(""),
+  honeypot: z.string().max(200).optional().default(""),
+  elapsed_ms: z.number().int().min(0).max(24 * 60 * 60 * 1000).optional(),
+  hcaptcha_token: z.string().max(4000).optional().default(""),
 });
 
 function makePublicClient() {
@@ -33,6 +36,21 @@ function makePublicClient() {
 export const submitChecklistLead = createServerFn({ method: "POST" })
   .inputValidator((d) => schema.parse(d))
   .handler(async ({ data }) => {
+    const { verifyAntiSpam } = await import("./anti-spam.server");
+    const verdict = await verifyAntiSpam({
+      honeypot: data.honeypot,
+      elapsedMs: data.elapsed_ms,
+      hcaptchaToken: data.hcaptcha_token,
+    });
+    if (!verdict.ok) {
+      console.warn("[checklist_leads] anti-spam rejected", verdict.reason);
+      throw new Error(
+        verdict.reason === "captcha_missing" || verdict.reason === "captcha_failed"
+          ? "אימות אנטי-ספאם נכשל. רענן את הדף ונסה שוב."
+          : "הבקשה נחסמה. ודא שמילאת את כל השדות ונסה שוב.",
+      );
+    }
+
     const supabase = makePublicClient();
     const { error } = await supabase.from("checklist_leads").insert({
       full_name: data.full_name,
