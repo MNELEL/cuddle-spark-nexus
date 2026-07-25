@@ -17,6 +17,9 @@
 // remove this TODO.
 
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { logError } from "@/lib/logger.server";
+
+const LOG_SOURCE = "reminder-alerts.server";
 
 type ReminderRow = {
   id: string;
@@ -55,8 +58,13 @@ function todayIso(): string {
  */
 async function sendReminderDigestEmail(digest: TeacherDigest): Promise<boolean> {
   if (!digest.email) {
-    console.error(
-      `[reminder-alerts] No email on file for teacher ${digest.ownerId}; skipping digest for ${digest.items.length} reminder(s).`,
+    void logError(
+      `No email on file for teacher ${digest.ownerId}; skipping digest for ${digest.items.length} reminder(s).`,
+      {
+        source: LOG_SOURCE,
+        userId: digest.ownerId,
+        context: { ownerId: digest.ownerId, itemCount: digest.items.length },
+      },
     );
     return false;
   }
@@ -91,7 +99,10 @@ export async function checkOverdueReminders(): Promise<void> {
     .lte("due_date", today);
 
   if (remindersError) {
-    console.error("[reminder-alerts] Failed to load overdue reminders:", remindersError);
+    void logError("Failed to load overdue reminders", {
+      source: LOG_SOURCE,
+      context: { error: remindersError },
+    });
     return;
   }
   const reminders = (overdue ?? []) as ReminderRow[];
@@ -105,7 +116,10 @@ export async function checkOverdueReminders(): Promise<void> {
       reminders.map((r) => r.id),
     );
   if (alertsError) {
-    console.error("[reminder-alerts] Failed to load sent_reminder_alerts (continuing without dedup is unsafe, aborting run):", alertsError);
+    void logError(
+      "Failed to load sent_reminder_alerts (continuing without dedup is unsafe, aborting run)",
+      { source: LOG_SOURCE, context: { error: alertsError } },
+    );
     return;
   }
   const alreadySentIds = new Set((alreadySent ?? []).map((a) => (a as { reminder_id: string }).reminder_id));
@@ -120,11 +134,17 @@ export async function checkOverdueReminders(): Promise<void> {
     supabaseAdmin.from("students").select("id,name").in("id", studentIds),
   ]);
   if (classesRes.error) {
-    console.error("[reminder-alerts] Failed to load classes for pending reminders:", classesRes.error);
+    void logError("Failed to load classes for pending reminders", {
+      source: LOG_SOURCE,
+      context: { error: classesRes.error, classIds },
+    });
     return;
   }
   if (studentsRes.error) {
-    console.error("[reminder-alerts] Failed to load students for pending reminders:", studentsRes.error);
+    void logError("Failed to load students for pending reminders", {
+      source: LOG_SOURCE,
+      context: { error: studentsRes.error, studentIds },
+    });
     return;
   }
 
@@ -140,7 +160,10 @@ export async function checkOverdueReminders(): Promise<void> {
   for (const r of pending) {
     const cls = classById.get(r.class_id);
     if (!cls) {
-      console.error(`[reminder-alerts] Reminder ${r.id} references missing class ${r.class_id}; skipping.`);
+      void logError(`Reminder references missing class; skipping.`, {
+        source: LOG_SOURCE,
+        context: { reminderId: r.id, classId: r.class_id },
+      });
       continue;
     }
     const student = studentById.get(r.student_id);
@@ -159,7 +182,11 @@ export async function checkOverdueReminders(): Promise<void> {
     try {
       const { data: userRes, error: userError } = await supabaseAdmin.auth.admin.getUserById(digest.ownerId);
       if (userError) {
-        console.error(`[reminder-alerts] Failed to load auth user ${digest.ownerId}:`, userError);
+        void logError(`Failed to load auth user for digest`, {
+          source: LOG_SOURCE,
+          userId: digest.ownerId,
+          context: { ownerId: digest.ownerId, error: userError },
+        });
         continue;
       }
       digest.email = userRes?.user?.email ?? null;
@@ -171,14 +198,25 @@ export async function checkOverdueReminders(): Promise<void> {
         digest.items.map((i) => ({ reminder_id: i.reminderId })),
       );
       if (insertError) {
-        console.error(
-          `[reminder-alerts] Digest for teacher ${digest.ownerId} was sent but recording sent_reminder_alerts failed ` +
-            `(these reminders may be re-sent tomorrow):`,
-          insertError,
+        void logError(
+          `Digest was sent but recording sent_reminder_alerts failed (these reminders may be re-sent tomorrow).`,
+          {
+            source: LOG_SOURCE,
+            userId: digest.ownerId,
+            context: {
+              ownerId: digest.ownerId,
+              reminderIds: digest.items.map((i) => i.reminderId),
+              error: insertError,
+            },
+          },
         );
       }
     } catch (err) {
-      console.error(`[reminder-alerts] Unexpected error processing teacher ${digest.ownerId}:`, err);
+      void logError(`Unexpected error processing teacher digest`, {
+        source: LOG_SOURCE,
+        userId: digest.ownerId,
+        context: { ownerId: digest.ownerId, error: err instanceof Error ? err.message : String(err) },
+      });
       // Continue with the remaining teachers — one teacher's failure must
       // not block the rest of the run.
     }
