@@ -38,9 +38,6 @@ export const ocrGradesImage = createServerFn({ method: "POST" })
     if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     if (!students || students.length === 0) throw new Error("אין תלמידים בכיתה");
 
-    const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) throw new Error("חסר מפתח LOVABLE_API_KEY");
-
     const studentList = students.map((s) => `- ${s.name}`).join("\n");
     const system = `אתה עוזר של רב/מלמד בתלמוד תורה. קיבלת צילום של דף ציונים (בכתב יד או מודפס, בעברית).
 המטרה: לזהות מהתמונה את שמות התלמידים והציונים שלהם, ולהחזיר טקסט חופשי בפורמט אחיד — שורה לכל תלמיד:
@@ -53,8 +50,7 @@ export const ocrGradesImage = createServerFn({ method: "POST" })
 - אל תוסיף שום טקסט נוסף, כותרות או הסברים — רק שורות של "שם: ציון".
 - מקצוע ברירת מחדל: "${data.defaultSubject}". מקסימום ברירת מחדל: ${data.defaultMax}.`;
 
-    const body = {
-      model: "google/gemini-2.5-flash",
+    const content = await callLovableAI({
       messages: [
         { role: "system", content: system },
         {
@@ -65,26 +61,8 @@ export const ocrGradesImage = createServerFn({ method: "POST" })
           ],
         },
       ],
-    };
-
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Lovable-API-Key": apiKey,
-        "X-Lovable-AIG-SDK": "fetch",
-      },
-      body: JSON.stringify(body),
     });
-
-    if (resp.status === 429) throw new Error("חרגת ממכסת בקשות AI. נסה שוב בעוד דקה.");
-    if (resp.status === 402) throw new Error("נגמרו קרדיטים ב-Lovable AI. הוסף קרדיטים בהגדרות.");
-    if (!resp.ok) {
-      console.error("[AI Gateway Error]", resp.status, await resp.text());
-      throw new Error(`שגיאת AI: ${resp.status}`);
-    }
-    const json = await resp.json() as { choices?: { message?: { content?: string } }[] };
-    const text = (json.choices?.[0]?.message?.content ?? "").trim();
+    const text = content.trim();
     return { text };
   });
 
@@ -109,9 +87,6 @@ export const parseGradesFromText = createServerFn({ method: "POST" })
     if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     if (!students || students.length === 0) throw new Error("אין תלמידים בכיתה");
 
-    const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) throw new Error("חסר מפתח LOVABLE_API_KEY");
-
     const studentList = students.map((s) => `- ${s.name} [id:${s.id}]`).join("\n");
     const system = `אתה עוזר של רב/מלמד בתלמוד תורה. קלט: טקסט חופשי בעברית עם ציוני מבחן/בחינה לתלמידים.
 המטרה: לחלץ רשימת ציונים מובנית. תמיד התאם כל ציון לתלמיד מהרשימה הנתונה.
@@ -120,34 +95,13 @@ export const parseGradesFromText = createServerFn({ method: "POST" })
 מקצוע ברירת מחדל: "${data.defaultSubject}". ציון מקסימלי ברירת מחדל: ${data.defaultMax}.
 החזר רק JSON בפורמט: {"grades":[{"student_name":"...","student_id":"uuid או null","subject":"...","value":0,"max_value":100,"notes":"","confidence":0.0-1.0}]}`;
 
-    const body = {
-      model: "google/gemini-2.5-flash",
+    const raw = (await callLovableAI({
       messages: [
         { role: "system", content: system },
         { role: "user", content: `רשימת תלמידי הכיתה:\n${studentList}\n\nטקסט הציונים:\n${data.text}` },
       ],
-      response_format: { type: "json_object" },
-    };
-
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Lovable-API-Key": apiKey,
-        "X-Lovable-AIG-SDK": "fetch",
-      },
-      body: JSON.stringify(body),
-    });
-
-    if (resp.status === 429) throw new Error("חרגת ממכסת בקשות AI. נסה שוב בעוד דקה.");
-    if (resp.status === 402) throw new Error("נגמרו קרדיטים ב-Lovable AI. הוסף קרדיטים בהגדרות.");
-    if (!resp.ok) {
-      console.error("[AI Gateway Error]", resp.status, await resp.text());
-      throw new Error(`שגיאת AI: ${resp.status}`);
-    }
-
-    const json = await resp.json() as { choices?: { message?: { content?: string } }[] };
-    const raw = json.choices?.[0]?.message?.content ?? "{}";
+      jsonResponse: true,
+    })) || "{}";
 
     let parsed: { grades?: unknown[] } = {};
     try { parsed = JSON.parse(raw); } catch { parsed = {}; }
