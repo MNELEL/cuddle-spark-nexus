@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 import { routeTree } from "@/routeTree.gen";
+import { ARTICLES as HELP_ARTICLES } from "@/routes/help.$slug";
+import { GUIDES as PARENTS_GUIDES } from "@/routes/parents-guide.$slug";
 
 const BASE_URL = "https://cuddle-spark-nexus.lovable.app";
 
@@ -99,6 +101,16 @@ export const Route = createFileRoute("/sitemap.xml")({
         }));
 
         // 2. Dynamic content — one entry per published row that maps to a $param route.
+        // 2a. Static-content $slug routes (help centre, parents guide). Adding a
+        // new article to those maps automatically extends the sitemap.
+        for (const slug of Object.keys(HELP_ARTICLES)) {
+          entries.push({ path: `/help/${slug}`, changefreq: "monthly", priority: "0.7" });
+        }
+        for (const slug of Object.keys(PARENTS_GUIDES)) {
+          entries.push({ path: `/parents-guide/${slug}`, changefreq: "monthly", priority: "0.7" });
+        }
+
+        // 2b. Public class showcase pages (DB-backed).
         try {
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
           const { data } = await supabaseAdmin
