@@ -1,5 +1,3 @@
-import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyMessage = any;
 
@@ -47,6 +45,3 @@ export async function callLovableAI(params: CallLovableAIParams): Promise<string
   const json = (await resp.json()) as { choices?: { message?: { content?: string } }[] };
   return json.choices?.[0]?.message?.content ?? "";
 }
-
-// Re-export for callers wanting a typed message shape (optional).
-export type { ChatCompletionMessageParam };
