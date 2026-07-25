@@ -218,6 +218,39 @@ export type Database = {
         }
         Relationships: []
       }
+      checklist_leads: {
+        Row: {
+          checklist_slug: string
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          institution: string
+          role: string
+          user_agent: string | null
+        }
+        Insert: {
+          checklist_slug: string
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          institution: string
+          role: string
+          user_agent?: string | null
+        }
+        Update: {
+          checklist_slug?: string
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          institution?: string
+          role?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       class_resource_usage: {
         Row: {
           class_id: string
