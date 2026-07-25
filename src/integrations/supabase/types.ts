@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_logs: {
+        Row: {
+          context: Json | null
+          created_at: string
+          id: string
+          level: string
+          message: string
+          source: string | null
+          user_id: string | null
+        }
+        Insert: {
+          context?: Json | null
+          created_at?: string
+          id?: string
+          level: string
+          message: string
+          source?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          context?: Json | null
+          created_at?: string
+          id?: string
+          level?: string
+          message?: string
+          source?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       app_security: {
         Row: {
           pin_enabled: boolean
