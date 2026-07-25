@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { callLovableAI } from "./ai-gateway.server";
 
 const ParamValue = z.union([z.string(), z.number(), z.boolean(), z.null()]);
 const ActionSchema = z.object({
@@ -47,9 +48,6 @@ export const assistantQuery = createServerFn({ method: "POST" })
     const students = studentsRes.data ?? [];
     if (students.length === 0) throw new Error("אין תלמידים בכיתה זו");
 
-    const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) throw new Error("חסר LOVABLE_API_KEY");
-
     const ctxJson = JSON.stringify({
       today: todayIso(),
       students: students.map((s) => ({ id: s.id, name: s.name, notes: s.notes ?? "" })),
@@ -79,29 +77,13 @@ export const assistantQuery = createServerFn({ method: "POST" })
 
 החזר רק JSON: {"answer":"...","actions":[{"kind":"...","summary":"...","params":{...}}]}`;
 
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Lovable-API-Key": apiKey,
-        "X-Lovable-AIG-SDK": "fetch",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: `הקשר הכיתה (JSON):\n${ctxJson}\n\nבקשת הרב:\n${data.text}` },
-        ],
-        response_format: { type: "json_object" },
-      }),
-    });
-
-    if (resp.status === 429) throw new Error("חרגת ממכסת בקשות AI. נסה שוב בעוד דקה.");
-    if (resp.status === 402) throw new Error("נגמרו קרדיטים ב-Lovable AI.");
-    if (!resp.ok) throw new Error(`שגיאת AI: ${resp.status}`);
-
-    const j = await resp.json() as { choices?: { message?: { content?: string } }[] };
-    const raw = j.choices?.[0]?.message?.content ?? "{}";
+    const raw = (await callLovableAI({
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: `הקשר הכיתה (JSON):\n${ctxJson}\n\nבקשת הרב:\n${data.text}` },
+      ],
+      jsonResponse: true,
+    })) || "{}";
     let parsed: { answer?: string; actions?: unknown[] } = {};
     try { parsed = JSON.parse(raw); } catch { /* ignore */ }
 
