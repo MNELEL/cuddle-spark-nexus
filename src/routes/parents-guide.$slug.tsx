@@ -10,7 +10,7 @@ type Guide = {
   faq: { q: string; a: string }[];
 };
 
-const GUIDES: Record<string, Guide> = {
+export const GUIDES: Record<string, Guide> = {
   "weekly-report": {
     title: "איך לקרוא את הדוח השבועי של הילד",
     description:
