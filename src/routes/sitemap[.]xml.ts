@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
+import { routeTree } from "@/routeTree.gen";
 
 const BASE_URL = "https://cuddle-spark-nexus.lovable.app";
 
@@ -9,48 +10,95 @@ interface SitemapEntry {
   priority?: string;
 }
 
+/**
+ * Walk the generated route tree and return every static, indexable full path.
+ * This is what makes the sitemap self-updating: adding, renaming, or removing a
+ * file under src/routes/ regenerates src/routeTree.gen.ts, and the next request
+ * to /sitemap.xml picks the change up automatically — no manual edits here.
+ *
+ * Excluded:
+ *   - the sitemap route itself
+ *   - dynamic segments ($param, splat $)
+ *   - authenticated subtree (blocked by robots.txt; not indexable)
+ *   - API / hook routes
+ *   - private share/token routes (/p/$token, /share/*)
+ */
+function collectStaticRoutes(): string[] {
+  const out = new Set<string>();
+  const visit = (route: unknown) => {
+    if (!route || typeof route !== "object") return;
+    const r = route as { id?: string; fullPath?: string; children?: unknown };
+    const id = r.id ?? "";
+    const fullPath = r.fullPath ?? "";
+
+    const isDynamic = fullPath.includes("$");
+    const isAuthenticated = id.startsWith("/_authenticated");
+    const isApi = fullPath.startsWith("/api");
+    const isPrivateShare = fullPath.startsWith("/p/") || fullPath.startsWith("/share/");
+    const isSitemap = fullPath === "/sitemap.xml";
+    const isRootPlaceholder = fullPath === "" || fullPath === "__root__";
+
+    if (
+      fullPath &&
+      !isDynamic &&
+      !isAuthenticated &&
+      !isApi &&
+      !isPrivateShare &&
+      !isSitemap &&
+      !isRootPlaceholder
+    ) {
+      // Normalize "/blog/" style entries produced by index children to "/blog".
+      const normalized =
+        fullPath.length > 1 && fullPath.endsWith("/") ? fullPath.slice(0, -1) : fullPath;
+      out.add(normalized);
+    }
+
+    const children = r.children;
+    if (Array.isArray(children)) {
+      for (const c of children) visit(c);
+    } else if (children && typeof children === "object") {
+      for (const c of Object.values(children)) visit(c);
+    }
+  };
+  visit(routeTree);
+  return Array.from(out).sort();
+}
+
+/**
+ * Priority / changefreq hints per path prefix. Anything not matched falls back
+ * to sensible defaults, so newly added routes get reasonable metadata without
+ * a code change here.
+ */
+function hintsFor(path: string): { changefreq: SitemapEntry["changefreq"]; priority: string } {
+  if (path === "/") return { changefreq: "weekly", priority: "1.0" };
+  if (path === "/login") return { changefreq: "monthly", priority: "0.5" };
+  if (path === "/privacy") return { changefreq: "yearly", priority: "0.3" };
+  if (path === "/support" || path === "/toolkit" || path === "/sound-board") {
+    return { changefreq: "monthly", priority: "0.5" };
+  }
+  if (path === "/blog") return { changefreq: "weekly", priority: "0.8" };
+  if (path.startsWith("/blog/")) return { changefreq: "monthly", priority: "0.7" };
+  if (path === "/help") return { changefreq: "weekly", priority: "0.8" };
+  if (path.startsWith("/help/")) return { changefreq: "monthly", priority: "0.7" };
+  if (path === "/parents-guide") return { changefreq: "monthly", priority: "0.8" };
+  if (path.startsWith("/parents-guide/")) return { changefreq: "monthly", priority: "0.7" };
+  if (path === "/partners") return { changefreq: "monthly", priority: "0.8" };
+  if (path.startsWith("/partners/")) return { changefreq: "monthly", priority: "0.7" };
+  if (path.startsWith("/tools/")) return { changefreq: "monthly", priority: "0.7" };
+  return { changefreq: "monthly", priority: "0.5" };
+}
+
 export const Route = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
       GET: async () => {
-        const entries: SitemapEntry[] = [
-          { path: "/", changefreq: "weekly", priority: "1.0" },
-          { path: "/login", changefreq: "monthly", priority: "0.5" },
-          { path: "/blog", changefreq: "weekly", priority: "0.8" },
-          { path: "/blog/digital-hall-pass-guide", changefreq: "monthly", priority: "0.7" },
-          { path: "/blog/progress-tracking-guide", changefreq: "monthly", priority: "0.8" },
-          { path: "/blog/weekly-report-template", changefreq: "monthly", priority: "0.7" },
-          { path: "/blog/classroom-tools-teachers", changefreq: "monthly", priority: "0.7" },
-          { path: "/blog/free-tools-comparison", changefreq: "monthly", priority: "0.7" },
-          { path: "/blog/classroom-management-strategies", changefreq: "monthly", priority: "0.8" },
-          { path: "/blog/classroom-management-strategies/checklist", changefreq: "monthly", priority: "0.7" },
-          { path: "/tools/group-maker", changefreq: "monthly", priority: "0.7" },
-          { path: "/partners", changefreq: "monthly", priority: "0.8" },
-          { path: "/partners/districts", changefreq: "monthly", priority: "0.7" },
-          { path: "/partners/schools", changefreq: "monthly", priority: "0.7" },
-          { path: "/partners/case-studies", changefreq: "monthly", priority: "0.7" },
-          { path: "/privacy", changefreq: "yearly", priority: "0.3" },
-          { path: "/support", changefreq: "monthly", priority: "0.4" },
-          { path: "/resources", changefreq: "weekly", priority: "0.6" },
-          { path: "/toolkit", changefreq: "monthly", priority: "0.5" },
-          { path: "/sound-board", changefreq: "monthly", priority: "0.5" },
-          { path: "/ingest", changefreq: "monthly", priority: "0.5" },
-          { path: "/questions", changefreq: "weekly", priority: "0.6" },
-          { path: "/parents-guide", changefreq: "monthly", priority: "0.8" },
-          { path: "/parents-guide/weekly-report", changefreq: "monthly", priority: "0.7" },
-          { path: "/parents-guide/grading-scale", changefreq: "monthly", priority: "0.7" },
-          { path: "/parents-guide/behavior-points", changefreq: "monthly", priority: "0.7" },
-          { path: "/parents-guide/supporting-progress-at-home", changefreq: "monthly", priority: "0.7" },
-          { path: "/help", changefreq: "weekly", priority: "0.8" },
-          { path: "/help/setup-grade-tracking", changefreq: "monthly", priority: "0.8" },
-          { path: "/help/grading-scale-and-weights", changefreq: "monthly", priority: "0.7" },
-          { path: "/help/import-grades-from-image", changefreq: "monthly", priority: "0.7" },
-          { path: "/help/weekly-reports", changefreq: "monthly", priority: "0.7" },
-          { path: "/help/mobile-usage", changefreq: "monthly", priority: "0.6" },
-          { path: "/help/privacy-and-pin", changefreq: "monthly", priority: "0.6" },
-        ];
+        // 1. Static routes — derived automatically from the generated route tree.
+        const entries: SitemapEntry[] = collectStaticRoutes().map((path) => ({
+          path,
+          ...hintsFor(path),
+        }));
 
-        // Add public class showcase pages dynamically
+        // 2. Dynamic content — one entry per published row that maps to a $param route.
         try {
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
           const { data } = await supabaseAdmin
@@ -87,7 +135,9 @@ export const Route = createFileRoute("/sitemap.xml")({
         return new Response(xml, {
           headers: {
             "Content-Type": "application/xml",
-            "Cache-Control": "public, max-age=3600",
+            // Short TTL so new routes or newly-published classes show up within
+            // ~5 minutes without waiting for a redeploy.
+            "Cache-Control": "public, max-age=300, s-maxage=300",
           },
         });
       },
