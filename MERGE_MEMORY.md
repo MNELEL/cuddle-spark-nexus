@@ -73,7 +73,7 @@
 
 ---
 
-## 2. הפער האמיתי היחיד שאומת כחסר: Task Automation בצד שרת
+## 2. Task Automation בצד שרת — ✅ הושלם ב-23/7
 
 נבדק בקפידה, כולל קריאה מלאה של `crm-tab.tsx`:
 - **יש** מערכת תזכורות מלאה בממשק (`RemindersPanel` בתוך `crm-tab.tsx`) — `listReminders`/`upsertReminder`/`toggleReminderDone`/`deleteReminder`, עם תאריך יעד, סימון "בוצע", והדגשת "overdue" (חישוב `new Date(due_date) < today` **בצד לקוח בלבד**, ברגע הרינדור).
@@ -82,13 +82,13 @@
 
 **מסקנה מדויקת יותר מאשר קודם:** זה לא "אין תזכורות" — יש תזכורות ידניות מלאות ומנוהלות היטב. **הפער הספציפי הוא רק באוטומציה: אין שום מנגנון שיוזם משהו בלי שהמורה יפתח את האפליקציה** (למשל: שליחת מייל/פוש כשמשימה עברה את תאריך היעד, או תזכורת יומית אוטומטית). זהו הפריט האחרון שבאמת נשאר לסגור.
 
-### מה נדרש בפועל כדי לסגור את זה ב-Lovable/Cloudflare:
-1. הוספת `triggers.crons` ל-`wrangler.jsonc` (לדוגמה: ריצה יומית ב-06:00).
-2. handler בתוך `src/server.ts` (או קובץ ייעודי) שמטפל ב-`scheduled` event של Cloudflare Worker.
-3. לוגיקה מותאמת מ-`classflow/base44/functions/checkOverdueTasks/entry.ts` (בדיקת עומס יתר) ו-`dailyTaskReminder/entry.ts` — יש להמיר מ-Deno (Base44) ל-Cloudflare Workers syntax, אך הלוגיקה העסקית (דדופ, ישות `OverdueAlert`, חישוב ימי איחור) ניתנת להעברה ישירה.
-4. טבלת Supabase מקבילה ל-`Task`/`SentReminder`/`OverdueAlert` (יש לבדוק אם `students.functions.ts`/`tracking.functions.ts` הקיימים כבר מכילים ישות `tasks` — טרם אומת).
-
-**סטטוס: לא הועבר. זו משימת המיזוג הבאה עם העדיפות הגבוהה ביותר.**
+### מה בוצע בפועל (23 ביולי 2026)
+- `wrangler.jsonc`: נוסף `triggers.crons` — ריצה יומית ב-03:00 UTC (≈06:00 בישראל).
+- `src/server.ts`: נוסף `scheduled` handler (Cloudflare Workers), קורא ל-`checkOverdueReminders()`, ללא שינוי ב-`fetch` handler הקיים.
+- `src/lib/reminder-alerts.server.ts` (קובץ חדש): מוצא reminders עם `completed=false` ו-`due_date <= today`, מסנן דרך טבלת דדופ, מקבץ לפי מורה (`classes.owner_id`), שולף אימייל דרך `supabaseAdmin.auth.admin.getUserById`, ושולח דיגסט אחד למורה (לא מייל נפרד לכל תזכורת). כשל אצל מורה אחד לא עוצר את הריצה עבור השאר.
+- מיגרציית Supabase חדשה: טבלת `sent_reminder_alerts` (unique על `reminder_id`) — מונעת שליחה כפולה של אותה תזכורת. הורצה בפועל על ה-DB, ו-`types.ts` התעדכן אוטומטית.
+- **מגבלה ידועה שנשארה בכוונה**: אין עדיין ספק מייל מחובר לפרויקט (לא Resend/SendGrid). לכן `sendReminderDigestEmail` כרגע רק כותב ל-console.log מה היה נשלח, ועדיין רושם ל-`sent_reminder_alerts` כדי שכל שרשרת הלוגיקה (dedup כולל) תהיה ניתנת לבדיקה מקצה לקצה. יש TODO ברור בקוד בשם `TODO(email-provider)`. כשיחובר ספק מייל, צריך להחליף רק את גוף הפונקציה הזו.
+- אומת ישירות מול קבצי הפרויקט ב-Lovable (לא רק תיאורטית) שכל הקבצים נמצאים במקום הנכון ושה-typecheck עובר נקי.
 
 ---
 
