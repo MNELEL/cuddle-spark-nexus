@@ -152,6 +152,16 @@ function Article() {
             </Link>
           </div>
 
+          <div className="mt-6 rounded-2xl border border-primary/40 bg-primary/5 p-6">
+            <p className="text-sm text-muted-foreground">רוצה גרסת PDF להדפסה עם שם המוסד שלך?</p>
+            <Link
+              to="/blog/classroom-management-strategies/checklist"
+              className="mt-2 inline-block text-base font-semibold text-primary hover:underline"
+            >
+              הורד צ'קליסט מודפס (PDF) ←
+            </Link>
+          </div>
+
           <h2 className="!mt-12">מדריכים משלימים</h2>
           <ul className="mt-4 list-disc pr-4">
             <li><Link to="/blog/progress-tracking-guide" className="text-primary hover:underline">מעקב התקדמות תלמידים — מדריך מלא</Link></li>

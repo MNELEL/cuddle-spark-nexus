@@ -42,6 +42,7 @@ import { Route as AuthenticatedResourcesRouteImport } from './routes/_authentica
 import { Route as AuthenticatedQuestionsRouteImport } from './routes/_authenticated.questions'
 import { Route as AuthenticatedIngestRouteImport } from './routes/_authenticated.ingest'
 import { Route as AuthenticatedClassesIndexRouteImport } from './routes/_authenticated.classes.index'
+import { Route as BlogClassroomManagementStrategiesChecklistRouteImport } from './routes/blog.classroom-management-strategies.checklist'
 import { Route as AuthenticatedShareClassIdRouteImport } from './routes/_authenticated.share.$classId'
 import { Route as AuthenticatedSettingsBrandRouteImport } from './routes/_authenticated.settings.brand'
 import { Route as AuthenticatedResourcesResourceIdRouteImport } from './routes/_authenticated.resources.$resourceId'
@@ -225,6 +226,12 @@ const AuthenticatedClassesIndexRoute =
     path: '/classes/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const BlogClassroomManagementStrategiesChecklistRoute =
+  BlogClassroomManagementStrategiesChecklistRouteImport.update({
+    id: '/checklist',
+    path: '/checklist',
+    getParentRoute: () => BlogClassroomManagementStrategiesRoute,
+  } as any)
 const AuthenticatedShareClassIdRoute =
   AuthenticatedShareClassIdRouteImport.update({
     id: '/share/$classId',
@@ -313,7 +320,7 @@ export interface FileRoutesByFullPath {
   '/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/sound-board': typeof AuthenticatedSoundBoardRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
-  '/blog/classroom-management-strategies': typeof BlogClassroomManagementStrategiesRoute
+  '/blog/classroom-management-strategies': typeof BlogClassroomManagementStrategiesRouteWithChildren
   '/blog/classroom-tools-teachers': typeof BlogClassroomToolsTeachersRoute
   '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
   '/blog/free-tools-comparison': typeof BlogFreeToolsComparisonRoute
@@ -341,6 +348,7 @@ export interface FileRoutesByFullPath {
   '/resources/$resourceId': typeof AuthenticatedResourcesResourceIdRoute
   '/settings/brand': typeof AuthenticatedSettingsBrandRoute
   '/share/$classId': typeof AuthenticatedShareClassIdRoute
+  '/blog/classroom-management-strategies/checklist': typeof BlogClassroomManagementStrategiesChecklistRoute
   '/classes/': typeof AuthenticatedClassesIndexRoute
   '/classes/$classId/display': typeof AuthenticatedClassesClassIdDisplayRoute
 }
@@ -356,7 +364,7 @@ export interface FileRoutesByTo {
   '/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/sound-board': typeof AuthenticatedSoundBoardRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
-  '/blog/classroom-management-strategies': typeof BlogClassroomManagementStrategiesRoute
+  '/blog/classroom-management-strategies': typeof BlogClassroomManagementStrategiesRouteWithChildren
   '/blog/classroom-tools-teachers': typeof BlogClassroomToolsTeachersRoute
   '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
   '/blog/free-tools-comparison': typeof BlogFreeToolsComparisonRoute
@@ -384,6 +392,7 @@ export interface FileRoutesByTo {
   '/resources/$resourceId': typeof AuthenticatedResourcesResourceIdRoute
   '/settings/brand': typeof AuthenticatedSettingsBrandRoute
   '/share/$classId': typeof AuthenticatedShareClassIdRoute
+  '/blog/classroom-management-strategies/checklist': typeof BlogClassroomManagementStrategiesChecklistRoute
   '/classes': typeof AuthenticatedClassesIndexRoute
   '/classes/$classId/display': typeof AuthenticatedClassesClassIdDisplayRoute
 }
@@ -404,7 +413,7 @@ export interface FileRoutesById {
   '/_authenticated/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/_authenticated/sound-board': typeof AuthenticatedSoundBoardRoute
   '/_authenticated/toolkit': typeof AuthenticatedToolkitRoute
-  '/blog/classroom-management-strategies': typeof BlogClassroomManagementStrategiesRoute
+  '/blog/classroom-management-strategies': typeof BlogClassroomManagementStrategiesRouteWithChildren
   '/blog/classroom-tools-teachers': typeof BlogClassroomToolsTeachersRoute
   '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
   '/blog/free-tools-comparison': typeof BlogFreeToolsComparisonRoute
@@ -432,6 +441,7 @@ export interface FileRoutesById {
   '/_authenticated/resources/$resourceId': typeof AuthenticatedResourcesResourceIdRoute
   '/_authenticated/settings/brand': typeof AuthenticatedSettingsBrandRoute
   '/_authenticated/share/$classId': typeof AuthenticatedShareClassIdRoute
+  '/blog/classroom-management-strategies/checklist': typeof BlogClassroomManagementStrategiesChecklistRoute
   '/_authenticated/classes/': typeof AuthenticatedClassesIndexRoute
   '/_authenticated/classes/$classId/display': typeof AuthenticatedClassesClassIdDisplayRoute
 }
@@ -480,6 +490,7 @@ export interface FileRouteTypes {
     | '/resources/$resourceId'
     | '/settings/brand'
     | '/share/$classId'
+    | '/blog/classroom-management-strategies/checklist'
     | '/classes/'
     | '/classes/$classId/display'
   fileRoutesByTo: FileRoutesByTo
@@ -523,6 +534,7 @@ export interface FileRouteTypes {
     | '/resources/$resourceId'
     | '/settings/brand'
     | '/share/$classId'
+    | '/blog/classroom-management-strategies/checklist'
     | '/classes'
     | '/classes/$classId/display'
   id:
@@ -570,6 +582,7 @@ export interface FileRouteTypes {
     | '/_authenticated/resources/$resourceId'
     | '/_authenticated/settings/brand'
     | '/_authenticated/share/$classId'
+    | '/blog/classroom-management-strategies/checklist'
     | '/_authenticated/classes/'
     | '/_authenticated/classes/$classId/display'
   fileRoutesById: FileRoutesById
@@ -823,6 +836,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClassesIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/blog/classroom-management-strategies/checklist': {
+      id: '/blog/classroom-management-strategies/checklist'
+      path: '/checklist'
+      fullPath: '/blog/classroom-management-strategies/checklist'
+      preLoaderRoute: typeof BlogClassroomManagementStrategiesChecklistRouteImport
+      parentRoute: typeof BlogClassroomManagementStrategiesRoute
+    }
     '/_authenticated/share/$classId': {
       id: '/_authenticated/share/$classId'
       path: '/share/$classId'
@@ -983,8 +1003,23 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
 
+interface BlogClassroomManagementStrategiesRouteChildren {
+  BlogClassroomManagementStrategiesChecklistRoute: typeof BlogClassroomManagementStrategiesChecklistRoute
+}
+
+const BlogClassroomManagementStrategiesRouteChildren: BlogClassroomManagementStrategiesRouteChildren =
+  {
+    BlogClassroomManagementStrategiesChecklistRoute:
+      BlogClassroomManagementStrategiesChecklistRoute,
+  }
+
+const BlogClassroomManagementStrategiesRouteWithChildren =
+  BlogClassroomManagementStrategiesRoute._addFileChildren(
+    BlogClassroomManagementStrategiesRouteChildren,
+  )
+
 interface BlogRouteChildren {
-  BlogClassroomManagementStrategiesRoute: typeof BlogClassroomManagementStrategiesRoute
+  BlogClassroomManagementStrategiesRoute: typeof BlogClassroomManagementStrategiesRouteWithChildren
   BlogClassroomToolsTeachersRoute: typeof BlogClassroomToolsTeachersRoute
   BlogDigitalHallPassGuideRoute: typeof BlogDigitalHallPassGuideRoute
   BlogFreeToolsComparisonRoute: typeof BlogFreeToolsComparisonRoute
@@ -995,7 +1030,7 @@ interface BlogRouteChildren {
 
 const BlogRouteChildren: BlogRouteChildren = {
   BlogClassroomManagementStrategiesRoute:
-    BlogClassroomManagementStrategiesRoute,
+    BlogClassroomManagementStrategiesRouteWithChildren,
   BlogClassroomToolsTeachersRoute: BlogClassroomToolsTeachersRoute,
   BlogDigitalHallPassGuideRoute: BlogDigitalHallPassGuideRoute,
   BlogFreeToolsComparisonRoute: BlogFreeToolsComparisonRoute,
