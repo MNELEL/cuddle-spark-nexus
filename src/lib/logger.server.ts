@@ -53,7 +53,7 @@ export async function logEvent(input: LogEventInput): Promise<void> {
     const { error } = await supabaseAdmin.from("app_logs").insert({
       level,
       message,
-      context: context ?? null,
+      context: (context ?? null) as never,
       source: source ?? null,
       user_id: userId ?? null,
     });
