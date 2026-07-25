@@ -33,3 +33,18 @@ SSR boot errors). Keep them in lockstep with the pinned baselines below.
 
 The versions in the table above are the current known-good baseline verified
 against Lovable Cloud (Cloudflare Worker SSR runtime) with `nodejs_compat`.
+
+### Automated updates (Dependabot)
+
+Dependency PRs are proposed by Dependabot (`.github/dependabot.yml`) under
+rules that mirror this document:
+
+- The entire router stack (`react-start`, `react-router`, `router-plugin`,
+  `router-core`, `react-router-devtools`, `start-*`, `server-*`) is bumped
+  in **one grouped PR** so versions can never drift apart.
+- `@tanstack/react-query` gets its own PR (independent per rule 4).
+- Major bumps of any router-stack package are **ignored** — do them by hand
+  per the upgrade rules above.
+- Every PR runs the CI workflow (`.github/workflows/ci.yml`):
+  `bun run check:tanstack` → `tsgo --noEmit` → `bun run build`. A PR that
+  breaks the compatibility rules fails CI and cannot be merged.
