@@ -7,7 +7,7 @@ const CACHE_NAME = "classalign-pdf-fonts-v1";
 // In-memory base64 cache (survives all downloads within a session).
 const fontCache: Record<string, string> = {};
 // De-dupe concurrent loads so parallel PDFs share one fetch/decode.
-const fontInflight: Record<string, Promise<string>> = {};
+const fontInflight: Record<string, Promise<string> | undefined> = {};
 
 function bytesToBase64(buf: ArrayBuffer): string {
   let bin = "";
@@ -21,8 +21,9 @@ function bytesToBase64(buf: ArrayBuffer): string {
 
 async function loadFontBase64(url: string): Promise<string> {
   if (fontCache[url]) return fontCache[url];
-  if (fontInflight[url]) return fontInflight[url];
-  fontInflight[url] = (async () => {
+  const existing = fontInflight[url];
+  if (existing) return existing;
+  const p = (async () => {
     // Prefer Cache Storage (persists across reloads) then fall back to fetch.
     try {
       if (typeof caches !== "undefined") {
@@ -45,8 +46,9 @@ async function loadFontBase64(url: string): Promise<string> {
     fontCache[url] = b64;
     return b64;
   })();
+  fontInflight[url] = p;
   try {
-    return await fontInflight[url];
+    return await p;
   } finally {
     delete fontInflight[url];
   }
