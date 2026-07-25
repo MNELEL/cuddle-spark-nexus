@@ -243,9 +243,27 @@ function ChecklistPage() {
               />
             </div>
             {errorMsg && <p className="text-sm text-destructive">{errorMsg}</p>}
+            {/* Honeypot — hidden from users, bots fill it and get rejected. */}
+            <div aria-hidden="true" style={{ position: "absolute", left: "-10000px", width: 1, height: 1, overflow: "hidden" }}>
+              <label>
+                אל תמלא שדה זה
+                <input
+                  type="text"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  value={honeypot}
+                  onChange={(e) => setHoneypot(e.target.value)}
+                />
+              </label>
+            </div>
+            {hcaptchaSiteKey && (
+              <div className="flex justify-center pt-2">
+                <div id="hcaptcha-slot" />
+              </div>
+            )}
             <button
               type="submit"
-              disabled={status === "loading"}
+              disabled={status === "loading" || (!!hcaptchaSiteKey && !hcaptchaToken)}
               className="w-full rounded-lg bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50"
             >
               {status === "loading" ? "מכין את ה-PDF..." : "הורד צ'קליסט (PDF)"}
