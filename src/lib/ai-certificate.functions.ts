@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { callLovableAI } from "./ai-gateway.server";
 
 export type CertOcrSubject = {
   subject: string;
@@ -36,9 +37,6 @@ export const analyzeCertificatePhoto = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => inputSchema.parse(d))
   .handler(async ({ data }): Promise<CertOcrResult> => {
-    const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) throw new Error("חסר LOVABLE_API_KEY");
-
     const system = `אתה מזהה תעודות מודפסות של תלמידי תלמוד תורה / ישיבות / בתי ספר בעברית.
 חלץ בקפדנות: שם התלמיד, שם הכיתה, שם המוסד, תקופה, ומקצועות עם הערכה מילולית או אחוז.
 התאם הערכה מילולית ל־6 התוויות: "מצוין", "טוב מאוד", "כמעט טוב מאוד", "טוב", "כמעט טוב", "להשתדל יותר".
@@ -48,35 +46,19 @@ summary הוא תיאור טקסטואלי של 2-3 משפטים למה שזוה
 החזר JSON בלבד:
 {"studentName":"","className":"","period":"","schoolName":"","subjects":[{"subject":"","label":"","percent":0,"note":""}],"conduct":"","diligence":"","manners":"","teacherNote":"","principalNote":"","summary":""}`;
 
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Lovable-API-Key": apiKey,
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: system },
-          {
-            role: "user",
-            content: [
-              { type: "text", text: "זוהי תמונה של תעודה. חלץ את הנתונים." },
-              { type: "image_url", image_url: { url: `data:${data.mimeType};base64,${data.imageBase64}` } },
-            ],
-          },
-        ],
-        response_format: { type: "json_object" },
-      }),
-    });
-    if (resp.status === 429) throw new Error("חרגת ממכסת AI. נסה שוב בעוד דקה.");
-    if (resp.status === 402) throw new Error("נגמרו קרדיטים ב-Lovable AI.");
-    if (!resp.ok) {
-      console.error("[cert-ocr]", resp.status, await resp.text().catch(() => ""));
-      throw new Error("זיהוי התעודה נכשל.");
-    }
-    const j = (await resp.json()) as { choices?: { message?: { content?: string } }[] };
-    const raw = j.choices?.[0]?.message?.content ?? "{}";
+    const raw = (await callLovableAI({
+      messages: [
+        { role: "system", content: system },
+        {
+          role: "user",
+          content: [
+            { type: "text", text: "זוהי תמונה של תעודה. חלץ את הנתונים." },
+            { type: "image_url", image_url: { url: `data:${data.mimeType};base64,${data.imageBase64}` } },
+          ],
+        },
+      ],
+      jsonResponse: true,
+    })) || "{}";
     let p: Partial<CertOcrResult> = {};
     try { p = JSON.parse(raw); } catch { /* ignore */ }
     return {
