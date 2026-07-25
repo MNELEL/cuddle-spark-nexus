@@ -3,21 +3,69 @@ import autoTable, { type UserOptions } from "jspdf-autotable";
 
 const FONT_REGULAR_URL = "/fonts/Heebo-Regular.ttf";
 const FONT_BOLD_URL = "/fonts/Heebo-Bold.ttf";
+const CACHE_NAME = "classalign-pdf-fonts-v1";
+// In-memory base64 cache (survives all downloads within a session).
 const fontCache: Record<string, string> = {};
+// De-dupe concurrent loads so parallel PDFs share one fetch/decode.
+const fontInflight: Record<string, Promise<string>> = {};
 
-async function loadFontBase64(url: string): Promise<string> {
-  if (fontCache[url]) return fontCache[url];
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("טעינת הפונט נכשלה");
-  const buf = await res.arrayBuffer();
+function bytesToBase64(buf: ArrayBuffer): string {
   let bin = "";
   const bytes = new Uint8Array(buf);
   const chunk = 0x8000;
   for (let i = 0; i < bytes.length; i += chunk) {
     bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
   }
-  fontCache[url] = btoa(bin);
-  return fontCache[url];
+  return btoa(bin);
+}
+
+async function loadFontBase64(url: string): Promise<string> {
+  if (fontCache[url]) return fontCache[url];
+  if (fontInflight[url]) return fontInflight[url];
+  fontInflight[url] = (async () => {
+    // Prefer Cache Storage (persists across reloads) then fall back to fetch.
+    try {
+      if (typeof caches !== "undefined") {
+        const cache = await caches.open(CACHE_NAME);
+        let res = await cache.match(url);
+        if (!res) {
+          const fresh = await fetch(url, { cache: "force-cache" });
+          if (!fresh.ok) throw new Error("טעינת הפונט נכשלה");
+          cache.put(url, fresh.clone()).catch(() => { /* quota — ignore */ });
+          res = fresh;
+        }
+        const b64 = bytesToBase64(await res.arrayBuffer());
+        fontCache[url] = b64;
+        return b64;
+      }
+    } catch { /* fall through to plain fetch */ }
+    const res = await fetch(url, { cache: "force-cache" });
+    if (!res.ok) throw new Error("טעינת הפונט נכשלה");
+    const b64 = bytesToBase64(await res.arrayBuffer());
+    fontCache[url] = b64;
+    return b64;
+  })();
+  try {
+    return await fontInflight[url];
+  } finally {
+    delete fontInflight[url];
+  }
+}
+
+/**
+ * Prewarm PDF fonts so the first download is instant.
+ * Safe to call multiple times; no-ops on the server.
+ */
+export function prewarmPdfAssets(): void {
+  if (typeof window === "undefined") return;
+  const kick = () => {
+    void loadFontBase64(FONT_REGULAR_URL).catch(() => {});
+    void loadFontBase64(FONT_BOLD_URL).catch(() => {});
+  };
+  const ric = (window as unknown as { requestIdleCallback?: (cb: () => void) => void })
+    .requestIdleCallback;
+  if (typeof ric === "function") ric(kick);
+  else setTimeout(kick, 0);
 }
 
 export const SLATE: [number, number, number] = [15, 23, 42];
