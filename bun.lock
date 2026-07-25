@@ -91,6 +91,7 @@
   },
   "overrides": {
     "js-yaml": "^4.3.0",
+    "seroval": "^1.5.3",
   },
   "packages": {
     "@babel/code-frame": ["@babel/code-frame@7.29.0", "", { "dependencies": { "@babel/helper-validator-identifier": "^7.28.5", "js-tokens": "^4.0.0", "picocolors": "^1.1.1" } }, "sha512-9NhCeYjq9+3uxgdtp20LSiJXJvN0FeCtNGpJxuMFZ1Kv3cWUNb6DOhJwUvcVCzKGR66cw4njwM6hrJLqgOwbcw=="],
@@ -1397,13 +1398,9 @@
 
     "@tanstack/router-generator/@tanstack/router-core/@tanstack/history": ["@tanstack/history@1.161.6", "", {}, "sha512-NaOGLRrddszbQj9upGat6HG/4TKvXLvu+osAIgfxPYA+eIvYKv8GKDJOrY2D3/U9MRnKfMWD7bU4jeD4xmqyIg=="],
 
-    "@tanstack/router-generator/@tanstack/router-core/seroval": ["seroval@1.5.2", "", {}, "sha512-xcRN39BdsnO9Tf+VzsE7b3JyTJASItIV1FVFewJKCFcW4s4haIKS3e6vj8PGB9qBwC7tnuOywQMdv5N4qkzi7Q=="],
-
     "@tanstack/router-generator/@tanstack/router-core/seroval-plugins": ["seroval-plugins@1.5.2", "", { "peerDependencies": { "seroval": "^1.0" } }, "sha512-qpY0Cl+fKYFn4GOf3cMiq6l72CpuVaawb6ILjubOQ+diJ54LfOWaSSPsaswN8DRPIPW4Yq+tE1k5aKd7ILyaFg=="],
 
     "@tanstack/router-plugin/@tanstack/router-core/@tanstack/history": ["@tanstack/history@1.161.6", "", {}, "sha512-NaOGLRrddszbQj9upGat6HG/4TKvXLvu+osAIgfxPYA+eIvYKv8GKDJOrY2D3/U9MRnKfMWD7bU4jeD4xmqyIg=="],
-
-    "@tanstack/router-plugin/@tanstack/router-core/seroval": ["seroval@1.5.2", "", {}, "sha512-xcRN39BdsnO9Tf+VzsE7b3JyTJASItIV1FVFewJKCFcW4s4haIKS3e6vj8PGB9qBwC7tnuOywQMdv5N4qkzi7Q=="],
 
     "@tanstack/router-plugin/@tanstack/router-core/seroval-plugins": ["seroval-plugins@1.5.2", "", { "peerDependencies": { "seroval": "^1.0" } }, "sha512-qpY0Cl+fKYFn4GOf3cMiq6l72CpuVaawb6ILjubOQ+diJ54LfOWaSSPsaswN8DRPIPW4Yq+tE1k5aKd7ILyaFg=="],
 

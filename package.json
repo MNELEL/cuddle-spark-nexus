@@ -95,9 +95,11 @@
     "vite": "^7.3.1"
   },
   "overrides": {
-    "js-yaml": "^4.3.0"
+    "js-yaml": "^4.3.0",
+    "seroval": "^1.5.3"
   },
   "resolutions": {
-    "js-yaml": "^4.3.0"
+    "js-yaml": "^4.3.0",
+    "seroval": "^1.5.3"
   }
 }
