@@ -10,7 +10,7 @@ type Article = {
   faq?: { q: string; a: string }[];
 };
 
-const ARTICLES: Record<string, Article> = {
+export const ARTICLES: Record<string, Article> = {
   "setup-grade-tracking": {
     title: "איך להגדיר מעקב ציונים בכיתה שלך",
     description:
