@@ -2,12 +2,18 @@
 /**
  * Guardrails against @tanstack/* version drift.
  *
- * Past incident: bumping @tanstack/react-start without matching
- * @tanstack/react-router broke the build with
- *   "getScriptPreloadAttrs" is not exported by "@tanstack/router-core".
+ * Past incident: @tanstack/react-start was bumped past @tanstack/react-router,
+ * and the transitive @tanstack/router-core no longer exported
+ * `getScriptPreloadAttrs`, breaking the build with a cryptic type error.
  *
- * This script fails CI when the installed minor versions of the coupled
- * @tanstack/* packages do not match. Run via `bun run check:tanstack`.
+ * Rule enforced here: `@tanstack/router-core` and `@tanstack/react-router`
+ * must be at the SAME OR HIGHER minor than `@tanstack/react-start`. The
+ * broken case is router-core lagging behind react-start.
+ *
+ * Also warns (non-fatal) when any coupled @tanstack/* packages disagree on
+ * minor, so drift shows up in CI logs before it becomes a build failure.
+ *
+ * Run via `bun run check:tanstack`.
  */
 import { readFileSync, existsSync } from "node:fs";
 import { resolve, dirname } from "node:path";
@@ -15,8 +21,6 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
-// These packages MUST share the same minor version. TanStack ships them in
-// lockstep and mixing minors reintroduces the router-core export mismatch.
 const COUPLED = [
   "@tanstack/react-start",
   "@tanstack/react-router",
@@ -35,40 +39,64 @@ function readInstalledVersion(pkg) {
   }
 }
 
-function minor(v) {
+function parseMinor(v) {
   const m = /^(\d+)\.(\d+)\./.exec(v ?? "");
-  return m ? `${m[1]}.${m[2]}` : null;
+  return m ? { major: Number(m[1]), minor: Number(m[2]), label: `${m[1]}.${m[2]}` } : null;
 }
 
-const rows = COUPLED.map((name) => {
-  const version = readInstalledVersion(name);
-  return { name, version, minor: minor(version) };
-}).filter((r) => r.version !== null);
-
-if (rows.length === 0) {
-  console.error(
-    "[check-tanstack-versions] No @tanstack/* packages found in node_modules. Did you run `bun install`?",
-  );
-  process.exit(1);
+function cmp(a, b) {
+  if (a.major !== b.major) return a.major - b.major;
+  return a.minor - b.minor;
 }
 
-const uniqueMinors = [...new Set(rows.map((r) => r.minor))];
+const versions = Object.fromEntries(
+  COUPLED.map((name) => [name, readInstalledVersion(name)]),
+);
 
 console.log("[check-tanstack-versions] Installed versions:");
-for (const r of rows) console.log(`  - ${r.name}@${r.version}`);
+for (const name of COUPLED) console.log(`  - ${name}@${versions[name] ?? "<missing>"}`);
 
-if (uniqueMinors.length > 1) {
-  console.error("\n[check-tanstack-versions] FAIL: minor version drift detected.");
+const start = parseMinor(versions["@tanstack/react-start"]);
+const router = parseMinor(versions["@tanstack/react-router"]);
+const core = parseMinor(versions["@tanstack/router-core"]);
+
+if (!start || !router || !core) {
   console.error(
-    "The following @tanstack/* packages must share the same major.minor version:",
-  );
-  for (const r of rows) console.error(`  - ${r.name}@${r.version} (minor ${r.minor})`);
-  console.error(
-    "\nAlign the versions in package.json (see README.md > TanStack version policy) and re-run `bun install`.",
+    "\n[check-tanstack-versions] FAIL: could not read installed versions for react-start / react-router / router-core. Did `bun install` run?",
   );
   process.exit(1);
 }
 
-console.log(
-  `\n[check-tanstack-versions] OK — all coupled @tanstack/* packages on minor ${uniqueMinors[0]}.`,
+const failures = [];
+if (cmp(core, start) < 0) {
+  failures.push(
+    `@tanstack/router-core@${versions["@tanstack/router-core"]} is older than @tanstack/react-start@${versions["@tanstack/react-start"]}. ` +
+      `react-start relies on router-core exports that only exist in matching or newer versions — the build will fail with a missing-export error.`,
+  );
+}
+if (cmp(router, start) < 0) {
+  failures.push(
+    `@tanstack/react-router@${versions["@tanstack/react-router"]} is older than @tanstack/react-start@${versions["@tanstack/react-start"]}. ` +
+      `Bump @tanstack/react-router to at least ${start.label}.x in package.json.`,
+  );
+}
+
+if (failures.length > 0) {
+  console.error("\n[check-tanstack-versions] FAIL:");
+  for (const f of failures) console.error(`  • ${f}`);
+  console.error(
+    "\nSee README.md > TanStack version policy. Align versions in package.json and re-run `bun install`.",
+  );
+  process.exit(1);
+}
+
+const minors = new Set(
+  COUPLED.map((n) => parseMinor(versions[n])?.label).filter(Boolean),
 );
+if (minors.size > 1) {
+  console.warn(
+    `\n[check-tanstack-versions] WARN: coupled @tanstack/* packages span multiple minors (${[...minors].join(", ")}). Build is currently compatible but drift is likely — consider aligning.`,
+  );
+}
+
+console.log("\n[check-tanstack-versions] OK — router-core/react-router satisfy react-start.");
