@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { buildStyleContextString } from "./teacher-style.functions";
+import { callLovableAI } from "./ai-gateway.server";
 
 const uuid = z.string().uuid();
 
@@ -74,9 +75,6 @@ export const generateQuizFromBulletin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ bulletin_id: uuid }).parse(d))
   .handler(async ({ data, context }) => {
-    const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) throw new Error("חסר LOVABLE_API_KEY");
-
     const { data: b } = await context.supabase
       .from("weekly_bulletins").select("title,study_points,digest_summary,start_date,end_date,class_id")
       .eq("id", data.bulletin_id).maybeSingle();
@@ -93,28 +91,12 @@ export const generateQuizFromBulletin = createServerFn({ method: "POST" })
 
     const user = `כותרת העלון: ${bul.title}\nסיכום השבוע:\n${bul.digest_summary}\nנקודות לימוד:\n${(bul.study_points ?? []).map((p, i) => `${i + 1}. ${p}`).join("\n")}`;
 
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Lovable-API-Key": apiKey,
-        "X-Lovable-AIG-SDK": "fetch",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [{ role: "system", content: system }, { role: "user", content: user }],
-        response_format: { type: "json_object" },
-      }),
+    const rawContent = await callLovableAI({
+      messages: [{ role: "system", content: system }, { role: "user", content: user }],
+      jsonResponse: true,
     });
-    if (resp.status === 429) throw new Error("חרגת ממכסת AI.");
-    if (resp.status === 402) throw new Error("נגמרו קרדיטים.");
-    if (!resp.ok) {
-      console.error("[AI]", resp.status, await resp.text().catch(() => ""));
-      throw new Error("היצירה נכשלה.");
-    }
-    const j = (await resp.json()) as { choices?: { message?: { content?: string } }[] };
     let parsed: { title?: string; description?: string; questions?: { q?: string; a?: string }[] } = {};
-    try { parsed = JSON.parse(j.choices?.[0]?.message?.content ?? "{}"); } catch { /* */ }
+    try { parsed = JSON.parse(rawContent || "{}"); } catch { /* */ }
 
     const content = {
       body: bul.digest_summary.slice(0, 2000),
