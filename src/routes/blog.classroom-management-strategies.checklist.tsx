@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { submitChecklistLead } from "@/lib/checklist-leads.functions";
+import { getAntiSpamConfig } from "@/lib/anti-spam-config.functions";
 import { generateClassroomManagementChecklistPdf } from "@/lib/pdf/classroom-management-checklist-pdf";
 
 const URL = "https://cuddle-spark-nexus.lovable.app/blog/classroom-management-strategies/checklist";
@@ -36,15 +37,79 @@ const ROLES: { value: Role; label: string }[] = [
 
 function ChecklistPage() {
   const submit = useServerFn(submitChecklistLead);
+  const loadConfig = useServerFn(getAntiSpamConfig);
   const [fullName, setFullName] = useState("");
   const [institution, setInstitution] = useState("");
   const [role, setRole] = useState<Role>("melamed");
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
+  const [honeypot, setHoneypot] = useState("");
+  const [hcaptchaSiteKey, setHcaptchaSiteKey] = useState<string>("");
+  const [hcaptchaToken, setHcaptchaToken] = useState<string>("");
+  const mountedAtRef = useRef<number>(Date.now());
+  const widgetIdRef = useRef<string | null>(null);
+
+  // Load site key + arm timing baseline on mount.
+  useEffect(() => {
+    mountedAtRef.current = Date.now();
+    loadConfig()
+      .then((cfg) => setHcaptchaSiteKey(cfg.hcaptchaSiteKey))
+      .catch(() => setHcaptchaSiteKey(""));
+  }, [loadConfig]);
+
+  // Inject the hCaptcha script + render the widget when a site key is present.
+  useEffect(() => {
+    if (!hcaptchaSiteKey || typeof window === "undefined") return;
+    const w = window as unknown as {
+      hcaptcha?: {
+        render: (el: HTMLElement, opts: Record<string, unknown>) => string;
+        reset: (id?: string) => void;
+      };
+    };
+    let cancelled = false;
+    function renderWidget() {
+      if (cancelled) return;
+      const el = document.getElementById("hcaptcha-slot");
+      if (!el || !w.hcaptcha || widgetIdRef.current) return;
+      widgetIdRef.current = w.hcaptcha.render(el, {
+        sitekey: hcaptchaSiteKey,
+        callback: (t: string) => setHcaptchaToken(t),
+        "expired-callback": () => setHcaptchaToken(""),
+        "error-callback": () => setHcaptchaToken(""),
+      });
+    }
+    if (w.hcaptcha) {
+      renderWidget();
+    } else if (!document.getElementById("hcaptcha-script")) {
+      const s = document.createElement("script");
+      s.id = "hcaptcha-script";
+      s.src = "https://js.hcaptcha.com/1/api.js?render=explicit";
+      s.async = true;
+      s.defer = true;
+      s.onload = renderWidget;
+      document.head.appendChild(s);
+    } else {
+      const iv = window.setInterval(() => {
+        if (w.hcaptcha) {
+          window.clearInterval(iv);
+          renderWidget();
+        }
+      }, 200);
+      window.setTimeout(() => window.clearInterval(iv), 10000);
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [hcaptchaSiteKey]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (hcaptchaSiteKey && !hcaptchaToken) {
+      setErrorMsg("אנא השלם את אימות ה-CAPTCHA לפני השליחה.");
+      setStatus("error");
+      return;
+    }
     setStatus("loading");
     setErrorMsg("");
     try {
@@ -56,6 +121,9 @@ function ChecklistPage() {
           email: email.trim(),
           checklist_slug: "classroom-management-strategies",
           user_agent: typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 500) : "",
+          honeypot,
+          elapsed_ms: Date.now() - mountedAtRef.current,
+          hcaptcha_token: hcaptchaToken,
         },
       });
       await generateClassroomManagementChecklistPdf({
@@ -67,6 +135,12 @@ function ChecklistPage() {
       console.error(err);
       setErrorMsg(err instanceof Error ? err.message : "שגיאה. נסה שוב.");
       setStatus("error");
+      // Reset captcha so the user can try again
+      const w = window as unknown as { hcaptcha?: { reset: (id?: string) => void } };
+      if (w.hcaptcha && widgetIdRef.current) {
+        w.hcaptcha.reset(widgetIdRef.current);
+        setHcaptchaToken("");
+      }
     }
   }
 
