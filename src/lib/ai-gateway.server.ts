@@ -45,3 +45,36 @@ export async function callLovableAI(params: CallLovableAIParams): Promise<string
   const json = (await resp.json()) as { choices?: { message?: { content?: string } }[] };
   return json.choices?.[0]?.message?.content ?? "";
 }
+
+/**
+ * Shared Lovable AI Gateway embeddings caller.
+ * Returns `null` on any failure (missing key, HTTP error, malformed response)
+ * to preserve the existing non-throwing embeddings contract.
+ */
+export async function callLovableAIEmbeddings(
+  text: string,
+  model = "openai/text-embedding-3-small",
+): Promise<number[] | null> {
+  const apiKey = process.env.LOVABLE_API_KEY;
+  if (!apiKey || !text.trim()) return null;
+  try {
+    const resp = await fetch("https://ai.gateway.lovable.dev/v1/embeddings", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Lovable-API-Key": apiKey,
+        "X-Lovable-AIG-SDK": "fetch",
+      },
+      body: JSON.stringify({ model, input: text.slice(0, 8000) }),
+    });
+    if (!resp.ok) {
+      console.error("[Embedding Error]", resp.status, await resp.text().catch(() => ""));
+      return null;
+    }
+    const j = (await resp.json()) as { data?: { embedding?: number[] }[] };
+    return j.data?.[0]?.embedding ?? null;
+  } catch (e) {
+    console.error("[Embedding Error]", e);
+    return null;
+  }
+}
