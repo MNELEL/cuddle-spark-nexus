@@ -29,6 +29,7 @@ import {
 import { getPersonalRecommendations, recomputeStyleProfile } from "@/lib/teacher-style.functions";
 import { Wand2 } from "lucide-react";
 import { WeeklyPaceCard } from "@/components/weekly-pace-card";
+import { TopicTreeFilter } from "@/components/topic-tree-filter";
 
 export const Route = createFileRoute("/_authenticated/resources")({
   component: ResourcesPage,
@@ -66,6 +67,7 @@ function ResourcesPage() {
   const listColls = useServerFn(listCollections);
 
   const [filters, setFilters] = useState<Filters>(emptyFilters);
+  const [topicId, setTopicId] = useState<string | null>(null);
   const [editing, setEditing] = useState<Partial<ResourceRow> | null>(null);
   const [aiOpen, setAiOpen] = useState(false);
   const [aiSource, setAiSource] = useState<ResourceRow | null>(null);
@@ -258,8 +260,14 @@ function ResourcesPage() {
           </CardContent>
         </Card>
 
+        <Card className="lg:col-start-1">
+          <CardContent className="pt-4">
+            <TopicTreeFilter value={topicId} onChange={setTopicId} />
+          </CardContent>
+        </Card>
+
         {/* Grid */}
-        <div className="space-y-3">
+        <div className="space-y-3 lg:col-start-2 lg:row-start-1 lg:row-span-2">
           {isLoading && (
             <Card><CardContent className="py-12 text-center text-muted-foreground">
               <Loader2 className="mx-auto mb-2 h-6 w-6 animate-spin" /> טוען חומרים…
@@ -275,7 +283,10 @@ function ResourcesPage() {
             </CardContent></Card>
           )}
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {resources.map((r) => (
+            {(topicId
+              ? resources.filter((r) => (r as unknown as { topic_id: string | null }).topic_id === topicId)
+              : resources
+            ).map((r) => (
               <ResourceCard
                 key={r.id}
                 resource={r}

@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
-import { Download, Upload, History, Save, Trash2, FileSpreadsheet, FileText } from "lucide-react";
+import { Download, Upload, History, Save, Trash2, FileSpreadsheet, FileText, Braces, GraduationCap, CalendarCheck, Library } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { listStudents } from "@/lib/students.functions";
 import { getClass } from "@/lib/classes.functions";
 import { importStudents, listConfigs, saveConfig, loadConfig, deleteConfig } from "@/lib/seating-configs.functions";
+import { exportClassGrades, exportClassAttendance, exportResourcesMeta } from "@/lib/data-export.functions";
 
 type Student = {
   id: string; name: string;
@@ -51,6 +52,9 @@ export function ImportExportBar({ classId }: { classId: string }) {
   const saveCfg = useServerFn(saveConfig);
   const loadCfg = useServerFn(loadConfig);
   const delCfg = useServerFn(deleteConfig);
+  const expGrades = useServerFn(exportClassGrades);
+  const expAtt = useServerFn(exportClassAttendance);
+  const expRes = useServerFn(exportResourcesMeta);
 
   const fileInput = useRef<HTMLInputElement>(null);
   const [saveOpen, setSaveOpen] = useState(false);
@@ -130,6 +134,47 @@ export function ImportExportBar({ classId }: { classId: string }) {
     pdf.save("seating.pdf");
   };
 
+  const downloadBlob = (content: string, filename: string, mime: string) => {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const toCsv = (rows: Record<string, unknown>[]): string => {
+    if (rows.length === 0) return "";
+    const cols = Array.from(rows.reduce((set, r) => { Object.keys(r).forEach((k) => set.add(k)); return set; }, new Set<string>()));
+    const esc = (v: unknown) => {
+      if (v === null || v === undefined) return "";
+      const s = typeof v === "object" ? JSON.stringify(v) : String(v);
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    return [cols.join(","), ...rows.map((r) => cols.map((c) => esc(r[c])).join(","))].join("\n");
+  };
+
+  const doExport = async (kind: "grades" | "attendance" | "resources", format: "csv" | "json") => {
+    try {
+      const rows = kind === "grades"
+        ? await expGrades({ data: { classId } })
+        : kind === "attendance"
+        ? await expAtt({ data: { classId } })
+        : await expRes();
+      if (!rows.length) { toast.info("אין נתונים לייצוא"); return; }
+      const stamp = new Date().toISOString().slice(0, 10);
+      const base = `${kind}-${stamp}`;
+      if (format === "json") {
+        downloadBlob(JSON.stringify(rows, null, 2), `${base}.json`, "application/json");
+      } else {
+        downloadBlob("\uFEFF" + toCsv(rows as Record<string, unknown>[]), `${base}.csv`, "text/csv;charset=utf-8");
+      }
+      toast.success(`יוצאו ${rows.length} רשומות`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "שגיאה בייצוא");
+    }
+  };
+
   const { data: configs = [] } = useQuery({
     queryKey: ["configs", classId],
     queryFn: () => listCfg({ data: { classId } }),
@@ -175,6 +220,24 @@ export function ImportExportBar({ classId }: { classId: string }) {
           </DropdownMenuItem>
           <DropdownMenuItem onClick={exportPDF}>
             <FileText className="ms-2 h-4 w-4" /> PDF (גריד)
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => doExport("grades", "csv")}>
+            <GraduationCap className="ms-2 h-4 w-4" /> ציונים · CSV
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => doExport("grades", "json")}>
+            <Braces className="ms-2 h-4 w-4" /> ציונים · JSON
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => doExport("attendance", "csv")}>
+            <CalendarCheck className="ms-2 h-4 w-4" /> נוכחות · CSV
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => doExport("attendance", "json")}>
+            <Braces className="ms-2 h-4 w-4" /> נוכחות · JSON
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => doExport("resources", "csv")}>
+            <Library className="ms-2 h-4 w-4" /> ספריית חומרים · CSV
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => doExport("resources", "json")}>
+            <Braces className="ms-2 h-4 w-4" /> ספריית חומרים · JSON
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

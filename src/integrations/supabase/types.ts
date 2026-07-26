@@ -782,6 +782,30 @@ export type Database = {
         }
         Relationships: []
       }
+      reminder_preferences: {
+        Row: {
+          created_at: string
+          lead_time_minutes: number
+          types_enabled: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          lead_time_minutes?: number
+          types_enabled?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          lead_time_minutes?: number
+          types_enabled?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       reminders: {
         Row: {
           class_id: string
@@ -1249,6 +1273,7 @@ export type Database = {
           subject: string
           tags: string[]
           title: string
+          topic_id: string | null
           updated_at: string
         }
         Insert: {
@@ -1268,6 +1293,7 @@ export type Database = {
           subject?: string
           tags?: string[]
           title: string
+          topic_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -1287,9 +1313,56 @@ export type Database = {
           subject?: string
           tags?: string[]
           title?: string
+          topic_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "teaching_resources_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      topics: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          name: string
+          owner_id: string
+          parent_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          name: string
+          owner_id: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "topics_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       weekly_bulletins: {
         Row: {
