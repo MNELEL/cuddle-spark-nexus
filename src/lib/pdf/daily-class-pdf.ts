@@ -6,6 +6,7 @@ import {
   hebrewDate,
   safeName,
 } from "./pdf-builder";
+import { ensurePdfBrandLoaded } from "./brand-loader";
 
 export type DailyClassPdfArgs = {
   report: ClassReport;
@@ -30,6 +31,7 @@ function attLabel(a: { present: number; late: number; absent: number; excused: n
 
 export async function buildDailyClassPdf(args: DailyClassPdfArgs): Promise<DailyClassPdfResult> {
   const { report, date, teacherName, schoolName, classNote, studentNotes, mode, studentId } = args;
+  await ensurePdfBrandLoaded();
   const hd = await createHebrewDoc();
 
   const meta = [
