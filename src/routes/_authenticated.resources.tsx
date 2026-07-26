@@ -525,10 +525,11 @@ function ResourceEditorDialog({
 /* -------------------- AI dialog -------------------- */
 
 function AIGeneratorDialog({
-  open, onClose, onGenerated,
+  open, onClose, onGenerated, source,
 }: {
   open: boolean; onClose: () => void;
   onGenerated: (draft: Partial<ResourceRow>) => void;
+  source?: ResourceRow | null;
 }) {
   const gen = useServerFn(generateResourceWithAI);
   const [prompt, setPrompt] = useState("");
@@ -536,8 +537,26 @@ function AIGeneratorDialog({
   const [subject, setSubject] = useState("");
   const [gradeLevel, setGradeLevel] = useState("");
 
+  // Prefill from source resource when opening as a "variant"
+  useEffect(() => {
+    if (open && source) {
+      setResourceType(source.resource_type);
+      setSubject(source.subject || "");
+      setGradeLevel(source.grade_level || "");
+      setPrompt(`צור וריאציה של "${source.title}" — שנה נוסח, הוסף שאלות דומות ושמור על אותו סגנון ורמה.`);
+    } else if (open && !source) {
+      // fresh open (not variant) — leave user input
+    }
+  }, [open, source]);
+
   const m = useMutation({
-    mutationFn: () => gen({ data: { prompt: prompt.trim(), resource_type: resourceType, subject, grade_level: gradeLevel } }),
+    mutationFn: () => gen({ data: {
+      prompt: prompt.trim(),
+      resource_type: resourceType,
+      subject,
+      grade_level: gradeLevel,
+      ...(source ? { source_resource_id: source.id } : {}),
+    } }),
     onSuccess: (draft) => {
       onGenerated({
         title: draft.title,
@@ -560,7 +579,8 @@ function AIGeneratorDialog({
       <DialogContent className="max-w-xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-amber" /> יצירת חומר עם AI
+            <Sparkles className="h-5 w-5 text-amber" />
+            {source ? `וריאציה מ־"${source.title}"` : "יצירת חומר עם AI"}
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
