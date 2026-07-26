@@ -47,8 +47,8 @@ export const buildWeeklySummary = createServerFn({ method: "POST" })
         .eq("class_id", classId).gte("date", weekStart).lte("date", weekEnd)
         .order("date", { ascending: true }),
       supabase.from("lesson_transcripts")
-        .select("title,recorded_at,summary")
-        .eq("class_id", classId).gte("recorded_at", weekStart).lte("recorded_at", weekEnd + "T23:59:59"),
+        .select("title,created_at,summary")
+        .eq("class_id", classId).gte("created_at", weekStart).lte("created_at", weekEnd + "T23:59:59"),
       supabase.from("behavior_points")
         .select("points,category,date")
         .eq("class_id", classId).gte("date", weekStart).lte("date", weekEnd),
@@ -66,7 +66,7 @@ export const buildWeeklySummary = createServerFn({ method: "POST" })
     }));
     const lessonsList = (lessons.data ?? []).map((l) => ({
       title: l.title,
-      date: (l.recorded_at ?? "").slice(0, 10),
+      date: (l.created_at ?? "").slice(0, 10),
       summary: (l.summary ?? "").slice(0, 400),
     }));
     let posSum = 0, negSum = 0;
