@@ -338,6 +338,66 @@ export type Database = {
         }
         Relationships: []
       }
+      class_events: {
+        Row: {
+          class_id: string
+          color: string | null
+          created_at: string
+          created_by: string
+          date: string
+          end_date: string | null
+          id: string
+          notes: string | null
+          student_id: string | null
+          title: string
+          type: Database["public"]["Enums"]["class_event_type"]
+          updated_at: string
+        }
+        Insert: {
+          class_id: string
+          color?: string | null
+          created_at?: string
+          created_by?: string
+          date: string
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          student_id?: string | null
+          title: string
+          type?: Database["public"]["Enums"]["class_event_type"]
+          updated_at?: string
+        }
+        Update: {
+          class_id?: string
+          color?: string | null
+          created_at?: string
+          created_by?: string
+          date?: string
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          student_id?: string | null
+          title?: string
+          type?: Database["public"]["Enums"]["class_event_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_events_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_events_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       class_resource_usage: {
         Row: {
           class_id: string
@@ -1293,7 +1353,13 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      class_event_type:
+        | "birthday"
+        | "exam"
+        | "trip"
+        | "holiday"
+        | "meeting"
+        | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1420,6 +1486,15 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      class_event_type: [
+        "birthday",
+        "exam",
+        "trip",
+        "holiday",
+        "meeting",
+        "other",
+      ],
+    },
   },
 } as const

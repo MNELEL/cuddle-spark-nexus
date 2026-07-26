@@ -59,6 +59,7 @@ import { Route as AuthenticatedExamScannerClassIdRouteImport } from './routes/_a
 import { Route as AuthenticatedDailyClassIdRouteImport } from './routes/_authenticated.daily.$classId'
 import { Route as AuthenticatedClassesClassIdRouteImport } from './routes/_authenticated.classes.$classId'
 import { Route as AuthenticatedCertificatesClassIdRouteImport } from './routes/_authenticated.certificates.$classId'
+import { Route as AuthenticatedCalendarClassIdRouteImport } from './routes/_authenticated.calendar.$classId'
 import { Route as AuthenticatedBulletinsClassIdRouteImport } from './routes/_authenticated.bulletins.$classId'
 import { Route as AuthenticatedAnalyticsClassIdRouteImport } from './routes/_authenticated.analytics.$classId'
 import { Route as AuthenticatedClassesClassIdDisplayRouteImport } from './routes/_authenticated.classes.$classId.display'
@@ -333,6 +334,12 @@ const AuthenticatedCertificatesClassIdRoute =
     path: '/certificates/$classId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedCalendarClassIdRoute =
+  AuthenticatedCalendarClassIdRouteImport.update({
+    id: '/calendar/$classId',
+    path: '/calendar/$classId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedBulletinsClassIdRoute =
   AuthenticatedBulletinsClassIdRouteImport.update({
     id: '/bulletins/$classId',
@@ -390,6 +397,7 @@ export interface FileRoutesByFullPath {
   '/parents-guide/': typeof ParentsGuideIndexRoute
   '/analytics/$classId': typeof AuthenticatedAnalyticsClassIdRoute
   '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
+  '/calendar/$classId': typeof AuthenticatedCalendarClassIdRoute
   '/certificates/$classId': typeof AuthenticatedCertificatesClassIdRoute
   '/classes/$classId': typeof AuthenticatedClassesClassIdRouteWithChildren
   '/daily/$classId': typeof AuthenticatedDailyClassIdRoute
@@ -441,6 +449,7 @@ export interface FileRoutesByTo {
   '/parents-guide': typeof ParentsGuideIndexRoute
   '/analytics/$classId': typeof AuthenticatedAnalyticsClassIdRoute
   '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
+  '/calendar/$classId': typeof AuthenticatedCalendarClassIdRoute
   '/certificates/$classId': typeof AuthenticatedCertificatesClassIdRoute
   '/classes/$classId': typeof AuthenticatedClassesClassIdRouteWithChildren
   '/daily/$classId': typeof AuthenticatedDailyClassIdRoute
@@ -497,6 +506,7 @@ export interface FileRoutesById {
   '/parents-guide/': typeof ParentsGuideIndexRoute
   '/_authenticated/analytics/$classId': typeof AuthenticatedAnalyticsClassIdRoute
   '/_authenticated/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
+  '/_authenticated/calendar/$classId': typeof AuthenticatedCalendarClassIdRoute
   '/_authenticated/certificates/$classId': typeof AuthenticatedCertificatesClassIdRoute
   '/_authenticated/classes/$classId': typeof AuthenticatedClassesClassIdRouteWithChildren
   '/_authenticated/daily/$classId': typeof AuthenticatedDailyClassIdRoute
@@ -553,6 +563,7 @@ export interface FileRouteTypes {
     | '/parents-guide/'
     | '/analytics/$classId'
     | '/bulletins/$classId'
+    | '/calendar/$classId'
     | '/certificates/$classId'
     | '/classes/$classId'
     | '/daily/$classId'
@@ -604,6 +615,7 @@ export interface FileRouteTypes {
     | '/parents-guide'
     | '/analytics/$classId'
     | '/bulletins/$classId'
+    | '/calendar/$classId'
     | '/certificates/$classId'
     | '/classes/$classId'
     | '/daily/$classId'
@@ -659,6 +671,7 @@ export interface FileRouteTypes {
     | '/parents-guide/'
     | '/_authenticated/analytics/$classId'
     | '/_authenticated/bulletins/$classId'
+    | '/_authenticated/calendar/$classId'
     | '/_authenticated/certificates/$classId'
     | '/_authenticated/classes/$classId'
     | '/_authenticated/daily/$classId'
@@ -1044,6 +1057,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCertificatesClassIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/calendar/$classId': {
+      id: '/_authenticated/calendar/$classId'
+      path: '/calendar/$classId'
+      fullPath: '/calendar/$classId'
+      preLoaderRoute: typeof AuthenticatedCalendarClassIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/bulletins/$classId': {
       id: '/_authenticated/bulletins/$classId'
       path: '/bulletins/$classId'
@@ -1108,6 +1128,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedToolkitRoute: typeof AuthenticatedToolkitRoute
   AuthenticatedAnalyticsClassIdRoute: typeof AuthenticatedAnalyticsClassIdRoute
   AuthenticatedBulletinsClassIdRoute: typeof AuthenticatedBulletinsClassIdRoute
+  AuthenticatedCalendarClassIdRoute: typeof AuthenticatedCalendarClassIdRoute
   AuthenticatedCertificatesClassIdRoute: typeof AuthenticatedCertificatesClassIdRoute
   AuthenticatedClassesClassIdRoute: typeof AuthenticatedClassesClassIdRouteWithChildren
   AuthenticatedDailyClassIdRoute: typeof AuthenticatedDailyClassIdRoute
@@ -1132,6 +1153,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedToolkitRoute: AuthenticatedToolkitRoute,
   AuthenticatedAnalyticsClassIdRoute: AuthenticatedAnalyticsClassIdRoute,
   AuthenticatedBulletinsClassIdRoute: AuthenticatedBulletinsClassIdRoute,
+  AuthenticatedCalendarClassIdRoute: AuthenticatedCalendarClassIdRoute,
   AuthenticatedCertificatesClassIdRoute: AuthenticatedCertificatesClassIdRoute,
   AuthenticatedClassesClassIdRoute:
     AuthenticatedClassesClassIdRouteWithChildren,
