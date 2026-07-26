@@ -260,6 +260,42 @@ export function SeatingGrid({ classId }: { classId: string }) {
   const cols = cls?.grid_cols ?? 6;
   const hiddenSet = useMemo(() => new Set<string>((cls?.hidden_seats as string[] | undefined) ?? []), [cls?.hidden_seats]);
 
+  // Room objects (persisted on classes.room_objects)
+  const roomObjects = useMemo<RoomObject[]>(
+    () => Array.isArray((cls as { room_objects?: unknown } | undefined)?.room_objects)
+      ? ((cls as { room_objects: RoomObject[] }).room_objects)
+      : [],
+    [cls],
+  );
+  const objectAt = useMemo(() => {
+    const m = new Map<string, RoomObject>();
+    for (const o of roomObjects) m.set(seatKey(o.row, o.col), o);
+    return m;
+  }, [roomObjects]);
+  const [editEnv, setEditEnv] = useState(false);
+  const saveObjectsM = useMutation({
+    mutationFn: (next: RoomObject[]) => updateClassFn({ data: { id: classId, room_objects: next } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["class", classId] }),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
+  });
+  const addObject = (type: RoomObjectType, r: number, c: number) => {
+    if (hiddenSet.has(seatKey(r, c))) { toast.error("לא ניתן להניח במושב מוסתר"); return; }
+    if (seated.get(seatKey(r, c))) { toast.error("המשבצת תפוסה על ידי תלמיד"); return; }
+    if (objectAt.get(seatKey(r, c))) { toast.error("המשבצת תפוסה על ידי אובייקט"); return; }
+    const id = `obj_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+    saveObjectsM.mutate([...roomObjects, { id, type, row: r, col: c }]);
+  };
+  const moveObject = (id: string, r: number, c: number) => {
+    if (hiddenSet.has(seatKey(r, c))) { toast.error("לא ניתן להניח במושב מוסתר"); return; }
+    if (seated.get(seatKey(r, c))) { toast.error("המשבצת תפוסה"); return; }
+    const other = objectAt.get(seatKey(r, c));
+    if (other && other.id !== id) { toast.error("המשבצת תפוסה"); return; }
+    saveObjectsM.mutate(roomObjects.map((o) => o.id === id ? { ...o, row: r, col: c } : o));
+  };
+  const deleteObject = (id: string) => {
+    saveObjectsM.mutate(roomObjects.filter((o) => o.id !== id));
+  };
+
   const seated = useMemo(() => {
     const map = new Map<string, Student>();
     for (const s of students) {
@@ -291,6 +327,8 @@ export function SeatingGrid({ classId }: { classId: string }) {
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
   const [activeStudent, setActiveStudent] = useState<Student | null>(null);
+  const [activeObject, setActiveObject] = useState<RoomObject | null>(null);
+  const [activeNewType, setActiveNewType] = useState<RoomObjectType | null>(null);
 
   // Accessibility mode (keyboard navigation + screen reader)
   const [a11y, setA11y] = useState<boolean>(() => {
@@ -455,30 +493,46 @@ export function SeatingGrid({ classId }: { classId: string }) {
   });
 
   const onDragStart = (e: DragStartEvent) => {
-    const sid = (e.active.data.current as { studentId?: string })?.studentId;
-    setActiveStudent(students.find((s) => s.id === sid) ?? null);
+    const d = e.active.data.current as { studentId?: string; objectId?: string; newType?: RoomObjectType } | undefined;
+    if (d?.studentId) setActiveStudent(students.find((s) => s.id === d.studentId) ?? null);
+    else if (d?.objectId) setActiveObject(roomObjects.find((o) => o.id === d.objectId) ?? null);
+    else if (d?.newType) setActiveNewType(d.newType);
   };
 
   const onDragEnd = (e: DragEndEvent) => {
-    setActiveStudent(null);
+    const d = e.active.data.current as { studentId?: string; objectId?: string; newType?: RoomObjectType } | undefined;
+    setActiveStudent(null); setActiveObject(null); setActiveNewType(null);
     if (!e.over) return;
-    const sid = (e.active.data.current as { studentId?: string })?.studentId;
+    const overId = String(e.over.id);
+    const overData = e.over.data.current as { row?: number; col?: number } | undefined;
+
+    if (d?.objectId) {
+      if (overId === "tray") { deleteObject(d.objectId); return; }
+      if (overData?.row === undefined || overData.col === undefined) return;
+      moveObject(d.objectId, overData.row, overData.col);
+      return;
+    }
+    if (d?.newType) {
+      if (overData?.row === undefined || overData.col === undefined) return;
+      addObject(d.newType, overData.row, overData.col);
+      return;
+    }
+    const sid = d?.studentId;
     if (!sid) return;
     const student = students.find((s) => s.id === sid);
     if (!student || student.seat_locked) {
       if (student?.seat_locked) toast.error("המושב נעול");
       return;
     }
-    const overId = String(e.over.id);
     if (overId === "tray") {
       moveM.mutate({ student_id: sid, seat_row: null, seat_col: null });
       return;
     }
-    const data = e.over.data.current as { row?: number; col?: number } | undefined;
-    if (data?.row === undefined || data.col === undefined) return;
-    const occupant = seated.get(seatKey(data.row, data.col));
+    if (overData?.row === undefined || overData.col === undefined) return;
+    if (objectAt.get(seatKey(overData.row, overData.col))) { toast.error("המשבצת תפוסה על ידי אובייקט"); return; }
+    const occupant = seated.get(seatKey(overData.row, overData.col));
     if (occupant?.seat_locked) { toast.error("המושב היעד נעול"); return; }
-    moveM.mutate({ student_id: sid, seat_row: data.row, seat_col: data.col });
+    moveM.mutate({ student_id: sid, seat_row: overData.row, seat_col: overData.col });
   };
 
   return (
