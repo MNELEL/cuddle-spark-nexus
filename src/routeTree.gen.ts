@@ -37,6 +37,7 @@ import { Route as BlogDigitalHallPassGuideRouteImport } from './routes/blog.digi
 import { Route as BlogClassroomToolsTeachersRouteImport } from './routes/blog.classroom-tools-teachers'
 import { Route as BlogClassroomManagementStrategiesRouteImport } from './routes/blog.classroom-management-strategies'
 import { Route as BlogClassdojoComparisonRouteImport } from './routes/blog.classdojo-comparison'
+import { Route as BlogAiSeatingArrangementsGuideRouteImport } from './routes/blog.ai-seating-arrangements-guide'
 import { Route as AuthenticatedToolkitRouteImport } from './routes/_authenticated.toolkit'
 import { Route as AuthenticatedSoundBoardRouteImport } from './routes/_authenticated.sound-board'
 import { Route as AuthenticatedResourcesRouteImport } from './routes/_authenticated.resources'
@@ -201,6 +202,12 @@ const BlogClassdojoComparisonRoute = BlogClassdojoComparisonRouteImport.update({
   path: '/classdojo-comparison',
   getParentRoute: () => BlogRoute,
 } as any)
+const BlogAiSeatingArrangementsGuideRoute =
+  BlogAiSeatingArrangementsGuideRouteImport.update({
+    id: '/ai-seating-arrangements-guide',
+    path: '/ai-seating-arrangements-guide',
+    getParentRoute: () => BlogRoute,
+  } as any)
 const AuthenticatedToolkitRoute = AuthenticatedToolkitRouteImport.update({
   id: '/toolkit',
   path: '/toolkit',
@@ -326,6 +333,7 @@ export interface FileRoutesByFullPath {
   '/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/sound-board': typeof AuthenticatedSoundBoardRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
+  '/blog/ai-seating-arrangements-guide': typeof BlogAiSeatingArrangementsGuideRoute
   '/blog/classdojo-comparison': typeof BlogClassdojoComparisonRoute
   '/blog/classroom-management-strategies': typeof BlogClassroomManagementStrategiesRouteWithChildren
   '/blog/classroom-tools-teachers': typeof BlogClassroomToolsTeachersRoute
@@ -371,6 +379,7 @@ export interface FileRoutesByTo {
   '/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/sound-board': typeof AuthenticatedSoundBoardRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
+  '/blog/ai-seating-arrangements-guide': typeof BlogAiSeatingArrangementsGuideRoute
   '/blog/classdojo-comparison': typeof BlogClassdojoComparisonRoute
   '/blog/classroom-management-strategies': typeof BlogClassroomManagementStrategiesRouteWithChildren
   '/blog/classroom-tools-teachers': typeof BlogClassroomToolsTeachersRoute
@@ -421,6 +430,7 @@ export interface FileRoutesById {
   '/_authenticated/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/_authenticated/sound-board': typeof AuthenticatedSoundBoardRoute
   '/_authenticated/toolkit': typeof AuthenticatedToolkitRoute
+  '/blog/ai-seating-arrangements-guide': typeof BlogAiSeatingArrangementsGuideRoute
   '/blog/classdojo-comparison': typeof BlogClassdojoComparisonRoute
   '/blog/classroom-management-strategies': typeof BlogClassroomManagementStrategiesRouteWithChildren
   '/blog/classroom-tools-teachers': typeof BlogClassroomToolsTeachersRoute
@@ -471,6 +481,7 @@ export interface FileRouteTypes {
     | '/resources'
     | '/sound-board'
     | '/toolkit'
+    | '/blog/ai-seating-arrangements-guide'
     | '/blog/classdojo-comparison'
     | '/blog/classroom-management-strategies'
     | '/blog/classroom-tools-teachers'
@@ -516,6 +527,7 @@ export interface FileRouteTypes {
     | '/resources'
     | '/sound-board'
     | '/toolkit'
+    | '/blog/ai-seating-arrangements-guide'
     | '/blog/classdojo-comparison'
     | '/blog/classroom-management-strategies'
     | '/blog/classroom-tools-teachers'
@@ -565,6 +577,7 @@ export interface FileRouteTypes {
     | '/_authenticated/resources'
     | '/_authenticated/sound-board'
     | '/_authenticated/toolkit'
+    | '/blog/ai-seating-arrangements-guide'
     | '/blog/classdojo-comparison'
     | '/blog/classroom-management-strategies'
     | '/blog/classroom-tools-teachers'
@@ -813,6 +826,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogClassdojoComparisonRouteImport
       parentRoute: typeof BlogRoute
     }
+    '/blog/ai-seating-arrangements-guide': {
+      id: '/blog/ai-seating-arrangements-guide'
+      path: '/ai-seating-arrangements-guide'
+      fullPath: '/blog/ai-seating-arrangements-guide'
+      preLoaderRoute: typeof BlogAiSeatingArrangementsGuideRouteImport
+      parentRoute: typeof BlogRoute
+    }
     '/_authenticated/toolkit': {
       id: '/_authenticated/toolkit'
       path: '/toolkit'
@@ -1038,6 +1058,7 @@ const BlogClassroomManagementStrategiesRouteWithChildren =
   )
 
 interface BlogRouteChildren {
+  BlogAiSeatingArrangementsGuideRoute: typeof BlogAiSeatingArrangementsGuideRoute
   BlogClassdojoComparisonRoute: typeof BlogClassdojoComparisonRoute
   BlogClassroomManagementStrategiesRoute: typeof BlogClassroomManagementStrategiesRouteWithChildren
   BlogClassroomToolsTeachersRoute: typeof BlogClassroomToolsTeachersRoute
@@ -1049,6 +1070,7 @@ interface BlogRouteChildren {
 }
 
 const BlogRouteChildren: BlogRouteChildren = {
+  BlogAiSeatingArrangementsGuideRoute: BlogAiSeatingArrangementsGuideRoute,
   BlogClassdojoComparisonRoute: BlogClassdojoComparisonRoute,
   BlogClassroomManagementStrategiesRoute:
     BlogClassroomManagementStrategiesRouteWithChildren,
