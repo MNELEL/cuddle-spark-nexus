@@ -67,7 +67,7 @@ function ResourcesPage() {
   const listColls = useServerFn(listCollections);
 
   const [filters, setFilters] = useState<Filters>(emptyFilters);
-  const [topicId, setTopicId] = useState<string | null>(null);
+  const [topicIds, setTopicIds] = useState<string[]>([]);
   const [editing, setEditing] = useState<Partial<ResourceRow> | null>(null);
   const [aiOpen, setAiOpen] = useState(false);
   const [aiSource, setAiSource] = useState<ResourceRow | null>(null);
@@ -262,7 +262,7 @@ function ResourcesPage() {
 
         <Card className="lg:col-start-1">
           <CardContent className="pt-4">
-            <TopicTreeFilter value={topicId} onChange={setTopicId} />
+            <TopicTreeFilter value={topicIds} onChange={setTopicIds} />
           </CardContent>
         </Card>
 
@@ -283,8 +283,11 @@ function ResourcesPage() {
             </CardContent></Card>
           )}
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {(topicId
-              ? resources.filter((r) => (r as unknown as { topic_id: string | null }).topic_id === topicId)
+            {(topicIds.length > 0
+              ? resources.filter((r) => {
+                  const tid = (r as unknown as { topic_id: string | null }).topic_id;
+                  return tid !== null && topicIds.includes(tid);
+                })
               : resources
             ).map((r) => (
               <ResourceCard
