@@ -126,7 +126,7 @@ export function GlobalCommandPalette() {
             <CommandSeparator />
             <CommandGroup heading="תלמידים">
               {students.map((s) => (
-                <CommandItem key={s.id} value={`תלמיד ${s.name} ${s.class_name}`} onSelect={() => go(`/students/${s.id}`)}>
+                <CommandItem key={s.id} value={`תלמיד ${s.name} ${s.class_name}`} onSelect={() => go(`/classes/${s.class_id}?student=${s.id}`)}>
                   <User className="ms-2 h-4 w-4" />
                   <span>{s.name}</span>
                   <span className="ms-auto text-xs text-muted-foreground">{s.class_name}</span>
