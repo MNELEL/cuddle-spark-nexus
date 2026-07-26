@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ChevronDown, ChevronLeft, Plus, Trash2, FolderTree, Pencil } from "lucide-react";
+import { ChevronDown, ChevronLeft, Plus, Trash2, FolderTree, Pencil, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,7 +16,7 @@ import { listTopics, upsertTopic, deleteTopic, buildTopicTree, type TopicRow } f
 
 export function TopicTreeFilter({
   value, onChange,
-}: { value: string | null; onChange: (id: string | null) => void }) {
+}: { value: string[]; onChange: (ids: string[]) => void }) {
   const qc = useQueryClient();
   const list = useServerFn(listTopics);
   const upsert = useServerFn(upsertTopic);
@@ -65,7 +65,10 @@ export function TopicTreeFilter({
   const renderNode = (t: TopicRow, depth: number) => {
     const children = tree.get(t.id) ?? [];
     const isOpen = expanded.has(t.id);
-    const isActive = value === t.id;
+    const isActive = value.includes(t.id);
+    const toggleSel = () => {
+      onChange(isActive ? value.filter((v) => v !== t.id) : [...value, t.id]);
+    };
     return (
       <div key={t.id}>
         <div className="flex items-center gap-1" style={{ paddingInlineStart: depth * 12 }}>
@@ -74,9 +77,16 @@ export function TopicTreeFilter({
               {isOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
             </button>
           ) : <span className="w-4" />}
+          <input
+            type="checkbox"
+            className="h-3.5 w-3.5 accent-primary"
+            checked={isActive}
+            onChange={toggleSel}
+            aria-label={`בחר ${t.name}`}
+          />
           <button
             className={`flex-1 rounded px-2 py-1 text-right text-sm hover:bg-accent ${isActive ? "bg-accent font-medium" : ""}`}
-            onClick={() => onChange(isActive ? null : t.id)}
+            onClick={toggleSel}
             style={t.color ? { borderInlineStart: `3px solid ${t.color}` } : undefined}
           >
             {t.name}
@@ -93,7 +103,13 @@ export function TopicTreeFilter({
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <Label className="text-xs flex items-center gap-1"><FolderTree className="h-3 w-3" /> נושאים</Label>
-        <Dialog open={manageOpen} onOpenChange={setManageOpen}>
+        <div className="flex items-center gap-1">
+          {value.length > 0 && (
+            <Button size="sm" variant="ghost" className="h-6 px-1 text-xs" onClick={() => onChange([])}>
+              <X className="h-3 w-3 ms-1" /> נקה ({value.length})
+            </Button>
+          )}
+          <Dialog open={manageOpen} onOpenChange={setManageOpen}>
           <DialogTrigger asChild>
             <Button size="sm" variant="ghost" className="h-6 px-1"><Pencil className="h-3 w-3" /></Button>
           </DialogTrigger>
@@ -148,11 +164,12 @@ export function TopicTreeFilter({
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
       <div className="space-y-0.5">
         <button
-          className={`w-full rounded px-2 py-1 text-right text-sm hover:bg-accent ${value === null ? "bg-accent font-medium" : ""}`}
-          onClick={() => onChange(null)}
+          className={`w-full rounded px-2 py-1 text-right text-sm hover:bg-accent ${value.length === 0 ? "bg-accent font-medium" : ""}`}
+          onClick={() => onChange([])}
         >
           כל הנושאים
         </button>
