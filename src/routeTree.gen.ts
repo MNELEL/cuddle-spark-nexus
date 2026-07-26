@@ -42,6 +42,7 @@ import { Route as AuthenticatedToolkitRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedSoundBoardRouteImport } from './routes/_authenticated.sound-board'
 import { Route as AuthenticatedResourcesRouteImport } from './routes/_authenticated.resources'
 import { Route as AuthenticatedQuestionsRouteImport } from './routes/_authenticated.questions'
+import { Route as AuthenticatedInsightsRouteImport } from './routes/_authenticated.insights'
 import { Route as AuthenticatedIngestRouteImport } from './routes/_authenticated.ingest'
 import { Route as AuthenticatedBellScheduleRouteImport } from './routes/_authenticated.bell-schedule'
 import { Route as AuthenticatedClassesIndexRouteImport } from './routes/_authenticated.classes.index'
@@ -231,6 +232,11 @@ const AuthenticatedQuestionsRoute = AuthenticatedQuestionsRouteImport.update({
   path: '/questions',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedInsightsRoute = AuthenticatedInsightsRouteImport.update({
+  id: '/insights',
+  path: '/insights',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedIngestRoute = AuthenticatedIngestRouteImport.update({
   id: '/ingest',
   path: '/ingest',
@@ -351,6 +357,7 @@ export interface FileRoutesByFullPath {
   '/support': typeof SupportRoute
   '/bell-schedule': typeof AuthenticatedBellScheduleRoute
   '/ingest': typeof AuthenticatedIngestRoute
+  '/insights': typeof AuthenticatedInsightsRoute
   '/questions': typeof AuthenticatedQuestionsRoute
   '/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/sound-board': typeof AuthenticatedSoundBoardRoute
@@ -400,6 +407,7 @@ export interface FileRoutesByTo {
   '/support': typeof SupportRoute
   '/bell-schedule': typeof AuthenticatedBellScheduleRoute
   '/ingest': typeof AuthenticatedIngestRoute
+  '/insights': typeof AuthenticatedInsightsRoute
   '/questions': typeof AuthenticatedQuestionsRoute
   '/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/sound-board': typeof AuthenticatedSoundBoardRoute
@@ -454,6 +462,7 @@ export interface FileRoutesById {
   '/support': typeof SupportRoute
   '/_authenticated/bell-schedule': typeof AuthenticatedBellScheduleRoute
   '/_authenticated/ingest': typeof AuthenticatedIngestRoute
+  '/_authenticated/insights': typeof AuthenticatedInsightsRoute
   '/_authenticated/questions': typeof AuthenticatedQuestionsRoute
   '/_authenticated/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/_authenticated/sound-board': typeof AuthenticatedSoundBoardRoute
@@ -508,6 +517,7 @@ export interface FileRouteTypes {
     | '/support'
     | '/bell-schedule'
     | '/ingest'
+    | '/insights'
     | '/questions'
     | '/resources'
     | '/sound-board'
@@ -557,6 +567,7 @@ export interface FileRouteTypes {
     | '/support'
     | '/bell-schedule'
     | '/ingest'
+    | '/insights'
     | '/questions'
     | '/resources'
     | '/sound-board'
@@ -610,6 +621,7 @@ export interface FileRouteTypes {
     | '/support'
     | '/_authenticated/bell-schedule'
     | '/_authenticated/ingest'
+    | '/_authenticated/insights'
     | '/_authenticated/questions'
     | '/_authenticated/resources'
     | '/_authenticated/sound-board'
@@ -900,6 +912,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedQuestionsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/insights': {
+      id: '/_authenticated/insights'
+      path: '/insights'
+      fullPath: '/insights'
+      preLoaderRoute: typeof AuthenticatedInsightsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/ingest': {
       id: '/_authenticated/ingest'
       path: '/ingest'
@@ -1062,6 +1081,7 @@ const AuthenticatedClassesClassIdRouteWithChildren =
 interface AuthenticatedRouteChildren {
   AuthenticatedBellScheduleRoute: typeof AuthenticatedBellScheduleRoute
   AuthenticatedIngestRoute: typeof AuthenticatedIngestRoute
+  AuthenticatedInsightsRoute: typeof AuthenticatedInsightsRoute
   AuthenticatedQuestionsRoute: typeof AuthenticatedQuestionsRoute
   AuthenticatedResourcesRoute: typeof AuthenticatedResourcesRouteWithChildren
   AuthenticatedSoundBoardRoute: typeof AuthenticatedSoundBoardRoute
@@ -1084,6 +1104,7 @@ interface AuthenticatedRouteChildren {
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedBellScheduleRoute: AuthenticatedBellScheduleRoute,
   AuthenticatedIngestRoute: AuthenticatedIngestRoute,
+  AuthenticatedInsightsRoute: AuthenticatedInsightsRoute,
   AuthenticatedQuestionsRoute: AuthenticatedQuestionsRoute,
   AuthenticatedResourcesRoute: AuthenticatedResourcesRouteWithChildren,
   AuthenticatedSoundBoardRoute: AuthenticatedSoundBoardRoute,
