@@ -287,7 +287,7 @@ function CertificatesPage() {
     let nextConducts: { key: string; label: BehaviorLabel }[] = [];
     setRows((r) => {
       const row = r[id]; if (!row) return r;
-      nextConducts = [...row.conducts, { key: "", label: "טוב" }];
+      nextConducts = [...row.conducts, { key: "", label: "נאות" as BehaviorLabel }];
       return { ...r, [id]: { ...row, conducts: nextConducts } };
     });
     void persistRow(id, { conducts: nextConducts });
@@ -706,10 +706,50 @@ function StudentCertCard({
           </Button>
         </div>
 
-        <div className="grid gap-2 sm:grid-cols-3">
-          <BehaviorSelect label="הליכות" value={row.conduct} onChange={(v) => onPatch({ conduct: v })} />
-          <BehaviorSelect label="שקידה" value={row.diligence} onChange={(v) => onPatch({ diligence: v })} />
-          <BehaviorSelect label="דרך ארץ" value={row.manners} onChange={(v) => onPatch({ manners: v })} />
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label className="text-sm">הליכות ומידות</Label>
+            <Button type="button" variant="outline" size="sm" onClick={onAddConduct} className="h-7 px-2 text-xs">
+              <Plus className="ms-1 h-3.5 w-3.5" /> הוסף קטגוריה
+            </Button>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {row.conducts.map((c, i) => (
+              <div key={i} className="flex items-end gap-2">
+                <div className="flex-1">
+                  <Label className="text-xs text-muted-foreground">שם הקטגוריה</Label>
+                  <Input
+                    value={c.key}
+                    placeholder="למשל: השתתפות בתפילה"
+                    onChange={(e) => onPatchConduct(i, { key: e.target.value })}
+                    onBlur={onPersistConducts}
+                  />
+                </div>
+                <div className="w-40">
+                  <Label className="text-xs text-muted-foreground">הערכה</Label>
+                  <Select
+                    value={c.label}
+                    onValueChange={(v) => { onPatchConduct(i, { label: v as BehaviorLabel }); onPersistConducts(); }}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {BEHAVIOR_LABELS.map((b) => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label="מחק קטגוריה"
+                  disabled={row.conducts.length <= 1}
+                  onClick={() => onRemoveConduct(i)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="grid gap-2 sm:grid-cols-2">
