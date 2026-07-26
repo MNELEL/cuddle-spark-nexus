@@ -2,12 +2,16 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useRef, useState } from "react";
-import { ArrowRight, Award, Camera, Download, Loader2, Plus, Settings, Trash2, Users } from "lucide-react";
+import { ArrowRight, Award, Camera, Download, Plus, Settings, Sparkles, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { getClass } from "@/lib/classes.functions";
 import { getCertificateData } from "@/lib/certificates.functions";
-import { analyzeCertificatePhoto } from "@/lib/ai-certificate.functions";
+import { analyzeCertificatePhoto, suggestCertificateNotes } from "@/lib/ai-certificate.functions";
+import {
+  listCertificateNotes,
+  upsertCertificateNote,
+} from "@/lib/certificate-notes.functions";
 import { useBrand } from "@/hooks/use-brand";
 import { setPdfBrand } from "@/lib/pdf/pdf-builder";
 import { Button } from "@/components/ui/button";
@@ -22,6 +26,9 @@ import {
 import {
   Tabs, TabsContent, TabsList, TabsTrigger,
 } from "@/components/ui/tabs";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "@/components/ui/dialog";
 import {
   buildCertificatePdfBlob,
   buildConferencePdfBlob,
@@ -141,6 +148,9 @@ function CertificatesPage() {
   const getC = useServerFn(getClass);
   const getData = useServerFn(getCertificateData);
   const ocrCert = useServerFn(analyzeCertificatePhoto);
+  const listNotes = useServerFn(listCertificateNotes);
+  const saveNote = useServerFn(upsertCertificateNote);
+  const suggestNotes = useServerFn(suggestCertificateNotes);
   const { brand } = useBrand();
 
   const [periodKind, setPeriodKind] = useState<PeriodKind>("half_a");
@@ -165,6 +175,8 @@ function CertificatesPage() {
     return periodRange(periodKind);
   }, [periodKind, customFrom, customTo]);
 
+  const periodKey = `${period.from}_${period.to}`;
+
   const { data: cls } = useQuery({
     queryKey: ["class", classId],
     queryFn: () => getC({ data: { id: classId } }),
@@ -173,18 +185,48 @@ function CertificatesPage() {
     queryKey: ["cert-data", classId, period.from, period.to],
     queryFn: () => getData({ data: { classId, from: period.from, to: period.to } }),
   });
+  const { data: savedNotes } = useQuery({
+    queryKey: ["cert-notes", classId, periodKey],
+    queryFn: () => listNotes({ data: { classId, periodKey } }),
+  });
 
   const [rows, setRows] = useState<Record<string, StudentRow>>({});
 
-  // Recompute rows whenever the underlying data changes.
+  // Recompute rows whenever the underlying data or saved notes change.
   useMemo(() => {
     if (!data) return;
+    const notesById = new Map<string, { teacher_note: string; principal_note: string }>();
+    for (const n of savedNotes ?? []) {
+      notesById.set(n.student_id, { teacher_note: n.teacher_note, principal_note: n.principal_note });
+    }
     const next: Record<string, StudentRow> = {};
     for (const s of data.students) {
-      next[s.id] = computeStudentRow(s, data.grades, data.behavior, data.attendance);
+      const base = computeStudentRow(s, data.grades, data.behavior, data.attendance);
+      const saved = notesById.get(s.id);
+      next[s.id] = saved
+        ? { ...base, teacherNote: saved.teacher_note, principalNote: saved.principal_note }
+        : base;
     }
     setRows(next);
-  }, [data]);
+  }, [data, savedNotes]);
+
+  const persistNote = async (id: string) => {
+    const row = rows[id];
+    if (!row) return;
+    try {
+      await saveNote({
+        data: {
+          classId,
+          studentId: id,
+          periodKey,
+          teacherNote: row.teacherNote,
+          principalNote: row.principalNote,
+        },
+      });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "שמירת הערה נכשלה");
+    }
+  };
 
   const patchRow = (id: string, patch: Partial<StudentRow>) =>
     setRows((r) => ({ ...r, [id]: { ...r[id], ...patch } }));
@@ -250,6 +292,58 @@ function CertificatesPage() {
       toast.success(result.summary || "הזיהוי הושלם", { id: t });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "הזיהוי נכשל", { id: t });
+    }
+  };
+
+  /* ---- AI note suggestions dialog state ---- */
+  const [suggestOpen, setSuggestOpen] = useState(false);
+  const [suggestBusy, setSuggestBusy] = useState(false);
+  const [suggestFor, setSuggestFor] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+
+  const openSuggest = async (studentId: string) => {
+    setSuggestFor(studentId);
+    setSuggestions([]);
+    setSuggestOpen(true);
+    setSuggestBusy(true);
+    try {
+      const res = await suggestNotes({
+        data: { classId, studentId, from: period.from, to: period.to },
+      });
+      setSuggestions(res.map((r) => r.text));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "ההצעות נכשלו");
+      setSuggestOpen(false);
+    } finally {
+      setSuggestBusy(false);
+    }
+  };
+
+  const applySuggestion = (text: string) => {
+    if (!suggestFor) return;
+    patchRow(suggestFor, { teacherNote: text });
+    setSuggestOpen(false);
+    void persistNoteFor(suggestFor, { teacherNote: text });
+  };
+
+  const persistNoteFor = async (
+    id: string,
+    override: Partial<Pick<StudentRow, "teacherNote" | "principalNote">>,
+  ) => {
+    const row = rows[id];
+    if (!row) return;
+    try {
+      await saveNote({
+        data: {
+          classId,
+          studentId: id,
+          periodKey,
+          teacherNote: override.teacherNote ?? row.teacherNote,
+          principalNote: override.principalNote ?? row.principalNote,
+        },
+      });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "שמירת הערה נכשלה");
     }
   };
 
@@ -422,6 +516,8 @@ function CertificatesPage() {
                 onRemoveSubject={(i) => removeSubject(row.id, i)}
                 onOcrPhoto={(f) => applyOcrToRow(row.id, f)}
                 onExport={() => buildForStudent(row, isCorrection ? "correction" : "regular")}
+                onSaveNotes={() => persistNote(row.id)}
+                onSuggestNotes={() => openSuggest(row.id)}
               />
             ))
           )}
@@ -451,12 +547,44 @@ function CertificatesPage() {
           )}
         </TabsContent>
       </Tabs>
+
+      <Dialog open={suggestOpen} onOpenChange={setSuggestOpen}>
+        <DialogContent dir="rtl" className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>הצעות AI להערת מחנך</DialogTitle>
+          </DialogHeader>
+          {suggestBusy ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">מכין הצעות…</p>
+          ) : suggestions.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">לא התקבלו הצעות.</p>
+          ) : (
+            <div className="space-y-3">
+              {suggestions.map((s, i) => (
+                <button
+                  key={i}
+                  onClick={() => applySuggestion(s)}
+                  className="w-full rounded-lg border p-3 text-right text-sm hover:bg-accent/40 focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <div className="text-xs text-muted-foreground mb-1">הצעה {i + 1}</div>
+                  {s}
+                </button>
+              ))}
+              <p className="text-xs text-muted-foreground">
+                לחיצה על הצעה תמלא את שדה "הערות המחנך" — ניתן לערוך אחר כך.
+              </p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setSuggestOpen(false)}>סגור</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
 function StudentCertCard({
-  row, onPatch, onPatchSubject, onAddSubject, onRemoveSubject, onOcrPhoto, onExport,
+  row, onPatch, onPatchSubject, onAddSubject, onRemoveSubject, onOcrPhoto, onExport, onSaveNotes, onSuggestNotes,
 }: {
   row: StudentRow;
   onPatch: (p: Partial<StudentRow>) => void;
@@ -465,6 +593,8 @@ function StudentCertCard({
   onRemoveSubject: (idx: number) => void;
   onOcrPhoto: (f: File) => void;
   onExport: () => void;
+  onSaveNotes: () => void;
+  onSuggestNotes: () => void;
 }) {
   const fileRef = useRef<HTMLInputElement | null>(null);
   return (
@@ -529,12 +659,27 @@ function StudentCertCard({
 
         <div className="grid gap-2 sm:grid-cols-2">
           <div>
-            <Label>הערות המחנך / הרב</Label>
-            <Textarea rows={2} value={row.teacherNote} onChange={(e) => onPatch({ teacherNote: e.target.value })} />
+            <div className="flex items-center justify-between">
+              <Label>הערות המחנך / הרב</Label>
+              <Button type="button" variant="ghost" size="sm" onClick={onSuggestNotes} className="h-7 gap-1 px-2 text-xs">
+                <Sparkles className="h-3.5 w-3.5" /> הצע הערות AI
+              </Button>
+            </div>
+            <Textarea
+              rows={3}
+              value={row.teacherNote}
+              onChange={(e) => onPatch({ teacherNote: e.target.value })}
+              onBlur={onSaveNotes}
+            />
           </div>
           <div>
             <Label>הערות ההנהלה</Label>
-            <Textarea rows={2} value={row.principalNote} onChange={(e) => onPatch({ principalNote: e.target.value })} />
+            <Textarea
+              rows={3}
+              value={row.principalNote}
+              onChange={(e) => onPatch({ principalNote: e.target.value })}
+              onBlur={onSaveNotes}
+            />
           </div>
         </div>
 

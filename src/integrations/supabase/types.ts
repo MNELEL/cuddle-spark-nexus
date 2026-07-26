@@ -248,6 +248,57 @@ export type Database = {
         }
         Relationships: []
       }
+      certificate_notes: {
+        Row: {
+          class_id: string
+          created_at: string
+          grade_overrides: Json | null
+          id: string
+          period_key: string
+          principal_note: string
+          student_id: string
+          teacher_note: string
+          updated_at: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          grade_overrides?: Json | null
+          id?: string
+          period_key: string
+          principal_note?: string
+          student_id: string
+          teacher_note?: string
+          updated_at?: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          grade_overrides?: Json | null
+          id?: string
+          period_key?: string
+          principal_note?: string
+          student_id?: string
+          teacher_note?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificate_notes_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificate_notes_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       checklist_leads: {
         Row: {
           checklist_slug: string

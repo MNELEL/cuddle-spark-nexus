@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
-import { ArrowRight, Printer, MessageCircle, Mail, FileDown } from "lucide-react";
+import { ArrowRight, Printer, MessageCircle, Mail, FileDown, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -92,6 +92,13 @@ function ReportsPage() {
       <div className="no-print flex items-center justify-between">
         <Link to="/classes/$classId" params={{ classId }} className="text-sm text-muted-foreground hover:underline flex items-center gap-1">
           <ArrowRight className="h-4 w-4" /> חזרה לכיתה
+        </Link>
+        <Link
+          to="/pedagogical/$classId"
+          params={{ classId }}
+          className="text-sm font-medium text-primary hover:underline flex items-center gap-1"
+        >
+          <Sparkles className="h-4 w-4" /> דוח פדגוגי (AI)
         </Link>
       </div>
 
