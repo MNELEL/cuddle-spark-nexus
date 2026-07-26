@@ -52,6 +52,7 @@ import { Route as AuthenticatedSettingsBrandRouteImport } from './routes/_authen
 import { Route as AuthenticatedResourcesResourceIdRouteImport } from './routes/_authenticated.resources.$resourceId'
 import { Route as AuthenticatedReportsClassIdRouteImport } from './routes/_authenticated.reports.$classId'
 import { Route as AuthenticatedRaffleClassIdRouteImport } from './routes/_authenticated.raffle.$classId'
+import { Route as AuthenticatedPedagogicalClassIdRouteImport } from './routes/_authenticated.pedagogical.$classId'
 import { Route as AuthenticatedParentsClassIdRouteImport } from './routes/_authenticated.parents.$classId'
 import { Route as AuthenticatedGamificationClassIdRouteImport } from './routes/_authenticated.gamification.$classId'
 import { Route as AuthenticatedExamScannerClassIdRouteImport } from './routes/_authenticated.exam-scanner.$classId'
@@ -290,6 +291,12 @@ const AuthenticatedRaffleClassIdRoute =
     path: '/raffle/$classId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedPedagogicalClassIdRoute =
+  AuthenticatedPedagogicalClassIdRouteImport.update({
+    id: '/pedagogical/$classId',
+    path: '/pedagogical/$classId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedParentsClassIdRoute =
   AuthenticatedParentsClassIdRouteImport.update({
     id: '/parents/$classId',
@@ -389,6 +396,7 @@ export interface FileRoutesByFullPath {
   '/exam-scanner/$classId': typeof AuthenticatedExamScannerClassIdRoute
   '/gamification/$classId': typeof AuthenticatedGamificationClassIdRoute
   '/parents/$classId': typeof AuthenticatedParentsClassIdRoute
+  '/pedagogical/$classId': typeof AuthenticatedPedagogicalClassIdRoute
   '/raffle/$classId': typeof AuthenticatedRaffleClassIdRoute
   '/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/resources/$resourceId': typeof AuthenticatedResourcesResourceIdRoute
@@ -439,6 +447,7 @@ export interface FileRoutesByTo {
   '/exam-scanner/$classId': typeof AuthenticatedExamScannerClassIdRoute
   '/gamification/$classId': typeof AuthenticatedGamificationClassIdRoute
   '/parents/$classId': typeof AuthenticatedParentsClassIdRoute
+  '/pedagogical/$classId': typeof AuthenticatedPedagogicalClassIdRoute
   '/raffle/$classId': typeof AuthenticatedRaffleClassIdRoute
   '/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/resources/$resourceId': typeof AuthenticatedResourcesResourceIdRoute
@@ -494,6 +503,7 @@ export interface FileRoutesById {
   '/_authenticated/exam-scanner/$classId': typeof AuthenticatedExamScannerClassIdRoute
   '/_authenticated/gamification/$classId': typeof AuthenticatedGamificationClassIdRoute
   '/_authenticated/parents/$classId': typeof AuthenticatedParentsClassIdRoute
+  '/_authenticated/pedagogical/$classId': typeof AuthenticatedPedagogicalClassIdRoute
   '/_authenticated/raffle/$classId': typeof AuthenticatedRaffleClassIdRoute
   '/_authenticated/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/_authenticated/resources/$resourceId': typeof AuthenticatedResourcesResourceIdRoute
@@ -549,6 +559,7 @@ export interface FileRouteTypes {
     | '/exam-scanner/$classId'
     | '/gamification/$classId'
     | '/parents/$classId'
+    | '/pedagogical/$classId'
     | '/raffle/$classId'
     | '/reports/$classId'
     | '/resources/$resourceId'
@@ -599,6 +610,7 @@ export interface FileRouteTypes {
     | '/exam-scanner/$classId'
     | '/gamification/$classId'
     | '/parents/$classId'
+    | '/pedagogical/$classId'
     | '/raffle/$classId'
     | '/reports/$classId'
     | '/resources/$resourceId'
@@ -653,6 +665,7 @@ export interface FileRouteTypes {
     | '/_authenticated/exam-scanner/$classId'
     | '/_authenticated/gamification/$classId'
     | '/_authenticated/parents/$classId'
+    | '/_authenticated/pedagogical/$classId'
     | '/_authenticated/raffle/$classId'
     | '/_authenticated/reports/$classId'
     | '/_authenticated/resources/$resourceId'
@@ -982,6 +995,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRaffleClassIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/pedagogical/$classId': {
+      id: '/_authenticated/pedagogical/$classId'
+      path: '/pedagogical/$classId'
+      fullPath: '/pedagogical/$classId'
+      preLoaderRoute: typeof AuthenticatedPedagogicalClassIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/parents/$classId': {
       id: '/_authenticated/parents/$classId'
       path: '/parents/$classId'
@@ -1094,6 +1114,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedExamScannerClassIdRoute: typeof AuthenticatedExamScannerClassIdRoute
   AuthenticatedGamificationClassIdRoute: typeof AuthenticatedGamificationClassIdRoute
   AuthenticatedParentsClassIdRoute: typeof AuthenticatedParentsClassIdRoute
+  AuthenticatedPedagogicalClassIdRoute: typeof AuthenticatedPedagogicalClassIdRoute
   AuthenticatedRaffleClassIdRoute: typeof AuthenticatedRaffleClassIdRoute
   AuthenticatedReportsClassIdRoute: typeof AuthenticatedReportsClassIdRoute
   AuthenticatedSettingsBrandRoute: typeof AuthenticatedSettingsBrandRoute
@@ -1118,6 +1139,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedExamScannerClassIdRoute: AuthenticatedExamScannerClassIdRoute,
   AuthenticatedGamificationClassIdRoute: AuthenticatedGamificationClassIdRoute,
   AuthenticatedParentsClassIdRoute: AuthenticatedParentsClassIdRoute,
+  AuthenticatedPedagogicalClassIdRoute: AuthenticatedPedagogicalClassIdRoute,
   AuthenticatedRaffleClassIdRoute: AuthenticatedRaffleClassIdRoute,
   AuthenticatedReportsClassIdRoute: AuthenticatedReportsClassIdRoute,
   AuthenticatedSettingsBrandRoute: AuthenticatedSettingsBrandRoute,
