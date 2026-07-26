@@ -1,23 +1,43 @@
-## דוח ממצאים — 12 פיצ'רים
 
-| # | פיצ'ר | סטטוס | מה נמצא בפועל |
-|---|---|---|---|
-| 1 | תעודות | **קיים מלא** | `_authenticated.certificates.$classId.tsx` תומך ב-6 תוויות מילוליות (מצוין/טוב מאוד/כמעט טוב מאוד/טוב/כמעט טוב/להשתדל יותר), הליכות + שקידה + דרך ארץ ב-4 דרגות, בחירת תקופה (מחצית א'/ב', שליש א'/ב'/ג', שנתי, custom), והערות חופשיות (`teacherNote`, `principalNote`) לכל תלמיד. תמיכה גם ב"תעודת תיקון". |
-| 2 | הצעות AI להערות תעודה | **לא קיים** | קיים `ai-certificate.functions.ts` אבל רק ל-OCR של תעודה מודפסת (`analyzeCertificatePhoto`). אין קריאת AI שמייצרת הערה מנומקת לתלמיד על סמך ציונים/הליכות/נוכחות. |
-| 3 | יומן/לוח אירועים כיתתי | **לא קיים** | אין רכיב לוח חודשי, אין טבלת `events`, ואין תצוגת ימי הולדת/מבחנים/טיולים. `reminders` (בטבלה נפרדת, ראו סעיף 9) הן רשימה שטוחה בלבד. |
-| 4 | אובייקטי סביבה בגריד הישיבה | **לא קיים** | `seating-grid.tsx` ו-`seating-configs.functions.ts` יודעים לשמור רק מיקומי תלמידים (`seat_row/seat_col`). אין רהיטים/לוח/שולחן מורה/פינת קריאה כישויות ב-config. |
-| 5 | סימון חזותי לצרכים מיוחדים | **לא קיים / חלקי בלבד** | ב-`students` יש `notes` חופשי אבל לא זיהיתי דגל `iep`/`special_needs` ולא סימון חזותי ייעודי בגריד. |
-| 6 | Partners + טופס יצירת קשר | **קיים מלא** | `/partners` עם טופס דמו מלא (institutionName, contactName, role, email, demoDate) + case-studies + districts + schools. |
-| 7 | Taxonomy היררכי לחומרי לימוד | **לא קיים** | ב-`teaching-resources` יש שדות שטוחים בלבד: `subject`, `grade_level`, `tags[]`, `resource_type` (enum). אין נושא-אב/תת-נושא ולא טבלת taxonomy. |
-| 8 | מבחני AI עם קושי/נושא/משוב/בדיקה אוטומטית | **חלקי בלבד** | קיים `exam-scanner` ל-OCR מבחן בכתב יד + `question_bank` בתוך resources. **חסר**: הפקת מבחן ב-AI עם בחירת רמת קושי + נושא, משוב מורה על שאלה בודדת, זיהוי שאלות סגורות/אמריקאיות, בדיקה אוטומטית מסומנת, וכתיבה אוטומטית לטבלת `grades`. |
-| 9 | תזכורות / התראות | **קיים חלקית** | טבלת `reminders` + `crm-tab.tsx` + `sent_reminder_alerts` + `reminder-alerts.server.ts` — תזכורות בסיסיות למורה. אין הגדרות התראה אישיות (סוגים, ערוצים, "שיעור מתחיל בעוד X"). |
-| 10 | Import/Export CSV/JSON | **קיים חלקית** | `import-export.tsx` תומך ב-XLSX + CSV לתלמידים בלבד (עמודות: name/height/row_pref/corner_pref/notes) + ייצוא PDF של הגריד + שמירה/טעינה של seating configs. אין ייצוא/ייבוא של ציונים, נוכחות, resources, תעודות. |
-| 11 | Command palette גלובלי | **לא קיים** | `src/components/ui/command.tsx` (רכיב shadcn cmdk) קיים כרכיב UI אבל לא מחובר לשום מקום כ-palette גלובלי לניווט/חיפוש. |
-| 12 | סיכום שבועי של אירועי הלוח ב-AI | **לא קיים** | קיים `bulletins` (עלוני כיתה שבועיים) ו-`weekly-pace-card.tsx` (קצב לימוד), אבל אין רכיב שמנתח אירועי לוח (כי סעיף 3 לא קיים בכלל) ומפיק סיכום טקסטואלי שבועי למורה. |
+## דוח ממצאים (בדיקה בלבד — לא נערך קוד)
 
-### סיכום עדיפויות מוצע
-- **חורים אמיתיים (לא קיים בכלל):** 2, 3, 4, 7, 11, 12 — ו-12 תלוי ב-3.
-- **חלקי, שווה השלמה:** 5 (דגל + באדג'), 8 (מחולל + בדיקה אוטומטית), 9 (הגדרות התראה), 10 (הרחבת ייבוא/ייצוא).
-- **קיים מלא:** 1, 6.
+### 1. טבלת `grades` והצגה בתעודה
+עמודות בפועל:
+`id, class_id, student_id, subject (text), value (numeric), max_value (numeric), date, notes, created_at`.
+אין עמודת `period` ואין ציון מילולי מאוחסן — הכל מספרי.
 
-אם תרצה שאתחיל בבנייה, אמליץ על הסדר: 3 → 12 (כזוג), אחר כך 2, 8, 4+5 (יחד בגריד), 11, 7, 9, 10. אשמח לפרט תוכנית מימוש לכל סעיף לפי הבחירה שלך.
+איך התעודה מציגה ציון מילולי כרגע (`_authenticated.certificates.$classId.tsx`):
+- `getCertificateData` (ב-`src/lib/certificates.functions.ts`) מושך grades בטווח `from..to` לפי `class_id`.
+- `computeStudentRow` מקבץ לפי `subject`, סוכם `value/max_value`, מחשב אחוז, וממפה דרך `labelForPercent()` (ב-`src/lib/pdf/certificate-pdf.ts`) לתווית מ-`GRADE_LABELS` (מצוין/טוב מאוד/כמעט טוב מאוד/טוב/כמעט טוב/להשתדל יותר). ההערה בשורה היא `"{אחוז}%"`.
+- המורה יכול לערוך ידנית בטבלה (`patchSubject`), כולל שינוי ה-label ל-`GradeLabel` אחר, ולהוסיף/למחוק מקצועות. השינויים חיים ב-state בלבד — לא נשמרים ל-DB.
+- טווחי תקופה (חצי-שנתי/שליש/שנתי/מותאם) מחושבים ב-`periodRange()` בקליינט; אין entity "period" בסכימה.
+
+### 2. `behavior_points`, `discipline_events`, `attendance`
+- `behavior_points`: `id, class_id, student_id, category (text), points (int), note, date, created_at`.
+- `discipline_events`: `id, class_id, student_id, type, category, severity (int), description, date, parents_notified (bool), created_at`. **לא נצרך היום** ב-`getCertificateData`.
+- `attendance`: `id, class_id, student_id, date, status (text: present/absent/late), notes, created_at`. כן נצרך בתעודה — מוצג כספירה של present/absent/late.
+
+חישוב "הליכות" בתעודה: סכימת `points` פשוטה עם ספי `>=10 / >=0 / >=-5 / else` → אחת מ-`BEHAVIOR_LABELS` (ראוי לשבח/נאות/בינוני/טעון שיפור). אותה תווית מועתקת גם ל-diligence ול-manners כברירת מחדל — המורה יכול לשנות ידנית לכל תחום.
+
+### 3. הערות teacherNote / principalNote
+לא נשמרות בשום entity — קיימות כשדות state בקליינט בלבד:
+- ב-`StudentRow` (בתוך `certificates.$classId.tsx`): `teacherNote: string`, `principalNote: string`, מאותחלים ל-`""` ב-`computeStudentRow`.
+- נערכים בכרטיס התלמיד (`StudentCertCard`) ומוזרמים ל-`buildCertificatePdfBlob({ teacherNote, principalNote })`.
+- OCR תעודה (`analyzeCertificatePhoto`) יכול למלא אותם אוטומטית מתמונה, אך שוב — רק ב-state הרינדור, נעלם בריענון עמוד. אין טבלת `certificates` או `certificate_notes` בסכימה.
+
+### 4. תשתית קריאה ל-Lovable AI Gateway
+כן — קיימת ומאוחדת ב-`src/lib/ai-gateway.server.ts`:
+- `callLovableAI({ messages, jsonResponse?, model? })` — chat/completions, ברירת מחדל `google/gemini-2.5-flash`, טיפול ב-429/402, מחזיר `choices[0].message.content`.
+- `callLovableAIEmbeddings(text, model?)` — embeddings, מחזיר `null` בכשל.
+
+דפוסים לשכפול (server functions עטופים ב-`createServerFn` + `requireSupabaseAuth` + Zod `inputValidator`):
+- `src/lib/ai-certificate.functions.ts` — OCR תעודה (multimodal image+text, `jsonResponse: true`, סניטציה מלאה של הפלט).
+- `src/lib/teaching-resources.functions.ts` — `generateResourceWithAI` (כולל `source_resource_id` להקשר).
+- `src/lib/ai-grades.functions.ts`, `src/lib/ai-exam.functions.ts`, `src/lib/ai-assistant.functions.ts` — דוגמאות טקסטואליות ו-JSON.
+
+### מסקנה מהירה לתכנון הבא
+- כדי לשמור הערות/תעודות בין רינדורים דרושה טבלה חדשה (למשל `certificates` או `certificate_notes` עם `student_id + period_key`).
+- כדי לתמוך ב"תקופה" (חצי/שליש/שנתי) בציונים עצמם — או להישאר עם חלון תאריכים (הגישה הנוכחית), או להוסיף `period` ל-`grades`.
+- הצעות AI להערות מורה/הנהלה ולניתוח שבועי — אפשר לממש בקלות ב-server function חדש שמשתמש ב-`callLovableAI` על סמך grades/behavior/attendance/discipline_events של התלמיד בטווח.
+
+מוכן להמשיך לתוכנית בנייה כשתאשר את הכיוון (איפה לשמור הערות, האם להוסיף `period` ל-grades, ומה בדיוק להזין ל-AI).
