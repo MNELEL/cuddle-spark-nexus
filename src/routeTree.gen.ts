@@ -36,11 +36,15 @@ import { Route as BlogFreeToolsComparisonRouteImport } from './routes/blog.free-
 import { Route as BlogDigitalHallPassGuideRouteImport } from './routes/blog.digital-hall-pass-guide'
 import { Route as BlogClassroomToolsTeachersRouteImport } from './routes/blog.classroom-tools-teachers'
 import { Route as BlogClassroomManagementStrategiesRouteImport } from './routes/blog.classroom-management-strategies'
+import { Route as BlogClassdojoComparisonRouteImport } from './routes/blog.classdojo-comparison'
+import { Route as BlogAiSeatingArrangementsGuideRouteImport } from './routes/blog.ai-seating-arrangements-guide'
 import { Route as AuthenticatedToolkitRouteImport } from './routes/_authenticated.toolkit'
 import { Route as AuthenticatedSoundBoardRouteImport } from './routes/_authenticated.sound-board'
 import { Route as AuthenticatedResourcesRouteImport } from './routes/_authenticated.resources'
 import { Route as AuthenticatedQuestionsRouteImport } from './routes/_authenticated.questions'
+import { Route as AuthenticatedInsightsRouteImport } from './routes/_authenticated.insights'
 import { Route as AuthenticatedIngestRouteImport } from './routes/_authenticated.ingest'
+import { Route as AuthenticatedBellScheduleRouteImport } from './routes/_authenticated.bell-schedule'
 import { Route as AuthenticatedClassesIndexRouteImport } from './routes/_authenticated.classes.index'
 import { Route as BlogClassroomManagementStrategiesChecklistRouteImport } from './routes/blog.classroom-management-strategies.checklist'
 import { Route as AuthenticatedShareClassIdRouteImport } from './routes/_authenticated.share.$classId'
@@ -48,12 +52,17 @@ import { Route as AuthenticatedSettingsBrandRouteImport } from './routes/_authen
 import { Route as AuthenticatedResourcesResourceIdRouteImport } from './routes/_authenticated.resources.$resourceId'
 import { Route as AuthenticatedReportsClassIdRouteImport } from './routes/_authenticated.reports.$classId'
 import { Route as AuthenticatedRaffleClassIdRouteImport } from './routes/_authenticated.raffle.$classId'
+import { Route as AuthenticatedPedagogicalClassIdRouteImport } from './routes/_authenticated.pedagogical.$classId'
 import { Route as AuthenticatedParentsClassIdRouteImport } from './routes/_authenticated.parents.$classId'
 import { Route as AuthenticatedGamificationClassIdRouteImport } from './routes/_authenticated.gamification.$classId'
+import { Route as AuthenticatedExamScannerClassIdRouteImport } from './routes/_authenticated.exam-scanner.$classId'
+import { Route as AuthenticatedExamGeneratorClassIdRouteImport } from './routes/_authenticated.exam-generator.$classId'
 import { Route as AuthenticatedDailyClassIdRouteImport } from './routes/_authenticated.daily.$classId'
 import { Route as AuthenticatedClassesClassIdRouteImport } from './routes/_authenticated.classes.$classId'
 import { Route as AuthenticatedCertificatesClassIdRouteImport } from './routes/_authenticated.certificates.$classId'
+import { Route as AuthenticatedCalendarClassIdRouteImport } from './routes/_authenticated.calendar.$classId'
 import { Route as AuthenticatedBulletinsClassIdRouteImport } from './routes/_authenticated.bulletins.$classId'
+import { Route as AuthenticatedAnalyticsClassIdRouteImport } from './routes/_authenticated.analytics.$classId'
 import { Route as AuthenticatedClassesClassIdDisplayRouteImport } from './routes/_authenticated.classes.$classId.display'
 
 const SupportRoute = SupportRouteImport.update({
@@ -195,6 +204,17 @@ const BlogClassroomManagementStrategiesRoute =
     path: '/classroom-management-strategies',
     getParentRoute: () => BlogRoute,
   } as any)
+const BlogClassdojoComparisonRoute = BlogClassdojoComparisonRouteImport.update({
+  id: '/classdojo-comparison',
+  path: '/classdojo-comparison',
+  getParentRoute: () => BlogRoute,
+} as any)
+const BlogAiSeatingArrangementsGuideRoute =
+  BlogAiSeatingArrangementsGuideRouteImport.update({
+    id: '/ai-seating-arrangements-guide',
+    path: '/ai-seating-arrangements-guide',
+    getParentRoute: () => BlogRoute,
+  } as any)
 const AuthenticatedToolkitRoute = AuthenticatedToolkitRouteImport.update({
   id: '/toolkit',
   path: '/toolkit',
@@ -215,11 +235,22 @@ const AuthenticatedQuestionsRoute = AuthenticatedQuestionsRouteImport.update({
   path: '/questions',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedInsightsRoute = AuthenticatedInsightsRouteImport.update({
+  id: '/insights',
+  path: '/insights',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedIngestRoute = AuthenticatedIngestRouteImport.update({
   id: '/ingest',
   path: '/ingest',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedBellScheduleRoute =
+  AuthenticatedBellScheduleRouteImport.update({
+    id: '/bell-schedule',
+    path: '/bell-schedule',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedClassesIndexRoute =
   AuthenticatedClassesIndexRouteImport.update({
     id: '/classes/',
@@ -262,6 +293,12 @@ const AuthenticatedRaffleClassIdRoute =
     path: '/raffle/$classId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedPedagogicalClassIdRoute =
+  AuthenticatedPedagogicalClassIdRouteImport.update({
+    id: '/pedagogical/$classId',
+    path: '/pedagogical/$classId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedParentsClassIdRoute =
   AuthenticatedParentsClassIdRouteImport.update({
     id: '/parents/$classId',
@@ -272,6 +309,18 @@ const AuthenticatedGamificationClassIdRoute =
   AuthenticatedGamificationClassIdRouteImport.update({
     id: '/gamification/$classId',
     path: '/gamification/$classId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedExamScannerClassIdRoute =
+  AuthenticatedExamScannerClassIdRouteImport.update({
+    id: '/exam-scanner/$classId',
+    path: '/exam-scanner/$classId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedExamGeneratorClassIdRoute =
+  AuthenticatedExamGeneratorClassIdRouteImport.update({
+    id: '/exam-generator/$classId',
+    path: '/exam-generator/$classId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedDailyClassIdRoute =
@@ -292,10 +341,22 @@ const AuthenticatedCertificatesClassIdRoute =
     path: '/certificates/$classId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedCalendarClassIdRoute =
+  AuthenticatedCalendarClassIdRouteImport.update({
+    id: '/calendar/$classId',
+    path: '/calendar/$classId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedBulletinsClassIdRoute =
   AuthenticatedBulletinsClassIdRouteImport.update({
     id: '/bulletins/$classId',
     path: '/bulletins/$classId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedAnalyticsClassIdRoute =
+  AuthenticatedAnalyticsClassIdRouteImport.update({
+    id: '/analytics/$classId',
+    path: '/analytics/$classId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedClassesClassIdDisplayRoute =
@@ -315,11 +376,15 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
+  '/bell-schedule': typeof AuthenticatedBellScheduleRoute
   '/ingest': typeof AuthenticatedIngestRoute
+  '/insights': typeof AuthenticatedInsightsRoute
   '/questions': typeof AuthenticatedQuestionsRoute
   '/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/sound-board': typeof AuthenticatedSoundBoardRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
+  '/blog/ai-seating-arrangements-guide': typeof BlogAiSeatingArrangementsGuideRoute
+  '/blog/classdojo-comparison': typeof BlogClassdojoComparisonRoute
   '/blog/classroom-management-strategies': typeof BlogClassroomManagementStrategiesRouteWithChildren
   '/blog/classroom-tools-teachers': typeof BlogClassroomToolsTeachersRoute
   '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
@@ -337,12 +402,17 @@ export interface FileRoutesByFullPath {
   '/blog/': typeof BlogIndexRoute
   '/help/': typeof HelpIndexRoute
   '/parents-guide/': typeof ParentsGuideIndexRoute
+  '/analytics/$classId': typeof AuthenticatedAnalyticsClassIdRoute
   '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
+  '/calendar/$classId': typeof AuthenticatedCalendarClassIdRoute
   '/certificates/$classId': typeof AuthenticatedCertificatesClassIdRoute
   '/classes/$classId': typeof AuthenticatedClassesClassIdRouteWithChildren
   '/daily/$classId': typeof AuthenticatedDailyClassIdRoute
+  '/exam-generator/$classId': typeof AuthenticatedExamGeneratorClassIdRoute
+  '/exam-scanner/$classId': typeof AuthenticatedExamScannerClassIdRoute
   '/gamification/$classId': typeof AuthenticatedGamificationClassIdRoute
   '/parents/$classId': typeof AuthenticatedParentsClassIdRoute
+  '/pedagogical/$classId': typeof AuthenticatedPedagogicalClassIdRoute
   '/raffle/$classId': typeof AuthenticatedRaffleClassIdRoute
   '/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/resources/$resourceId': typeof AuthenticatedResourcesResourceIdRoute
@@ -359,11 +429,15 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
+  '/bell-schedule': typeof AuthenticatedBellScheduleRoute
   '/ingest': typeof AuthenticatedIngestRoute
+  '/insights': typeof AuthenticatedInsightsRoute
   '/questions': typeof AuthenticatedQuestionsRoute
   '/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/sound-board': typeof AuthenticatedSoundBoardRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
+  '/blog/ai-seating-arrangements-guide': typeof BlogAiSeatingArrangementsGuideRoute
+  '/blog/classdojo-comparison': typeof BlogClassdojoComparisonRoute
   '/blog/classroom-management-strategies': typeof BlogClassroomManagementStrategiesRouteWithChildren
   '/blog/classroom-tools-teachers': typeof BlogClassroomToolsTeachersRoute
   '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
@@ -381,12 +455,17 @@ export interface FileRoutesByTo {
   '/blog': typeof BlogIndexRoute
   '/help': typeof HelpIndexRoute
   '/parents-guide': typeof ParentsGuideIndexRoute
+  '/analytics/$classId': typeof AuthenticatedAnalyticsClassIdRoute
   '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
+  '/calendar/$classId': typeof AuthenticatedCalendarClassIdRoute
   '/certificates/$classId': typeof AuthenticatedCertificatesClassIdRoute
   '/classes/$classId': typeof AuthenticatedClassesClassIdRouteWithChildren
   '/daily/$classId': typeof AuthenticatedDailyClassIdRoute
+  '/exam-generator/$classId': typeof AuthenticatedExamGeneratorClassIdRoute
+  '/exam-scanner/$classId': typeof AuthenticatedExamScannerClassIdRoute
   '/gamification/$classId': typeof AuthenticatedGamificationClassIdRoute
   '/parents/$classId': typeof AuthenticatedParentsClassIdRoute
+  '/pedagogical/$classId': typeof AuthenticatedPedagogicalClassIdRoute
   '/raffle/$classId': typeof AuthenticatedRaffleClassIdRoute
   '/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/resources/$resourceId': typeof AuthenticatedResourcesResourceIdRoute
@@ -408,11 +487,15 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
+  '/_authenticated/bell-schedule': typeof AuthenticatedBellScheduleRoute
   '/_authenticated/ingest': typeof AuthenticatedIngestRoute
+  '/_authenticated/insights': typeof AuthenticatedInsightsRoute
   '/_authenticated/questions': typeof AuthenticatedQuestionsRoute
   '/_authenticated/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/_authenticated/sound-board': typeof AuthenticatedSoundBoardRoute
   '/_authenticated/toolkit': typeof AuthenticatedToolkitRoute
+  '/blog/ai-seating-arrangements-guide': typeof BlogAiSeatingArrangementsGuideRoute
+  '/blog/classdojo-comparison': typeof BlogClassdojoComparisonRoute
   '/blog/classroom-management-strategies': typeof BlogClassroomManagementStrategiesRouteWithChildren
   '/blog/classroom-tools-teachers': typeof BlogClassroomToolsTeachersRoute
   '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
@@ -430,12 +513,17 @@ export interface FileRoutesById {
   '/blog/': typeof BlogIndexRoute
   '/help/': typeof HelpIndexRoute
   '/parents-guide/': typeof ParentsGuideIndexRoute
+  '/_authenticated/analytics/$classId': typeof AuthenticatedAnalyticsClassIdRoute
   '/_authenticated/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
+  '/_authenticated/calendar/$classId': typeof AuthenticatedCalendarClassIdRoute
   '/_authenticated/certificates/$classId': typeof AuthenticatedCertificatesClassIdRoute
   '/_authenticated/classes/$classId': typeof AuthenticatedClassesClassIdRouteWithChildren
   '/_authenticated/daily/$classId': typeof AuthenticatedDailyClassIdRoute
+  '/_authenticated/exam-generator/$classId': typeof AuthenticatedExamGeneratorClassIdRoute
+  '/_authenticated/exam-scanner/$classId': typeof AuthenticatedExamScannerClassIdRoute
   '/_authenticated/gamification/$classId': typeof AuthenticatedGamificationClassIdRoute
   '/_authenticated/parents/$classId': typeof AuthenticatedParentsClassIdRoute
+  '/_authenticated/pedagogical/$classId': typeof AuthenticatedPedagogicalClassIdRoute
   '/_authenticated/raffle/$classId': typeof AuthenticatedRaffleClassIdRoute
   '/_authenticated/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/_authenticated/resources/$resourceId': typeof AuthenticatedResourcesResourceIdRoute
@@ -457,11 +545,15 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/sitemap.xml'
     | '/support'
+    | '/bell-schedule'
     | '/ingest'
+    | '/insights'
     | '/questions'
     | '/resources'
     | '/sound-board'
     | '/toolkit'
+    | '/blog/ai-seating-arrangements-guide'
+    | '/blog/classdojo-comparison'
     | '/blog/classroom-management-strategies'
     | '/blog/classroom-tools-teachers'
     | '/blog/digital-hall-pass-guide'
@@ -479,12 +571,17 @@ export interface FileRouteTypes {
     | '/blog/'
     | '/help/'
     | '/parents-guide/'
+    | '/analytics/$classId'
     | '/bulletins/$classId'
+    | '/calendar/$classId'
     | '/certificates/$classId'
     | '/classes/$classId'
     | '/daily/$classId'
+    | '/exam-generator/$classId'
+    | '/exam-scanner/$classId'
     | '/gamification/$classId'
     | '/parents/$classId'
+    | '/pedagogical/$classId'
     | '/raffle/$classId'
     | '/reports/$classId'
     | '/resources/$resourceId'
@@ -501,11 +598,15 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/sitemap.xml'
     | '/support'
+    | '/bell-schedule'
     | '/ingest'
+    | '/insights'
     | '/questions'
     | '/resources'
     | '/sound-board'
     | '/toolkit'
+    | '/blog/ai-seating-arrangements-guide'
+    | '/blog/classdojo-comparison'
     | '/blog/classroom-management-strategies'
     | '/blog/classroom-tools-teachers'
     | '/blog/digital-hall-pass-guide'
@@ -523,12 +624,17 @@ export interface FileRouteTypes {
     | '/blog'
     | '/help'
     | '/parents-guide'
+    | '/analytics/$classId'
     | '/bulletins/$classId'
+    | '/calendar/$classId'
     | '/certificates/$classId'
     | '/classes/$classId'
     | '/daily/$classId'
+    | '/exam-generator/$classId'
+    | '/exam-scanner/$classId'
     | '/gamification/$classId'
     | '/parents/$classId'
+    | '/pedagogical/$classId'
     | '/raffle/$classId'
     | '/reports/$classId'
     | '/resources/$resourceId'
@@ -549,11 +655,15 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/sitemap.xml'
     | '/support'
+    | '/_authenticated/bell-schedule'
     | '/_authenticated/ingest'
+    | '/_authenticated/insights'
     | '/_authenticated/questions'
     | '/_authenticated/resources'
     | '/_authenticated/sound-board'
     | '/_authenticated/toolkit'
+    | '/blog/ai-seating-arrangements-guide'
+    | '/blog/classdojo-comparison'
     | '/blog/classroom-management-strategies'
     | '/blog/classroom-tools-teachers'
     | '/blog/digital-hall-pass-guide'
@@ -571,12 +681,17 @@ export interface FileRouteTypes {
     | '/blog/'
     | '/help/'
     | '/parents-guide/'
+    | '/_authenticated/analytics/$classId'
     | '/_authenticated/bulletins/$classId'
+    | '/_authenticated/calendar/$classId'
     | '/_authenticated/certificates/$classId'
     | '/_authenticated/classes/$classId'
     | '/_authenticated/daily/$classId'
+    | '/_authenticated/exam-generator/$classId'
+    | '/_authenticated/exam-scanner/$classId'
     | '/_authenticated/gamification/$classId'
     | '/_authenticated/parents/$classId'
+    | '/_authenticated/pedagogical/$classId'
     | '/_authenticated/raffle/$classId'
     | '/_authenticated/reports/$classId'
     | '/_authenticated/resources/$resourceId'
@@ -794,6 +909,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogClassroomManagementStrategiesRouteImport
       parentRoute: typeof BlogRoute
     }
+    '/blog/classdojo-comparison': {
+      id: '/blog/classdojo-comparison'
+      path: '/classdojo-comparison'
+      fullPath: '/blog/classdojo-comparison'
+      preLoaderRoute: typeof BlogClassdojoComparisonRouteImport
+      parentRoute: typeof BlogRoute
+    }
+    '/blog/ai-seating-arrangements-guide': {
+      id: '/blog/ai-seating-arrangements-guide'
+      path: '/ai-seating-arrangements-guide'
+      fullPath: '/blog/ai-seating-arrangements-guide'
+      preLoaderRoute: typeof BlogAiSeatingArrangementsGuideRouteImport
+      parentRoute: typeof BlogRoute
+    }
     '/_authenticated/toolkit': {
       id: '/_authenticated/toolkit'
       path: '/toolkit'
@@ -822,11 +951,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedQuestionsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/insights': {
+      id: '/_authenticated/insights'
+      path: '/insights'
+      fullPath: '/insights'
+      preLoaderRoute: typeof AuthenticatedInsightsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/ingest': {
       id: '/_authenticated/ingest'
       path: '/ingest'
       fullPath: '/ingest'
       preLoaderRoute: typeof AuthenticatedIngestRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/bell-schedule': {
+      id: '/_authenticated/bell-schedule'
+      path: '/bell-schedule'
+      fullPath: '/bell-schedule'
+      preLoaderRoute: typeof AuthenticatedBellScheduleRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/classes/': {
@@ -878,6 +1021,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRaffleClassIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/pedagogical/$classId': {
+      id: '/_authenticated/pedagogical/$classId'
+      path: '/pedagogical/$classId'
+      fullPath: '/pedagogical/$classId'
+      preLoaderRoute: typeof AuthenticatedPedagogicalClassIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/parents/$classId': {
       id: '/_authenticated/parents/$classId'
       path: '/parents/$classId'
@@ -890,6 +1040,20 @@ declare module '@tanstack/react-router' {
       path: '/gamification/$classId'
       fullPath: '/gamification/$classId'
       preLoaderRoute: typeof AuthenticatedGamificationClassIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/exam-scanner/$classId': {
+      id: '/_authenticated/exam-scanner/$classId'
+      path: '/exam-scanner/$classId'
+      fullPath: '/exam-scanner/$classId'
+      preLoaderRoute: typeof AuthenticatedExamScannerClassIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/exam-generator/$classId': {
+      id: '/_authenticated/exam-generator/$classId'
+      path: '/exam-generator/$classId'
+      fullPath: '/exam-generator/$classId'
+      preLoaderRoute: typeof AuthenticatedExamGeneratorClassIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/daily/$classId': {
@@ -913,11 +1077,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCertificatesClassIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/calendar/$classId': {
+      id: '/_authenticated/calendar/$classId'
+      path: '/calendar/$classId'
+      fullPath: '/calendar/$classId'
+      preLoaderRoute: typeof AuthenticatedCalendarClassIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/bulletins/$classId': {
       id: '/_authenticated/bulletins/$classId'
       path: '/bulletins/$classId'
       fullPath: '/bulletins/$classId'
       preLoaderRoute: typeof AuthenticatedBulletinsClassIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/analytics/$classId': {
+      id: '/_authenticated/analytics/$classId'
+      path: '/analytics/$classId'
+      fullPath: '/analytics/$classId'
+      preLoaderRoute: typeof AuthenticatedAnalyticsClassIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/classes/$classId/display': {
@@ -961,17 +1139,24 @@ const AuthenticatedClassesClassIdRouteWithChildren =
   )
 
 interface AuthenticatedRouteChildren {
+  AuthenticatedBellScheduleRoute: typeof AuthenticatedBellScheduleRoute
   AuthenticatedIngestRoute: typeof AuthenticatedIngestRoute
+  AuthenticatedInsightsRoute: typeof AuthenticatedInsightsRoute
   AuthenticatedQuestionsRoute: typeof AuthenticatedQuestionsRoute
   AuthenticatedResourcesRoute: typeof AuthenticatedResourcesRouteWithChildren
   AuthenticatedSoundBoardRoute: typeof AuthenticatedSoundBoardRoute
   AuthenticatedToolkitRoute: typeof AuthenticatedToolkitRoute
+  AuthenticatedAnalyticsClassIdRoute: typeof AuthenticatedAnalyticsClassIdRoute
   AuthenticatedBulletinsClassIdRoute: typeof AuthenticatedBulletinsClassIdRoute
+  AuthenticatedCalendarClassIdRoute: typeof AuthenticatedCalendarClassIdRoute
   AuthenticatedCertificatesClassIdRoute: typeof AuthenticatedCertificatesClassIdRoute
   AuthenticatedClassesClassIdRoute: typeof AuthenticatedClassesClassIdRouteWithChildren
   AuthenticatedDailyClassIdRoute: typeof AuthenticatedDailyClassIdRoute
+  AuthenticatedExamGeneratorClassIdRoute: typeof AuthenticatedExamGeneratorClassIdRoute
+  AuthenticatedExamScannerClassIdRoute: typeof AuthenticatedExamScannerClassIdRoute
   AuthenticatedGamificationClassIdRoute: typeof AuthenticatedGamificationClassIdRoute
   AuthenticatedParentsClassIdRoute: typeof AuthenticatedParentsClassIdRoute
+  AuthenticatedPedagogicalClassIdRoute: typeof AuthenticatedPedagogicalClassIdRoute
   AuthenticatedRaffleClassIdRoute: typeof AuthenticatedRaffleClassIdRoute
   AuthenticatedReportsClassIdRoute: typeof AuthenticatedReportsClassIdRoute
   AuthenticatedSettingsBrandRoute: typeof AuthenticatedSettingsBrandRoute
@@ -980,18 +1165,26 @@ interface AuthenticatedRouteChildren {
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedBellScheduleRoute: AuthenticatedBellScheduleRoute,
   AuthenticatedIngestRoute: AuthenticatedIngestRoute,
+  AuthenticatedInsightsRoute: AuthenticatedInsightsRoute,
   AuthenticatedQuestionsRoute: AuthenticatedQuestionsRoute,
   AuthenticatedResourcesRoute: AuthenticatedResourcesRouteWithChildren,
   AuthenticatedSoundBoardRoute: AuthenticatedSoundBoardRoute,
   AuthenticatedToolkitRoute: AuthenticatedToolkitRoute,
+  AuthenticatedAnalyticsClassIdRoute: AuthenticatedAnalyticsClassIdRoute,
   AuthenticatedBulletinsClassIdRoute: AuthenticatedBulletinsClassIdRoute,
+  AuthenticatedCalendarClassIdRoute: AuthenticatedCalendarClassIdRoute,
   AuthenticatedCertificatesClassIdRoute: AuthenticatedCertificatesClassIdRoute,
   AuthenticatedClassesClassIdRoute:
     AuthenticatedClassesClassIdRouteWithChildren,
   AuthenticatedDailyClassIdRoute: AuthenticatedDailyClassIdRoute,
+  AuthenticatedExamGeneratorClassIdRoute:
+    AuthenticatedExamGeneratorClassIdRoute,
+  AuthenticatedExamScannerClassIdRoute: AuthenticatedExamScannerClassIdRoute,
   AuthenticatedGamificationClassIdRoute: AuthenticatedGamificationClassIdRoute,
   AuthenticatedParentsClassIdRoute: AuthenticatedParentsClassIdRoute,
+  AuthenticatedPedagogicalClassIdRoute: AuthenticatedPedagogicalClassIdRoute,
   AuthenticatedRaffleClassIdRoute: AuthenticatedRaffleClassIdRoute,
   AuthenticatedReportsClassIdRoute: AuthenticatedReportsClassIdRoute,
   AuthenticatedSettingsBrandRoute: AuthenticatedSettingsBrandRoute,
@@ -1019,6 +1212,8 @@ const BlogClassroomManagementStrategiesRouteWithChildren =
   )
 
 interface BlogRouteChildren {
+  BlogAiSeatingArrangementsGuideRoute: typeof BlogAiSeatingArrangementsGuideRoute
+  BlogClassdojoComparisonRoute: typeof BlogClassdojoComparisonRoute
   BlogClassroomManagementStrategiesRoute: typeof BlogClassroomManagementStrategiesRouteWithChildren
   BlogClassroomToolsTeachersRoute: typeof BlogClassroomToolsTeachersRoute
   BlogDigitalHallPassGuideRoute: typeof BlogDigitalHallPassGuideRoute
@@ -1029,6 +1224,8 @@ interface BlogRouteChildren {
 }
 
 const BlogRouteChildren: BlogRouteChildren = {
+  BlogAiSeatingArrangementsGuideRoute: BlogAiSeatingArrangementsGuideRoute,
+  BlogClassdojoComparisonRoute: BlogClassdojoComparisonRoute,
   BlogClassroomManagementStrategiesRoute:
     BlogClassroomManagementStrategiesRouteWithChildren,
   BlogClassroomToolsTeachersRoute: BlogClassroomToolsTeachersRoute,

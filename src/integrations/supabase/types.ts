@@ -248,6 +248,63 @@ export type Database = {
         }
         Relationships: []
       }
+      certificate_notes: {
+        Row: {
+          class_id: string
+          conducts: Json | null
+          created_at: string
+          grade_overrides: Json | null
+          id: string
+          period_key: string
+          principal_note: string
+          student_id: string
+          subjects: Json | null
+          teacher_note: string
+          updated_at: string
+        }
+        Insert: {
+          class_id: string
+          conducts?: Json | null
+          created_at?: string
+          grade_overrides?: Json | null
+          id?: string
+          period_key: string
+          principal_note?: string
+          student_id: string
+          subjects?: Json | null
+          teacher_note?: string
+          updated_at?: string
+        }
+        Update: {
+          class_id?: string
+          conducts?: Json | null
+          created_at?: string
+          grade_overrides?: Json | null
+          id?: string
+          period_key?: string
+          principal_note?: string
+          student_id?: string
+          subjects?: Json | null
+          teacher_note?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificate_notes_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificate_notes_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       checklist_leads: {
         Row: {
           checklist_slug: string
@@ -280,6 +337,66 @@ export type Database = {
           user_agent?: string | null
         }
         Relationships: []
+      }
+      class_events: {
+        Row: {
+          class_id: string
+          color: string | null
+          created_at: string
+          created_by: string
+          date: string
+          end_date: string | null
+          id: string
+          notes: string | null
+          student_id: string | null
+          title: string
+          type: Database["public"]["Enums"]["class_event_type"]
+          updated_at: string
+        }
+        Insert: {
+          class_id: string
+          color?: string | null
+          created_at?: string
+          created_by?: string
+          date: string
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          student_id?: string | null
+          title: string
+          type?: Database["public"]["Enums"]["class_event_type"]
+          updated_at?: string
+        }
+        Update: {
+          class_id?: string
+          color?: string | null
+          created_at?: string
+          created_by?: string
+          date?: string
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          student_id?: string | null
+          title?: string
+          type?: Database["public"]["Enums"]["class_event_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_events_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_events_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       class_resource_usage: {
         Row: {
@@ -326,6 +443,7 @@ export type Database = {
           public_enabled: boolean
           public_headline: string | null
           public_slug: string | null
+          room_objects: Json
           updated_at: string
         }
         Insert: {
@@ -340,6 +458,7 @@ export type Database = {
           public_enabled?: boolean
           public_headline?: string | null
           public_slug?: string | null
+          room_objects?: Json
           updated_at?: string
         }
         Update: {
@@ -354,6 +473,7 @@ export type Database = {
           public_enabled?: boolean
           public_headline?: string | null
           public_slug?: string | null
+          room_objects?: Json
           updated_at?: string
         }
         Relationships: []
@@ -659,6 +779,30 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+        }
+        Relationships: []
+      }
+      reminder_preferences: {
+        Row: {
+          created_at: string
+          lead_time_minutes: number
+          types_enabled: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          lead_time_minutes?: number
+          types_enabled?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          lead_time_minutes?: number
+          types_enabled?: Json
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -985,6 +1129,7 @@ export type Database = {
       }
       students: {
         Row: {
+          accommodation_note: string | null
           address: string | null
           birth_date: string | null
           class_id: string
@@ -994,6 +1139,7 @@ export type Database = {
           father_name: string | null
           father_phone: string | null
           gender: string | null
+          has_special_accommodation: boolean
           height: string
           id: string
           mother_id: string | null
@@ -1008,6 +1154,7 @@ export type Database = {
           seat_row: number | null
         }
         Insert: {
+          accommodation_note?: string | null
           address?: string | null
           birth_date?: string | null
           class_id: string
@@ -1017,6 +1164,7 @@ export type Database = {
           father_name?: string | null
           father_phone?: string | null
           gender?: string | null
+          has_special_accommodation?: boolean
           height?: string
           id?: string
           mother_id?: string | null
@@ -1031,6 +1179,7 @@ export type Database = {
           seat_row?: number | null
         }
         Update: {
+          accommodation_note?: string | null
           address?: string | null
           birth_date?: string | null
           class_id?: string
@@ -1040,6 +1189,7 @@ export type Database = {
           father_name?: string | null
           father_phone?: string | null
           gender?: string | null
+          has_special_accommodation?: boolean
           height?: string
           id?: string
           mother_id?: string | null
@@ -1123,6 +1273,7 @@ export type Database = {
           subject: string
           tags: string[]
           title: string
+          topic_id: string | null
           updated_at: string
         }
         Insert: {
@@ -1142,6 +1293,7 @@ export type Database = {
           subject?: string
           tags?: string[]
           title: string
+          topic_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -1161,9 +1313,56 @@ export type Database = {
           subject?: string
           tags?: string[]
           title?: string
+          topic_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "teaching_resources_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      topics: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          name: string
+          owner_id: string
+          parent_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          name: string
+          owner_id: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "topics_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       weekly_bulletins: {
         Row: {
@@ -1236,7 +1435,13 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      class_event_type:
+        | "birthday"
+        | "exam"
+        | "trip"
+        | "holiday"
+        | "meeting"
+        | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1363,6 +1568,15 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      class_event_type: [
+        "birthday",
+        "exam",
+        "trip",
+        "holiday",
+        "meeting",
+        "other",
+      ],
+    },
   },
 } as const

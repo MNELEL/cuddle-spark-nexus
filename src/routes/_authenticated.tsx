@@ -3,12 +3,13 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { GraduationCap, LogOut, Wrench, Music, Sparkles } from "lucide-react";
+import { GraduationCap, LogOut, Wrench, Music, Sparkles, BellRing, LineChart, Palette, BookOpen } from "lucide-react";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getSecurity } from "@/lib/security.functions";
 import { PinLockScreen } from "@/components/pin-lock-screen";
+import { GlobalCommandPalette } from "@/components/global-command-palette";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthLayout,
@@ -56,11 +57,23 @@ function AuthLayout() {
             <Link to="/resources" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
               ספרייה
             </Link>
+            <Link to="/insights" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
+              <LineChart className="me-1 inline h-4 w-4" />תובנות
+            </Link>
             <Link to="/questions" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
               שאלות
             </Link>
             <Link to="/ingest" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
               <Sparkles className="me-1 inline h-4 w-4" />העלאה חכמה
+            </Link>
+            <Link to="/bell-schedule" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
+              <BellRing className="me-1 inline h-4 w-4" />לוח פעמונים
+            </Link>
+            <Link to="/settings/brand" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
+              <Palette className="me-1 inline h-4 w-4" />מיתוג מוסד
+            </Link>
+            <Link to="/blog" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
+              <BookOpen className="me-1 inline h-4 w-4" />מדריכים
             </Link>
           </nav>
           <div className="flex shrink-0 items-center gap-1 sm:gap-3">
@@ -76,6 +89,7 @@ function AuthLayout() {
         <Outlet />
       </main>
       {needsPin && <PinLockScreen onUnlock={() => setUnlocked(true)} />}
+      {!needsPin && <GlobalCommandPalette />}
     </div>
   );
 }

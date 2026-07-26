@@ -1,0 +1,141 @@
+import { useEffect, useState, useMemo } from "react";
+import { useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import {
+  CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator,
+} from "@/components/ui/command";
+import {
+  Wrench, Music, Sparkles, BellRing, LineChart, Palette, BookOpen, GraduationCap,
+  ScanText, TrendingUp, ClipboardList, Library, User, Users, Calendar,
+} from "lucide-react";
+import { listClasses } from "@/lib/classes.functions";
+import { listStudents } from "@/lib/students.functions";
+
+type NavItem = { label: string; to: string; icon: React.ComponentType<{ className?: string }>; keywords?: string };
+
+const GLOBAL_ITEMS: NavItem[] = [
+  { label: "כיתות", to: "/classes", icon: GraduationCap, keywords: "class classes" },
+  { label: "ארגז כלים", to: "/toolkit", icon: Wrench, keywords: "tools timer" },
+  { label: "לוח צלילים", to: "/sound-board", icon: Music, keywords: "sound" },
+  { label: "ספריית חומרים", to: "/resources", icon: Library, keywords: "resources library" },
+  { label: "תובנות מורה", to: "/insights", icon: LineChart, keywords: "insights analytics" },
+  { label: "בנק שאלות", to: "/questions", icon: ClipboardList, keywords: "questions" },
+  { label: "העלאה חכמה", to: "/ingest", icon: Sparkles, keywords: "ingest ai" },
+  { label: "לוח פעמונים", to: "/bell-schedule", icon: BellRing, keywords: "bell" },
+  { label: "מיתוג מוסד", to: "/settings/brand", icon: Palette, keywords: "brand settings" },
+  { label: "מדריכים", to: "/blog", icon: BookOpen, keywords: "blog guides" },
+];
+
+const CLASS_ACTIONS: { label: string; template: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { label: "אנליטיקה", template: "/analytics/", icon: TrendingUp },
+  { label: "סורק מבחנים", template: "/exam-scanner/", icon: ScanText },
+  { label: "יומן אירועים", template: "/calendar/", icon: Calendar },
+  { label: "תעודות", template: "/certificates/", icon: BookOpen },
+];
+
+export function GlobalCommandPalette() {
+  const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
+  const listCls = useServerFn(listClasses);
+  const listSt = useServerFn(listStudents);
+
+  const { data: classes = [] } = useQuery({
+    queryKey: ["command:classes"],
+    queryFn: () => listCls(),
+    enabled: open,
+  });
+
+  // Load students for all classes (compact: only when palette open)
+  const { data: allStudents = [] } = useQuery({
+    queryKey: ["command:students", classes.map((c) => c.id).join(",")],
+    queryFn: async () => {
+      const results = await Promise.all(
+        classes.map(async (c) => {
+          const rows = await listSt({ data: { classId: c.id } });
+          return (rows as Array<{ id: string; name: string }>).map((s) => ({ ...s, class_id: c.id, class_name: c.name }));
+        }),
+      );
+      return results.flat();
+    },
+    enabled: open && classes.length > 0,
+  });
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setOpen((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const go = (to: string) => {
+    setOpen(false);
+    // Use string navigation to avoid TS typed-route strictness for dynamic paths
+    navigate({ to: to as never });
+  };
+
+  const students = useMemo(() => allStudents as Array<{ id: string; name: string; class_id: string; class_name: string }>, [allStudents]);
+
+  return (
+    <CommandDialog open={open} onOpenChange={setOpen}>
+      <CommandInput placeholder="חפש עמוד, כיתה או תלמיד... (Ctrl+K)" />
+      <CommandList>
+        <CommandEmpty>לא נמצאו תוצאות.</CommandEmpty>
+        <CommandGroup heading="ניווט מהיר">
+          {GLOBAL_ITEMS.map((i) => (
+            <CommandItem key={i.to} value={`${i.label} ${i.keywords ?? ""}`} onSelect={() => go(i.to)}>
+              <i.icon className="ms-2 h-4 w-4" />
+              <span>{i.label}</span>
+            </CommandItem>
+          ))}
+        </CommandGroup>
+        {classes.length > 0 && (
+          <>
+            <CommandSeparator />
+            <CommandGroup heading="כיתות">
+              {classes.map((c) => (
+                <CommandItem key={c.id} value={`כיתה ${c.name}`} onSelect={() => go(`/classes/${c.id}`)}>
+                  <Users className="ms-2 h-4 w-4" />
+                  <span>{c.name}</span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+            <CommandSeparator />
+            <CommandGroup heading="פעולות כיתה">
+              {classes.flatMap((c) =>
+                CLASS_ACTIONS.map((a) => (
+                  <CommandItem
+                    key={`${c.id}-${a.template}`}
+                    value={`${a.label} ${c.name}`}
+                    onSelect={() => go(`${a.template}${c.id}`)}
+                  >
+                    <a.icon className="ms-2 h-4 w-4" />
+                    <span>{a.label} · {c.name}</span>
+                  </CommandItem>
+                )),
+              )}
+            </CommandGroup>
+          </>
+        )}
+        {students.length > 0 && (
+          <>
+            <CommandSeparator />
+            <CommandGroup heading="תלמידים">
+              {students.map((s) => (
+                <CommandItem key={s.id} value={`תלמיד ${s.name} ${s.class_name}`} onSelect={() => go(`/classes/${s.class_id}?student=${s.id}`)}>
+                  <User className="ms-2 h-4 w-4" />
+                  <span>{s.name}</span>
+                  <span className="ms-auto text-xs text-muted-foreground">{s.class_name}</span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </>
+        )}
+      </CommandList>
+    </CommandDialog>
+  );
+}

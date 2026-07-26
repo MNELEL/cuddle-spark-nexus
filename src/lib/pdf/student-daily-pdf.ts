@@ -8,6 +8,7 @@ import {
   hebrewDate,
   safeName,
 } from "./pdf-builder";
+import { ensurePdfBrandLoaded } from "./brand-loader";
 
 export type StudentDailyPdfArgs = {
   report: ClassReport;
@@ -29,6 +30,7 @@ export async function buildStudentDailyPdf(args: StudentDailyPdfArgs): Promise<S
   const student = report.students.find((s) => s.id === studentId);
   if (!student) throw new Error("התלמיד לא נמצא בדוח");
 
+  await ensurePdfBrandLoaded();
   const hd = await createHebrewDoc();
   const headerBits = [
     schoolName,

@@ -53,6 +53,8 @@ export type CertificatePayload = {
     conduct: BehaviorLabel;   // הליכות
     diligence?: BehaviorLabel; // שקידה
     manners?: BehaviorLabel;   // דרך ארץ
+    /** Optional dynamic conducts — if provided, replaces the fixed three rows. */
+    extras?: { key: string; label: BehaviorLabel }[];
   };
   attendance?: { present: number; absent: number; late: number };
   teacherNote?: string;
@@ -111,11 +113,15 @@ export async function buildCertificatePdfBlob(p: CertificatePayload): Promise<Bl
 
   // Behavior
   hd.section("הליכות ומידות");
-  const behaviorRows: [string, string][] = [
-    ["הליכות", p.behavior.conduct],
-  ];
-  if (p.behavior.diligence) behaviorRows.push(["שקידה", p.behavior.diligence]);
-  if (p.behavior.manners) behaviorRows.push(["דרך ארץ", p.behavior.manners]);
+  const behaviorRows: [string, string][] =
+    p.behavior.extras && p.behavior.extras.length > 0
+      ? p.behavior.extras.map((c) => [c.key, c.label])
+      : (() => {
+          const rows: [string, string][] = [["הליכות", p.behavior.conduct]];
+          if (p.behavior.diligence) rows.push(["שקידה", p.behavior.diligence]);
+          if (p.behavior.manners) rows.push(["דרך ארץ", p.behavior.manners]);
+          return rows;
+        })();
   hd.table({
     head: [["תחום", "הערכה"]],
     body: behaviorRows,

@@ -1,0 +1,86 @@
+# Dependabot config for ClassAlign Studio.
+#
+# The @tanstack/* router stack is tightly coupled — see README.md ("TanStack
+# version compatibility"). Historically, letting Dependabot bump individual
+# @tanstack packages produced cryptic build errors like
+# `"getScriptPreloadAttrs" is not exported by "@tanstack/router-core"`.
+#
+# Strategy:
+#   1. Group the entire router stack into ONE PR so versions bump together.
+#   2. Keep @tanstack/react-query on its own — it upgrades independently.
+#   3. Rely on the CI workflow (.github/workflows/ci.yml) to run
+#      `bun run check:tanstack` + typecheck + production build on every PR.
+#      That enforces the README compatibility rules automatically — an unsafe
+#      bump fails CI and cannot be merged.
+
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Asia/Jerusalem
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+    commit-message:
+      prefix: "chore(deps)"
+      include: scope
+    # Never bump majors automatically — the router stack breaks across majors.
+    ignore:
+      - dependency-name: "@tanstack/react-start"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@tanstack/react-router"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@tanstack/router-plugin"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@tanstack/react-router-devtools"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@tanstack/router-core"
+        update-types: ["version-update:semver-major"]
+    groups:
+      # One PR bumps the whole router stack together. This is the ONLY safe
+      # way to update these packages — CI (`check:tanstack`) will reject a
+      # PR where these versions drift apart.
+      tanstack-router-stack:
+        patterns:
+          - "@tanstack/react-start"
+          - "@tanstack/react-router"
+          - "@tanstack/react-router-devtools"
+          - "@tanstack/router-plugin"
+          - "@tanstack/router-core"
+          - "@tanstack/start-*"
+          - "@tanstack/server-*"
+        update-types:
+          - minor
+          - patch
+      # react-query is independent and safe on its own (README §4).
+      tanstack-react-query:
+        patterns:
+          - "@tanstack/react-query"
+          - "@tanstack/query-*"
+          - "@tanstack/react-query-devtools"
+        update-types:
+          - minor
+          - patch
+      # Everything else — one grouped PR per week keeps noise low.
+      minor-and-patch:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "@tanstack/*"
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+    labels:
+      - dependencies
+      - ci
+    commit-message:
+      prefix: "chore(ci)"

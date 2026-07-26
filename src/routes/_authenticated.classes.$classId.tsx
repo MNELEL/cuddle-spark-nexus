@@ -21,7 +21,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Heart, Ban, MoveHorizontal, Pencil, Plus, Trash2, FolderOpen, FileText, Sparkles, Trophy, Users, Library, Monitor, Upload, Printer, Copy, Dices, Globe2, Award } from "lucide-react";
+import { ArrowRight, Heart, Ban, MoveHorizontal, Pencil, Plus, Trash2, FolderOpen, FileText, Sparkles, Trophy, Users, Library, Monitor, Upload, Printer, Copy, Dices, Globe2, Award, ScanText, TrendingUp, CalendarDays, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { copyList, printList } from "@/lib/print-list";
 import { SeatingGrid } from "@/components/seating-grid";
@@ -65,6 +65,10 @@ function ClassActionGrid({ classId }: { classId: string }) {
       <Link to="/parents/$classId" params={{ classId }}><ActionBtn icon={Users} label="פורטל הורים" /></Link>
       <Link to="/share/$classId" params={{ classId }}><ActionBtn icon={Globe2} label="דף ציבורי" /></Link>
       <Link to="/resources"><ActionBtn icon={Library} label="ספריית עזרים" /></Link>
+      <Link to="/exam-scanner/$classId" params={{ classId }}><ActionBtn icon={ScanText} label="סורק מבחנים" /></Link>
+      <Link to="/exam-generator/$classId" params={{ classId }}><ActionBtn icon={Wand2} label="מחולל מבחנים" /></Link>
+      <Link to="/analytics/$classId" params={{ classId }}><ActionBtn icon={TrendingUp} label="אנליטיקה" /></Link>
+      <Link to="/calendar/$classId" params={{ classId }}><ActionBtn icon={CalendarDays} label="יומן אירועים" /></Link>
     </div>
   );
 }
@@ -99,6 +103,7 @@ export const Route = createFileRoute("/_authenticated/classes/$classId")({
 type Student = {
   id: string; class_id: string; name: string; notes: string | null;
   height: "low" | "mid" | "high"; row_pref: "front" | "mid" | "back" | "any"; corner_pref: boolean;
+  has_special_accommodation?: boolean; accommodation_note?: string | null;
 };
 
 function ClassDetail() {
@@ -295,11 +300,15 @@ function StudentDialog({ classId, editing, onClose }: { classId: string; editing
   const [height, setHeight] = useState<Student["height"]>(editing?.height ?? "mid");
   const [rowPref, setRowPref] = useState<Student["row_pref"]>(editing?.row_pref ?? "any");
   const [corner, setCorner] = useState(editing?.corner_pref ?? false);
+  const [special, setSpecial] = useState(editing?.has_special_accommodation ?? false);
+  const [accNote, setAccNote] = useState(editing?.accommodation_note ?? "");
 
   const m = useMutation({
     mutationFn: () => upsert({ data: {
       id: editing?.id, class_id: classId, name: name.trim(),
       notes, height, row_pref: rowPref, corner_pref: corner,
+      has_special_accommodation: special,
+      accommodation_note: special ? (accNote || null) : null,
     }}),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["students", classId] });
@@ -345,6 +354,15 @@ function StudentDialog({ classId, editing, onClose }: { classId: string; editing
         <div className="flex items-center gap-2">
           <Checkbox id="corner" checked={corner} onCheckedChange={(v) => setCorner(!!v)} />
           <Label htmlFor="corner" className="cursor-pointer">מעדיף ישיבה בפינה</Label>
+        </div>
+        <div className="rounded-md border p-3 space-y-2 bg-amber/5">
+          <div className="flex items-center gap-2">
+            <Checkbox id="special" checked={special} onCheckedChange={(v) => setSpecial(!!v)} />
+            <Label htmlFor="special" className="cursor-pointer">התאמות / צרכים מיוחדים</Label>
+          </div>
+          {special && (
+            <Textarea value={accNote} onChange={(e) => setAccNote(e.target.value)} rows={2} placeholder="למשל: זקוק לישיבה קדמית, קושי בריכוז, התאמות במבחן..." />
+          )}
         </div>
         <div>
           <Label>הערות פדגוגיות</Label>

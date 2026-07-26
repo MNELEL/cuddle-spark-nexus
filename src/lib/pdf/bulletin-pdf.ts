@@ -6,6 +6,7 @@ import {
   hebrewDate,
   safeName,
 } from "./pdf-builder";
+import { ensurePdfBrandLoaded } from "./brand-loader";
 
 export type BulletinPdfArgs = {
   bulletin: BulletinDraft & { startDate: string; endDate: string };
@@ -18,6 +19,7 @@ export type BulletinPdfResult = { blob: Blob; filename: string };
 
 export async function buildBulletinPdf(args: BulletinPdfArgs): Promise<BulletinPdfResult> {
   const { bulletin, className, schoolName, teacherName } = args;
+  await ensurePdfBrandLoaded();
   const hd = await createHebrewDoc();
 
   const meta = [

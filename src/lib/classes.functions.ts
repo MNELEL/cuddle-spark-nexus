@@ -39,6 +39,28 @@ export const getClass = createServerFn({ method: "POST" })
     return row;
   });
 
+export const ROOM_OBJECT_TYPES = [
+  "board", "teacher_desk", "cabinet", "reading_corner", "door", "window",
+] as const;
+export type RoomObjectType = typeof ROOM_OBJECT_TYPES[number];
+export type RoomObject = {
+  id: string;
+  type: RoomObjectType;
+  row: number;
+  col: number;
+  span?: number;
+  label?: string;
+};
+
+const roomObjectSchema = z.object({
+  id: z.string().min(1).max(60),
+  type: z.enum(ROOM_OBJECT_TYPES),
+  row: z.number().int().min(0).max(30),
+  col: z.number().int().min(0).max(30),
+  span: z.number().int().min(1).max(6).optional(),
+  label: z.string().max(60).optional(),
+});
+
 export const updateClass = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
@@ -47,6 +69,7 @@ export const updateClass = createServerFn({ method: "POST" })
       name: z.string().min(1).max(100).optional(),
       grid_cols: z.number().int().min(1).max(20).optional(),
       grid_rows: z.number().int().min(1).max(20).optional(),
+      room_objects: z.array(roomObjectSchema).max(60).optional(),
     }).parse(d),
   )
   .handler(async ({ data, context }) => {

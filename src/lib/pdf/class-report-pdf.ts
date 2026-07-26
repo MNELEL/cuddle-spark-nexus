@@ -7,6 +7,7 @@ import {
   hebrewDate,
   safeName,
 } from "./pdf-builder";
+import { ensurePdfBrandLoaded } from "./brand-loader";
 
 export type ClassReportPdfArgs = {
   report: ClassReport;
@@ -18,6 +19,7 @@ export type ClassReportPdfResult = { blob: Blob; filename: string };
 
 export async function buildClassReportPdf(args: ClassReportPdfArgs): Promise<ClassReportPdfResult> {
   const { report, teacherName, schoolName } = args;
+  await ensurePdfBrandLoaded();
   const hd = await createHebrewDoc();
 
   const meta = [

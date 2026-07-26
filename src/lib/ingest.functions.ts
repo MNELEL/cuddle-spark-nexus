@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { callLovableAI } from "./ai-gateway.server";
 
 const uuid = z.string().uuid();
 const KIND = z.enum(["roster", "resource", "lesson_audio", "auto"]);
@@ -203,24 +204,20 @@ export const deleteIngestJob = createServerFn({ method: "POST" })
 
 /* ------------------------ analyze ------------------------ */
 
-async function callGateway(payload: unknown, apiKey: string) {
-  const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Lovable-API-Key": apiKey,
-      "X-Lovable-AIG-SDK": "fetch",
-    },
-    body: JSON.stringify(payload),
-  });
-  if (resp.status === 429) throw new Error("חרגת ממכסת AI. נסה שוב בעוד דקה.");
-  if (resp.status === 402) throw new Error("נגמרו קרדיטים ב-Lovable AI.");
-  if (!resp.ok) {
-    console.error("[AI]", resp.status, await resp.text().catch(() => ""));
-    throw new Error("הניתוח נכשל. נסה שוב.");
-  }
-  const j = (await resp.json()) as { choices?: { message?: { content?: string } }[] };
-  return j.choices?.[0]?.message?.content ?? "{}";
+async function callGateway(
+  payload: {
+    model?: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    messages: any[];
+    response_format?: { type: string };
+  },
+  _apiKey?: string,
+) {
+  return (await callLovableAI({
+    messages: payload.messages,
+    model: payload.model,
+    jsonResponse: payload.response_format?.type === "json_object",
+  })) || "{}";
 }
 
 function fileToBase64(buf: Uint8Array): string {

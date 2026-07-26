@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { recomputeStyleProfileFor, buildStyleContextString } from "./teacher-style.functions";
+import { callLovableAI } from "./ai-gateway.server";
 
 const uuid = z.string().uuid();
 
@@ -315,6 +316,7 @@ export const generateResourceWithAI = createServerFn({ method: "POST" })
     resource_type: z.enum(RESOURCE_TYPES).default("worksheet"),
     subject: z.string().max(80).default(""),
     grade_level: z.string().max(40).default(""),
+    source_resource_id: uuid.optional(),
   }).parse(d))
   .handler(async ({ data, context }): Promise<{
     title: string; description: string; tags: string[]; content: ResourceContent;
@@ -326,10 +328,24 @@ export const generateResourceWithAI = createServerFn({ method: "POST" })
 
     const styleCtx = await buildStyleContextString(context.supabase, context.userId);
 
+    let sourceCtx = "";
+    if (data.source_resource_id) {
+      const { data: src } = await context.supabase
+        .from("teaching_resources")
+        .select("title,description,subject,grade_level,resource_type,content")
+        .eq("id", data.source_resource_id)
+        .eq("owner_id", context.userId)
+        .maybeSingle();
+      if (src) {
+        const snippet = JSON.stringify(src).slice(0, 4000);
+        sourceCtx = `\n\nהתבסס על החומר הקיים הבא (צור וריאציה / התאמה / חומר משלים בהתאם לבקשת המשתמש):\n${snippet}`;
+      }
+    }
+
     const system = `אתה עוזר של רב/מלמד בתלמוד תורה / חיידר חרדי. אתה מייצר חומרי הוראה ועזרים לכיתה בעברית טהורה ומכובדת.
 השתמש במונחים: "הרב", "המלמד", "התלמידים", "הורי הבית" (לא "מורה", לא "ילדים", לא "סטודנטים").
 מקצועות קודש: גמרא, משנה, חומש, נביא, הלכה, מוסר, תפילה, פרשת שבוע.
-סוג החומר המבוקש: ${typeLabel}${data.subject ? ` במקצוע ${data.subject}` : ""}${data.grade_level ? ` לכיתה ${data.grade_level}` : ""}.${styleCtx}
+סוג החומר המבוקש: ${typeLabel}${data.subject ? ` במקצוע ${data.subject}` : ""}${data.grade_level ? ` לכיתה ${data.grade_level}` : ""}.${styleCtx}${sourceCtx}
 
 החזר אך ורק JSON תקין במבנה הבא — בלי טקסט נוסף:
 {
@@ -354,30 +370,13 @@ export const generateResourceWithAI = createServerFn({ method: "POST" })
 - lesson_plan: מלא body (מטרות) + steps (מהלך השיעור).
 השתמש בשדות הרלוונטיים בלבד — אל תכלול שדות ריקים מיותרים.`;
 
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Lovable-API-Key": apiKey,
-        "X-Lovable-AIG-SDK": "fetch",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: data.prompt },
-        ],
-        response_format: { type: "json_object" },
-      }),
-    });
-    if (resp.status === 429) throw new Error("חרגת ממכסת בקשות AI. נסה שוב בעוד דקה.");
-    if (resp.status === 402) throw new Error("נגמרו קרדיטים ב-Lovable AI.");
-    if (!resp.ok) {
-      console.error("[AI Gateway Error]", resp.status, await resp.text().catch(() => ""));
-      throw new Error("הפעולה נכשלה. נסה שוב.");
-    }
-    const j = (await resp.json()) as { choices?: { message?: { content?: string } }[] };
-    const raw = j.choices?.[0]?.message?.content ?? "{}";
+    const raw = (await callLovableAI({
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: data.prompt },
+      ],
+      jsonResponse: true,
+    })) || "{}";
     let parsed: { title?: string; description?: string; tags?: unknown; content?: ResourceContent } = {};
     try { parsed = JSON.parse(raw); } catch { /* ignore */ }
 

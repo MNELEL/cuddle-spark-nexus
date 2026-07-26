@@ -76,4 +76,10 @@ export function warmDashboardMedia() {
   //    (Icons are bundled inside the route chunks preloaded by the router.)
   const assets: string[] = [];
   for (const href of assets) prefetchAsset(href);
+
+  // 3. Prewarm PDF fonts so exports feel instant on first click.
+  //    Dynamic import keeps jspdf out of the auth/dashboard critical path.
+  import("@/lib/pdf/pdf-builder")
+    .then((m) => m.prewarmPdfAssets())
+    .catch(() => { /* best-effort */ });
 }

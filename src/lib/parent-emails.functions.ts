@@ -8,6 +8,7 @@ import {
   type TemplateKey,
 } from "./parent-email-templates";
 import { buildStyleContextString } from "./teacher-style.functions";
+import { callLovableAI } from "./ai-gateway.server";
 
 const TemplateKeyZ = z.enum(
   Object.keys(PARENT_TEMPLATE_LABELS) as [TemplateKey, ...TemplateKey[]],
@@ -100,22 +101,11 @@ export const draftParentEmail = createServerFn({ method: "POST" })
     const user = `נושא נוכחי: ${subject}\n\nגוף נוכחי:\n${body}`;
 
     try {
-      const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Lovable-API-Key": apiKey,
-          "X-Lovable-AIG-SDK": "fetch",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [{ role: "system", content: system }, { role: "user", content: user }],
-          response_format: { type: "json_object" },
-        }),
+      const raw = await callLovableAI({
+        messages: [{ role: "system", content: system }, { role: "user", content: user }],
+        jsonResponse: true,
       });
-      if (!resp.ok) return { subject, body, polished: false };
-      const j = (await resp.json()) as { choices?: { message?: { content?: string } }[] };
-      const parsed = JSON.parse(j.choices?.[0]?.message?.content ?? "{}") as {
+      const parsed = JSON.parse(raw || "{}") as {
         subject?: string; body?: string;
       };
       if (parsed.subject && parsed.body) {
