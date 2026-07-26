@@ -36,6 +36,7 @@ import { Route as BlogFreeToolsComparisonRouteImport } from './routes/blog.free-
 import { Route as BlogDigitalHallPassGuideRouteImport } from './routes/blog.digital-hall-pass-guide'
 import { Route as BlogClassroomToolsTeachersRouteImport } from './routes/blog.classroom-tools-teachers'
 import { Route as BlogClassroomManagementStrategiesRouteImport } from './routes/blog.classroom-management-strategies'
+import { Route as BlogClassdojoComparisonRouteImport } from './routes/blog.classdojo-comparison'
 import { Route as AuthenticatedToolkitRouteImport } from './routes/_authenticated.toolkit'
 import { Route as AuthenticatedSoundBoardRouteImport } from './routes/_authenticated.sound-board'
 import { Route as AuthenticatedResourcesRouteImport } from './routes/_authenticated.resources'
@@ -195,6 +196,11 @@ const BlogClassroomManagementStrategiesRoute =
     path: '/classroom-management-strategies',
     getParentRoute: () => BlogRoute,
   } as any)
+const BlogClassdojoComparisonRoute = BlogClassdojoComparisonRouteImport.update({
+  id: '/classdojo-comparison',
+  path: '/classdojo-comparison',
+  getParentRoute: () => BlogRoute,
+} as any)
 const AuthenticatedToolkitRoute = AuthenticatedToolkitRouteImport.update({
   id: '/toolkit',
   path: '/toolkit',
@@ -320,6 +326,7 @@ export interface FileRoutesByFullPath {
   '/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/sound-board': typeof AuthenticatedSoundBoardRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
+  '/blog/classdojo-comparison': typeof BlogClassdojoComparisonRoute
   '/blog/classroom-management-strategies': typeof BlogClassroomManagementStrategiesRouteWithChildren
   '/blog/classroom-tools-teachers': typeof BlogClassroomToolsTeachersRoute
   '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
@@ -364,6 +371,7 @@ export interface FileRoutesByTo {
   '/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/sound-board': typeof AuthenticatedSoundBoardRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
+  '/blog/classdojo-comparison': typeof BlogClassdojoComparisonRoute
   '/blog/classroom-management-strategies': typeof BlogClassroomManagementStrategiesRouteWithChildren
   '/blog/classroom-tools-teachers': typeof BlogClassroomToolsTeachersRoute
   '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
@@ -413,6 +421,7 @@ export interface FileRoutesById {
   '/_authenticated/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/_authenticated/sound-board': typeof AuthenticatedSoundBoardRoute
   '/_authenticated/toolkit': typeof AuthenticatedToolkitRoute
+  '/blog/classdojo-comparison': typeof BlogClassdojoComparisonRoute
   '/blog/classroom-management-strategies': typeof BlogClassroomManagementStrategiesRouteWithChildren
   '/blog/classroom-tools-teachers': typeof BlogClassroomToolsTeachersRoute
   '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
@@ -462,6 +471,7 @@ export interface FileRouteTypes {
     | '/resources'
     | '/sound-board'
     | '/toolkit'
+    | '/blog/classdojo-comparison'
     | '/blog/classroom-management-strategies'
     | '/blog/classroom-tools-teachers'
     | '/blog/digital-hall-pass-guide'
@@ -506,6 +516,7 @@ export interface FileRouteTypes {
     | '/resources'
     | '/sound-board'
     | '/toolkit'
+    | '/blog/classdojo-comparison'
     | '/blog/classroom-management-strategies'
     | '/blog/classroom-tools-teachers'
     | '/blog/digital-hall-pass-guide'
@@ -554,6 +565,7 @@ export interface FileRouteTypes {
     | '/_authenticated/resources'
     | '/_authenticated/sound-board'
     | '/_authenticated/toolkit'
+    | '/blog/classdojo-comparison'
     | '/blog/classroom-management-strategies'
     | '/blog/classroom-tools-teachers'
     | '/blog/digital-hall-pass-guide'
@@ -794,6 +806,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogClassroomManagementStrategiesRouteImport
       parentRoute: typeof BlogRoute
     }
+    '/blog/classdojo-comparison': {
+      id: '/blog/classdojo-comparison'
+      path: '/classdojo-comparison'
+      fullPath: '/blog/classdojo-comparison'
+      preLoaderRoute: typeof BlogClassdojoComparisonRouteImport
+      parentRoute: typeof BlogRoute
+    }
     '/_authenticated/toolkit': {
       id: '/_authenticated/toolkit'
       path: '/toolkit'
@@ -1019,6 +1038,7 @@ const BlogClassroomManagementStrategiesRouteWithChildren =
   )
 
 interface BlogRouteChildren {
+  BlogClassdojoComparisonRoute: typeof BlogClassdojoComparisonRoute
   BlogClassroomManagementStrategiesRoute: typeof BlogClassroomManagementStrategiesRouteWithChildren
   BlogClassroomToolsTeachersRoute: typeof BlogClassroomToolsTeachersRoute
   BlogDigitalHallPassGuideRoute: typeof BlogDigitalHallPassGuideRoute
@@ -1029,6 +1049,7 @@ interface BlogRouteChildren {
 }
 
 const BlogRouteChildren: BlogRouteChildren = {
+  BlogClassdojoComparisonRoute: BlogClassdojoComparisonRoute,
   BlogClassroomManagementStrategiesRoute:
     BlogClassroomManagementStrategiesRouteWithChildren,
   BlogClassroomToolsTeachersRoute: BlogClassroomToolsTeachersRoute,
