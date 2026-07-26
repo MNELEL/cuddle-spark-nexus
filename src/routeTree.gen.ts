@@ -57,6 +57,7 @@ import { Route as AuthenticatedDailyClassIdRouteImport } from './routes/_authent
 import { Route as AuthenticatedClassesClassIdRouteImport } from './routes/_authenticated.classes.$classId'
 import { Route as AuthenticatedCertificatesClassIdRouteImport } from './routes/_authenticated.certificates.$classId'
 import { Route as AuthenticatedBulletinsClassIdRouteImport } from './routes/_authenticated.bulletins.$classId'
+import { Route as AuthenticatedAnalyticsClassIdRouteImport } from './routes/_authenticated.analytics.$classId'
 import { Route as AuthenticatedClassesClassIdDisplayRouteImport } from './routes/_authenticated.classes.$classId.display'
 
 const SupportRoute = SupportRouteImport.update({
@@ -318,6 +319,12 @@ const AuthenticatedBulletinsClassIdRoute =
     path: '/bulletins/$classId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAnalyticsClassIdRoute =
+  AuthenticatedAnalyticsClassIdRouteImport.update({
+    id: '/analytics/$classId',
+    path: '/analytics/$classId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedClassesClassIdDisplayRoute =
   AuthenticatedClassesClassIdDisplayRouteImport.update({
     id: '/display',
@@ -359,6 +366,7 @@ export interface FileRoutesByFullPath {
   '/blog/': typeof BlogIndexRoute
   '/help/': typeof HelpIndexRoute
   '/parents-guide/': typeof ParentsGuideIndexRoute
+  '/analytics/$classId': typeof AuthenticatedAnalyticsClassIdRoute
   '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
   '/certificates/$classId': typeof AuthenticatedCertificatesClassIdRoute
   '/classes/$classId': typeof AuthenticatedClassesClassIdRouteWithChildren
@@ -406,6 +414,7 @@ export interface FileRoutesByTo {
   '/blog': typeof BlogIndexRoute
   '/help': typeof HelpIndexRoute
   '/parents-guide': typeof ParentsGuideIndexRoute
+  '/analytics/$classId': typeof AuthenticatedAnalyticsClassIdRoute
   '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
   '/certificates/$classId': typeof AuthenticatedCertificatesClassIdRoute
   '/classes/$classId': typeof AuthenticatedClassesClassIdRouteWithChildren
@@ -458,6 +467,7 @@ export interface FileRoutesById {
   '/blog/': typeof BlogIndexRoute
   '/help/': typeof HelpIndexRoute
   '/parents-guide/': typeof ParentsGuideIndexRoute
+  '/_authenticated/analytics/$classId': typeof AuthenticatedAnalyticsClassIdRoute
   '/_authenticated/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
   '/_authenticated/certificates/$classId': typeof AuthenticatedCertificatesClassIdRoute
   '/_authenticated/classes/$classId': typeof AuthenticatedClassesClassIdRouteWithChildren
@@ -510,6 +520,7 @@ export interface FileRouteTypes {
     | '/blog/'
     | '/help/'
     | '/parents-guide/'
+    | '/analytics/$classId'
     | '/bulletins/$classId'
     | '/certificates/$classId'
     | '/classes/$classId'
@@ -557,6 +568,7 @@ export interface FileRouteTypes {
     | '/blog'
     | '/help'
     | '/parents-guide'
+    | '/analytics/$classId'
     | '/bulletins/$classId'
     | '/certificates/$classId'
     | '/classes/$classId'
@@ -608,6 +620,7 @@ export interface FileRouteTypes {
     | '/blog/'
     | '/help/'
     | '/parents-guide/'
+    | '/_authenticated/analytics/$classId'
     | '/_authenticated/bulletins/$classId'
     | '/_authenticated/certificates/$classId'
     | '/_authenticated/classes/$classId'
@@ -979,6 +992,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBulletinsClassIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/analytics/$classId': {
+      id: '/_authenticated/analytics/$classId'
+      path: '/analytics/$classId'
+      fullPath: '/analytics/$classId'
+      preLoaderRoute: typeof AuthenticatedAnalyticsClassIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/classes/$classId/display': {
       id: '/_authenticated/classes/$classId/display'
       path: '/display'
@@ -1025,6 +1045,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedResourcesRoute: typeof AuthenticatedResourcesRouteWithChildren
   AuthenticatedSoundBoardRoute: typeof AuthenticatedSoundBoardRoute
   AuthenticatedToolkitRoute: typeof AuthenticatedToolkitRoute
+  AuthenticatedAnalyticsClassIdRoute: typeof AuthenticatedAnalyticsClassIdRoute
   AuthenticatedBulletinsClassIdRoute: typeof AuthenticatedBulletinsClassIdRoute
   AuthenticatedCertificatesClassIdRoute: typeof AuthenticatedCertificatesClassIdRoute
   AuthenticatedClassesClassIdRoute: typeof AuthenticatedClassesClassIdRouteWithChildren
@@ -1045,6 +1066,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedResourcesRoute: AuthenticatedResourcesRouteWithChildren,
   AuthenticatedSoundBoardRoute: AuthenticatedSoundBoardRoute,
   AuthenticatedToolkitRoute: AuthenticatedToolkitRoute,
+  AuthenticatedAnalyticsClassIdRoute: AuthenticatedAnalyticsClassIdRoute,
   AuthenticatedBulletinsClassIdRoute: AuthenticatedBulletinsClassIdRoute,
   AuthenticatedCertificatesClassIdRoute: AuthenticatedCertificatesClassIdRoute,
   AuthenticatedClassesClassIdRoute:
