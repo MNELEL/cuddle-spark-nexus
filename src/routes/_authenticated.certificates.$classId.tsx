@@ -639,13 +639,17 @@ function CertificatesPage() {
 }
 
 function StudentCertCard({
-  row, onPatch, onPatchSubject, onAddSubject, onRemoveSubject, onOcrPhoto, onExport, onSaveNotes, onSuggestNotes,
+  row, onPatch, onPatchSubject, onAddSubject, onRemoveSubject, onPatchConduct, onAddConduct, onRemoveConduct, onPersistConducts, onOcrPhoto, onExport, onSaveNotes, onSuggestNotes,
 }: {
   row: StudentRow;
   onPatch: (p: Partial<StudentRow>) => void;
   onPatchSubject: (idx: number, p: Partial<CertificateSubject>) => void;
   onAddSubject: () => void;
   onRemoveSubject: (idx: number) => void;
+  onPatchConduct: (idx: number, p: Partial<{ key: string; label: BehaviorLabel }>) => void;
+  onAddConduct: () => void;
+  onRemoveConduct: (idx: number) => void;
+  onPersistConducts: () => void;
   onOcrPhoto: (f: File) => void;
   onExport: () => void;
   onSaveNotes: () => void;
