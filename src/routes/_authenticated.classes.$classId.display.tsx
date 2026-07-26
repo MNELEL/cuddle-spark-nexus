@@ -2,12 +2,14 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { getClass } from "@/lib/classes.functions";
+import { getClass, type RoomObject } from "@/lib/classes.functions";
+import { ROOM_OBJECT_META } from "@/components/seating-grid";
 import { listStudents } from "@/lib/students.functions";
 import { listClassScoreInputs } from "@/lib/scoring.functions";
 import { computeStudentScore, tierColorClasses } from "@/lib/performance-score";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Printer, Box, Square, Eye, EyeOff, Hash, Plane, User, RotateCcw, MoveHorizontal } from "lucide-react";
+import { ArrowRight, Printer, Box, Square, Eye, EyeOff, Hash, Plane, User, RotateCcw, MoveHorizontal, Star } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export const Route = createFileRoute("/_authenticated/classes/$classId/display")({
   component: DisplayMode,
@@ -16,6 +18,7 @@ export const Route = createFileRoute("/_authenticated/classes/$classId/display")
 type Student = {
   id: string; name: string;
   seat_row: number | null; seat_col: number | null;
+  has_special_accommodation?: boolean; accommodation_note?: string | null;
 };
 
 type Preset = "normal" | "bird" | "student" | "side";
@@ -96,6 +99,16 @@ function DisplayMode() {
     }
     return m;
   }, [students]);
+
+  const roomObjects = useMemo<RoomObject[]>(() => {
+    const raw = (cls as unknown as { room_objects?: unknown } | undefined)?.room_objects;
+    return Array.isArray(raw) ? (raw as RoomObject[]) : [];
+  }, [cls]);
+  const objectAt = useMemo(() => {
+    const m = new Map<string, RoomObject>();
+    for (const o of roomObjects) m.set(`${o.row}:${o.col}`, o);
+    return m;
+  }, [roomObjects]);
 
   // sequential seat numbers row-major
   const seatNumber = useMemo(() => {
@@ -195,10 +208,34 @@ function DisplayMode() {
                     return <div key={k} className="aspect-[5/3] rounded-md border border-dashed border-muted/40 print:hidden" />;
                   }
                   const child = seated.get(k);
+                  const obj = objectAt.get(k);
                   const num = seatNumber.get(k);
                   const sc = child ? scoreByStudent.get(child.id) ?? null : null;
                   const tc = sc ? tierColorClasses(sc.tier) : null;
                   const display = child ? (showNames ? child.name : `שולחן ${num}`) : null;
+                  if (obj && !child) {
+                    const meta = ROOM_OBJECT_META[obj.type];
+                    const Icon = meta.icon;
+                    return (
+                      <Popover key={k}>
+                        <PopoverTrigger asChild>
+                          <button type="button"
+                            className={`relative flex aspect-[5/3] items-center justify-center rounded-lg border-2 border-dashed p-2 text-center ${meta.className}`}
+                            style={is3D ? { transformStyle: "preserve-3d", backfaceVisibility: "hidden" } : undefined}
+                          >
+                            <div className="flex flex-col items-center gap-1">
+                              <Icon className="h-6 w-6 md:h-8 md:w-8" />
+                              <span className="text-[10px] md:text-sm font-bold">{obj.label || meta.label}</span>
+                            </div>
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent side="top" className="text-sm">
+                          <div className="font-bold">{meta.label}</div>
+                          {obj.label && <div className="text-muted-foreground">{obj.label}</div>}
+                        </PopoverContent>
+                      </Popover>
+                    );
+                  }
                   return (
                     <div
                       key={k}
@@ -228,9 +265,26 @@ function DisplayMode() {
                       )}
 
                       {child ? (
-                        <span className="font-display text-lg md:text-3xl font-bold leading-tight text-foreground break-words">
-                          {display}
-                        </span>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button type="button" className="flex flex-col items-center gap-1 font-display text-lg md:text-3xl font-bold leading-tight text-foreground break-words">
+                              <span>{display}</span>
+                              {child.has_special_accommodation && (
+                                <Star className="h-4 w-4 fill-amber-400 text-amber-500 print:hidden" aria-label="התאמות" />
+                              )}
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent side="top" className="text-sm text-start">
+                            <div className="font-bold">{child.name}</div>
+                            {child.has_special_accommodation && (
+                              <div className="mt-1 text-amber-700">
+                                <span className="inline-flex items-center gap-1 font-semibold"><Star className="h-3 w-3 fill-amber-400 text-amber-500" /> התאמות</span>
+                                {child.accommodation_note && <div className="text-muted-foreground">{child.accommodation_note}</div>}
+                              </div>
+                            )}
+                            {sc && <div className="mt-1 text-muted-foreground">ציון: {sc.score}</div>}
+                          </PopoverContent>
+                        </Popover>
                       ) : (
                         <span className="text-xs text-muted-foreground">ריק</span>
                       )}
