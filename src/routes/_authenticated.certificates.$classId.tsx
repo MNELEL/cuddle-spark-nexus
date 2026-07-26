@@ -93,9 +93,7 @@ type StudentRow = {
   id: string;
   name: string;
   subjects: CertificateSubject[];
-  conduct: BehaviorLabel;
-  diligence: BehaviorLabel;
-  manners: BehaviorLabel;
+  conducts: { key: string; label: BehaviorLabel }[];
   attendance: { present: number; absent: number; late: number };
   teacherNote: string;
   principalNote: string;
@@ -134,9 +132,11 @@ function computeStudentRow(
     id: student.id,
     name: student.name,
     subjects: subjects.length ? subjects : [{ subject: "כללי", label: "טוב", note: "" }],
-    conduct,
-    diligence: conduct,
-    manners: conduct,
+    conducts: [
+      { key: "הליכות", label: conduct },
+      { key: "שקידה", label: conduct },
+      { key: "דרך ארץ", label: conduct },
+    ],
     attendance: { present, absent, late },
     teacherNote: "",
     principalNote: "",
@@ -195,38 +195,54 @@ function CertificatesPage() {
   // Recompute rows whenever the underlying data or saved notes change.
   useMemo(() => {
     if (!data) return;
-    const notesById = new Map<string, { teacher_note: string; principal_note: string }>();
-    for (const n of savedNotes ?? []) {
-      notesById.set(n.student_id, { teacher_note: n.teacher_note, principal_note: n.principal_note });
-    }
+    const notesById = new Map<string, (typeof savedNotes extends undefined ? never : NonNullable<typeof savedNotes>[number])>();
+    for (const n of savedNotes ?? []) notesById.set(n.student_id, n);
     const next: Record<string, StudentRow> = {};
     for (const s of data.students) {
       const base = computeStudentRow(s, data.grades, data.behavior, data.attendance);
       const saved = notesById.get(s.id);
-      next[s.id] = saved
-        ? { ...base, teacherNote: saved.teacher_note, principalNote: saved.principal_note }
-        : base;
+      if (!saved) { next[s.id] = base; continue; }
+      const savedSubjects = Array.isArray(saved.subjects) && saved.subjects.length
+        ? (saved.subjects as unknown as CertificateSubject[])
+        : base.subjects;
+      const savedConducts = Array.isArray(saved.conducts) && saved.conducts.length
+        ? (saved.conducts as unknown as { key: string; label: BehaviorLabel }[])
+        : base.conducts;
+      next[s.id] = {
+        ...base,
+        subjects: savedSubjects,
+        conducts: savedConducts,
+        teacherNote: saved.teacher_note,
+        principalNote: saved.principal_note,
+      };
     }
     setRows(next);
   }, [data, savedNotes]);
 
-  const persistNote = async (id: string) => {
+  const persistRow = async (
+    id: string,
+    override?: Partial<Pick<StudentRow, "teacherNote" | "principalNote" | "subjects" | "conducts">>,
+  ) => {
     const row = rows[id];
     if (!row) return;
+    const merged = { ...row, ...(override ?? {}) };
     try {
       await saveNote({
         data: {
           classId,
           studentId: id,
           periodKey,
-          teacherNote: row.teacherNote,
-          principalNote: row.principalNote,
+          teacherNote: merged.teacherNote,
+          principalNote: merged.principalNote,
+          subjects: merged.subjects,
+          conducts: merged.conducts,
         },
       });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "שמירת הערה נכשלה");
+      toast.error(e instanceof Error ? e.message : "השמירה נכשלה");
     }
   };
+  const persistNote = persistRow;
 
   const patchRow = (id: string, patch: Partial<StudentRow>) =>
     setRows((r) => ({ ...r, [id]: { ...r[id], ...patch } }));
@@ -239,17 +255,58 @@ function CertificatesPage() {
       return { ...r, [id]: { ...row, subjects } };
     });
 
-  const addSubject = (id: string) =>
+  const addSubject = (id: string) => {
+    let nextSubjects: CertificateSubject[] = [];
     setRows((r) => {
       const row = r[id]; if (!row) return r;
-      return { ...r, [id]: { ...row, subjects: [...row.subjects, { subject: "", label: "טוב", note: "" }] } };
+      nextSubjects = [...row.subjects, { subject: "", label: "טוב", note: "" }];
+      return { ...r, [id]: { ...row, subjects: nextSubjects } };
+    });
+    void persistRow(id, { subjects: nextSubjects });
+  };
+
+  const removeSubject = (id: string, idx: number) => {
+    let nextSubjects: CertificateSubject[] = [];
+    setRows((r) => {
+      const row = r[id]; if (!row) return r;
+      nextSubjects = row.subjects.filter((_, i) => i !== idx);
+      return { ...r, [id]: { ...row, subjects: nextSubjects } };
+    });
+    void persistRow(id, { subjects: nextSubjects });
+  };
+
+  const patchConduct = (id: string, idx: number, patch: Partial<{ key: string; label: BehaviorLabel }>) =>
+    setRows((r) => {
+      const row = r[id];
+      if (!row) return r;
+      const conducts = row.conducts.map((c, i) => (i === idx ? { ...c, ...patch } : c));
+      return { ...r, [id]: { ...row, conducts } };
     });
 
-  const removeSubject = (id: string, idx: number) =>
+  const addConduct = (id: string) => {
+    let nextConducts: { key: string; label: BehaviorLabel }[] = [];
     setRows((r) => {
       const row = r[id]; if (!row) return r;
-      return { ...r, [id]: { ...row, subjects: row.subjects.filter((_, i) => i !== idx) } };
+      nextConducts = [...row.conducts, { key: "", label: "נאות" as BehaviorLabel }];
+      return { ...r, [id]: { ...row, conducts: nextConducts } };
     });
+    void persistRow(id, { conducts: nextConducts });
+  };
+
+  const removeConduct = (id: string, idx: number) => {
+    let nextConducts: { key: string; label: BehaviorLabel }[] = [];
+    setRows((r) => {
+      const row = r[id]; if (!row) return r;
+      if (row.conducts.length <= 1) {
+        toast.info("צריך להישאר לפחות קטגוריית הליכות אחת");
+        nextConducts = row.conducts;
+        return r;
+      }
+      nextConducts = row.conducts.filter((_, i) => i !== idx);
+      return { ...r, [id]: { ...row, conducts: nextConducts } };
+    });
+    if (nextConducts.length) void persistRow(id, { conducts: nextConducts });
+  };
 
   const applyOcrToRow = async (id: string, file: File) => {
     if (file.size > 10 * 1024 * 1024) { toast.error("התמונה גדולה מ-10MB"); return; }
@@ -276,19 +333,30 @@ function CertificatesPage() {
         }
         const behaviorLike = (v?: string): BehaviorLabel | undefined =>
           v && (BEHAVIOR_LABELS as readonly string[]).includes(v) ? (v as BehaviorLabel) : undefined;
+        const nextConducts = [...row.conducts];
+        const setConduct = (key: string, val?: string) => {
+          const lab = behaviorLike(val);
+          if (!lab) return;
+          const idx = nextConducts.findIndex((c) => c.key === key);
+          if (idx >= 0) nextConducts[idx] = { key, label: lab };
+          else nextConducts.push({ key, label: lab });
+        };
+        setConduct("הליכות", result.conduct);
+        setConduct("שקידה", result.diligence);
+        setConduct("דרך ארץ", result.manners);
         return {
           ...r,
           [id]: {
             ...row,
             subjects: merged.length ? merged : row.subjects,
-            conduct: behaviorLike(result.conduct) ?? row.conduct,
-            diligence: behaviorLike(result.diligence) ?? row.diligence,
-            manners: behaviorLike(result.manners) ?? row.manners,
+            conducts: nextConducts,
             teacherNote: result.teacherNote || row.teacherNote,
             principalNote: result.principalNote || row.principalNote,
           },
         };
       });
+      // Persist the OCR-derived edits after the state update flushes.
+      queueMicrotask(() => void persistRow(id));
       toast.success(result.summary || "הזיהוי הושלם", { id: t });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "הזיהוי נכשל", { id: t });
@@ -326,26 +394,10 @@ function CertificatesPage() {
     void persistNoteFor(suggestFor, { teacherNote: text });
   };
 
-  const persistNoteFor = async (
+  const persistNoteFor = (
     id: string,
     override: Partial<Pick<StudentRow, "teacherNote" | "principalNote">>,
-  ) => {
-    const row = rows[id];
-    if (!row) return;
-    try {
-      await saveNote({
-        data: {
-          classId,
-          studentId: id,
-          periodKey,
-          teacherNote: override.teacherNote ?? row.teacherNote,
-          principalNote: override.principalNote ?? row.principalNote,
-        },
-      });
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "שמירת הערה נכשלה");
-    }
-  };
+  ) => persistRow(id, override);
 
   const buildForStudent = async (row: StudentRow, kind: "regular" | "correction" = "regular") => {
     setPdfBrand({
@@ -361,7 +413,10 @@ function CertificatesPage() {
       period: `${period.label} – ${academicYear}`,
       academicYear,
       subjects: row.subjects,
-      behavior: { conduct: row.conduct, diligence: row.diligence, manners: row.manners },
+      behavior: {
+        conduct: row.conducts[0]?.label ?? "טוב",
+        extras: row.conducts,
+      },
       attendance: row.attendance,
       teacherNote: row.teacherNote,
       principalNote: row.principalNote,
@@ -399,7 +454,7 @@ function CertificatesPage() {
       challenges: row.principalNote,
       actionItems: "",
       gradesSummary: row.subjects.map((s) => ({ subject: s.subject, label: s.label })),
-      behavior: { conduct: row.conduct },
+      behavior: { conduct: row.conducts[0]?.label ?? "טוב" },
       teacherName,
     });
     downloadPdfBlob(blob, `הכנה_לפגישה_${row.name}.pdf`);
@@ -514,6 +569,10 @@ function CertificatesPage() {
                 onPatchSubject={(i, p) => patchSubject(row.id, i, p)}
                 onAddSubject={() => addSubject(row.id)}
                 onRemoveSubject={(i) => removeSubject(row.id, i)}
+                onPatchConduct={(i, p) => patchConduct(row.id, i, p)}
+                onAddConduct={() => addConduct(row.id)}
+                onRemoveConduct={(i) => removeConduct(row.id, i)}
+                onPersistConducts={() => persistRow(row.id)}
                 onOcrPhoto={(f) => applyOcrToRow(row.id, f)}
                 onExport={() => buildForStudent(row, isCorrection ? "correction" : "regular")}
                 onSaveNotes={() => persistNote(row.id)}
@@ -584,13 +643,17 @@ function CertificatesPage() {
 }
 
 function StudentCertCard({
-  row, onPatch, onPatchSubject, onAddSubject, onRemoveSubject, onOcrPhoto, onExport, onSaveNotes, onSuggestNotes,
+  row, onPatch, onPatchSubject, onAddSubject, onRemoveSubject, onPatchConduct, onAddConduct, onRemoveConduct, onPersistConducts, onOcrPhoto, onExport, onSaveNotes, onSuggestNotes,
 }: {
   row: StudentRow;
   onPatch: (p: Partial<StudentRow>) => void;
   onPatchSubject: (idx: number, p: Partial<CertificateSubject>) => void;
   onAddSubject: () => void;
   onRemoveSubject: (idx: number) => void;
+  onPatchConduct: (idx: number, p: Partial<{ key: string; label: BehaviorLabel }>) => void;
+  onAddConduct: () => void;
+  onRemoveConduct: (idx: number) => void;
+  onPersistConducts: () => void;
   onOcrPhoto: (f: File) => void;
   onExport: () => void;
   onSaveNotes: () => void;
@@ -651,10 +714,50 @@ function StudentCertCard({
           </Button>
         </div>
 
-        <div className="grid gap-2 sm:grid-cols-3">
-          <BehaviorSelect label="הליכות" value={row.conduct} onChange={(v) => onPatch({ conduct: v })} />
-          <BehaviorSelect label="שקידה" value={row.diligence} onChange={(v) => onPatch({ diligence: v })} />
-          <BehaviorSelect label="דרך ארץ" value={row.manners} onChange={(v) => onPatch({ manners: v })} />
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label className="text-sm">הליכות ומידות</Label>
+            <Button type="button" variant="outline" size="sm" onClick={onAddConduct} className="h-7 px-2 text-xs">
+              <Plus className="ms-1 h-3.5 w-3.5" /> הוסף קטגוריה
+            </Button>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {row.conducts.map((c, i) => (
+              <div key={i} className="flex items-end gap-2">
+                <div className="flex-1">
+                  <Label className="text-xs text-muted-foreground">שם הקטגוריה</Label>
+                  <Input
+                    value={c.key}
+                    placeholder="למשל: השתתפות בתפילה"
+                    onChange={(e) => onPatchConduct(i, { key: e.target.value })}
+                    onBlur={onPersistConducts}
+                  />
+                </div>
+                <div className="w-40">
+                  <Label className="text-xs text-muted-foreground">הערכה</Label>
+                  <Select
+                    value={c.label}
+                    onValueChange={(v) => { onPatchConduct(i, { label: v as BehaviorLabel }); onPersistConducts(); }}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {BEHAVIOR_LABELS.map((b) => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label="מחק קטגוריה"
+                  disabled={row.conducts.length <= 1}
+                  onClick={() => onRemoveConduct(i)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="grid gap-2 sm:grid-cols-2">

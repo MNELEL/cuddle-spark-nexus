@@ -251,34 +251,40 @@ export type Database = {
       certificate_notes: {
         Row: {
           class_id: string
+          conducts: Json | null
           created_at: string
           grade_overrides: Json | null
           id: string
           period_key: string
           principal_note: string
           student_id: string
+          subjects: Json | null
           teacher_note: string
           updated_at: string
         }
         Insert: {
           class_id: string
+          conducts?: Json | null
           created_at?: string
           grade_overrides?: Json | null
           id?: string
           period_key: string
           principal_note?: string
           student_id: string
+          subjects?: Json | null
           teacher_note?: string
           updated_at?: string
         }
         Update: {
           class_id?: string
+          conducts?: Json | null
           created_at?: string
           grade_overrides?: Json | null
           id?: string
           period_key?: string
           principal_note?: string
           student_id?: string
+          subjects?: Json | null
           teacher_note?: string
           updated_at?: string
         }
