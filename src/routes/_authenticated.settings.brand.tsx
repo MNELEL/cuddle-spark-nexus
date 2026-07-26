@@ -76,7 +76,7 @@ function BrandSettingsPage() {
             <div className="mt-1 flex items-center gap-3">
               {brand.logo_data_url ? (
                 <div className="relative">
-                  <img src={brand.logo_data_url} alt={brand.institution_name ? `לוגו ${brand.institution_name}` : "לוגו המוסד"} className="h-20 w-20 rounded-lg border object-contain bg-white" />
+                  <img src={brand.logo_data_url} alt={brand.school_name ? `לוגו ${brand.school_name}` : "לוגו המוסד"} className="h-20 w-20 rounded-lg border object-contain bg-white" />
                   <button
                     type="button"
                     aria-label="הסר לוגו"
