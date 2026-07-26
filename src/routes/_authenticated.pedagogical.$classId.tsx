@@ -2,12 +2,14 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { ArrowRight, Sparkles, LineChart as LineChartIcon, Users, RefreshCw } from "lucide-react";
+import { ArrowRight, Sparkles, LineChart as LineChartIcon, Users, RefreshCw, Download } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
   LineChart, Line, Legend,
 } from "recharts";
 import { buildPedagogicalReport } from "@/lib/ai-pedagogical.functions";
+import { buildPedagogicalPdfBlob, pedagogicalPdfFilename } from "@/lib/pdf/pedagogical-pdf";
+import { downloadPdfBlob } from "@/lib/pdf/pdf-builder";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -81,6 +83,16 @@ function PedagogicalPage() {
             )}
             <Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
               <RefreshCw className={`ms-1 h-4 w-4 ${isFetching ? "animate-spin" : ""}`} /> רענן
+            </Button>
+            <Button
+              onClick={async () => {
+                if (!data) return;
+                const blob = await buildPedagogicalPdfBlob(data);
+                downloadPdfBlob(blob, pedagogicalPdfFilename(data));
+              }}
+              disabled={!data}
+            >
+              <Download className="ms-1 h-4 w-4" /> ייצוא PDF
             </Button>
           </div>
         </CardContent>
