@@ -68,6 +68,7 @@ function ResourcesPage() {
   const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [editing, setEditing] = useState<Partial<ResourceRow> | null>(null);
   const [aiOpen, setAiOpen] = useState(false);
+  const [aiSource, setAiSource] = useState<ResourceRow | null>(null);
   const [collOpen, setCollOpen] = useState(false);
 
   const queryArgs = {
@@ -275,7 +276,12 @@ function ResourcesPage() {
           )}
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {resources.map((r) => (
-              <ResourceCard key={r.id} resource={r} onOpen={() => setEditing(r)} />
+              <ResourceCard
+                key={r.id}
+                resource={r}
+                onOpen={() => setEditing(r)}
+                onVariant={(src) => { setAiSource(src); setAiOpen(true); }}
+              />
             ))}
           </div>
         </div>
@@ -294,8 +300,9 @@ function ResourcesPage() {
       {/* AI generator */}
       <AIGeneratorDialog
         open={aiOpen}
-        onClose={() => setAiOpen(false)}
-        onGenerated={(draft) => { setAiOpen(false); setEditing(draft); }}
+        source={aiSource}
+        onClose={() => { setAiOpen(false); setAiSource(null); }}
+        onGenerated={(draft) => { setAiOpen(false); setAiSource(null); setEditing(draft); }}
       />
 
       {/* Collections manager */}
