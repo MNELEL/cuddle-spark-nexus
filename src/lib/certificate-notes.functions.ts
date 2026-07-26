@@ -65,18 +65,20 @@ export const upsertCertificateNote = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const payload: Record<string, unknown> = {
-      class_id: data.classId,
-      student_id: data.studentId,
-      period_key: data.periodKey,
-      teacher_note: data.teacherNote,
-      principal_note: data.principalNote,
-    };
-    if (data.subjects !== undefined) payload.subjects = data.subjects;
-    if (data.conducts !== undefined) payload.conducts = data.conducts;
     const { error } = await context.supabase
       .from("certificate_notes")
-      .upsert(payload, { onConflict: "student_id,period_key" });
+      .upsert(
+        {
+          class_id: data.classId,
+          student_id: data.studentId,
+          period_key: data.periodKey,
+          teacher_note: data.teacherNote,
+          principal_note: data.principalNote,
+          ...(data.subjects !== undefined ? { subjects: data.subjects } : {}),
+          ...(data.conducts !== undefined ? { conducts: data.conducts } : {}),
+        },
+        { onConflict: "student_id,period_key" },
+      );
     if (error) {
       console.error("[certificate_notes upsert]", error);
       throw new Error("שמירת ההערות נכשלה.");
