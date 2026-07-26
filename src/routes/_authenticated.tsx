@@ -9,6 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getSecurity } from "@/lib/security.functions";
 import { PinLockScreen } from "@/components/pin-lock-screen";
+import { GlobalCommandPalette } from "@/components/global-command-palette";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthLayout,
@@ -88,6 +89,7 @@ function AuthLayout() {
         <Outlet />
       </main>
       {needsPin && <PinLockScreen onUnlock={() => setUnlocked(true)} />}
+      {!needsPin && <GlobalCommandPalette />}
     </div>
   );
 }
