@@ -260,8 +260,14 @@ function ResourcesPage() {
           </CardContent>
         </Card>
 
+        <Card className="lg:col-start-1">
+          <CardContent className="pt-4">
+            <TopicTreeFilter value={topicId} onChange={setTopicId} />
+          </CardContent>
+        </Card>
+
         {/* Grid */}
-        <div className="space-y-3">
+        <div className="space-y-3 lg:col-start-2 lg:row-start-1 lg:row-span-2">
           {isLoading && (
             <Card><CardContent className="py-12 text-center text-muted-foreground">
               <Loader2 className="mx-auto mb-2 h-6 w-6 animate-spin" /> טוען חומרים…
@@ -277,7 +283,10 @@ function ResourcesPage() {
             </CardContent></Card>
           )}
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {resources.map((r) => (
+            {(topicId
+              ? resources.filter((r) => (r as unknown as { topic_id: string | null }).topic_id === topicId)
+              : resources
+            ).map((r) => (
               <ResourceCard
                 key={r.id}
                 resource={r}
