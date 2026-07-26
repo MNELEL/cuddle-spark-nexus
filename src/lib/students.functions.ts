@@ -30,6 +30,8 @@ export const upsertStudent = createServerFn({ method: "POST" })
       height: heightEnum.default("mid"),
       row_pref: rowEnum.default("any"),
       corner_pref: z.boolean().default(false),
+      has_special_accommodation: z.boolean().optional().default(false),
+      accommodation_note: z.string().max(2000).nullable().optional(),
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
