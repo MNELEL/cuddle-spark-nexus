@@ -1,10 +1,23 @@
-Scope: Update the existing `/blog/free-tools-comparison` route to include a collapsible FAQ section and `FAQPage` structured data, improving accessibility and SEO rich-results eligibility.
+## דוח ממצאים — 12 פיצ'רים
 
-Changes:
-1. Import the reusable `FaqSection` component and `faqJsonLd` helper from `@/components/faq-section`.
-2. Add a Hebrew FAQ array (5–6 items) covering: whether the tools are truly free, privacy/PII, Hebrew/RTL support, exporting data, suitability for Charedi classrooms, and migration from paper/Excel.
-3. Render the FAQ section near the bottom of the article, before the related guides block.
-4. Append a second `application/ld+json` script in `head()` with `FAQPage` schema while keeping the existing `Article` schema.
-5. Verify with `tsgo --noEmit` and a quick preview check that the page renders and the JSON-LD is emitted.
+| # | פיצ'ר | סטטוס | מה נמצא בפועל |
+|---|---|---|---|
+| 1 | תעודות | **קיים מלא** | `_authenticated.certificates.$classId.tsx` תומך ב-6 תוויות מילוליות (מצוין/טוב מאוד/כמעט טוב מאוד/טוב/כמעט טוב/להשתדל יותר), הליכות + שקידה + דרך ארץ ב-4 דרגות, בחירת תקופה (מחצית א'/ב', שליש א'/ב'/ג', שנתי, custom), והערות חופשיות (`teacherNote`, `principalNote`) לכל תלמיד. תמיכה גם ב"תעודת תיקון". |
+| 2 | הצעות AI להערות תעודה | **לא קיים** | קיים `ai-certificate.functions.ts` אבל רק ל-OCR של תעודה מודפסת (`analyzeCertificatePhoto`). אין קריאת AI שמייצרת הערה מנומקת לתלמיד על סמך ציונים/הליכות/נוכחות. |
+| 3 | יומן/לוח אירועים כיתתי | **לא קיים** | אין רכיב לוח חודשי, אין טבלת `events`, ואין תצוגת ימי הולדת/מבחנים/טיולים. `reminders` (בטבלה נפרדת, ראו סעיף 9) הן רשימה שטוחה בלבד. |
+| 4 | אובייקטי סביבה בגריד הישיבה | **לא קיים** | `seating-grid.tsx` ו-`seating-configs.functions.ts` יודעים לשמור רק מיקומי תלמידים (`seat_row/seat_col`). אין רהיטים/לוח/שולחן מורה/פינת קריאה כישויות ב-config. |
+| 5 | סימון חזותי לצרכים מיוחדים | **לא קיים / חלקי בלבד** | ב-`students` יש `notes` חופשי אבל לא זיהיתי דגל `iep`/`special_needs` ולא סימון חזותי ייעודי בגריד. |
+| 6 | Partners + טופס יצירת קשר | **קיים מלא** | `/partners` עם טופס דמו מלא (institutionName, contactName, role, email, demoDate) + case-studies + districts + schools. |
+| 7 | Taxonomy היררכי לחומרי לימוד | **לא קיים** | ב-`teaching-resources` יש שדות שטוחים בלבד: `subject`, `grade_level`, `tags[]`, `resource_type` (enum). אין נושא-אב/תת-נושא ולא טבלת taxonomy. |
+| 8 | מבחני AI עם קושי/נושא/משוב/בדיקה אוטומטית | **חלקי בלבד** | קיים `exam-scanner` ל-OCR מבחן בכתב יד + `question_bank` בתוך resources. **חסר**: הפקת מבחן ב-AI עם בחירת רמת קושי + נושא, משוב מורה על שאלה בודדת, זיהוי שאלות סגורות/אמריקאיות, בדיקה אוטומטית מסומנת, וכתיבה אוטומטית לטבלת `grades`. |
+| 9 | תזכורות / התראות | **קיים חלקית** | טבלת `reminders` + `crm-tab.tsx` + `sent_reminder_alerts` + `reminder-alerts.server.ts` — תזכורות בסיסיות למורה. אין הגדרות התראה אישיות (סוגים, ערוצים, "שיעור מתחיל בעוד X"). |
+| 10 | Import/Export CSV/JSON | **קיים חלקית** | `import-export.tsx` תומך ב-XLSX + CSV לתלמידים בלבד (עמודות: name/height/row_pref/corner_pref/notes) + ייצוא PDF של הגריד + שמירה/טעינה של seating configs. אין ייצוא/ייבוא של ציונים, נוכחות, resources, תעודות. |
+| 11 | Command palette גלובלי | **לא קיים** | `src/components/ui/command.tsx` (רכיב shadcn cmdk) קיים כרכיב UI אבל לא מחובר לשום מקום כ-palette גלובלי לניווט/חיפוש. |
+| 12 | סיכום שבועי של אירועי הלוח ב-AI | **לא קיים** | קיים `bulletins` (עלוני כיתה שבועיים) ו-`weekly-pace-card.tsx` (קצב לימוד), אבל אין רכיב שמנתח אירועי לוח (כי סעיף 3 לא קיים בכלל) ומפיק סיכום טקסטואלי שבועי למורה. |
 
-No new dependencies, no backend changes, no route changes.
+### סיכום עדיפויות מוצע
+- **חורים אמיתיים (לא קיים בכלל):** 2, 3, 4, 7, 11, 12 — ו-12 תלוי ב-3.
+- **חלקי, שווה השלמה:** 5 (דגל + באדג'), 8 (מחולל + בדיקה אוטומטית), 9 (הגדרות התראה), 10 (הרחבת ייבוא/ייצוא).
+- **קיים מלא:** 1, 6.
+
+אם תרצה שאתחיל בבנייה, אמליץ על הסדר: 3 → 12 (כזוג), אחר כך 2, 8, 4+5 (יחד בגריד), 11, 7, 9, 10. אשמח לפרט תוכנית מימוש לכל סעיף לפי הבחירה שלך.
