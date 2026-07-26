@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { GraduationCap, LogOut, Wrench, Music, Sparkles } from "lucide-react";
+import { GraduationCap, LogOut, Wrench, Music, Sparkles, BellRing } from "lucide-react";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -61,6 +61,9 @@ function AuthLayout() {
             </Link>
             <Link to="/ingest" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
               <Sparkles className="me-1 inline h-4 w-4" />העלאה חכמה
+            </Link>
+            <Link to="/bell-schedule" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
+              <BellRing className="me-1 inline h-4 w-4" />לוח פעמונים
             </Link>
           </nav>
           <div className="flex shrink-0 items-center gap-1 sm:gap-3">
