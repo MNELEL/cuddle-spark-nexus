@@ -354,6 +354,15 @@ function StudentDialog({ classId, editing, onClose }: { classId: string; editing
           <Checkbox id="corner" checked={corner} onCheckedChange={(v) => setCorner(!!v)} />
           <Label htmlFor="corner" className="cursor-pointer">מעדיף ישיבה בפינה</Label>
         </div>
+        <div className="rounded-md border p-3 space-y-2 bg-amber/5">
+          <div className="flex items-center gap-2">
+            <Checkbox id="special" checked={special} onCheckedChange={(v) => setSpecial(!!v)} />
+            <Label htmlFor="special" className="cursor-pointer">התאמות / צרכים מיוחדים</Label>
+          </div>
+          {special && (
+            <Textarea value={accNote} onChange={(e) => setAccNote(e.target.value)} rows={2} placeholder="למשל: זקוק לישיבה קדמית, קושי בריכוז, התאמות במבחן..." />
+          )}
+        </div>
         <div>
           <Label>הערות פדגוגיות</Label>
           <Textarea value={notes ?? ""} onChange={(e) => setNotes(e.target.value)} rows={3} />
