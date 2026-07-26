@@ -97,10 +97,12 @@
   },
   "overrides": {
     "js-yaml": "^4.3.0",
-    "seroval": "^1.5.3"
+    "seroval": "^1.5.3",
+    "dompurify": "^3.4.12"
   },
   "resolutions": {
     "js-yaml": "^4.3.0",
-    "seroval": "^1.5.3"
+    "seroval": "^1.5.3",
+    "dompurify": "^3.4.12"
   }
 }
