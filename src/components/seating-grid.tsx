@@ -5,7 +5,7 @@ import {
 } from "@dnd-kit/core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Lock, Unlock, EyeOff, Shuffle, Settings2, Sparkles, AlertTriangle, Accessibility, Undo2 } from "lucide-react";
+import { Lock, Unlock, EyeOff, Shuffle, Settings2, Sparkles, AlertTriangle, Accessibility, Undo2, Star, X, Presentation, Armchair, DoorOpen, Rows3, BookOpen, PanelTopOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { listStudents, listRelations, setSeat, toggleSeatLock, clearAllSeats, toggleHiddenSeat, smartSortSeats } from "@/lib/students.functions";
-import { getClass, updateClass } from "@/lib/classes.functions";
+import { getClass, updateClass, type RoomObject, type RoomObjectType, ROOM_OBJECT_TYPES } from "@/lib/classes.functions";
 import { listGroups } from "@/lib/groups.functions";
 import { computeViolations, type ScoringStudent, type ScoringRelation } from "@/lib/seating-logic";
 import { SeatingSnapshots } from "@/components/seating-snapshots";
@@ -25,9 +25,19 @@ type Student = {
   id: string; class_id: string; name: string;
   height: "low" | "mid" | "high"; row_pref: "front" | "mid" | "back" | "any";
   corner_pref: boolean; seat_row: number | null; seat_col: number | null; seat_locked: boolean;
+  has_special_accommodation?: boolean; accommodation_note?: string | null;
 };
 
 const seatKey = (r: number, c: number) => `${r}:${c}`;
+
+export const ROOM_OBJECT_META: Record<RoomObjectType, { label: string; icon: typeof Star; className: string }> = {
+  board: { label: "לוח מחיק", icon: Presentation, className: "bg-slate-700 text-white" },
+  teacher_desk: { label: "שולחן מורה", icon: PanelTopOpen, className: "bg-amber-700 text-white" },
+  cabinet: { label: "ארון", icon: Rows3, className: "bg-stone-600 text-white" },
+  reading_corner: { label: "פינת קריאה", icon: BookOpen, className: "bg-emerald-700 text-white" },
+  door: { label: "דלת", icon: DoorOpen, className: "bg-blue-700 text-white" },
+  window: { label: "חלון", icon: Armchair, className: "bg-sky-500 text-white" },
+};
 
 function StudentChip({ student, dragging, highlight, groupColor }: { student: Student; dragging?: boolean; highlight?: "friend" | "avoid" | "distance" | "self" | null; groupColor?: string | null }) {
   const cls =
@@ -40,9 +50,16 @@ function StudentChip({ student, dragging, highlight, groupColor }: { student: St
     <div
       className={`select-none rounded-md border px-2 py-1 text-xs font-medium text-foreground shadow-sm ${cls} ${dragging ? "opacity-90 shadow-lg" : ""}`}
       style={groupColor && !highlight ? { borderColor: groupColor, boxShadow: `inset 0 0 0 9999px ${groupColor}22` } : undefined}
+      title={student.has_special_accommodation ? (student.accommodation_note || "התאמות/צרכים מיוחדים") : undefined}
     >
       <div className="flex items-center gap-1">
         {student.seat_locked && <Lock className="h-3 w-3 text-amber-600" />}
+        {student.has_special_accommodation && (
+          <Star
+            className="h-3 w-3 shrink-0 fill-amber-400 text-amber-500"
+            aria-label={`התאמות: ${student.accommodation_note || "צרכים מיוחדים"}`}
+          />
+        )}
         {groupColor && <span className="inline-block h-2 w-2 rounded-full" style={{ background: groupColor }} aria-hidden />}
         <span className="truncate max-w-[8rem]">{student.name}</span>
       </div>
