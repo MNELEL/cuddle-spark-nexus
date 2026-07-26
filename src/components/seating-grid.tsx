@@ -5,7 +5,7 @@ import {
 } from "@dnd-kit/core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Lock, Unlock, EyeOff, Shuffle, Settings2, Sparkles, AlertTriangle, Accessibility, Undo2 } from "lucide-react";
+import { Lock, Unlock, EyeOff, Shuffle, Settings2, Sparkles, AlertTriangle, Accessibility, Undo2, Star, X, Presentation, Armchair, DoorOpen, Rows3, BookOpen, PanelTopOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { listStudents, listRelations, setSeat, toggleSeatLock, clearAllSeats, toggleHiddenSeat, smartSortSeats } from "@/lib/students.functions";
-import { getClass, updateClass } from "@/lib/classes.functions";
+import { getClass, updateClass, type RoomObject, type RoomObjectType, ROOM_OBJECT_TYPES } from "@/lib/classes.functions";
 import { listGroups } from "@/lib/groups.functions";
 import { computeViolations, type ScoringStudent, type ScoringRelation } from "@/lib/seating-logic";
 import { SeatingSnapshots } from "@/components/seating-snapshots";
@@ -25,9 +25,19 @@ type Student = {
   id: string; class_id: string; name: string;
   height: "low" | "mid" | "high"; row_pref: "front" | "mid" | "back" | "any";
   corner_pref: boolean; seat_row: number | null; seat_col: number | null; seat_locked: boolean;
+  has_special_accommodation?: boolean; accommodation_note?: string | null;
 };
 
 const seatKey = (r: number, c: number) => `${r}:${c}`;
+
+export const ROOM_OBJECT_META: Record<RoomObjectType, { label: string; icon: typeof Star; className: string }> = {
+  board: { label: "לוח מחיק", icon: Presentation, className: "bg-slate-700 text-white" },
+  teacher_desk: { label: "שולחן מורה", icon: PanelTopOpen, className: "bg-amber-700 text-white" },
+  cabinet: { label: "ארון", icon: Rows3, className: "bg-stone-600 text-white" },
+  reading_corner: { label: "פינת קריאה", icon: BookOpen, className: "bg-emerald-700 text-white" },
+  door: { label: "דלת", icon: DoorOpen, className: "bg-blue-700 text-white" },
+  window: { label: "חלון", icon: Armchair, className: "bg-sky-500 text-white" },
+};
 
 function StudentChip({ student, dragging, highlight, groupColor }: { student: Student; dragging?: boolean; highlight?: "friend" | "avoid" | "distance" | "self" | null; groupColor?: string | null }) {
   const cls =
@@ -40,9 +50,16 @@ function StudentChip({ student, dragging, highlight, groupColor }: { student: St
     <div
       className={`select-none rounded-md border px-2 py-1 text-xs font-medium text-foreground shadow-sm ${cls} ${dragging ? "opacity-90 shadow-lg" : ""}`}
       style={groupColor && !highlight ? { borderColor: groupColor, boxShadow: `inset 0 0 0 9999px ${groupColor}22` } : undefined}
+      title={student.has_special_accommodation ? (student.accommodation_note || "התאמות/צרכים מיוחדים") : undefined}
     >
       <div className="flex items-center gap-1">
         {student.seat_locked && <Lock className="h-3 w-3 text-amber-600" />}
+        {student.has_special_accommodation && (
+          <Star
+            className="h-3 w-3 shrink-0 fill-amber-400 text-amber-500"
+            aria-label={`התאמות: ${student.accommodation_note || "צרכים מיוחדים"}`}
+          />
+        )}
         {groupColor && <span className="inline-block h-2 w-2 rounded-full" style={{ background: groupColor }} aria-hidden />}
         <span className="truncate max-w-[8rem]">{student.name}</span>
       </div>
@@ -62,6 +79,7 @@ function DraggableStudent({ student, id, highlight, onClick, groupColor }: { stu
 
 function Seat({
   row, col, hidden, child, onToggleHide, onToggleLock, lockedChild, highlight, onSelect, groupColor,
+  roomObject, onDeleteObject,
   a11y, focused, grabbedId, onFocusSeat, seatRef,
 }: {
   row: number; col: number; hidden: boolean; child: Student | null;
@@ -69,6 +87,8 @@ function Seat({
   highlight?: "friend" | "avoid" | "distance" | "self" | null;
   onSelect?: () => void;
   groupColor?: string | null;
+  roomObject?: RoomObject | null;
+  onDeleteObject?: (id: string) => void;
   a11y?: boolean;
   focused?: boolean;
   grabbedId?: string | null;
@@ -120,21 +140,80 @@ function Seat({
             {lockedChild ? <Lock className="h-3 w-3 text-amber-600" /> : <Unlock className="h-3 w-3" />}
           </button>
         )}
-        {!child && (
+        {!child && !roomObject && (
           <button type="button" onClick={onToggleHide}
             aria-label="הסתר מושב"
             className="rounded p-0.5 hover:bg-accent" title="הסתר מושב">
             <EyeOff className="h-3 w-3" />
           </button>
         )}
+        {roomObject && onDeleteObject && (
+          <button type="button" onClick={() => onDeleteObject(roomObject.id)}
+            aria-label="מחק אובייקט" className="rounded p-0.5 hover:bg-destructive/20 text-destructive" title="מחק">
+            <X className="h-3 w-3" />
+          </button>
+        )}
       </div>
       <span className="absolute bottom-0.5 right-1 text-[9px] text-muted-foreground">{row + 1},{col + 1}</span>
       {child ? (
         <DraggableStudent student={child} id={`student:${child.id}`} highlight={highlight} onClick={onSelect} groupColor={groupColor} />
+      ) : roomObject ? (
+        <DraggableRoomObject obj={roomObject} />
       ) : (
         <span className="text-[10px] text-muted-foreground">ריק</span>
       )}
     </div>
+  );
+}
+
+function RoomObjectChip({ obj, dragging }: { obj: RoomObject; dragging?: boolean }) {
+  const meta = ROOM_OBJECT_META[obj.type];
+  const Icon = meta.icon;
+  return (
+    <div className={`flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-semibold shadow-sm ${meta.className} ${dragging ? "opacity-90 shadow-lg" : ""}`}>
+      <Icon className="h-3.5 w-3.5" />
+      <span className="truncate max-w-[7rem]">{obj.label || meta.label}</span>
+    </div>
+  );
+}
+
+function DraggableRoomObject({ obj }: { obj: RoomObject }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: `obj:${obj.id}`, data: { objectId: obj.id },
+  });
+  return (
+    <div ref={setNodeRef} {...listeners} {...attributes}
+      className={`cursor-grab active:cursor-grabbing ${isDragging ? "opacity-30" : ""}`}>
+      <RoomObjectChip obj={obj} />
+    </div>
+  );
+}
+
+function PaletteItem({ type }: { type: RoomObjectType }) {
+  const meta = ROOM_OBJECT_META[type];
+  const Icon = meta.icon;
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: `objnew:${type}`, data: { newType: type },
+  });
+  return (
+    <div ref={setNodeRef} {...listeners} {...attributes}
+      className={`flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-semibold shadow-sm cursor-grab active:cursor-grabbing ${meta.className} ${isDragging ? "opacity-40" : ""}`}
+      title={`גרור ל"${meta.label}"`}
+    >
+      <Icon className="h-4 w-4" />
+      <span>{meta.label}</span>
+    </div>
+  );
+}
+
+function RoomObjectPalette() {
+  return (
+    <Card>
+      <CardContent className="flex flex-wrap items-center gap-2 py-3">
+        <span className="text-xs font-semibold text-muted-foreground me-2">אובייקטי סביבה — גרור לתוך הגריד:</span>
+        {ROOM_OBJECT_TYPES.map((t) => <PaletteItem key={t} type={t} />)}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -181,6 +260,43 @@ export function SeatingGrid({ classId }: { classId: string }) {
   const cols = cls?.grid_cols ?? 6;
   const hiddenSet = useMemo(() => new Set<string>((cls?.hidden_seats as string[] | undefined) ?? []), [cls?.hidden_seats]);
 
+  // Room objects (persisted on classes.room_objects)
+  const roomObjects = useMemo<RoomObject[]>(
+    () => {
+      const raw = (cls as unknown as { room_objects?: unknown } | undefined)?.room_objects;
+      return Array.isArray(raw) ? (raw as RoomObject[]) : [];
+    },
+    [cls],
+  );
+  const objectAt = useMemo(() => {
+    const m = new Map<string, RoomObject>();
+    for (const o of roomObjects) m.set(seatKey(o.row, o.col), o);
+    return m;
+  }, [roomObjects]);
+  const [editEnv, setEditEnv] = useState(false);
+  const saveObjectsM = useMutation({
+    mutationFn: (next: RoomObject[]) => updateClassFn({ data: { id: classId, room_objects: next } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["class", classId] }),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
+  });
+  const addObject = (type: RoomObjectType, r: number, c: number) => {
+    if (hiddenSet.has(seatKey(r, c))) { toast.error("לא ניתן להניח במושב מוסתר"); return; }
+    if (seated.get(seatKey(r, c))) { toast.error("המשבצת תפוסה על ידי תלמיד"); return; }
+    if (objectAt.get(seatKey(r, c))) { toast.error("המשבצת תפוסה על ידי אובייקט"); return; }
+    const id = `obj_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+    saveObjectsM.mutate([...roomObjects, { id, type, row: r, col: c }]);
+  };
+  const moveObject = (id: string, r: number, c: number) => {
+    if (hiddenSet.has(seatKey(r, c))) { toast.error("לא ניתן להניח במושב מוסתר"); return; }
+    if (seated.get(seatKey(r, c))) { toast.error("המשבצת תפוסה"); return; }
+    const other = objectAt.get(seatKey(r, c));
+    if (other && other.id !== id) { toast.error("המשבצת תפוסה"); return; }
+    saveObjectsM.mutate(roomObjects.map((o) => o.id === id ? { ...o, row: r, col: c } : o));
+  };
+  const deleteObject = (id: string) => {
+    saveObjectsM.mutate(roomObjects.filter((o) => o.id !== id));
+  };
+
   const seated = useMemo(() => {
     const map = new Map<string, Student>();
     for (const s of students) {
@@ -212,6 +328,8 @@ export function SeatingGrid({ classId }: { classId: string }) {
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
   const [activeStudent, setActiveStudent] = useState<Student | null>(null);
+  const [activeObject, setActiveObject] = useState<RoomObject | null>(null);
+  const [activeNewType, setActiveNewType] = useState<RoomObjectType | null>(null);
 
   // Accessibility mode (keyboard navigation + screen reader)
   const [a11y, setA11y] = useState<boolean>(() => {
@@ -376,30 +494,46 @@ export function SeatingGrid({ classId }: { classId: string }) {
   });
 
   const onDragStart = (e: DragStartEvent) => {
-    const sid = (e.active.data.current as { studentId?: string })?.studentId;
-    setActiveStudent(students.find((s) => s.id === sid) ?? null);
+    const d = e.active.data.current as { studentId?: string; objectId?: string; newType?: RoomObjectType } | undefined;
+    if (d?.studentId) setActiveStudent(students.find((s) => s.id === d.studentId) ?? null);
+    else if (d?.objectId) setActiveObject(roomObjects.find((o) => o.id === d.objectId) ?? null);
+    else if (d?.newType) setActiveNewType(d.newType);
   };
 
   const onDragEnd = (e: DragEndEvent) => {
-    setActiveStudent(null);
+    const d = e.active.data.current as { studentId?: string; objectId?: string; newType?: RoomObjectType } | undefined;
+    setActiveStudent(null); setActiveObject(null); setActiveNewType(null);
     if (!e.over) return;
-    const sid = (e.active.data.current as { studentId?: string })?.studentId;
+    const overId = String(e.over.id);
+    const overData = e.over.data.current as { row?: number; col?: number } | undefined;
+
+    if (d?.objectId) {
+      if (overId === "tray") { deleteObject(d.objectId); return; }
+      if (overData?.row === undefined || overData.col === undefined) return;
+      moveObject(d.objectId, overData.row, overData.col);
+      return;
+    }
+    if (d?.newType) {
+      if (overData?.row === undefined || overData.col === undefined) return;
+      addObject(d.newType, overData.row, overData.col);
+      return;
+    }
+    const sid = d?.studentId;
     if (!sid) return;
     const student = students.find((s) => s.id === sid);
     if (!student || student.seat_locked) {
       if (student?.seat_locked) toast.error("המושב נעול");
       return;
     }
-    const overId = String(e.over.id);
     if (overId === "tray") {
       moveM.mutate({ student_id: sid, seat_row: null, seat_col: null });
       return;
     }
-    const data = e.over.data.current as { row?: number; col?: number } | undefined;
-    if (data?.row === undefined || data.col === undefined) return;
-    const occupant = seated.get(seatKey(data.row, data.col));
+    if (overData?.row === undefined || overData.col === undefined) return;
+    if (objectAt.get(seatKey(overData.row, overData.col))) { toast.error("המשבצת תפוסה על ידי אובייקט"); return; }
+    const occupant = seated.get(seatKey(overData.row, overData.col));
     if (occupant?.seat_locked) { toast.error("המושב היעד נעול"); return; }
-    moveM.mutate({ student_id: sid, seat_row: data.row, seat_col: data.col });
+    moveM.mutate({ student_id: sid, seat_row: overData.row, seat_col: overData.col });
   };
 
   return (
@@ -422,6 +556,9 @@ export function SeatingGrid({ classId }: { classId: string }) {
                 <Undo2 className="ms-1 h-4 w-4" /> בטל ({undoStack.length})
               </Button>
             )}
+            <Button size="sm" variant={editEnv ? "default" : "outline"} onClick={() => setEditEnv((v) => !v)} title="הוסף/הזז אובייקטי סביבה">
+              <Presentation className="ms-1 h-4 w-4" /> {editEnv ? "סיים עריכת סביבה" : "עריכת סביבה"}
+            </Button>
             {selectedId && (
               <Button size="sm" variant="ghost" onClick={() => setSelectedId(null)}>
                 בטל בחירה
@@ -468,6 +605,8 @@ export function SeatingGrid({ classId }: { classId: string }) {
           </div>
         </div>
 
+        {editEnv && <RoomObjectPalette />}
+
         <div id="seating-grid-canvas" className="rounded-lg border bg-muted/30 p-3">
           <div className="mb-2 text-center text-xs font-semibold text-muted-foreground">חזית הכיתה</div>
           <div
@@ -482,6 +621,7 @@ export function SeatingGrid({ classId }: { classId: string }) {
             {Array.from({ length: rows }).flatMap((_, r) =>
               Array.from({ length: cols }).map((__, c) => {
                 const child = seated.get(seatKey(r, c)) ?? null;
+                const obj = objectAt.get(seatKey(r, c)) ?? null;
                 const hl = child ? highlightMap.get(child.id) ?? null : null;
                 const gc = child ? studentColor.get(child.id) ?? null : null;
                 return (
@@ -491,6 +631,8 @@ export function SeatingGrid({ classId }: { classId: string }) {
                     lockedChild={!!child?.seat_locked}
                     highlight={hl}
                     groupColor={gc}
+                    roomObject={obj}
+                    onDeleteObject={editEnv ? deleteObject : undefined}
                     onSelect={() => child && setSelectedId((cur) => cur === child.id ? null : child.id)}
                     onToggleHide={() => hideM.mutate({ row: r, col: c })}
                     onToggleLock={() => child && lockM.mutate({ id: child.id, locked: !child.seat_locked })}
@@ -520,7 +662,12 @@ export function SeatingGrid({ classId }: { classId: string }) {
         <ViolationsPanel violations={violations} nameOf={nameOf} onFocus={setSelectedId} />
       </div>
 
-      <DragOverlay>{activeStudent ? <StudentChip student={activeStudent} dragging /> : null}</DragOverlay>
+      <DragOverlay>
+        {activeStudent ? <StudentChip student={activeStudent} dragging />
+          : activeObject ? <RoomObjectChip obj={activeObject} dragging />
+          : activeNewType ? <RoomObjectChip obj={{ id: "new", type: activeNewType, row: 0, col: 0 }} dragging />
+          : null}
+      </DragOverlay>
     </DndContext>
   );
 }

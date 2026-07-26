@@ -443,6 +443,7 @@ export type Database = {
           public_enabled: boolean
           public_headline: string | null
           public_slug: string | null
+          room_objects: Json
           updated_at: string
         }
         Insert: {
@@ -457,6 +458,7 @@ export type Database = {
           public_enabled?: boolean
           public_headline?: string | null
           public_slug?: string | null
+          room_objects?: Json
           updated_at?: string
         }
         Update: {
@@ -471,6 +473,7 @@ export type Database = {
           public_enabled?: boolean
           public_headline?: string | null
           public_slug?: string | null
+          room_objects?: Json
           updated_at?: string
         }
         Relationships: []
@@ -1102,6 +1105,7 @@ export type Database = {
       }
       students: {
         Row: {
+          accommodation_note: string | null
           address: string | null
           birth_date: string | null
           class_id: string
@@ -1111,6 +1115,7 @@ export type Database = {
           father_name: string | null
           father_phone: string | null
           gender: string | null
+          has_special_accommodation: boolean
           height: string
           id: string
           mother_id: string | null
@@ -1125,6 +1130,7 @@ export type Database = {
           seat_row: number | null
         }
         Insert: {
+          accommodation_note?: string | null
           address?: string | null
           birth_date?: string | null
           class_id: string
@@ -1134,6 +1140,7 @@ export type Database = {
           father_name?: string | null
           father_phone?: string | null
           gender?: string | null
+          has_special_accommodation?: boolean
           height?: string
           id?: string
           mother_id?: string | null
@@ -1148,6 +1155,7 @@ export type Database = {
           seat_row?: number | null
         }
         Update: {
+          accommodation_note?: string | null
           address?: string | null
           birth_date?: string | null
           class_id?: string
@@ -1157,6 +1165,7 @@ export type Database = {
           father_name?: string | null
           father_phone?: string | null
           gender?: string | null
+          has_special_accommodation?: boolean
           height?: string
           id?: string
           mother_id?: string | null
