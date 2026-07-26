@@ -29,6 +29,7 @@ import {
 import { getPersonalRecommendations, recomputeStyleProfile } from "@/lib/teacher-style.functions";
 import { Wand2 } from "lucide-react";
 import { WeeklyPaceCard } from "@/components/weekly-pace-card";
+import { TopicTreeFilter } from "@/components/topic-tree-filter";
 
 export const Route = createFileRoute("/_authenticated/resources")({
   component: ResourcesPage,
@@ -66,6 +67,7 @@ function ResourcesPage() {
   const listColls = useServerFn(listCollections);
 
   const [filters, setFilters] = useState<Filters>(emptyFilters);
+  const [topicId, setTopicId] = useState<string | null>(null);
   const [editing, setEditing] = useState<Partial<ResourceRow> | null>(null);
   const [aiOpen, setAiOpen] = useState(false);
   const [aiSource, setAiSource] = useState<ResourceRow | null>(null);
