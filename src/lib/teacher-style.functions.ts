@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { callLovableAI } from "./ai-gateway.server";
 
 const uuid = z.string().uuid();
 
@@ -200,18 +201,11 @@ export const suggestResourceEdits = createServerFn({ method: "POST" })
     const user = `סוג החומר: ${r.resource_type}\nכותרת: ${r.title}\nתיאור: ${r.description}\nתוכן: ${JSON.stringify(r.content).slice(0, 4000)}`;
 
     try {
-      const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Lovable-API-Key": apiKey, "X-Lovable-AIG-SDK": "fetch" },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [{ role: "system", content: system }, { role: "user", content: user }],
-          response_format: { type: "json_object" },
-        }),
+      const raw = await callLovableAI({
+        messages: [{ role: "system", content: system }, { role: "user", content: user }],
+        jsonResponse: true,
       });
-      if (!resp.ok) return { suggestions: [] };
-      const j = (await resp.json()) as { choices?: { message?: { content?: string } }[] };
-      const parsed = JSON.parse(j.choices?.[0]?.message?.content ?? "{}") as { suggestions?: { title?: string; reason?: string }[] };
+      const parsed = JSON.parse(raw || "{}") as { suggestions?: { title?: string; reason?: string }[] };
       const suggestions = (parsed.suggestions ?? [])
         .filter((s) => s?.title)
         .map((s) => ({ title: String(s.title).slice(0, 120), reason: String(s.reason ?? "").slice(0, 240) }))

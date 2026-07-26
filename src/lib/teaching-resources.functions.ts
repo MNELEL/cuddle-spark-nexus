@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { recomputeStyleProfileFor, buildStyleContextString } from "./teacher-style.functions";
+import { callLovableAI } from "./ai-gateway.server";
 
 const uuid = z.string().uuid();
 
@@ -354,30 +355,13 @@ export const generateResourceWithAI = createServerFn({ method: "POST" })
 - lesson_plan: מלא body (מטרות) + steps (מהלך השיעור).
 השתמש בשדות הרלוונטיים בלבד — אל תכלול שדות ריקים מיותרים.`;
 
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Lovable-API-Key": apiKey,
-        "X-Lovable-AIG-SDK": "fetch",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: data.prompt },
-        ],
-        response_format: { type: "json_object" },
-      }),
-    });
-    if (resp.status === 429) throw new Error("חרגת ממכסת בקשות AI. נסה שוב בעוד דקה.");
-    if (resp.status === 402) throw new Error("נגמרו קרדיטים ב-Lovable AI.");
-    if (!resp.ok) {
-      console.error("[AI Gateway Error]", resp.status, await resp.text().catch(() => ""));
-      throw new Error("הפעולה נכשלה. נסה שוב.");
-    }
-    const j = (await resp.json()) as { choices?: { message?: { content?: string } }[] };
-    const raw = j.choices?.[0]?.message?.content ?? "{}";
+    const raw = (await callLovableAI({
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: data.prompt },
+      ],
+      jsonResponse: true,
+    })) || "{}";
     let parsed: { title?: string; description?: string; tags?: unknown; content?: ResourceContent } = {};
     try { parsed = JSON.parse(raw); } catch { /* ignore */ }
 

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { callLovableAI } from "./ai-gateway.server";
 
 const DateStr = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
@@ -63,9 +64,6 @@ export const generateBulletin = createServerFn({ method: "POST" })
     ]);
     if (cls.error) throw new Error("שגיאה בטעינת הכיתה");
 
-    const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) throw new Error("חסר LOVABLE_API_KEY");
-
     const ctx = JSON.stringify({
       class_name: cls.data?.name,
       range: { from: data.startDate, to: data.endDate },
@@ -93,29 +91,13 @@ export const generateBulletin = createServerFn({ method: "POST" })
 החזר אך ורק JSON תקין בפורמט הזה:
 {"title":"","digest_summary":"","study_points":[],"recap_questions":[{"question":"","answer":""}],"weekly_riddle":"","weekly_riddle_answer":"","activities":[]}`;
 
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Lovable-API-Key": apiKey,
-        "X-Lovable-AIG-SDK": "fetch",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: `נתוני הכיתה (JSON):\n${ctx}` },
-        ],
-        response_format: { type: "json_object" },
-      }),
-    });
-
-    if (resp.status === 429) throw new Error("חרגת ממכסת בקשות AI. נסה שוב בעוד דקה.");
-    if (resp.status === 402) throw new Error("נגמרו קרדיטים ב-Lovable AI.");
-    if (!resp.ok) throw new Error(`שגיאת AI: ${resp.status}`);
-
-    const j = await resp.json() as { choices?: { message?: { content?: string } }[] };
-    const raw = j.choices?.[0]?.message?.content ?? "{}";
+    const raw = (await callLovableAI({
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: `נתוני הכיתה (JSON):\n${ctx}` },
+      ],
+      jsonResponse: true,
+    })) || "{}";
     let parsed: Partial<BulletinDraft> = {};
     try { parsed = JSON.parse(raw); } catch { /* ignore */ }
 
