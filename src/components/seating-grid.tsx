@@ -556,6 +556,9 @@ export function SeatingGrid({ classId }: { classId: string }) {
                 <Undo2 className="ms-1 h-4 w-4" /> בטל ({undoStack.length})
               </Button>
             )}
+            <Button size="sm" variant={editEnv ? "default" : "outline"} onClick={() => setEditEnv((v) => !v)} title="הוסף/הזז אובייקטי סביבה">
+              <Presentation className="ms-1 h-4 w-4" /> {editEnv ? "סיים עריכת סביבה" : "עריכת סביבה"}
+            </Button>
             {selectedId && (
               <Button size="sm" variant="ghost" onClick={() => setSelectedId(null)}>
                 בטל בחירה
@@ -602,6 +605,8 @@ export function SeatingGrid({ classId }: { classId: string }) {
           </div>
         </div>
 
+        {editEnv && <RoomObjectPalette />}
+
         <div id="seating-grid-canvas" className="rounded-lg border bg-muted/30 p-3">
           <div className="mb-2 text-center text-xs font-semibold text-muted-foreground">חזית הכיתה</div>
           <div
@@ -616,6 +621,7 @@ export function SeatingGrid({ classId }: { classId: string }) {
             {Array.from({ length: rows }).flatMap((_, r) =>
               Array.from({ length: cols }).map((__, c) => {
                 const child = seated.get(seatKey(r, c)) ?? null;
+                const obj = objectAt.get(seatKey(r, c)) ?? null;
                 const hl = child ? highlightMap.get(child.id) ?? null : null;
                 const gc = child ? studentColor.get(child.id) ?? null : null;
                 return (
@@ -625,6 +631,8 @@ export function SeatingGrid({ classId }: { classId: string }) {
                     lockedChild={!!child?.seat_locked}
                     highlight={hl}
                     groupColor={gc}
+                    roomObject={obj}
+                    onDeleteObject={editEnv ? deleteObject : undefined}
                     onSelect={() => child && setSelectedId((cur) => cur === child.id ? null : child.id)}
                     onToggleHide={() => hideM.mutate({ row: r, col: c })}
                     onToggleLock={() => child && lockM.mutate({ id: child.id, locked: !child.seat_locked })}
@@ -654,7 +662,12 @@ export function SeatingGrid({ classId }: { classId: string }) {
         <ViolationsPanel violations={violations} nameOf={nameOf} onFocus={setSelectedId} />
       </div>
 
-      <DragOverlay>{activeStudent ? <StudentChip student={activeStudent} dragging /> : null}</DragOverlay>
+      <DragOverlay>
+        {activeStudent ? <StudentChip student={activeStudent} dragging />
+          : activeObject ? <RoomObjectChip obj={activeObject} dragging />
+          : activeNewType ? <RoomObjectChip obj={{ id: "new", type: activeNewType, row: 0, col: 0 }} dragging />
+          : null}
+      </DragOverlay>
     </DndContext>
   );
 }
