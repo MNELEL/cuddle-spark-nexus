@@ -93,9 +93,7 @@ type StudentRow = {
   id: string;
   name: string;
   subjects: CertificateSubject[];
-  conduct: BehaviorLabel;
-  diligence: BehaviorLabel;
-  manners: BehaviorLabel;
+  conducts: { key: string; label: BehaviorLabel }[];
   attendance: { present: number; absent: number; late: number };
   teacherNote: string;
   principalNote: string;
@@ -134,9 +132,11 @@ function computeStudentRow(
     id: student.id,
     name: student.name,
     subjects: subjects.length ? subjects : [{ subject: "כללי", label: "טוב", note: "" }],
-    conduct,
-    diligence: conduct,
-    manners: conduct,
+    conducts: [
+      { key: "הליכות", label: conduct },
+      { key: "שקידה", label: conduct },
+      { key: "דרך ארץ", label: conduct },
+    ],
     attendance: { present, absent, late },
     teacherNote: "",
     principalNote: "",
@@ -195,38 +195,54 @@ function CertificatesPage() {
   // Recompute rows whenever the underlying data or saved notes change.
   useMemo(() => {
     if (!data) return;
-    const notesById = new Map<string, { teacher_note: string; principal_note: string }>();
-    for (const n of savedNotes ?? []) {
-      notesById.set(n.student_id, { teacher_note: n.teacher_note, principal_note: n.principal_note });
-    }
+    const notesById = new Map<string, (typeof savedNotes extends undefined ? never : NonNullable<typeof savedNotes>[number])>();
+    for (const n of savedNotes ?? []) notesById.set(n.student_id, n);
     const next: Record<string, StudentRow> = {};
     for (const s of data.students) {
       const base = computeStudentRow(s, data.grades, data.behavior, data.attendance);
       const saved = notesById.get(s.id);
-      next[s.id] = saved
-        ? { ...base, teacherNote: saved.teacher_note, principalNote: saved.principal_note }
-        : base;
+      if (!saved) { next[s.id] = base; continue; }
+      const savedSubjects = Array.isArray(saved.subjects) && saved.subjects.length
+        ? (saved.subjects as unknown as CertificateSubject[])
+        : base.subjects;
+      const savedConducts = Array.isArray(saved.conducts) && saved.conducts.length
+        ? (saved.conducts as unknown as { key: string; label: BehaviorLabel }[])
+        : base.conducts;
+      next[s.id] = {
+        ...base,
+        subjects: savedSubjects,
+        conducts: savedConducts,
+        teacherNote: saved.teacher_note,
+        principalNote: saved.principal_note,
+      };
     }
     setRows(next);
   }, [data, savedNotes]);
 
-  const persistNote = async (id: string) => {
+  const persistRow = async (
+    id: string,
+    override?: Partial<Pick<StudentRow, "teacherNote" | "principalNote" | "subjects" | "conducts">>,
+  ) => {
     const row = rows[id];
     if (!row) return;
+    const merged = { ...row, ...(override ?? {}) };
     try {
       await saveNote({
         data: {
           classId,
           studentId: id,
           periodKey,
-          teacherNote: row.teacherNote,
-          principalNote: row.principalNote,
+          teacherNote: merged.teacherNote,
+          principalNote: merged.principalNote,
+          subjects: merged.subjects,
+          conducts: merged.conducts,
         },
       });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "שמירת הערה נכשלה");
+      toast.error(e instanceof Error ? e.message : "השמירה נכשלה");
     }
   };
+  const persistNote = persistRow;
 
   const patchRow = (id: string, patch: Partial<StudentRow>) =>
     setRows((r) => ({ ...r, [id]: { ...r[id], ...patch } }));
@@ -239,17 +255,58 @@ function CertificatesPage() {
       return { ...r, [id]: { ...row, subjects } };
     });
 
-  const addSubject = (id: string) =>
+  const addSubject = (id: string) => {
+    let nextSubjects: CertificateSubject[] = [];
     setRows((r) => {
       const row = r[id]; if (!row) return r;
-      return { ...r, [id]: { ...row, subjects: [...row.subjects, { subject: "", label: "טוב", note: "" }] } };
+      nextSubjects = [...row.subjects, { subject: "", label: "טוב", note: "" }];
+      return { ...r, [id]: { ...row, subjects: nextSubjects } };
+    });
+    void persistRow(id, { subjects: nextSubjects });
+  };
+
+  const removeSubject = (id: string, idx: number) => {
+    let nextSubjects: CertificateSubject[] = [];
+    setRows((r) => {
+      const row = r[id]; if (!row) return r;
+      nextSubjects = row.subjects.filter((_, i) => i !== idx);
+      return { ...r, [id]: { ...row, subjects: nextSubjects } };
+    });
+    void persistRow(id, { subjects: nextSubjects });
+  };
+
+  const patchConduct = (id: string, idx: number, patch: Partial<{ key: string; label: BehaviorLabel }>) =>
+    setRows((r) => {
+      const row = r[id];
+      if (!row) return r;
+      const conducts = row.conducts.map((c, i) => (i === idx ? { ...c, ...patch } : c));
+      return { ...r, [id]: { ...row, conducts } };
     });
 
-  const removeSubject = (id: string, idx: number) =>
+  const addConduct = (id: string) => {
+    let nextConducts: { key: string; label: BehaviorLabel }[] = [];
     setRows((r) => {
       const row = r[id]; if (!row) return r;
-      return { ...r, [id]: { ...row, subjects: row.subjects.filter((_, i) => i !== idx) } };
+      nextConducts = [...row.conducts, { key: "", label: "טוב" }];
+      return { ...r, [id]: { ...row, conducts: nextConducts } };
     });
+    void persistRow(id, { conducts: nextConducts });
+  };
+
+  const removeConduct = (id: string, idx: number) => {
+    let nextConducts: { key: string; label: BehaviorLabel }[] = [];
+    setRows((r) => {
+      const row = r[id]; if (!row) return r;
+      if (row.conducts.length <= 1) {
+        toast.info("צריך להישאר לפחות קטגוריית הליכות אחת");
+        nextConducts = row.conducts;
+        return r;
+      }
+      nextConducts = row.conducts.filter((_, i) => i !== idx);
+      return { ...r, [id]: { ...row, conducts: nextConducts } };
+    });
+    if (nextConducts.length) void persistRow(id, { conducts: nextConducts });
+  };
 
   const applyOcrToRow = async (id: string, file: File) => {
     if (file.size > 10 * 1024 * 1024) { toast.error("התמונה גדולה מ-10MB"); return; }
@@ -276,19 +333,30 @@ function CertificatesPage() {
         }
         const behaviorLike = (v?: string): BehaviorLabel | undefined =>
           v && (BEHAVIOR_LABELS as readonly string[]).includes(v) ? (v as BehaviorLabel) : undefined;
+        const nextConducts = [...row.conducts];
+        const setConduct = (key: string, val?: string) => {
+          const lab = behaviorLike(val);
+          if (!lab) return;
+          const idx = nextConducts.findIndex((c) => c.key === key);
+          if (idx >= 0) nextConducts[idx] = { key, label: lab };
+          else nextConducts.push({ key, label: lab });
+        };
+        setConduct("הליכות", result.conduct);
+        setConduct("שקידה", result.diligence);
+        setConduct("דרך ארץ", result.manners);
         return {
           ...r,
           [id]: {
             ...row,
             subjects: merged.length ? merged : row.subjects,
-            conduct: behaviorLike(result.conduct) ?? row.conduct,
-            diligence: behaviorLike(result.diligence) ?? row.diligence,
-            manners: behaviorLike(result.manners) ?? row.manners,
+            conducts: nextConducts,
             teacherNote: result.teacherNote || row.teacherNote,
             principalNote: result.principalNote || row.principalNote,
           },
         };
       });
+      // Persist the OCR-derived edits after the state update flushes.
+      queueMicrotask(() => void persistRow(id));
       toast.success(result.summary || "הזיהוי הושלם", { id: t });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "הזיהוי נכשל", { id: t });
@@ -326,26 +394,10 @@ function CertificatesPage() {
     void persistNoteFor(suggestFor, { teacherNote: text });
   };
 
-  const persistNoteFor = async (
+  const persistNoteFor = (
     id: string,
     override: Partial<Pick<StudentRow, "teacherNote" | "principalNote">>,
-  ) => {
-    const row = rows[id];
-    if (!row) return;
-    try {
-      await saveNote({
-        data: {
-          classId,
-          studentId: id,
-          periodKey,
-          teacherNote: override.teacherNote ?? row.teacherNote,
-          principalNote: override.principalNote ?? row.principalNote,
-        },
-      });
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "שמירת הערה נכשלה");
-    }
-  };
+  ) => persistRow(id, override);
 
   const buildForStudent = async (row: StudentRow, kind: "regular" | "correction" = "regular") => {
     setPdfBrand({
@@ -361,7 +413,10 @@ function CertificatesPage() {
       period: `${period.label} – ${academicYear}`,
       academicYear,
       subjects: row.subjects,
-      behavior: { conduct: row.conduct, diligence: row.diligence, manners: row.manners },
+      behavior: {
+        conduct: row.conducts[0]?.label ?? "טוב",
+        extras: row.conducts,
+      },
       attendance: row.attendance,
       teacherNote: row.teacherNote,
       principalNote: row.principalNote,
@@ -399,7 +454,7 @@ function CertificatesPage() {
       challenges: row.principalNote,
       actionItems: "",
       gradesSummary: row.subjects.map((s) => ({ subject: s.subject, label: s.label })),
-      behavior: { conduct: row.conduct },
+      behavior: { conduct: row.conducts[0]?.label ?? "טוב" },
       teacherName,
     });
     downloadPdfBlob(blob, `הכנה_לפגישה_${row.name}.pdf`);
