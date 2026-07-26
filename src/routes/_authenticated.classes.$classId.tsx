@@ -66,6 +66,7 @@ function ClassActionGrid({ classId }: { classId: string }) {
       <Link to="/share/$classId" params={{ classId }}><ActionBtn icon={Globe2} label="דף ציבורי" /></Link>
       <Link to="/resources"><ActionBtn icon={Library} label="ספריית עזרים" /></Link>
       <Link to="/exam-scanner/$classId" params={{ classId }}><ActionBtn icon={ScanText} label="סורק מבחנים" /></Link>
+      <Link to="/exam-generator/$classId" params={{ classId }}><ActionBtn icon={Wand2} label="מחולל מבחנים" /></Link>
       <Link to="/analytics/$classId" params={{ classId }}><ActionBtn icon={TrendingUp} label="אנליטיקה" /></Link>
       <Link to="/calendar/$classId" params={{ classId }}><ActionBtn icon={CalendarDays} label="יומן אירועים" /></Link>
     </div>
