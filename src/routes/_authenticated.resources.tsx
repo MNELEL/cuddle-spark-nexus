@@ -306,7 +306,13 @@ function ResourcesPage() {
 
 /* -------------------- card -------------------- */
 
-function ResourceCard({ resource, onOpen }: { resource: ResourceRow; onOpen: () => void }) {
+function ResourceCard({
+  resource, onOpen, onVariant,
+}: {
+  resource: ResourceRow;
+  onOpen: () => void;
+  onVariant: (r: ResourceRow) => void;
+}) {
   return (
     <div className="group rounded-xl border bg-card p-4 text-right transition hover:border-amber/40 hover:shadow-md">
       <div className="flex items-start justify-between gap-2">
@@ -339,6 +345,9 @@ function ResourceCard({ resource, onOpen }: { resource: ResourceRow; onOpen: () 
           <Link to="/resources/$resourceId" params={{ resourceId: resource.id }}>פתח</Link>
         </Button>
         <Button size="sm" variant="ghost" onClick={onOpen}>ערוך</Button>
+        <Button size="sm" variant="ghost" onClick={() => onVariant(resource)} title="צור וריאציה עם AI מפריט זה">
+          <Sparkles className="h-4 w-4 text-amber" />
+        </Button>
       </div>
     </div>
   );
