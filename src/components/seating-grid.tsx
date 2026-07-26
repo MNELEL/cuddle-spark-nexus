@@ -79,6 +79,7 @@ function DraggableStudent({ student, id, highlight, onClick, groupColor }: { stu
 
 function Seat({
   row, col, hidden, child, onToggleHide, onToggleLock, lockedChild, highlight, onSelect, groupColor,
+  roomObject, onDeleteObject,
   a11y, focused, grabbedId, onFocusSeat, seatRef,
 }: {
   row: number; col: number; hidden: boolean; child: Student | null;
@@ -86,6 +87,8 @@ function Seat({
   highlight?: "friend" | "avoid" | "distance" | "self" | null;
   onSelect?: () => void;
   groupColor?: string | null;
+  roomObject?: RoomObject | null;
+  onDeleteObject?: (id: string) => void;
   a11y?: boolean;
   focused?: boolean;
   grabbedId?: string | null;
@@ -137,21 +140,80 @@ function Seat({
             {lockedChild ? <Lock className="h-3 w-3 text-amber-600" /> : <Unlock className="h-3 w-3" />}
           </button>
         )}
-        {!child && (
+        {!child && !roomObject && (
           <button type="button" onClick={onToggleHide}
             aria-label="הסתר מושב"
             className="rounded p-0.5 hover:bg-accent" title="הסתר מושב">
             <EyeOff className="h-3 w-3" />
           </button>
         )}
+        {roomObject && onDeleteObject && (
+          <button type="button" onClick={() => onDeleteObject(roomObject.id)}
+            aria-label="מחק אובייקט" className="rounded p-0.5 hover:bg-destructive/20 text-destructive" title="מחק">
+            <X className="h-3 w-3" />
+          </button>
+        )}
       </div>
       <span className="absolute bottom-0.5 right-1 text-[9px] text-muted-foreground">{row + 1},{col + 1}</span>
       {child ? (
         <DraggableStudent student={child} id={`student:${child.id}`} highlight={highlight} onClick={onSelect} groupColor={groupColor} />
+      ) : roomObject ? (
+        <DraggableRoomObject obj={roomObject} />
       ) : (
         <span className="text-[10px] text-muted-foreground">ריק</span>
       )}
     </div>
+  );
+}
+
+function RoomObjectChip({ obj, dragging }: { obj: RoomObject; dragging?: boolean }) {
+  const meta = ROOM_OBJECT_META[obj.type];
+  const Icon = meta.icon;
+  return (
+    <div className={`flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-semibold shadow-sm ${meta.className} ${dragging ? "opacity-90 shadow-lg" : ""}`}>
+      <Icon className="h-3.5 w-3.5" />
+      <span className="truncate max-w-[7rem]">{obj.label || meta.label}</span>
+    </div>
+  );
+}
+
+function DraggableRoomObject({ obj }: { obj: RoomObject }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: `obj:${obj.id}`, data: { objectId: obj.id },
+  });
+  return (
+    <div ref={setNodeRef} {...listeners} {...attributes}
+      className={`cursor-grab active:cursor-grabbing ${isDragging ? "opacity-30" : ""}`}>
+      <RoomObjectChip obj={obj} />
+    </div>
+  );
+}
+
+function PaletteItem({ type }: { type: RoomObjectType }) {
+  const meta = ROOM_OBJECT_META[type];
+  const Icon = meta.icon;
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: `objnew:${type}`, data: { newType: type },
+  });
+  return (
+    <div ref={setNodeRef} {...listeners} {...attributes}
+      className={`flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-semibold shadow-sm cursor-grab active:cursor-grabbing ${meta.className} ${isDragging ? "opacity-40" : ""}`}
+      title={`גרור ל"${meta.label}"`}
+    >
+      <Icon className="h-4 w-4" />
+      <span>{meta.label}</span>
+    </div>
+  );
+}
+
+function RoomObjectPalette() {
+  return (
+    <Card>
+      <CardContent className="flex flex-wrap items-center gap-2 py-3">
+        <span className="text-xs font-semibold text-muted-foreground me-2">אובייקטי סביבה — גרור לתוך הגריד:</span>
+        {ROOM_OBJECT_TYPES.map((t) => <PaletteItem key={t} type={t} />)}
+      </CardContent>
+    </Card>
   );
 }
 
