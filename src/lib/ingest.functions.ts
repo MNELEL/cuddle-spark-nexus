@@ -204,12 +204,15 @@ export const deleteIngestJob = createServerFn({ method: "POST" })
 
 /* ------------------------ analyze ------------------------ */
 
-async function callGateway(payload: {
-  model?: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  messages: any[];
-  response_format?: { type: string };
-}) {
+async function callGateway(
+  payload: {
+    model?: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    messages: any[];
+    response_format?: { type: string };
+  },
+  _apiKey?: string,
+) {
   return (await callLovableAI({
     messages: payload.messages,
     model: payload.model,
