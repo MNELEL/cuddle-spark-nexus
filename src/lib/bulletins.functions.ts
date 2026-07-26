@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { callLovableAI } from "./ai-gateway.server";
 
 const DateStr = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
@@ -62,9 +63,6 @@ export const generateBulletin = createServerFn({ method: "POST" })
         .eq("class_id", data.classId).gte("date", data.startDate).lte("date", data.endDate),
     ]);
     if (cls.error) throw new Error("שגיאה בטעינת הכיתה");
-
-    const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) throw new Error("חסר LOVABLE_API_KEY");
 
     const ctx = JSON.stringify({
       class_name: cls.data?.name,
