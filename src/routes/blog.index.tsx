@@ -90,6 +90,16 @@ function BlogIndex() {
               <span className="mt-3 inline-block text-sm text-primary">קרא את המדריך ←</span>
             </Link>
           </li>
+          <li className="rounded-2xl border border-border/60 bg-card/40 p-6">
+            <Link to="/blog/classdojo-comparison" className="block">
+              <h2 className="text-xl font-semibold">ClassDojo מול ClassAlign — השוואה לחיידר</h2>
+              <p className="mt-2 text-muted-foreground">
+                השוואה מלאה: עברית ו-RTL, מקצועות קודש, מונחי חיידר, פרטיות ודו״ח פדגוגי פרטי
+                מול פיד חברתי ציבורי.
+              </p>
+              <span className="mt-3 inline-block text-sm text-primary">קרא את ההשוואה ←</span>
+            </Link>
+          </li>
         </ul>
       </main>
     </div>
