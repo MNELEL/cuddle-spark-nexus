@@ -569,6 +569,10 @@ function CertificatesPage() {
                 onPatchSubject={(i, p) => patchSubject(row.id, i, p)}
                 onAddSubject={() => addSubject(row.id)}
                 onRemoveSubject={(i) => removeSubject(row.id, i)}
+                onPatchConduct={(i, p) => patchConduct(row.id, i, p)}
+                onAddConduct={() => addConduct(row.id)}
+                onRemoveConduct={(i) => removeConduct(row.id, i)}
+                onPersistConducts={() => persistRow(row.id)}
                 onOcrPhoto={(f) => applyOcrToRow(row.id, f)}
                 onExport={() => buildForStudent(row, isCorrection ? "correction" : "regular")}
                 onSaveNotes={() => persistNote(row.id)}
