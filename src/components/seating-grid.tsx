@@ -262,9 +262,10 @@ export function SeatingGrid({ classId }: { classId: string }) {
 
   // Room objects (persisted on classes.room_objects)
   const roomObjects = useMemo<RoomObject[]>(
-    () => Array.isArray((cls as { room_objects?: unknown } | undefined)?.room_objects)
-      ? ((cls as { room_objects: RoomObject[] }).room_objects)
-      : [],
+    () => {
+      const raw = (cls as unknown as { room_objects?: unknown } | undefined)?.room_objects;
+      return Array.isArray(raw) ? (raw as RoomObject[]) : [];
+    },
     [cls],
   );
   const objectAt = useMemo(() => {
