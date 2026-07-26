@@ -316,6 +316,7 @@ export const generateResourceWithAI = createServerFn({ method: "POST" })
     resource_type: z.enum(RESOURCE_TYPES).default("worksheet"),
     subject: z.string().max(80).default(""),
     grade_level: z.string().max(40).default(""),
+    source_resource_id: uuid.optional(),
   }).parse(d))
   .handler(async ({ data, context }): Promise<{
     title: string; description: string; tags: string[]; content: ResourceContent;
@@ -327,10 +328,24 @@ export const generateResourceWithAI = createServerFn({ method: "POST" })
 
     const styleCtx = await buildStyleContextString(context.supabase, context.userId);
 
+    let sourceCtx = "";
+    if (data.source_resource_id) {
+      const { data: src } = await context.supabase
+        .from("teaching_resources")
+        .select("title,description,subject,grade_level,resource_type,content")
+        .eq("id", data.source_resource_id)
+        .eq("owner_id", context.userId)
+        .maybeSingle();
+      if (src) {
+        const snippet = JSON.stringify(src).slice(0, 4000);
+        sourceCtx = `\n\nהתבסס על החומר הקיים הבא (צור וריאציה / התאמה / חומר משלים בהתאם לבקשת המשתמש):\n${snippet}`;
+      }
+    }
+
     const system = `אתה עוזר של רב/מלמד בתלמוד תורה / חיידר חרדי. אתה מייצר חומרי הוראה ועזרים לכיתה בעברית טהורה ומכובדת.
 השתמש במונחים: "הרב", "המלמד", "התלמידים", "הורי הבית" (לא "מורה", לא "ילדים", לא "סטודנטים").
 מקצועות קודש: גמרא, משנה, חומש, נביא, הלכה, מוסר, תפילה, פרשת שבוע.
-סוג החומר המבוקש: ${typeLabel}${data.subject ? ` במקצוע ${data.subject}` : ""}${data.grade_level ? ` לכיתה ${data.grade_level}` : ""}.${styleCtx}
+סוג החומר המבוקש: ${typeLabel}${data.subject ? ` במקצוע ${data.subject}` : ""}${data.grade_level ? ` לכיתה ${data.grade_level}` : ""}.${styleCtx}${sourceCtx}
 
 החזר אך ורק JSON תקין במבנה הבא — בלי טקסט נוסף:
 {

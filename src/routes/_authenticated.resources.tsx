@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Sparkles, Loader2, Save, Trash2, Printer, Plus, Search,
   BookOpen, FileText, FolderPlus, X, ArrowRight, Tag, Library,
@@ -68,6 +68,7 @@ function ResourcesPage() {
   const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [editing, setEditing] = useState<Partial<ResourceRow> | null>(null);
   const [aiOpen, setAiOpen] = useState(false);
+  const [aiSource, setAiSource] = useState<ResourceRow | null>(null);
   const [collOpen, setCollOpen] = useState(false);
 
   const queryArgs = {
@@ -275,7 +276,12 @@ function ResourcesPage() {
           )}
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {resources.map((r) => (
-              <ResourceCard key={r.id} resource={r} onOpen={() => setEditing(r)} />
+              <ResourceCard
+                key={r.id}
+                resource={r}
+                onOpen={() => setEditing(r)}
+                onVariant={(src) => { setAiSource(src); setAiOpen(true); }}
+              />
             ))}
           </div>
         </div>
@@ -294,8 +300,9 @@ function ResourcesPage() {
       {/* AI generator */}
       <AIGeneratorDialog
         open={aiOpen}
-        onClose={() => setAiOpen(false)}
-        onGenerated={(draft) => { setAiOpen(false); setEditing(draft); }}
+        source={aiSource}
+        onClose={() => { setAiOpen(false); setAiSource(null); }}
+        onGenerated={(draft) => { setAiOpen(false); setAiSource(null); setEditing(draft); }}
       />
 
       {/* Collections manager */}
@@ -306,7 +313,13 @@ function ResourcesPage() {
 
 /* -------------------- card -------------------- */
 
-function ResourceCard({ resource, onOpen }: { resource: ResourceRow; onOpen: () => void }) {
+function ResourceCard({
+  resource, onOpen, onVariant,
+}: {
+  resource: ResourceRow;
+  onOpen: () => void;
+  onVariant: (r: ResourceRow) => void;
+}) {
   return (
     <div className="group rounded-xl border bg-card p-4 text-right transition hover:border-amber/40 hover:shadow-md">
       <div className="flex items-start justify-between gap-2">
@@ -339,6 +352,9 @@ function ResourceCard({ resource, onOpen }: { resource: ResourceRow; onOpen: () 
           <Link to="/resources/$resourceId" params={{ resourceId: resource.id }}>פתח</Link>
         </Button>
         <Button size="sm" variant="ghost" onClick={onOpen}>ערוך</Button>
+        <Button size="sm" variant="ghost" onClick={() => onVariant(resource)} title="צור וריאציה עם AI מפריט זה">
+          <Sparkles className="h-4 w-4 text-amber" />
+        </Button>
       </div>
     </div>
   );
@@ -509,10 +525,11 @@ function ResourceEditorDialog({
 /* -------------------- AI dialog -------------------- */
 
 function AIGeneratorDialog({
-  open, onClose, onGenerated,
+  open, onClose, onGenerated, source,
 }: {
   open: boolean; onClose: () => void;
   onGenerated: (draft: Partial<ResourceRow>) => void;
+  source?: ResourceRow | null;
 }) {
   const gen = useServerFn(generateResourceWithAI);
   const [prompt, setPrompt] = useState("");
@@ -520,8 +537,26 @@ function AIGeneratorDialog({
   const [subject, setSubject] = useState("");
   const [gradeLevel, setGradeLevel] = useState("");
 
+  // Prefill from source resource when opening as a "variant"
+  useEffect(() => {
+    if (open && source) {
+      setResourceType(source.resource_type);
+      setSubject(source.subject || "");
+      setGradeLevel(source.grade_level || "");
+      setPrompt(`צור וריאציה של "${source.title}" — שנה נוסח, הוסף שאלות דומות ושמור על אותו סגנון ורמה.`);
+    } else if (open && !source) {
+      // fresh open (not variant) — leave user input
+    }
+  }, [open, source]);
+
   const m = useMutation({
-    mutationFn: () => gen({ data: { prompt: prompt.trim(), resource_type: resourceType, subject, grade_level: gradeLevel } }),
+    mutationFn: () => gen({ data: {
+      prompt: prompt.trim(),
+      resource_type: resourceType,
+      subject,
+      grade_level: gradeLevel,
+      ...(source ? { source_resource_id: source.id } : {}),
+    } }),
     onSuccess: (draft) => {
       onGenerated({
         title: draft.title,
@@ -544,7 +579,8 @@ function AIGeneratorDialog({
       <DialogContent className="max-w-xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-amber" /> יצירת חומר עם AI
+            <Sparkles className="h-5 w-5 text-amber" />
+            {source ? `וריאציה מ־"${source.title}"` : "יצירת חומר עם AI"}
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
