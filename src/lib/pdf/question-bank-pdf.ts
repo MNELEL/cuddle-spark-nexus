@@ -3,12 +3,14 @@ import { RESOURCE_TYPE_LABELS } from "@/lib/teaching-resources.functions";
 import {
   createHebrewDoc, drawBrandHeader, drawFooter, downloadPdfBlob, safeName,
 } from "./pdf-builder";
+import { ensurePdfBrandLoaded } from "./brand-loader";
 
 export async function exportQuestionsPdf(
   items: QuestionItem[],
   opts?: { title?: string; withAnswers?: boolean },
 ): Promise<void> {
   const title = opts?.title?.trim() || "מאגר שאלות מוכנות";
+  await ensurePdfBrandLoaded();
   const hd = await createHebrewDoc();
   drawBrandHeader(hd, {
     title,

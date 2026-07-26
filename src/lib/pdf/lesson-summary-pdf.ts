@@ -2,6 +2,7 @@ import type { LessonExtracted, LessonExamQuestion } from "@/lib/ingest.functions
 import {
   createHebrewDoc, drawBrandHeader, drawFooter, downloadPdfBlob, safeName,
 } from "./pdf-builder";
+import { ensurePdfBrandLoaded } from "./brand-loader";
 
 function todayIso(): string {
   const d = new Date();
@@ -26,6 +27,7 @@ export async function buildLessonSummaryPdf(
   lesson: LessonExtracted,
   opts?: { className?: string; onlyIncluded?: boolean },
 ): Promise<LessonPdfResult> {
+  await ensurePdfBrandLoaded();
   const hd = await createHebrewDoc();
 
   const meta = [
