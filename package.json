@@ -17,7 +17,7 @@
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/utilities": "^3.2.2",
     "@hebcal/core": "^6.8.2",
-    "@hookform/resolvers": "^5.5.6",
+    "@hookform/resolvers": "^5.5.5",
     "@lovable.dev/cloud-auth-js": "^1.1.2",
     "@radix-ui/react-accordion": "^1.2.20",
     "@radix-ui/react-alert-dialog": "^1.1.23",
