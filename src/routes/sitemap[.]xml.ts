@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
-import { routeTree } from "@/routeTree.gen";
 import { ARTICLES as HELP_ARTICLES } from "@/routes/help.$slug";
 import { GUIDES as PARENTS_GUIDES } from "@/routes/parents-guide.$slug";
 
@@ -25,7 +24,11 @@ interface SitemapEntry {
  *   - API / hook routes
  *   - private share/token routes (/p/$token, /share/*)
  */
-function collectStaticRoutes(): string[] {
+async function collectStaticRoutes(): Promise<string[]> {
+  // Lazy import to avoid a circular dependency: routeTree.gen imports this
+  // file's Route export, so importing routeTree at module scope leaves
+  // SitemapDotxmlRouteImport undefined during eval.
+  const { routeTree } = await import("@/routeTree.gen");
   const out = new Set<string>();
   const visit = (route: unknown) => {
     if (!route || typeof route !== "object") return;
@@ -95,7 +98,7 @@ export const Route = createFileRoute("/sitemap.xml")({
     handlers: {
       GET: async () => {
         // 1. Static routes — derived automatically from the generated route tree.
-        const entries: SitemapEntry[] = collectStaticRoutes().map((path) => ({
+        const entries: SitemapEntry[] = (await collectStaticRoutes()).map((path) => ({
           path,
           ...hintsFor(path),
         }));
