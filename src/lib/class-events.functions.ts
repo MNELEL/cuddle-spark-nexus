@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-export type ClassEventType = "birthday" | "exam" | "trip" | "holiday" | "meeting" | "special_exam" | "celebration" | "other";
+export type ClassEventType = "birthday" | "exam" | "trip" | "holiday" | "meeting" | "other";
 
 export type ClassEvent = {
   id: string;
@@ -49,7 +49,7 @@ export const upsertClassEvent = createServerFn({ method: "POST" })
       id: z.string().uuid().optional(),
       classId: z.string().uuid(),
       title: z.string().min(1).max(200),
-      type: z.enum(["birthday", "exam", "trip", "holiday", "meeting", "special_exam", "celebration", "other"]),
+      type: z.enum(["birthday", "exam", "trip", "holiday", "meeting", "other"]),
       date: dateStr,
       endDate: dateStr.nullable().optional(),
       studentId: z.string().uuid().nullable().optional(),
