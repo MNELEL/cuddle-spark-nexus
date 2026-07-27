@@ -58,7 +58,7 @@ export const upsertClassEvent = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const payload = {
+    const payload: any = {
       class_id: data.classId,
       title: data.title.trim(),
       type: data.type,
