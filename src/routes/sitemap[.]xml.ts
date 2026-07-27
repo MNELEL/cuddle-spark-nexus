@@ -98,7 +98,7 @@ export const Route = createFileRoute("/sitemap.xml")({
     handlers: {
       GET: async () => {
         // 1. Static routes — derived automatically from the generated route tree.
-        const entries: SitemapEntry[] = collectStaticRoutes().map((path) => ({
+        const entries: SitemapEntry[] = (await collectStaticRoutes()).map((path) => ({
           path,
           ...hintsFor(path),
         }));
