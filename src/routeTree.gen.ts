@@ -62,6 +62,8 @@ import { Route as AuthenticatedReportsClassIdRouteImport } from './routes/_authe
 import { Route as AuthenticatedResourcesResourceIdRouteImport } from './routes/_authenticated.resources.$resourceId'
 import { Route as AuthenticatedSettingsBrandRouteImport } from './routes/_authenticated.settings.brand'
 import { Route as AuthenticatedShareClassIdRouteImport } from './routes/_authenticated.share.$classId'
+import { Route as AuthenticatedStudentViewClassIdRouteImport } from './routes/_authenticated.student-view.$classId'
+import { Route as AuthenticatedWeeklyScheduleClassIdRouteImport } from './routes/_authenticated.weekly-schedule.$classId'
 import { Route as BlogClassroomManagementStrategiesChecklistRouteImport } from './routes/blog.classroom-management-strategies.checklist'
 import { Route as AuthenticatedClassesClassIdDisplayRouteImport } from './routes/_authenticated.classes.$classId.display'
 
@@ -353,6 +355,18 @@ const AuthenticatedShareClassIdRoute =
     path: '/share/$classId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedStudentViewClassIdRoute =
+  AuthenticatedStudentViewClassIdRouteImport.update({
+    id: '/student-view/$classId',
+    path: '/student-view/$classId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedWeeklyScheduleClassIdRoute =
+  AuthenticatedWeeklyScheduleClassIdRouteImport.update({
+    id: '/weekly-schedule/$classId',
+    path: '/weekly-schedule/$classId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const BlogClassroomManagementStrategiesChecklistRoute =
   BlogClassroomManagementStrategiesChecklistRouteImport.update({
     id: '/checklist',
@@ -418,6 +432,8 @@ export interface FileRoutesByFullPath {
   '/resources/$resourceId': typeof AuthenticatedResourcesResourceIdRoute
   '/settings/brand': typeof AuthenticatedSettingsBrandRoute
   '/share/$classId': typeof AuthenticatedShareClassIdRoute
+  '/student-view/$classId': typeof AuthenticatedStudentViewClassIdRoute
+  '/weekly-schedule/$classId': typeof AuthenticatedWeeklyScheduleClassIdRoute
   '/blog/classroom-management-strategies/checklist': typeof BlogClassroomManagementStrategiesChecklistRoute
   '/classes/': typeof AuthenticatedClassesIndexRoute
   '/classes/$classId/display': typeof AuthenticatedClassesClassIdDisplayRoute
@@ -471,6 +487,8 @@ export interface FileRoutesByTo {
   '/resources/$resourceId': typeof AuthenticatedResourcesResourceIdRoute
   '/settings/brand': typeof AuthenticatedSettingsBrandRoute
   '/share/$classId': typeof AuthenticatedShareClassIdRoute
+  '/student-view/$classId': typeof AuthenticatedStudentViewClassIdRoute
+  '/weekly-schedule/$classId': typeof AuthenticatedWeeklyScheduleClassIdRoute
   '/blog/classroom-management-strategies/checklist': typeof BlogClassroomManagementStrategiesChecklistRoute
   '/classes': typeof AuthenticatedClassesIndexRoute
   '/classes/$classId/display': typeof AuthenticatedClassesClassIdDisplayRoute
@@ -529,6 +547,8 @@ export interface FileRoutesById {
   '/_authenticated/resources/$resourceId': typeof AuthenticatedResourcesResourceIdRoute
   '/_authenticated/settings/brand': typeof AuthenticatedSettingsBrandRoute
   '/_authenticated/share/$classId': typeof AuthenticatedShareClassIdRoute
+  '/_authenticated/student-view/$classId': typeof AuthenticatedStudentViewClassIdRoute
+  '/_authenticated/weekly-schedule/$classId': typeof AuthenticatedWeeklyScheduleClassIdRoute
   '/blog/classroom-management-strategies/checklist': typeof BlogClassroomManagementStrategiesChecklistRoute
   '/_authenticated/classes/': typeof AuthenticatedClassesIndexRoute
   '/_authenticated/classes/$classId/display': typeof AuthenticatedClassesClassIdDisplayRoute
@@ -587,6 +607,8 @@ export interface FileRouteTypes {
     | '/resources/$resourceId'
     | '/settings/brand'
     | '/share/$classId'
+    | '/student-view/$classId'
+    | '/weekly-schedule/$classId'
     | '/blog/classroom-management-strategies/checklist'
     | '/classes/'
     | '/classes/$classId/display'
@@ -640,6 +662,8 @@ export interface FileRouteTypes {
     | '/resources/$resourceId'
     | '/settings/brand'
     | '/share/$classId'
+    | '/student-view/$classId'
+    | '/weekly-schedule/$classId'
     | '/blog/classroom-management-strategies/checklist'
     | '/classes'
     | '/classes/$classId/display'
@@ -697,6 +721,8 @@ export interface FileRouteTypes {
     | '/_authenticated/resources/$resourceId'
     | '/_authenticated/settings/brand'
     | '/_authenticated/share/$classId'
+    | '/_authenticated/student-view/$classId'
+    | '/_authenticated/weekly-schedule/$classId'
     | '/blog/classroom-management-strategies/checklist'
     | '/_authenticated/classes/'
     | '/_authenticated/classes/$classId/display'
@@ -1091,6 +1117,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedShareClassIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/student-view/$classId': {
+      id: '/_authenticated/student-view/$classId'
+      path: '/student-view/$classId'
+      fullPath: '/student-view/$classId'
+      preLoaderRoute: typeof AuthenticatedStudentViewClassIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/weekly-schedule/$classId': {
+      id: '/_authenticated/weekly-schedule/$classId'
+      path: '/weekly-schedule/$classId'
+      fullPath: '/weekly-schedule/$classId'
+      preLoaderRoute: typeof AuthenticatedWeeklyScheduleClassIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/blog/classroom-management-strategies/checklist': {
       id: '/blog/classroom-management-strategies/checklist'
       path: '/checklist'
@@ -1161,6 +1201,8 @@ interface AuthenticatedRouteChildren {
   AuthenticatedReportsClassIdRoute: typeof AuthenticatedReportsClassIdRoute
   AuthenticatedSettingsBrandRoute: typeof AuthenticatedSettingsBrandRoute
   AuthenticatedShareClassIdRoute: typeof AuthenticatedShareClassIdRoute
+  AuthenticatedStudentViewClassIdRoute: typeof AuthenticatedStudentViewClassIdRoute
+  AuthenticatedWeeklyScheduleClassIdRoute: typeof AuthenticatedWeeklyScheduleClassIdRoute
   AuthenticatedClassesIndexRoute: typeof AuthenticatedClassesIndexRoute
 }
 
@@ -1189,6 +1231,9 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedReportsClassIdRoute: AuthenticatedReportsClassIdRoute,
   AuthenticatedSettingsBrandRoute: AuthenticatedSettingsBrandRoute,
   AuthenticatedShareClassIdRoute: AuthenticatedShareClassIdRoute,
+  AuthenticatedStudentViewClassIdRoute: AuthenticatedStudentViewClassIdRoute,
+  AuthenticatedWeeklyScheduleClassIdRoute:
+    AuthenticatedWeeklyScheduleClassIdRoute,
   AuthenticatedClassesIndexRoute: AuthenticatedClassesIndexRoute,
 }
 
@@ -1298,3 +1343,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
