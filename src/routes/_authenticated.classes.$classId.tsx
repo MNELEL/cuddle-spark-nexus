@@ -21,7 +21,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Heart, Ban, MoveHorizontal, Pencil, Plus, Trash2, FolderOpen, FileText, Sparkles, Trophy, Users, Library, Monitor, Upload, Printer, Copy, Dices, Globe2, Award, ScanText, TrendingUp, CalendarDays, Wand2 } from "lucide-react";
+import { ArrowRight, Heart, Ban, MoveHorizontal, Pencil, Plus, Trash2, FolderOpen, FileText, Sparkles, Trophy, Users, Library, Monitor, Upload, Printer, Copy, Dices, Globe2, Award, ScanText, TrendingUp, CalendarDays, Wand2, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import { copyList, printList } from "@/lib/print-list";
 import { SeatingGrid } from "@/components/seating-grid";
@@ -69,6 +69,7 @@ function ClassActionGrid({ classId }: { classId: string }) {
       <Link to="/exam-generator/$classId" params={{ classId }}><ActionBtn icon={Wand2} label="מחולל מבחנים" /></Link>
       <Link to="/analytics/$classId" params={{ classId }}><ActionBtn icon={TrendingUp} label="אנליטיקה" /></Link>
       <Link to="/calendar/$classId" params={{ classId }}><ActionBtn icon={CalendarDays} label="יומן אירועים" /></Link>
+      <Link to="/poll/$classId" params={{ classId }}><ActionBtn icon={MessageSquare} label="סקר כיתה חי" /></Link>
     </div>
   );
 }
