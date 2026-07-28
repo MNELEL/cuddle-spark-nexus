@@ -1495,6 +1495,69 @@ export type Database = {
         }
         Relationships: []
       }
+      weekly_lessons: {
+        Row: {
+          class_id: string
+          created_at: string
+          created_by: string
+          day_key: string
+          duration: number
+          hour: number
+          id: string
+          library_item_id: string | null
+          notes: string | null
+          subject: string | null
+          title: string
+          updated_at: string
+          week_start: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          created_by?: string
+          day_key: string
+          duration?: number
+          hour: number
+          id?: string
+          library_item_id?: string | null
+          notes?: string | null
+          subject?: string | null
+          title: string
+          updated_at?: string
+          week_start: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          created_by?: string
+          day_key?: string
+          duration?: number
+          hour?: number
+          id?: string
+          library_item_id?: string | null
+          notes?: string | null
+          subject?: string | null
+          title?: string
+          updated_at?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekly_lessons_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "weekly_lessons_library_item_id_fkey"
+            columns: ["library_item_id"]
+            isOneToOne: false
+            referencedRelation: "teaching_resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
