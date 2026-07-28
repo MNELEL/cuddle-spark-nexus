@@ -294,3 +294,29 @@
   --font-display: "JetBrains Mono", "Heebo", monospace;
   --font-body: "JetBrains Mono", "Heebo", monospace;
 }
+/* ClassAlign — טורקיז-כתום-צהוב, עגול ותוסס, בהשראת עיצוב מובייל */
+[data-theme="classalign"] {
+  --radius: 1.25rem;
+  --background: oklch(0.98 0.015 200);
+  --foreground: oklch(0.22 0.04 220);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.22 0.04 220);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.22 0.04 220);
+  --primary: oklch(0.72 0.13 200);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.94 0.03 200);
+  --secondary-foreground: oklch(0.30 0.06 200);
+  --muted: oklch(0.95 0.02 200);
+  --muted-foreground: oklch(0.52 0.03 210);
+  --accent: oklch(0.70 0.19 45);
+  --accent-foreground: oklch(0.99 0 0);
+  --amber: oklch(0.87 0.18 95);
+  --amber-glow: oklch(0.92 0.14 95);
+  --emerald-score: oklch(0.65 0.15 145);
+  --rose-score: oklch(0.60 0.22 10);
+  --border: oklch(0.90 0.03 200);
+  --input: oklch(0.90 0.03 200);
+  --ring: oklch(0.72 0.13 200);
+  --font-display: "Heebo", system-ui, sans-serif;
+}
