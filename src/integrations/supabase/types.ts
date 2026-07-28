@@ -764,6 +764,86 @@ export type Database = {
         }
         Relationships: []
       }
+      poll_votes: {
+        Row: {
+          created_at: string
+          id: string
+          option_index: number
+          poll_id: string
+          student_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          option_index: number
+          poll_id: string
+          student_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          option_index?: number
+          poll_id?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "poll_votes_poll_id_fkey"
+            columns: ["poll_id"]
+            isOneToOne: false
+            referencedRelation: "polls"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "poll_votes_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      polls: {
+        Row: {
+          class_id: string
+          closed_at: string | null
+          created_at: string
+          id: string
+          options: Json
+          question: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          class_id: string
+          closed_at?: string | null
+          created_at?: string
+          id?: string
+          options?: Json
+          question: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          class_id?: string
+          closed_at?: string | null
+          created_at?: string
+          id?: string
+          options?: Json
+          question?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "polls_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -1414,6 +1494,69 @@ export type Database = {
           weekly_riddle_answer?: string
         }
         Relationships: []
+      }
+      weekly_lessons: {
+        Row: {
+          class_id: string
+          created_at: string
+          created_by: string
+          day_key: string
+          duration: number
+          hour: number
+          id: string
+          library_item_id: string | null
+          notes: string | null
+          subject: string | null
+          title: string
+          updated_at: string
+          week_start: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          created_by?: string
+          day_key: string
+          duration?: number
+          hour: number
+          id?: string
+          library_item_id?: string | null
+          notes?: string | null
+          subject?: string | null
+          title: string
+          updated_at?: string
+          week_start: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          created_by?: string
+          day_key?: string
+          duration?: number
+          hour?: number
+          id?: string
+          library_item_id?: string | null
+          notes?: string | null
+          subject?: string | null
+          title?: string
+          updated_at?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekly_lessons_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "weekly_lessons_library_item_id_fkey"
+            columns: ["library_item_id"]
+            isOneToOne: false
+            referencedRelation: "teaching_resources"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

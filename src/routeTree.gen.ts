@@ -57,6 +57,7 @@ import { Route as AuthenticatedExamScannerClassIdRouteImport } from './routes/_a
 import { Route as AuthenticatedGamificationClassIdRouteImport } from './routes/_authenticated.gamification.$classId'
 import { Route as AuthenticatedParentsClassIdRouteImport } from './routes/_authenticated.parents.$classId'
 import { Route as AuthenticatedPedagogicalClassIdRouteImport } from './routes/_authenticated.pedagogical.$classId'
+import { Route as AuthenticatedPollClassIdRouteImport } from './routes/_authenticated.poll.$classId'
 import { Route as AuthenticatedRaffleClassIdRouteImport } from './routes/_authenticated.raffle.$classId'
 import { Route as AuthenticatedReportsClassIdRouteImport } from './routes/_authenticated.reports.$classId'
 import { Route as AuthenticatedResourcesResourceIdRouteImport } from './routes/_authenticated.resources.$resourceId'
@@ -325,6 +326,12 @@ const AuthenticatedPedagogicalClassIdRoute =
     path: '/pedagogical/$classId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedPollClassIdRoute =
+  AuthenticatedPollClassIdRouteImport.update({
+    id: '/poll/$classId',
+    path: '/poll/$classId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedRaffleClassIdRoute =
   AuthenticatedRaffleClassIdRouteImport.update({
     id: '/raffle/$classId',
@@ -427,6 +434,7 @@ export interface FileRoutesByFullPath {
   '/gamification/$classId': typeof AuthenticatedGamificationClassIdRoute
   '/parents/$classId': typeof AuthenticatedParentsClassIdRoute
   '/pedagogical/$classId': typeof AuthenticatedPedagogicalClassIdRoute
+  '/poll/$classId': typeof AuthenticatedPollClassIdRoute
   '/raffle/$classId': typeof AuthenticatedRaffleClassIdRoute
   '/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/resources/$resourceId': typeof AuthenticatedResourcesResourceIdRoute
@@ -482,6 +490,7 @@ export interface FileRoutesByTo {
   '/gamification/$classId': typeof AuthenticatedGamificationClassIdRoute
   '/parents/$classId': typeof AuthenticatedParentsClassIdRoute
   '/pedagogical/$classId': typeof AuthenticatedPedagogicalClassIdRoute
+  '/poll/$classId': typeof AuthenticatedPollClassIdRoute
   '/raffle/$classId': typeof AuthenticatedRaffleClassIdRoute
   '/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/resources/$resourceId': typeof AuthenticatedResourcesResourceIdRoute
@@ -542,6 +551,7 @@ export interface FileRoutesById {
   '/_authenticated/gamification/$classId': typeof AuthenticatedGamificationClassIdRoute
   '/_authenticated/parents/$classId': typeof AuthenticatedParentsClassIdRoute
   '/_authenticated/pedagogical/$classId': typeof AuthenticatedPedagogicalClassIdRoute
+  '/_authenticated/poll/$classId': typeof AuthenticatedPollClassIdRoute
   '/_authenticated/raffle/$classId': typeof AuthenticatedRaffleClassIdRoute
   '/_authenticated/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/_authenticated/resources/$resourceId': typeof AuthenticatedResourcesResourceIdRoute
@@ -602,6 +612,7 @@ export interface FileRouteTypes {
     | '/gamification/$classId'
     | '/parents/$classId'
     | '/pedagogical/$classId'
+    | '/poll/$classId'
     | '/raffle/$classId'
     | '/reports/$classId'
     | '/resources/$resourceId'
@@ -657,6 +668,7 @@ export interface FileRouteTypes {
     | '/gamification/$classId'
     | '/parents/$classId'
     | '/pedagogical/$classId'
+    | '/poll/$classId'
     | '/raffle/$classId'
     | '/reports/$classId'
     | '/resources/$resourceId'
@@ -716,6 +728,7 @@ export interface FileRouteTypes {
     | '/_authenticated/gamification/$classId'
     | '/_authenticated/parents/$classId'
     | '/_authenticated/pedagogical/$classId'
+    | '/_authenticated/poll/$classId'
     | '/_authenticated/raffle/$classId'
     | '/_authenticated/reports/$classId'
     | '/_authenticated/resources/$resourceId'
@@ -1082,6 +1095,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPedagogicalClassIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/poll/$classId': {
+      id: '/_authenticated/poll/$classId'
+      path: '/poll/$classId'
+      fullPath: '/poll/$classId'
+      preLoaderRoute: typeof AuthenticatedPollClassIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/raffle/$classId': {
       id: '/_authenticated/raffle/$classId'
       path: '/raffle/$classId'
@@ -1197,6 +1217,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedGamificationClassIdRoute: typeof AuthenticatedGamificationClassIdRoute
   AuthenticatedParentsClassIdRoute: typeof AuthenticatedParentsClassIdRoute
   AuthenticatedPedagogicalClassIdRoute: typeof AuthenticatedPedagogicalClassIdRoute
+  AuthenticatedPollClassIdRoute: typeof AuthenticatedPollClassIdRoute
   AuthenticatedRaffleClassIdRoute: typeof AuthenticatedRaffleClassIdRoute
   AuthenticatedReportsClassIdRoute: typeof AuthenticatedReportsClassIdRoute
   AuthenticatedSettingsBrandRoute: typeof AuthenticatedSettingsBrandRoute
@@ -1227,6 +1248,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedGamificationClassIdRoute: AuthenticatedGamificationClassIdRoute,
   AuthenticatedParentsClassIdRoute: AuthenticatedParentsClassIdRoute,
   AuthenticatedPedagogicalClassIdRoute: AuthenticatedPedagogicalClassIdRoute,
+  AuthenticatedPollClassIdRoute: AuthenticatedPollClassIdRoute,
   AuthenticatedRaffleClassIdRoute: AuthenticatedRaffleClassIdRoute,
   AuthenticatedReportsClassIdRoute: AuthenticatedReportsClassIdRoute,
   AuthenticatedSettingsBrandRoute: AuthenticatedSettingsBrandRoute,
@@ -1343,13 +1365,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
