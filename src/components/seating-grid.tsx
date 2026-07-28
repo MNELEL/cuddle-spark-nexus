@@ -20,7 +20,7 @@ import { getClass, updateClass, type RoomObject, type RoomObjectType, ROOM_OBJEC
 import { listGroups } from "@/lib/groups.functions";
 import { computeViolations, type ScoringStudent, type ScoringRelation } from "@/lib/seating-logic";
 import { SeatingSnapshots } from "@/components/seating-snapshots";
-
+import { SeatingWizardModal } from "@/components/SeatingWizardModal";
 type Student = {
   id: string; class_id: string; name: string;
   height: "low" | "mid" | "high"; row_pref: "front" | "mid" | "back" | "any";
@@ -545,6 +545,7 @@ export function SeatingGrid({ classId }: { classId: string }) {
             <Button size="sm" onClick={() => smartM.mutate()} disabled={smartM.isPending || students.length === 0}>
               <Sparkles className="ms-1 h-4 w-4" /> מיון חכם
             </Button>
+            <SeatingWizardModal classId={classId} studentNameById={new Map(students.map(s => [s.id, s.name]))} />
             <Button size="sm" variant="secondary" onClick={() => randomM.mutate()} disabled={randomM.isPending || students.length === 0}>
               <Shuffle className="ms-1 h-4 w-4" /> מיון אקראי
             </Button>
