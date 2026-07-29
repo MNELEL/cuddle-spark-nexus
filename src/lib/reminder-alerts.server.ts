@@ -18,6 +18,7 @@
 
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { logError } from "@/lib/logger.server";
+import { Resend } from "resend";
 
 const LOG_SOURCE = "reminder-alerts.server";
 
@@ -69,14 +70,82 @@ async function sendReminderDigestEmail(digest: TeacherDigest): Promise<boolean> 
     return false;
   }
 
-  // TODO(email-provider): replace this block with a real call once an email
-  // provider (e.g. Resend) is connected to this project.
-  console.log(
-    `[reminder-alerts] (no email provider connected — logging only) ` +
-      `Would send digest to ${digest.email} for ${digest.items.length} overdue reminder(s): ` +
-      digest.items.map((i) => `"${i.title}" (${i.studentName}, ${i.className}, due ${i.dueDate})`).join("; "),
-  );
-  return true;
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.error(
+      "[reminder-alerts] RESEND_API_KEY is not configured; cannot send digest email.",
+      { ownerId: digest.ownerId, itemCount: digest.items.length },
+    );
+    return false;
+  }
+
+  const esc = (s: string) =>
+    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+  const rows = digest.items
+    .map(
+      (i) => `
+        <tr>
+          <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;text-align:right;">${esc(i.title)}</td>
+          <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;text-align:right;">${esc(i.studentName)}</td>
+          <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;text-align:right;">${esc(i.className)}</td>
+          <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;text-align:right;">${esc(i.dueDate ?? "")}</td>
+        </tr>`,
+    )
+    .join("");
+
+  const html = `<!doctype html>
+<html lang="he" dir="rtl">
+  <head><meta charset="utf-8" /><title>תזכורות שבאיחור</title></head>
+  <body dir="rtl" style="margin:0;padding:24px;background:#f8fafc;font-family:Heebo,Arial,sans-serif;color:#0f172a;text-align:right;">
+    <div style="max-width:640px;margin:0 auto;background:#ffffff;border-radius:12px;padding:24px;">
+      <h1 style="margin:0 0 8px 0;font-size:20px;text-align:right;">תזכורות שבאיחור</h1>
+      <p style="margin:0 0 16px 0;color:#475569;text-align:right;">
+        יש לך ${digest.items.length} תזכורות שדורשות טיפול:
+      </p>
+      <table style="width:100%;border-collapse:collapse;direction:rtl;">
+        <thead>
+          <tr style="background:#f1f5f9;">
+            <th style="padding:10px 12px;text-align:right;font-size:14px;">כותרת</th>
+            <th style="padding:10px 12px;text-align:right;font-size:14px;">תלמיד</th>
+            <th style="padding:10px 12px;text-align:right;font-size:14px;">כיתה</th>
+            <th style="padding:10px 12px;text-align:right;font-size:14px;">תאריך יעד</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <p style="margin:20px 0 0 0;color:#64748b;font-size:12px;text-align:right;">
+        הודעה אוטומטית מ-ClassAlign Studio.
+      </p>
+    </div>
+  </body>
+</html>`;
+
+  try {
+    const resend = new Resend(apiKey);
+    const { error } = await resend.emails.send({
+      from: "ClassAlign <reminders@notifications.classalign.app>",
+      to: digest.email,
+      subject: `יש לך ${digest.items.length} תזכורות באיחור`,
+      html,
+    });
+    if (error) {
+      console.error("[reminder-alerts] Resend returned an error:", {
+        ownerId: digest.ownerId,
+        email: digest.email,
+        error,
+      });
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("[reminder-alerts] Unexpected error sending digest via Resend:", {
+      ownerId: digest.ownerId,
+      email: digest.email,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return false;
+  }
 }
 
 /**
