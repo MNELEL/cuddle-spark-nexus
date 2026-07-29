@@ -11,6 +11,8 @@ Disallow: /toolkit
 Disallow: /sound-board
 Disallow: /ingest
 Disallow: /questions
+Disallow: /bell-schedule
+Disallow: /insights
 Disallow: /p/
 Disallow: /bulletins
 Disallow: /certificates
