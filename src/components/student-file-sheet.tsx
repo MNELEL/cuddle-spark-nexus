@@ -243,11 +243,11 @@ function DocumentsPanel({ classId, studentId }: Props) {
                 </div>
                 <div className="flex gap-1">
                   {d.file_path && (
-                    <Button size="icon" variant="ghost" onClick={() => handleDownload(d.file_path)}>
+                    <Button size="icon" variant="ghost" aria-label="הורד קובץ" onClick={() => handleDownload(d.file_path)}>
                       <Download className="h-4 w-4" />
                     </Button>
                   )}
-                  <Button size="icon" variant="ghost" className="text-destructive"
+                  <Button size="icon" variant="ghost" className="text-destructive" aria-label="מחק קובץ"
                     onClick={() => removeM.mutate({ id: d.id, file_path: d.file_path })}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -367,7 +367,7 @@ function ParentCommsPanel({ classId, studentId }: Props) {
                       </p>
                     )}
                   </div>
-                  <Button size="icon" variant="ghost" className="text-destructive"
+                  <Button size="icon" variant="ghost" className="text-destructive" aria-label="מחק רשומה"
                     onClick={() => removeM.mutate(c.id)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -495,7 +495,7 @@ function DisciplinePanel({ classId, studentId }: Props) {
                   </div>
                   <p className="mt-1 text-sm whitespace-pre-wrap">{e.description}</p>
                 </div>
-                <Button size="icon" variant="ghost" className="text-destructive"
+                <Button size="icon" variant="ghost" className="text-destructive" aria-label="מחק אירוע"
                   onClick={() => removeM.mutate(e.id)}>
                   <Trash2 className="h-4 w-4" />
                 </Button>

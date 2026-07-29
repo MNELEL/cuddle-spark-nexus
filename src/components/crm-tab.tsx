@@ -171,7 +171,7 @@ function ReminderRow({ reminder, classId, studentName }: { reminder: Reminder; c
             {reminder.description && <p className="mt-1 text-sm text-muted-foreground whitespace-pre-line">{reminder.description}</p>}
           </div>
         </div>
-        <Button variant="ghost" size="icon" className="text-destructive" onClick={() => removeM.mutate()}>
+        <Button variant="ghost" size="icon" className="text-destructive" aria-label="מחק תזכורת" onClick={() => removeM.mutate()}>
           <Trash2 className="h-4 w-4" />
         </Button>
       </CardContent>
@@ -302,7 +302,7 @@ function PointRow({ point, classId, studentName }: { point: Point; classId: stri
             {point.note && <p className="mt-0.5 text-sm">{point.note}</p>}
           </div>
         </div>
-        <Button variant="ghost" size="icon" className="text-destructive" onClick={() => removeM.mutate()}>
+        <Button variant="ghost" size="icon" className="text-destructive" aria-label="מחק אירוע" onClick={() => removeM.mutate()}>
           <Trash2 className="h-4 w-4" />
         </Button>
       </CardContent>

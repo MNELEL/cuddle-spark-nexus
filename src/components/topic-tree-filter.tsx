@@ -128,11 +128,11 @@ export function TopicTreeFilter({
                     </span>}
                   </div>
                   <div className="flex gap-1">
-                    <Button size="icon" variant="ghost" className="h-7 w-7"
+                    <Button size="icon" variant="ghost" className="h-7 w-7" aria-label={`ערוך נושא ${t.name}`}
                       onClick={() => { setEditing(t); setName(t.name); setColor(t.color); setParentId(t.parent_id ?? "root"); }}>
                       <Pencil className="h-3 w-3" />
                     </Button>
-                    <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive"
+                    <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" aria-label={`מחק נושא ${t.name}`}
                       onClick={() => { if (confirm("למחוק נושא זה?")) delM.mutate(t.id); }}>
                       <Trash2 className="h-3 w-3" />
                     </Button>

@@ -284,7 +284,7 @@ function Inner({ classId, students, onClose }: { classId: string; students: Stud
                         </SelectContent>
                       </Select>
                     </div>
-                    <Button variant="ghost" size="icon" onClick={() => removeRow(i)}>
+                    <Button variant="ghost" size="icon" aria-label="הסר שורה" onClick={() => removeRow(i)}>
                       <X className="h-4 w-4" />
                     </Button>
                   </div>

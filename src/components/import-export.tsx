@@ -278,7 +278,7 @@ export function ImportExportBar({ classId }: { classId: string }) {
                     </div>
                     <div className="flex gap-1">
                       <Button size="sm" onClick={() => loadM.mutate(c.id)} disabled={loadM.isPending}>טען</Button>
-                      <Button size="icon" variant="ghost" className="text-destructive" onClick={() => delM.mutate(c.id)}>
+                      <Button size="icon" variant="ghost" className="text-destructive" aria-label={`מחק את ${c.name}`} onClick={() => delM.mutate(c.id)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
