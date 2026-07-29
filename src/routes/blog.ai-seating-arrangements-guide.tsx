@@ -4,7 +4,7 @@ import { FaqSection, faqJsonLd, type FaqItem } from "@/components/faq-section";
 const URL_ = "https://cuddle-spark-nexus.lovable.app/blog/ai-seating-arrangements-guide";
 const TITLE = "סידורי ישיבה חכמים עם AI — מדריך ניהול כיתה גדולה בחיידר";
 const DESCRIPTION =
-  "מדריך מקצועי למלמדים ורבנים: איך להשתמש ב-AI Sort כדי לבנות סידורי ישיבה שמפחיתים הפרעות, משפרים ריכוז, ומנהלים כיתה גדולה בתלמוד תורה — במקום שעות עבודה ידנית.";
+  "מדריך מקצועי למלמדים ורבנים: איך להשתמש ב-AI Sort לבניית סידורי ישיבה שמפחיתים הפרעות ומשפרים ריכוז בכיתה גדולה בתלמוד תורה, במקום שעות עבודה ידנית.";
 
 const FAQ: FaqItem[] = [
   {
