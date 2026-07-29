@@ -1,9 +1,10 @@
-import { Palette, Check } from "lucide-react";
+import { Palette, Check, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { Link } from "@tanstack/react-router";
 import { useTheme, THEMES } from "@/hooks/use-theme";
 
 export function ThemeSwitcher() {
@@ -27,6 +28,16 @@ export function ThemeSwitcher() {
             </div>
           </DropdownMenuItem>
         ))}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild className="flex items-center gap-2 py-2">
+          <Link to="/theme-test" className="cursor-pointer">
+            <ExternalLink className="h-4 w-4 text-muted-foreground" />
+            <div>
+              <div className="text-sm font-medium">תצוגת בדיקה</div>
+              <div className="text-xs text-muted-foreground">כל ערכות הנושא במבט אחד</div>
+            </div>
+          </Link>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -19,6 +19,7 @@ import { Route as PartnersRouteImport } from './routes/partners'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SupportRouteImport } from './routes/support'
+import { Route as ThemeTestRouteImport } from './routes/theme-test'
 import { Route as AuthenticatedBellScheduleRouteImport } from './routes/_authenticated.bell-schedule'
 import { Route as AuthenticatedIngestRouteImport } from './routes/_authenticated.ingest'
 import { Route as AuthenticatedInsightsRouteImport } from './routes/_authenticated.insights'
@@ -115,6 +116,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const SupportRoute = SupportRouteImport.update({
   id: '/support',
   path: '/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ThemeTestRoute = ThemeTestRouteImport.update({
+  id: '/theme-test',
+  path: '/theme-test',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedBellScheduleRoute =
@@ -397,6 +403,7 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
+  '/theme-test': typeof ThemeTestRoute
   '/bell-schedule': typeof AuthenticatedBellScheduleRoute
   '/ingest': typeof AuthenticatedIngestRoute
   '/insights': typeof AuthenticatedInsightsRoute
@@ -453,6 +460,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
+  '/theme-test': typeof ThemeTestRoute
   '/bell-schedule': typeof AuthenticatedBellScheduleRoute
   '/ingest': typeof AuthenticatedIngestRoute
   '/insights': typeof AuthenticatedInsightsRoute
@@ -514,6 +522,7 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
+  '/theme-test': typeof ThemeTestRoute
   '/_authenticated/bell-schedule': typeof AuthenticatedBellScheduleRoute
   '/_authenticated/ingest': typeof AuthenticatedIngestRoute
   '/_authenticated/insights': typeof AuthenticatedInsightsRoute
@@ -575,6 +584,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/sitemap.xml'
     | '/support'
+    | '/theme-test'
     | '/bell-schedule'
     | '/ingest'
     | '/insights'
@@ -631,6 +641,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/sitemap.xml'
     | '/support'
+    | '/theme-test'
     | '/bell-schedule'
     | '/ingest'
     | '/insights'
@@ -691,6 +702,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/sitemap.xml'
     | '/support'
+    | '/theme-test'
     | '/_authenticated/bell-schedule'
     | '/_authenticated/ingest'
     | '/_authenticated/insights'
@@ -752,6 +764,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SupportRoute: typeof SupportRoute
+  ThemeTestRoute: typeof ThemeTestRoute
   CSlugRoute: typeof CSlugRoute
   PTokenRoute: typeof PTokenRoute
   ToolsGroupMakerRoute: typeof ToolsGroupMakerRoute
@@ -827,6 +840,13 @@ declare module '@tanstack/react-router' {
       path: '/support'
       fullPath: '/support'
       preLoaderRoute: typeof SupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/theme-test': {
+      id: '/theme-test'
+      path: '/theme-test'
+      fullPath: '/theme-test'
+      preLoaderRoute: typeof ThemeTestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/bell-schedule': {
@@ -1358,6 +1378,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SupportRoute: SupportRoute,
+  ThemeTestRoute: ThemeTestRoute,
   CSlugRoute: CSlugRoute,
   PTokenRoute: PTokenRoute,
   ToolsGroupMakerRoute: ToolsGroupMakerRoute,
