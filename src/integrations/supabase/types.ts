@@ -1075,6 +1075,33 @@ export type Database = {
         }
         Relationships: []
       }
+      seating_wizard_prefs: {
+        Row: {
+          balance_height: boolean
+          updated_at: string
+          user_id: string
+          weight_academic: number
+          weight_behavioral: number
+          weight_social: number
+        }
+        Insert: {
+          balance_height?: boolean
+          updated_at?: string
+          user_id: string
+          weight_academic?: number
+          weight_behavioral?: number
+          weight_social?: number
+        }
+        Update: {
+          balance_height?: boolean
+          updated_at?: string
+          user_id?: string
+          weight_academic?: number
+          weight_behavioral?: number
+          weight_social?: number
+        }
+        Relationships: []
+      }
       sent_reminder_alerts: {
         Row: {
           id: string
