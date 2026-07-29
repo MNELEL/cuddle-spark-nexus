@@ -479,7 +479,30 @@ export function SeatingGrid({ classId }: { classId: string }) {
     onSuccess: () => { invalidate(); toast.success("מיון חכם הושלם"); },
     onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
   });
+ const templateM = useMutation({
+  mutationFn: async (placements: SeatPlacement[]) => {
+    pushUndo();
+    const ids = new Set(placements.map((p) => p.student_id));
+    // פינוי מושבים של תלמידים ניידים שכן ישתבצו מחדש
+    const toClear = students.filter((s) => !s.seat_locked && ids.has(s.id));
+    await Promise.all(toClear.map((s) =>
+      setSeatFn({ data: { class_id: classId, student_id: s.id, seat_row: null, seat_col: null } })));
+    for (const p of placements) {
+      await setSeatFn({ data: { class_id: classId, student_id: p.student_id, seat_row: p.seat_row, seat_col: p.seat_col } });
+    }
+  },
+  onSuccess: () => { invalidate(); toast.success("התבנית הוחלה"); },
+  onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
+});
 
+function runSeatingTemplate(placements: SeatPlacement[]) {
+  const hasExisting = students.some((s) => s.seat_row !== null && s.seat_col !== null);
+  if (hasExisting) {
+    const ok = window.confirm("הפעלת התבנית תחליף את הסידור הנוכחי (למעט תלמידים נעולים). להמשיך?");
+    if (!ok) return;
+  }
+  templateM.mutate(placements);
+}
   const undoM = useMutation({
     mutationFn: async () => {
       const snap = undoStack[undoStack.length - 1];
@@ -536,7 +559,53 @@ export function SeatingGrid({ classId }: { classId: string }) {
     if (occupant?.seat_locked) { toast.error("המושב היעד נעול"); return; }
     moveM.mutate({ student_id: sid, seat_row: overData.row, seat_col: overData.col });
   };
+type SeatPlacement = { student_id: string; seat_row: number; seat_col: number };
 
+// שורות קלאסיות — מילוי רציף שורה-אחר-שורה, מדלג על מושבים מוסתרים
+function buildClassicRowsPlacements(
+  students: Student[], rows: number, cols: number, hiddenSet: Set<string>
+): SeatPlacement[] {
+  const movable = students.filter((s) => !s.seat_locked);
+  const openSeats: { row: number; col: number }[] = [];
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+    if (!hiddenSet.has(seatKey(r, c))) openSeats.push({ row: r, col: c });
+  }
+  return movable.slice(0, openSeats.length).map((s, i) => ({
+    student_id: s.id, seat_row: openSeats[i].row, seat_col: openSeats[i].col,
+  }));
+}
+
+// צורת ח' — רק היקף הגריד: שורה ראשונה + טור ראשון + טור אחרון
+function buildUShapePlacements(
+  students: Student[], rows: number, cols: number, hiddenSet: Set<string>
+): SeatPlacement[] {
+  const movable = students.filter((s) => !s.seat_locked);
+  const perimeter: { row: number; col: number }[] = [];
+  for (let c = 0; c < cols; c++) perimeter.push({ row: 0, col: c });
+  for (let r = 1; r < rows; r++) {
+    perimeter.push({ row: r, col: 0 });
+    if (cols > 1) perimeter.push({ row: r, col: cols - 1 });
+  }
+  const openSeats = perimeter.filter((p) => !hiddenSet.has(seatKey(p.row, p.col)));
+  return movable.slice(0, openSeats.length).map((s, i) => ({
+    student_id: s.id, seat_row: openSeats[i].row, seat_col: openSeats[i].col,
+  }));
+}
+
+// קבוצות עם מעברים — מילוי רציף תוך דילוג על טורי-מסדרון קבועים (כל טור שלישי)
+function buildGroupsWithAislesPlacements(
+  students: Student[], rows: number, cols: number, hiddenSet: Set<string>, aisleEvery = 3
+): SeatPlacement[] {
+  const movable = students.filter((s) => !s.seat_locked);
+  const openSeats: { row: number; col: number }[] = [];
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+    if ((c + 1) % aisleEvery === 0) continue; // טור מסדרון
+    if (!hiddenSet.has(seatKey(r, c))) openSeats.push({ row: r, col: c });
+  }
+  return movable.slice(0, openSeats.length).map((s, i) => ({
+    student_id: s.id, seat_row: openSeats[i].row, seat_col: openSeats[i].col,
+  }));
+}
   return (
     <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
       <div className={`space-y-4 ${highContrast ? "contrast-125 [&_*]:!border-foreground/60" : ""}`}>
@@ -550,6 +619,27 @@ export function SeatingGrid({ classId }: { classId: string }) {
             <Button size="sm" variant="secondary" onClick={() => randomM.mutate()} disabled={randomM.isPending || students.length === 0}>
               <Shuffle className="ms-1 h-4 w-4" /> מיון אקראי
             </Button>
+            <Button
+  size="sm" variant="outline"
+  onClick={() => runSeatingTemplate(buildClassicRowsPlacements(students, rows, cols, hiddenSet))}
+  disabled={templateM.isPending || students.length === 0}
+>
+  שורות קלאסיות
+</Button>
+<Button
+  size="sm" variant="outline"
+  onClick={() => runSeatingTemplate(buildUShapePlacements(students, rows, cols, hiddenSet))}
+  disabled={templateM.isPending || students.length === 0}
+>
+  צורת ח׳
+</Button>
+<Button
+  size="sm" variant="outline"
+  onClick={() => runSeatingTemplate(buildGroupsWithAislesPlacements(students, rows, cols, hiddenSet))}
+  disabled={templateM.isPending || students.length === 0}
+>
+  קבוצות עם מעברים
+</Button>
             <Button size="sm" variant="outline" onClick={() => clearM.mutate()} disabled={clearM.isPending}>
               נקה סידור
             </Button>
