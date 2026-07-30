@@ -334,14 +334,14 @@ export function drawBrandHeader(
     doc.setFont("Heebo", "bold");
     doc.setFontSize(13);
     doc.setTextColor(...SLATE);
-    doc.text(brand.schoolName, layout.rightX, hd.currentY(), { align: "right" });
+    rtlText(doc, brand.schoolName, layout.rightX, hd.currentY(), { align: "right" });
     hd.advance(5.5);
   }
   if (brand.headerLine) {
     doc.setFont("Heebo", "normal");
     doc.setFontSize(9);
     doc.setTextColor(120);
-    doc.text(brand.headerLine, layout.rightX, hd.currentY(), { align: "right" });
+    rtlText(doc, brand.headerLine, layout.rightX, hd.currentY(), { align: "right" });
     hd.advance(4.5);
   }
   if (brand.schoolName || brand.headerLine) {
@@ -356,7 +356,7 @@ export function drawBrandHeader(
   doc.setFontSize(18);
   doc.setTextColor(...SLATE);
   const titleLines = doc.splitTextToSize(args.title, layout.contentW) as string[];
-  doc.text(titleLines, layout.rightX, hd.currentY(), { align: "right" });
+  doc.text(bidiLines(titleLines), layout.rightX, hd.currentY(), { align: "right" });
   hd.advance(titleLines.length * 7);
 
   if (args.subtitle) {
@@ -364,7 +364,7 @@ export function drawBrandHeader(
     doc.setFontSize(11);
     doc.setTextColor(80);
     const subLines = doc.splitTextToSize(args.subtitle, layout.contentW) as string[];
-    doc.text(subLines, layout.rightX, hd.currentY(), { align: "right" });
+    doc.text(bidiLines(subLines), layout.rightX, hd.currentY(), { align: "right" });
     hd.advance(subLines.length * 5);
   }
 
@@ -373,13 +373,13 @@ export function drawBrandHeader(
     doc.setFontSize(9.5);
     doc.setTextColor(110);
     const metaLines = doc.splitTextToSize(args.meta, layout.contentW) as string[];
-    doc.text(metaLines, layout.rightX, hd.currentY(), { align: "right" });
+    doc.text(bidiLines(metaLines), layout.rightX, hd.currentY(), { align: "right" });
     hd.advance(metaLines.length * 4.5);
   }
 
   doc.setFontSize(8);
   doc.setTextColor(150);
-  doc.text(`הופק ב-${new Date().toLocaleString("he-IL")}`, layout.rightX, hd.currentY(), { align: "right" });
+  rtlText(doc, `הופק ב-${new Date().toLocaleString("he-IL")}`, layout.rightX, hd.currentY(), { align: "right" });
   hd.advance(6);
 }
 
@@ -394,8 +394,9 @@ export function drawFooter(hd: HebrewDoc, meta?: string): void {
     doc.setDrawColor(226, 232, 240);
     doc.line(layout.marginL, layout.pageH - 12, layout.pageW - layout.marginR, layout.pageH - 12);
     doc.setTextColor(150);
-    if (meta) doc.text(meta, layout.rightX, layout.pageH - 7, { align: "right" });
-    doc.text(
+    if (meta) rtlText(doc, meta, layout.rightX, layout.pageH - 7, { align: "right" });
+    rtlText(
+      doc,
       `הכיתה שלי · עמ׳ ${i} מתוך ${pageCount}`,
       layout.pageW / 2,
       layout.pageH - 7,
