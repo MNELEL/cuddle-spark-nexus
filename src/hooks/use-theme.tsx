@@ -15,6 +15,7 @@ type Ctx = { theme: ThemeName; setTheme: (t: ThemeName) => void };
 const ThemeContext = createContext<Ctx | null>(null);
 export const THEME_STORAGE_KEY = "classpro-theme";
 const STORAGE_KEY = THEME_STORAGE_KEY;
+export const DEFAULT_THEME: ThemeName = "hakita-sheli";
 
 function apply(theme: ThemeName) {
   const root = document.documentElement;
