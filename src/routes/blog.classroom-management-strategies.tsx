@@ -148,7 +148,7 @@ function Article() {
           <div className="mt-12 rounded-2xl border border-border/60 bg-card/40 p-6">
             <p className="text-sm text-muted-foreground">רוצה כלים שיטתיים שמיישמים את זה בכיתה שלך?</p>
             <Link to="/" className="mt-2 inline-block text-base font-semibold text-primary hover:underline">
-              פתח כיתה ב-הכיתה שלי ←
+              פתח כיתה ב"הכיתה שלי" ←
             </Link>
           </div>
 

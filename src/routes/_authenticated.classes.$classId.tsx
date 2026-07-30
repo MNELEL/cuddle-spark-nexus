@@ -91,7 +91,7 @@ export const Route = createFileRoute("/_authenticated/classes/$classId")({
     return {
       meta: [
         { title: `${name} · ניהול כיתה · הכיתה שלי` },
-        { name: "description", content: `סידור הושבה, ציונים, התנהגות וקשר עם הורים עבור כיתה ${name} ב-הכיתה שלי.` },
+        { name: "description", content: `סידור הושבה, ציונים, התנהגות וקשר עם הורים עבור כיתה ${name} ב"הכיתה שלי".` },
         { property: "og:title", content: `${name} · ניהול כיתה · הכיתה שלי` },
         { property: "og:description", content: `סידור הושבה, ציונים, התנהגות וקשר עם הורים עבור כיתה ${name}.` },
         { property: "og:url", content: url },

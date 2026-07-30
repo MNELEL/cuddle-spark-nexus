@@ -4,7 +4,7 @@ import { FaqSection, faqJsonLd, type FaqItem } from "@/components/faq-section";
 const URL = "https://cuddle-spark-nexus.lovable.app/blog/classdojo-comparison";
 const TITLE = "ClassDojo מול הכיתה שלי — השוואה למלמדים בתלמודי תורה";
 const DESCRIPTION =
-  "השוואה מלאה בין ClassDojo ל-הכיתה שלי: עברית ו-RTL, מקצועות קודש, מונחי חיידר (מלמד, רב, פרשת שבוע), פרטיות, ודו״חות פדגוגיים פרטיים מול פיצ׳רים חברתיים ציבוריים.";
+  "השוואה מלאה בין ClassDojo ל"הכיתה שלי": עברית ו-RTL, מקצועות קודש, מונחי חיידר (מלמד, רב, פרשת שבוע), פרטיות, ודו״חות פדגוגיים פרטיים מול פיצ׳רים חברתיים ציבוריים.";
 
 type Row = { feature: string; classdojo: string; classalign: string };
 
@@ -66,7 +66,7 @@ const FAQ: FaqItem[] = [
     a: "ClassDojo מבוסס על פיד חברתי ציבורי בין הורים, מלמדים ותלמידים. הכיתה שלי מבוסס על דו״ח פדגוגי פרטי: המלמד מנהל את הכיתה, מייצר סיכומים ותעודות, ושולח אותם ישירות להורה כקובץ PDF — בלי פיד ציבורי ובלי לייקים.",
   },
   {
-    q: "האם אפשר לייבא נתונים קיימים מ-ClassDojo ל-הכיתה שלי?",
+    q: "האם אפשר לייבא נתונים קיימים מ-ClassDojo ל"הכיתה שלי"?",
     a: "כן. אפשר לייצא רשימת תלמידים מ-ClassDojo כ-CSV ולהעלות אותה ב\"העלאה חכמה\" של הכיתה שלי. המערכת מזהה שמות, כיתות ומקצועות אוטומטית וממקמת אותם במקום הנכון.",
   },
   {
@@ -168,7 +168,7 @@ function Article() {
             הספציפי. אין פיד ציבורי, אין חשיפה של תלמידים אחרים, ואין כפתור לייק.
           </p>
 
-          <h2>מעבר מ-ClassDojo ל-הכיתה שלי בלי לאבד נתונים</h2>
+          <h2>מעבר מ-ClassDojo ל"הכיתה שלי" בלי לאבד נתונים</h2>
           <p>
             אם אתם משתמשים כבר ב-ClassDojo, אפשר לייצא רשימת תלמידים כ-CSV, להעלות ב״העלאה חכמה״
             של הכיתה שלי, והמערכת תזהה אוטומטית את השמות, הכיתות והמקצועות. אין צורך להקליד ידנית.
@@ -177,12 +177,12 @@ function Article() {
           <div className="mt-12 rounded-2xl border border-border/60 bg-card/40 p-6">
             <p className="text-sm text-muted-foreground">רוצה לנסות חלופה עברית לתלמוד תורה?</p>
             <Link to="/" className="mt-2 inline-block text-base font-semibold text-primary hover:underline">
-              פתח כיתה ראשונה ב-הכיתה שלי ←
+              פתח כיתה ראשונה ב"הכיתה שלי" ←
             </Link>
           </div>
 
           <section className="!mt-12">
-            <FaqSection items={FAQ} intro="שאלות שמלמדים ומנהלי מוסדות שואלים לפני מעבר מ-ClassDojo ל-הכיתה שלי." />
+            <FaqSection items={FAQ} intro="שאלות שמלמדים ומנהלי מוסדות שואלים לפני מעבר מ-ClassDojo ל"הכיתה שלי"." />
           </section>
 
           <h2 className="!mt-12">מדריכים נוספים</h2>

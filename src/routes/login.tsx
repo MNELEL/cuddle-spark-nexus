@@ -14,9 +14,9 @@ export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
       { title: "כניסה למערכת · הכיתה שלי" },
-      { name: "description", content: "התחבר ל-הכיתה שלי כדי לנהל כיתה, סידור הושבה, ציונים ודוחות פדגוגיים בעברית מלאה." },
+      { name: "description", content: "התחבר ל"הכיתה שלי" כדי לנהל כיתה, סידור הושבה, ציונים ודוחות פדגוגיים בעברית מלאה." },
       { property: "og:title", content: "כניסה למערכת · הכיתה שלי" },
-      { property: "og:description", content: "התחבר ל-הכיתה שלי כדי לנהל כיתה, סידור הושבה, ציונים ודוחות פדגוגיים בעברית מלאה." },
+      { property: "og:description", content: "התחבר ל"הכיתה שלי" כדי לנהל כיתה, סידור הושבה, ציונים ודוחות פדגוגיים בעברית מלאה." },
       { property: "og:url", content: "https://cuddle-spark-nexus.lovable.app/login" },
     ],
     links: [{ rel: "canonical", href: "https://cuddle-spark-nexus.lovable.app/login" }],
@@ -77,7 +77,7 @@ function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background to-secondary/40 p-4">
-      <h1 className="sr-only">התחברות ל-הכיתה שלי</h1>
+      <h1 className="sr-only">התחברות ל"הכיתה שלי"</h1>
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <Link to="/" className="mx-auto mb-2 flex items-center gap-2">

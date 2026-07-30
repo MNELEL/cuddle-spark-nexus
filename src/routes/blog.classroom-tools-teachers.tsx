@@ -97,7 +97,7 @@ function Article() {
           <div className="mt-12 rounded-2xl border border-border/60 bg-card/40 p-6">
             <p className="text-sm text-muted-foreground">רוצה לראות את כל הכלים במקום אחד?</p>
             <Link to="/" className="mt-2 inline-block text-base font-semibold text-primary hover:underline">
-              התנסה ב-הכיתה שלי ←
+              התנסה ב"הכיתה שלי" ←
             </Link>
           </div>
         </article>
