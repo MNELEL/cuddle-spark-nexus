@@ -92,11 +92,11 @@ export async function buildCertificatePdfBlob(p: CertificatePayload): Promise<Bl
   doc.setFont("Heebo", "bold");
   doc.setFontSize(13);
   doc.setTextColor(...SLATE);
-  doc.text(`שם התלמיד: ${p.studentName}`, layout.rightX - 3, y0 + 7, { align: "right" });
+  hd.text(`שם התלמיד: ${p.studentName}`, layout.rightX - 3, y0 + 7, { align: "right" });
   doc.setFont("Heebo", "normal");
   doc.setFontSize(10.5);
   doc.setTextColor(60);
-  doc.text(`כיתה: ${p.className}`, layout.rightX - 3, y0 + 13, { align: "right" });
+  hd.text(`כיתה: ${p.className}`, layout.rightX - 3, y0 + 13, { align: "right" });
   hd.setY(y0 + 20);
 
   // Subjects table
@@ -166,11 +166,11 @@ export async function buildCertificatePdfBlob(p: CertificatePayload): Promise<Bl
   doc.setFont("Heebo", "normal");
   doc.setFontSize(10);
   doc.setTextColor(80);
-  doc.text(p.teacherName ?? "חתימת המחנך/הרב", rightSigX - 20, sigY + 5, { align: "center" });
-  doc.text(p.principalName ?? "חתימת ההנהלה", leftSigX + 20, sigY + 5, { align: "center" });
+  hd.text(p.teacherName ?? "חתימת המחנך/הרב", rightSigX - 20, sigY + 5, { align: "center" });
+  hd.text(p.principalName ?? "חתימת ההנהלה", leftSigX + 20, sigY + 5, { align: "center" });
   doc.setFontSize(9);
   doc.setTextColor(120);
-  doc.text(`תאריך הפקה: ${p.issueDate}`, midX, sigY + 5, { align: "center" });
+  hd.text(`תאריך הפקה: ${p.issueDate}`, midX, sigY + 5, { align: "center" });
 
   drawFooter(hd, `${p.schoolName} · ${p.period}`);
   return doc.output("blob");
