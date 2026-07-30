@@ -243,11 +243,21 @@ function LoginPage() {
             {mode === "signin" ? "התחבר כדי לנהל את הכיתות שלך" : "התחל לנהל את הכיתות שלך בחינם"}
           </p>
 
-          <div aria-live="polite" role="status" className="mb-4 empty:mb-0">
-            <span className="sr-only">{statusText}</span>
+          <div aria-live="polite" aria-atomic="true" role="status" className="mb-4 space-y-2 empty:mb-0">
+            {statusText && (
+              <p className="flex items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                {statusText}
+              </p>
+            )}
             {!statusText && errorMsg && (
               <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
                 {errorMsg}
+              </p>
+            )}
+            {!statusText && successMsg && (
+              <p className="rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-sm text-foreground">
+                {successMsg}
               </p>
             )}
           </div>
@@ -279,6 +289,18 @@ function LoginPage() {
                 <Label htmlFor="password">סיסמה</Label>
                 <Input id="password" type="password" required minLength={6} disabled={busy} value={password} onChange={(e) => setPassword(e.target.value)} dir="ltr" />
               </div>
+              {mode === "signin" && (
+                <div className="flex justify-start">
+                  <button
+                    type="button"
+                    onClick={forgotPassword}
+                    disabled={busy}
+                    className="rounded-sm text-sm font-medium text-primary underline-offset-4 hover:underline disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  >
+                    {resetBusy ? "שולח קישור..." : "שכחתי סיסמה"}
+                  </button>
+                </div>
+              )}
               <Button type="submit" className="w-full" disabled={busy}>
                 {submitting && <Loader2 className="ms-2 h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />}
                 {submitting ? (mode === "signin" ? "מתחבר..." : "יוצר חשבון...") : (mode === "signin" ? "התחבר" : "הרשם")}
