@@ -1,43 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { FaqSection, faqJsonLd, type FaqItem } from "@/components/faq-section";
+import { RewardChartPrintView } from "@/components/reward-chart-print";
+import { REWARD_CHARTS } from "@/lib/reward-charts";
 
 const URL = "https://cuddle-spark-nexus.lovable.app/blog/torah-study-reward-charts";
 const TITLE = "לוח מבצעים ופרסים לתלמידים — מדריך ותבניות להדפסה";
 const DESCRIPTION =
   "מדריך מלא להפעלת מבצעי לימוד בתלמוד תורה: לוחות מבצעים להדפסה, שיטות ניקוד, סולם פרסים לפי גיל ומעבר חלק מלוח נייר למעקב דיגיטלי בעברית.";
 
-const CHARTS = [
-  {
-    name: "לוח משנתי — 'משנה יומית'",
-    goal: "חזרה יומית על משנה אחת בעל פה",
-    grid: "טבלת 30 משבצות (חודש), משבצת = יום",
-    reward: "10 משבצות = פרס קטן · 30 משבצות = פרס חודשי",
-  },
-  {
-    name: "לוח בעל פה בגמרא",
-    goal: "אמירת קטע גמרא בעל פה בפני המלמד",
-    grid: "עמודה לכל תלמיד, שורה לכל עמוד/סוגיה",
-    reward: "כל 5 סימונים — נקודה לקבוצה, לא רק לתלמיד",
-  },
-  {
-    name: "לוח מבצע תפילה ומידות",
-    goal: "הגעה בזמן, עניית אמן, עזרה לחבר",
-    grid: "טבלה שבועית 5 ימים × 3 קריטריונים",
-    reward: "מצטבר לכיתה — יעד כיתתי משותף",
-  },
-  {
-    name: "לוח מבצע פרשת השבוע",
-    goal: "חזרה בבית על הפרשה + חתימת הורה",
-    grid: "משבצת אחת לשבוע, 12 שבועות בעמוד",
-    reward: "הגרלה שבועית בין החותמים",
-  },
-  {
-    name: "לוח 'עולים במדרגות'",
-    goal: "יעד אישי מדורג לכל תלמיד",
-    grid: "סולם 10 שלבים אנכי לכל תלמיד",
-    reward: "פרס בשלב 5 ובשלב 10 בלבד",
-  },
-];
+const CHARTS = REWARD_CHARTS;
 
 const REWARDS = [
   { age: "כיתות א׳–ב׳", ideas: "מדבקות, חותמת בכתב יד הרב, בחירת ניגון לתפילה, הכתרה כ'חייל היום'" },
@@ -130,7 +101,7 @@ function Article() {
           <h2>חמישה לוחות מבצעים מוכנים</h2>
           <div className="mt-6 space-y-6">
             {CHARTS.map((c) => (
-              <section key={c.name} className="rounded-2xl border border-border/60 bg-card/40 p-6">
+              <section key={c.id} className="rounded-2xl border border-border/60 bg-card/40 p-6">
                 <h3 className="text-lg font-semibold">{c.name}</h3>
                 <ul className="mt-3 list-disc pr-4 text-sm text-muted-foreground">
                   <li>יעד: {c.goal}</li>
@@ -140,6 +111,17 @@ function Article() {
               </section>
             ))}
           </div>
+
+          <section className="reward-charts-print-section !mt-12">
+            <div className="reward-charts-print-intro">
+              <h2 className="!mt-0">תצוגת הדפסה והורדת PDF</h2>
+              <p>
+                בחרו לוח (או את כל החמישה), הדפיסו ישירות מהדפדפן בפורמט מותאם לדף A4,
+                או הורידו קובץ PDF ממותג עם משבצות ריקות מוכנות למילוי.
+              </p>
+            </div>
+            <RewardChartPrintView />
+          </section>
 
           <h2>שיטת ניקוד שלא מתפרקת אחרי שבוע</h2>
           <ol className="mt-4 list-decimal pr-4 text-muted-foreground">
