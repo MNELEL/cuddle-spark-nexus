@@ -1621,13 +1621,6 @@ export type Database = {
     }
     Functions: {
       export_my_data: { Args: never; Returns: Json }
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
       match_resources: {
         Args: {
           exclude_id?: string
