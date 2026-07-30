@@ -1,7 +1,15 @@
 import { useEffect, useState } from "react";
 import { Printer, Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { REWARD_CHARTS, type RewardChart } from "@/lib/reward-charts";
+import {
+  REWARD_CHARTS,
+  applyRewardChartCustomization,
+  DEFAULT_REWARD_CHART_CUSTOMIZATION,
+  type RewardChart,
+  type RewardChartCustomization,
+} from "@/lib/reward-charts";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { generateRewardChartPdf, generateAllRewardChartsPdf } from "@/lib/pdf/reward-chart-pdf";
 import { toast } from "sonner";
 
@@ -56,7 +64,9 @@ function ChartTable({ chart }: { chart: RewardChart }) {
 export function RewardChartPrintView() {
   const [selected, setSelected] = useState<string>("all");
   const [busy, setBusy] = useState<string | null>(null);
-  const charts = selected === "all" ? REWARD_CHARTS : REWARD_CHARTS.filter((c) => c.id === selected);
+  const [custom, setCustom] = useState<RewardChartCustomization>(DEFAULT_REWARD_CHART_CUSTOMIZATION);
+  const base = selected === "all" ? REWARD_CHARTS : REWARD_CHARTS.filter((c) => c.id === selected);
+  const charts = base.map((c) => applyRewardChartCustomization(c, custom));
   const landscape = charts.some((c) => c.orientation === "landscape");
 
   // Match the paper orientation to the widest chart being printed.
@@ -71,7 +81,7 @@ export function RewardChartPrintView() {
   const downloadOne = async (chart: RewardChart) => {
     setBusy(chart.id);
     try {
-      await generateRewardChartPdf(chart);
+      await generateRewardChartPdf(chart, undefined, custom.teacherName);
     } catch {
       toast.error("יצירת ה-PDF נכשלה, נסה שוב");
     } finally {
@@ -82,7 +92,7 @@ export function RewardChartPrintView() {
   const downloadAll = async () => {
     setBusy("all");
     try {
-      await generateAllRewardChartsPdf();
+      await generateAllRewardChartsPdf(undefined, charts, custom.teacherName);
     } catch {
       toast.error("יצירת ה-PDF נכשלה, נסה שוב");
     } finally {
