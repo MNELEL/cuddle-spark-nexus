@@ -21,6 +21,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowRight, Heart, Ban, MoveHorizontal, Pencil, Plus, Trash2, FolderOpen, FileText, Sparkles, Trophy, Users, Library, Monitor, Upload, Printer, Copy, Dices, Globe2, Award, ScanText, TrendingUp, CalendarDays, Wand2, MessageSquare, MoreHorizontal, LayoutGrid } from "lucide-react";
 import { toast } from "sonner";
 import { copyList, printList } from "@/lib/print-list";
@@ -45,7 +46,7 @@ function ActionBtn({ icon: Icon, label, variant = "outline" }: { icon: typeof Up
     <Button
       variant={variant}
       size="sm"
-      className="w-full justify-start whitespace-normal text-start leading-tight"
+      className="w-full justify-start whitespace-normal text-start leading-tight transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none motion-reduce:hover:translate-y-0"
     >
       <Icon className="ms-1 h-4 w-4 shrink-0" />
       <span className="truncate">{label}</span>
@@ -56,13 +57,13 @@ function ActionBtn({ icon: Icon, label, variant = "outline" }: { icon: typeof Up
 function ClassActionGrid({ classId, onSeating }: { classId: string; onSeating: () => void }) {
   return (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-      <Button size="sm" className="w-full justify-start" onClick={onSeating}>
+      <Button size="sm" className="w-full justify-start transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none motion-reduce:hover:translate-y-0" onClick={onSeating}>
         <LayoutGrid className="ms-1 h-4 w-4 shrink-0" />
         <span className="truncate">סידור הושבה</span>
       </Button>
       <Link to="/ingest" search={{ classId }}><ActionBtn icon={Upload} label="העלאה חכמה" /></Link>
       <Link to="/daily/$classId" params={{ classId }}><ActionBtn icon={FileText} label="סיכום יומי" /></Link>
-      <Button variant="outline" size="sm" className="w-full justify-start" onClick={openCommandPalette}>
+      <Button variant="outline" size="sm" className="w-full justify-start transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none motion-reduce:hover:translate-y-0" onClick={openCommandPalette}>
         <MoreHorizontal className="ms-1 h-4 w-4 shrink-0" />
         <span className="truncate">עוד כלים</span>
       </Button>
