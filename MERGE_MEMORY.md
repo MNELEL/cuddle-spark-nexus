@@ -2,8 +2,9 @@
 > מסמך זיכרון קבוע לפרויקט מיזוג האפליקציות. עדכן אותו בכל שיחה חדשה כדי לא לאבד החלטות.
 > יעד סופי: **Lovable**. הפרויקט החי: **"Harmony Hub"** (repo: `cuddle-spark-nexus`), פרויקט Lovable ID `2734475a-1431-4ef2-8175-67b8af357276`.
 
-**עדכון אחרון:** 23 ביולי 2026 — **עודכן אחרי בדיקה ישירה מול Lovable API (לא רק GitHub)**
-**עדכון נוסף:** 23 ביולי 2026, בסמוך לכך — הושלמה משימת ה-Task Automation (ראה סעיף 2).
+**עדכון אחרון:** 30 ביולי 2026 — **סיור מקיף חדש: Lovable + Base44, כולל תיקון אבחנה קריטי (registerDriveWatch) ופער אבטחה חדש (PIN hashing ב-Class-Flow). ראה סעיף 10.**
+**עדכון קודם:** 26 ביולי 2026 — פיצ'ר הרשמת מורים עם קוד גישה + תיקון אבטחת bulletinFeedback ב-Class-Flow (סעיף 9).
+**עדכון קודם:** 23 ביולי 2026 — הושלמה משימת ה-Task Automation (סעיף 2) ואיחוד AI Gateway (סעיף 4).
 
 ---
 
@@ -107,6 +108,7 @@
 
 ### 3.2 סידור הושבה
 - טרם נבדק מול הקוד החי (`seating-logic.ts`/`seating-grid.tsx`) בסבב הזה — עדיין ברשימת המעקב.
+- **עדכון 30/7**: הסיור החדש חשף ש-Class-Flow יש כלי אופטימיזציית הושבה עמוקים משמעותית (`StrategicLeadersOptimizer.jsx`, `GroupSeatingOptimizer.jsx`, `ConflictHelper.jsx`) שאין להם מקבילה כלל ב-Harmony Hub — ראה סעיף 10.6.
 
 ### 3.3 ציונים (הושווה לעומק מול הקוד החי — 23/7) ✅ סופי
 נקראו `grade-ai-import.tsx` + `ai-grades.functions.ts` במלואם. **הממצא: cuddle-spark-nexus כבר עולה על גם classflow וגם certificates-tool בתחום הזה — אינטגרציה מלאה של שלוש שיטות קלט לתוך דיאלוג אחד:**
@@ -115,11 +117,13 @@
 - **טקסט חופשי** — כל הקלט (מתמונה/קול/הקלדה) עובר דרך `parseGradesFromText`, שמשייך כל שם לתלמיד אמיתי ב-DB עם ציון-ביטחון (`confidence`) ואפשרות תיקון ידני לכל שורה לפני שמירה.
 - טיפול נכון בשגיאות מכסה/קרדיטים של Lovable AI Gateway (429/402) בעברית ברורה למשתמש.
 - **סטטוס: לא נדרשת פעולה נוספת — הפיצ'ר שלם ומעולה כפי שהוא.**
+- **עדכון 30/7**: נוספו גם `ai-exam-generator.functions.ts` (יצירת מבחנים AI) ו-`ai-exam.functions.ts` (סריקת/ניקוד מבחן מצולם) — שניהם קוראים נכון ל-`callLovableAI()` המשותף. ראה סעיף 10.1.
 
 ### 3.4 ספרייה/חומרי הוראה
 - Teacher-students-mgmt עדיין נראה החזק ביותר (10 קומפוננטות ייעודיות).
 - cuddle-spark-nexus יש `teaching-resources.functions.ts` + routes `_authenticated.resources.*`, וגם `bulletin-sync.functions.ts` כולל `generateQuizFromBulletin` (יצירת מבחן חזרה אוטומטי מעלון שבועי, עם חיפוש סמנטי דרך embeddings/`match_resources` RPC) — **פיצ'ר AI שלא היה בשום מאגר אחר שנבדק**.
 - **סטטוס: עדיין דורש השוואה ישירה בעומק (לא רק ברמת קבצים) מול Teacher-students-mgmt לפני הכרעה.**
+- **עדכון 30/7**: Class-Flow מכיל קומפוננטות עומק נוספות תחת `library/` — `MultiSourceGenerator.jsx`, `ArtifactGenerator.jsx`, `ArtifactRenderer.jsx` — שאין להן מקבילה ב-Harmony Hub. ראה סעיף 10.6.
 
 ### 3.5 נוכחות (הושווה לעומק מול הקוד החי — 23/7) ✅ סופי
 נקרא `tracking-tab.tsx` במלואו. **הממצא: cuddle-spark-nexus שווה-ערך מלא ל-Teacher-students-mgmt, לא נחות ממנו.**
@@ -130,6 +134,7 @@
 
 ### 3.6 PWA/Offline
 - **עדיין רק ב-Teacher-students-mgmt** (Service Worker אמיתי + IndexedDB). cuddle-spark-nexus הוא TanStack Start + Cloudflare — ארכיטקטורת offline שונה לגמרי תידרש (Service Worker נפרד, לא Firebase-based).
+- **עדכון 30/7**: `docs/lms-gap-analysis.md` הפנימי של Harmony Hub מאשר זאת — PWA מסומן ⚠️ ("אין מניפסט ברור ו-service worker"), iOS ואופליין מסומנים ❌.
 
 ### 3.7 Embeddings/RAG
 - cuddle-spark-nexus כבר יש `embeddings.server.ts` עם **Lovable AI Gateway** (`text-embedding-3-small`, pgvector-ready) — **זה כבר המימוש הנכון ליעד**, אין צורך לייבא מ-Class-manager-from-Gemini-.
@@ -145,6 +150,7 @@
 
 ### 3.11 Google Workspace Integration
 - טרם אומת מול המצב העדכני של cuddle-spark-nexus — לא נראה קובץ `googleWorkspace`-דומה ברשימת הקבצים שנבדקה. דורש בדיקה נוספת.
+- **עדכון 30/7**: `docs/lms-gap-analysis.md` הפנימי מאשר "Google OAuth + Google Search Console" קיימים ("✅"), אך אינטגרציה עם Google Classroom עצמו מסומנת "❌ אין".
 
 ---
 
@@ -153,6 +159,7 @@
 1. **בלוגים מובנים (structured logging)**
    - הוספת מערכת `app_logs` בצד שרת והחלפה הדרגתית של `console.log`/`console.error`.
    - **עדכון (23/7): הושלם.** ראה סעיף 2 ומיגרציית `app_logs`.
+   - **עדכון 30/7**: אומת מחדש — `src/lib/logger.server.ts` קיים ובנפרד מ-`error-capture.ts` (שתי מנגנונים משלימים, לא כפילות: logger = מבנה לוגים, error-capture = תפיסת קריסות out-of-band).
 
 2. **חיבור OCR → תעודות**
    - לשלב את יכולת ה-OCR שמזהה שמות/מקצועות/ציונים/הליכות/הערות מתמונת תעודה לזרימת ההנפקה, כך שהמורה יערוך וידפיס.
@@ -160,9 +167,8 @@
 
 3. **איחוד AI Gateway**
    - לאחד קבצים עם אותו בלוק `fetch` כפול לקריאה מרכזית אחת ל-AI Gateway.
-   - **עדכון (23/7): בבדיקה נמצא חמישי (לא רק ארבעה) קבצים עם אותו בלוק fetch כפול: יש להוסיף גם `src/lib/ai-certificate.functions.ts` לרשימה. עדיין ברשימת העבודה הבאה.**
-   - עדכון סופי (23/7): הושלם. נוצר src/lib/ai-gateway.server.ts עם callLovableAI() משותפת. כל 5 מופעי הקריאה הכפולה הוחלפו לקרוא לפונקציה המשותפת תוך שימור מדויק של הלוגיקה העסקית. Typecheck עובר נקי.
    - **עדכון סופי (23/7): הושלם.** נוצר `src/lib/ai-gateway.server.ts` עם פונקציה משותפת `callLovableAI()` (תומכת ב-messages מולטימודליים, `jsonResponse` אופציונלי, ו-model ניתן לדריסה). כל 5 מופעי הקריאה הכפולה הוחלפו לקרוא לפונקציה המשותפת, תוך שימור מדויק של כל הלוגיקה העסקית (system/user prompts, פרסור JSON, טיפול בתוצאות) בקובץ הקורא עצמו — רק שכבת ה-fetch/headers/error-handling אוחדה. אומת ישירות מול 3 מהקבצים (`ai-gateway.server.ts`, `ai-certificate.functions.ts`, `ai-assistant.functions.ts`) שההתנהגות נשמרה במדויק. Typecheck עובר נקי.
+   - **עדכון 30/7**: אומת מחדש שהאיחוד לא נשחק — קבצי AI חדשים שנוספו מאז (`ai-exam-generator.functions.ts`, `ai-exam.functions.ts`) גם הם קוראים נכון ל-`callLovableAI()` ולא יצרו כפילות fetch חדשה.
 
 **סטטוס סופי (23/7): שלוש המשימות הושלמו במלואן.** 1) בלוגים מובנים — הושלם. 2) OCR→תעודות — התברר שכבר היה קיים ומיושם. 3) איחוד AI Gateway — הושלם, 5 קבצים מאוחדים למודול משותף אחד.
 
@@ -185,7 +191,12 @@
 | Whiteboard | ❌ חסר | לייבא מ-Class-manager-from-Gemini- אם רלוונטי |
 | Sound-board | 🟡 קיים, פחות מפותח | לשקול שדרוג מול Teacher-students-mgmt |
 | Kiosk mode | ❌ לא קיים בשום מאגר web | לבנות מאפס אם נדרש |
-| Google Workspace | ❓ לא אומת | לבדוק מול Lovable ישירות |
+| Google Workspace | 🟡 חלקי — OAuth+Search Console קיימים, Classroom חסר | לחבר Google Classroom API אם רלוונטי |
+| **RBAC (ניהול תפקידים)** | ✅ **חדש 30/7** — נבנה במלואו | אין צורך בפעולה |
+| **מיתוג מוסדי + "הכיתה שלי"** | ✅ **חדש 30/7** | לוודא עם מיכאל שזהו כיוון מכוון |
+| **מחולל/סורק מבחנים AI** | ✅ **חדש 30/7** | אין צורך בפעולה |
+| **סידור הושבה מתקדם (אופטימיזציה)** | ❌ **חסר** — Class-Flow עולה משמעותית | לשקול העברה מ-Class-Flow |
+| **תכנון שבועי גרפי (Weekly Planner Board)** | ❌ **חסר** | קיים רק ב-Class-Flow |
 
 ---
 
@@ -195,6 +206,7 @@
 2. ה-5 מאגרים האחרים (Teacher-students-mgmt וכו') עדיין ניתן להשוות מול ה-clone הסטטי, אלא אם יתברר שגם הם מחוברים לפלטפורמת build חיה.
 3. עדכן טבלה בסעיף 5 מיד כשתחום עובר מ-🟡/❌ ל-✅ בפועל.
 4. הקובץ הזה חי גם בתוך `/mnt/user-data/outputs` (קובץ נפרד) — יש להוריד ולשמור גרסה מקומית מפעם לפעם.
+5. **הערה 30/7**: בזמן עדכון זה ל-workspace ה-Lovable נגמרו הקרדיטים, כך שהגרסה הזו של הקובץ עדיין לא הועלתה בפועל לריפו `cuddle-spark-nexus` עצמו. יש להעלות ידנית או לנסות שוב דרך `Lovable:send_message` לאחר חידוש הקרדיטים (ראה https://lovable.dev/settings/billing).
 
 ---
 
@@ -216,6 +228,8 @@
 
 **סטטוס: הבדיקה הושלמה. שני פערים אמיתיים בלבד נותרו (Weekly Schedule, Student View), שניהם קטנים יחסית ומתועדים כאן בפירוט לביצוע עתידי במידת הצורך.**
 
+> **עדכון 30/7**: הסיור המקיף החדש חשף פערים נוספים ועמוקים יותר מעבר לשניים אלו — ראה סעיף 10.6 (כלי אופטימיזציית הושבה, מחוללי תוכן ממקורות מרובים, כלי ניהול-על מוסדי, לוח תכנון שבועי גרפי).
+
 ---
 
 ## 8. מיזוג נתונים (Class-Flow ↔ Harmony Hub) — מסמך תכנון נפרד
@@ -233,9 +247,81 @@
 - **`linkTeacher/entry.ts`** (function חדשה) — כשמורה מזין קוד גישה תקף, הפונקציה (בהרצת service-role, עוקפת RLS בכוונה כי `user_id` עדיין לא מוגדר בשלב הזה) מקשרת את המשתמש שנרשם לרשומת `Teacher` קיימת (שנוצרה מראש על ידי admin דרך `TeacherFormModal.jsx`), ומעדכנת אוטומטית את `teacher_user_id` בכל הכיתות המשויכות לאותו מורה.
 - **שינויי RLS מקבילים ב-`Teacher.jsonc`**: `user_id` הפך מ-required ל-optional (מאפשר ליצור רשומת מורה לפני שיש חשבון מקושר), ומדיניות ה-`update` הורחבה בחזרה מ-admin-only ל-admin **או** המורה עצמו.
 - **סטטוס: זוהה בלבד. פיצ'ר שלם ומשמעותי (self-service onboarding למורים) שלא היה קיים בהשוואה המקורית. לא נבדק אם/כמה רלוונטי להעביר ל-Harmony Hub — Harmony Hub כבר משתמש ב-Supabase Auth שיש בו זרימת הרשמה שונה מובנית.**
+- **עדכון 30/7**: אומת מחדש מול הקוד החי — `linkTeacher/entry.ts` בנוי נכון (בדיקת `access_code` + `is_active`, עדכון `teacher_user_id` בכל הכיתות המשויכות). ראה גם 10.5 — הניתוב ב-`App.jsx` תקין ואין דפים יתומים.
 
 ### 9.2 תיקון אבטחה אמיתי ב-bulletinFeedback (טוקן משוב הורים)
 - **הבעיה שתוקנה היום**: אם `BASE44_APP_ID` לא היה מוגדר, הקוד הישן חזר בשקט ל-secret קבוע וציבורי בקוד המקור (`"bulletin-fallback-secret"`) ליצירת טוקן HMAC — כלומר כל מי שקורא את הקוד יכול לזייף טוקן משוב תקף.
 - **התיקון**: משתנה סביבה ייעודי חדש `BULLETIN_TOKEN_SECRET`, וכשלא מוגדר — הפונקציה **נכשלת בקול** (`throw Error`) במקום לחזור לברירת מחדל לא-מאובטחת.
 - זה מאשש ומחזק: מנגנון טוקן משוב ההורים ב-Class-Flow (`bulletinFeedback`, ה"פער" שזוהה ב-3.1 לגבי Harmony Hub) הוא אכן פעיל ומטופל ברצינות אבטחתית (משתמש בהשוואת HMAC בזמן קבוע — timing-safe — בדיוק כמו ה-PIN-hash ב-Harmony Hub).
 - **סטטוס: תיקון אבטחה תועד. לא דורש פעולה ב-Harmony Hub (אין לו את הפיצ'ר הזה כלל עדיין).**
+- **⚠️ עדכון 30/7 — סתירה שיש לשים לב אליה**: בסיור החדש נמצא ש-`pinSecurity/entry.ts` (פונקציה אחרת לגמרי, לא bulletinFeedback) **עדיין** משתמש ב-`BASE44_APP_ID` כ-secret קבוע לכל המשתמשים, ללא ה-fail-safe שנוסף כאן ל-bulletinFeedback. כלומר התיקון האבטחתי מ-26/7 טופל רק במקום אחד (bulletinFeedback) ולא הוחל על pinSecurity. ראה פירוט מלא בסעיף 10.3.
+
+---
+
+## 10. סיור מקיף 30/7 — מצב חי מעודכן + תיקון אבחנה קריטי + פערי אבטחה
+
+בוצע סיור שיטתי ישירות מול Lovable API (`list_edits`, `list_files`, `read_file`) ומול Base44 (`list_directory`, `read_file`, `list_connectors`, `query_entities`). **הפרויקט ב-Lovable התקדם מאוד מאז 23/7** — יותר מ-15 commits חדשים עד 30/7 כולל שינוי מיתוג אסטרטגי.
+
+### 10.1 Harmony Hub — עדכונים שלא היו מתועדים
+
+**RBAC מלא נבנה** (`docs/rbac-roles.md`, `src/lib/user-roles.functions.ts`) — היה "❌ חסר" לפי `docs/lms-gap-analysis.md` הישן, עכשיו קיים בפועל.
+
+**מסמך פערים עצמי חדש**: `docs/lms-gap-analysis.md` — המערכת עצמה מתעדת 8 קטגוריות LMS עם סטטוס ✅/⚠️/❌. תמצית הפערים שהמערכת מודה בהם:
+- Google Classroom/Moodle integration — ❌ אין
+- Push notifications / SMS — ❌ אין
+- צ'אט/פורום צוות מורים — ❌ אין
+- דוחות ברמת מוסד/מחוז — ❌ אין
+- iOS app + offline מלא — ❌ אין
+- שיתוף משאבים בין מורים/מוסדות — ⚠️ חלקי (משאבים כרגע שייכים למורה בודד בלבד)
+
+**שינוי מיתוג אסטרטגי**: `src/components/torah-logo.tsx`, שם מוצר חדש "הכיתה שלי" (`hakita-sheli-implementation-guide.html/pdf`), ערכת נושא ייעודית. **יש לוודא עם מיכאל שזהו כיוון מכוון ולא drift לא-מתוכנן.**
+
+**פיצ'רי AI חדשים** שלא היו במסמך: `ai-exam-generator.functions.ts` (יצירת מבחנים — שאלות פתוחות+אמריקאיות, ניקוד אוטומטי מנורמל), `ai-exam.functions.ts` (סריקת/ניקוד מבחן מצולם), `ai-pedagogical.functions.ts`, `ai-poll.functions.ts`, `ai-weekly-summary.functions.ts`. **נבדק ואומת**: כל אלו קוראים נכון ל-`callLovableAI()` המשותף — האיחוד מ-23/7 נשמר ולא נשחק.
+
+**Anti-spam server** (`anti-spam.server.ts` + `anti-spam-config.functions.ts`) — הגנה חדשה שלא הייתה מתועדת.
+
+**קבצים חדשים נוספים לאימות עתידי** (לא נבדקו לעומק הפעם — ברשימת מעקב): `checklist-leads.functions.ts`, `data-export.functions.ts`, `class-events.functions.ts`, `polls.functions.ts`, `topics.functions.ts`, `weekly-schedule.functions.ts`, `certificate-notes.functions.ts`, `seating-wizard.functions.ts` + `seating-wizard-prefs.functions.ts`, `reminder-preferences.functions.ts` + `reminder-preferences-card.tsx` (הרחבה על מנגנון ה-cron מ-23/7 — כנראה מאפשר למורה לקבוע העדפות תזכורת).
+
+**Migrations**: 95+ קבצי מיגרציה ב-`supabase/migrations/`, כולל 3 מ-30/7 עצמו — קצב הפיתוח גבוה ומתמשך.
+
+### 10.2 Class-Flow (Base44) — תיקון אבחנה קריטי לגבי registerDriveWatch
+
+**המסמך הישן (סעיף שהוחלף) קבע שהבעיה היא `createClientFromRequest(req)` לא מקבל טוקן אימות כראוי דרך cookie. זו הייתה אבחנה שגויה.** נבדק ישירות מול הקוד ומול מצב ה-connector בפועל:
+
+- Google Drive connector מחובר עם **scope `drive.readonly` בלבד** (אומת דרך `list_connectors`).
+- `registerDriveWatch/entry.ts` קורא ל-`POST https://www.googleapis.com/drive/v3/changes/watch` — זו פעולת **כתיבה** (יצירת ערוץ webhook) שדורשת הרשאה מעבר ל-readonly.
+- Google מחזירה כנראה 403 (insufficient scope) על הקריאה הזו; קוד ה-`catch` הגנרי בפונקציה תופס את זה ומחזיר 500 ללא הבחנה מסיבת השגיאה האמיתית.
+- **המסקנה הנכונה**: התיקון הנדרש הוא **הרחבת ה-scope של ה-Google Drive connector** (מ-readonly לכתיבה/ניהול), לא תיקון triaging של טוקן/cookie. ה-קוד של הפונקציה עצמו תקין ובנוי נכון (אימות admin, גזירת webhook address מה-URL בלבד למניעת exfiltration, ניהול נכון של `SyncState`).
+- `syncDriveStudentDocs` (הפונקציה שמקבלת את ה-webhook עצמו) פועלת נכון עם readonly כי היא רק *קוראת* שינויים — היא לא הבעיה.
+
+**פעולה נדרשת**: להרחיב את הרשאות ה-Google Drive connector ב-Base44 dashboard לכלול scope שמאפשר `changes.watch` (למשל `drive` המלא, לא `drive.readonly`), ואז להריץ מחדש את `registerDriveWatch`.
+
+### 10.3 פער אבטחה חדש שזוהה: PIN hashing ב-Class-Flow חלש יותר מ-Harmony Hub
+
+- **Harmony Hub** (`security.functions.ts`): salt רנדומלי 16 בית **לכל משתמש בנפרד** + SHA-256 + `timingSafeEqual`. חזק.
+- **Class-Flow** (`pinSecurity/entry.ts`): ה-HMAC secret הוא `Deno.env.get("BASE44_APP_ID")` — **אותו secret קבוע לכל המשתמשים במערכת כולה**, וזהו ערך (App ID) שבמידה מסוימת ניתן לחשיפה/ניחוש בהשוואה לסוד ייעודי. משמעות בפועל: אם ה-App ID ידלוף או ייחשף, ניתן לבצע brute-force offline על כל ה-PINs של כל המורים במערכת בבת אחת (לא רק על משתמש בודד).
+- **חשוב לציין לחיוב**: הקוד עצמו איכותי בהיבטים אחרים — משתמש ב-`asServiceRole` נכון לעקיפת RLS controlled, ומבצע `timingSafeEqual`-style השוואה (`safeEqual`) נכונה נגד timing attacks. הבעיה ממוקדת רק בבחירת ה-secret, לא בשאר הלוגיקה.
+- **הערה חשובה**: תיקון אבטחה דומה כבר בוצע ב-26/7 עבור `bulletinFeedback` (החלפת fallback-secret קבוע ב-secret ייעודי שנכשל בקול אם חסר) — אבל התיקון **לא הוחל** על `pinSecurity`. יש כאן חוסר עקביות בין שני מנגנוני אבטחה באותו קודבייס.
+- **פעולה מומלצת (לא בוצעה)**: להחליף ל-secret ייעודי אקראי (Deno secret נפרד, לא App ID), ורצוי גם salt פר-משתמש כמו ב-Harmony Hub. כדאי ליישם באותו דפוס שכבר הוכח ב-`bulletinFeedback`.
+
+### 10.4 פיצ'ר שנבנה אך לא בשימוש בפועל: PendingUpdate
+
+- Entity `PendingUpdate` ב-Class-Flow — מנגנון "אשר לפני ביצוע" לפקודות AI (קול/טקסט/העלאת קובץ) שיוצרות שינויים באמת (הוספת תלמיד, סימון נוכחות, הוספת ציון וכו').
+- הסכימה בנויה היטב (RLS תקין, `intent` enum מסודר, שדות ביקורת `reviewed_at`/`review_notes`).
+- **נבדק בפועל מול הדאטה החי (`query_entities`): 0 רשומות קיימות.** המשמעות: הפיצ'ר קיים בקוד אבל **מעולם לא הופעל בפרודקשן**, או הוזנח אחרי הבנייה. כדאי לברר עם מיכאל אם זהו פיצ'ר בפיתוח-בתהליך שצריך להשלים חיבור UI אליו, או קוד מת שאפשר להסיר.
+
+### 10.5 סיור ניתוב (App.jsx ב-Class-Flow) — תקין, ללא דפים יתומים
+
+נבדק `src/App.jsx` במלואו (278 שורות). כל הדפים (~50+) ממופים כראוי ל-routes תקינים תחת `ProtectedRoute`, כולל lazy-loading נכון, טיפול בכפתור back של Android/iOS WebView דרך postMessage, ו-PIN lock ברמת אפליקציה שלמה. **לא נמצאו דפים מיובאים-אך-לא-מנותבים או ניתובים שבורים.**
+
+### 10.6 יכולות עומק ב-Class-Flow שעדיין אין להן מקבילה כלל ב-Harmony Hub
+
+מעבר לשניים שכבר תועדו בסעיף 7 (Weekly Schedule, Student View), הסיור הנוכחי חשף רשימה רחבה יותר של קומפוננטות עומק, כולן קיימות רק ב-Class-Flow:
+- `StrategicLeadersOptimizer.jsx`, `GroupSeatingOptimizer.jsx`, `ConflictHelper.jsx` — כלי אופטימיזציית הושבה מתקדמים משמעותית מעבר למה שיש ב-`seating-logic.ts` של Harmony Hub.
+- `MultiSourceGenerator.jsx`, `ArtifactGenerator.jsx`, `ArtifactRenderer.jsx` (בתוך `library/`) — יצירת תוכן לימודי ממקורות מרובים.
+- `TeacherStyleDashboard`/`TeachingStyleOverview.jsx`/`PreMeetingBriefing.jsx` (תחת `admin/`) — כלים לניהול-על ברמת מוסד, לא רק פרטני.
+- `WeeklyPlannerBoard.jsx` (28KB, הגדול מבין קבצי הקומפוננטות) — לוח תכנון שבועי גרפי.
+
+**המלצה**: לפני שממשיכים בהעברת פיצ'רים בודדים, שווה להחליט אם Class-Flow הוא כעת "מקור עומק" נפרד ומכוון (לניהול-על מוסדי) ולא רק "גרסה מוקדמת" של Harmony Hub — הקוד מראה שהוא המשיך להתפתח בכיוון משלים (admin/מוסד) ולא רק כפילות.
+
+---
