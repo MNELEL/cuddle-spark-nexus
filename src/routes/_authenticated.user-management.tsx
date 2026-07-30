@@ -95,6 +95,23 @@ function UserManagementPage() {
     },
   });
 
+  const bootstrapMutation = useMutation({
+    mutationFn: async () => {
+      return await bootstrapFn();
+    },
+    onSuccess: (res) => {
+      if (res.ok) {
+        toast.success(res.message);
+        queryClient.invalidateQueries({ queryKey: ["is-admin"] });
+      } else {
+        toast.info(res.message);
+      }
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "האתחול נכשל");
+    },
+  });
+
   if (isAdminLoading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center text-muted-foreground">
