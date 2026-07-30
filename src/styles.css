@@ -338,15 +338,15 @@
   --secondary-foreground: oklch(0.32 0.035 254);
   --muted: oklch(0.915 0.024 87);
   --muted-foreground: oklch(0.50 0.025 250);
-  --accent: oklch(0.66 0.075 78);
+  --accent: oklch(0.62 0.15 76);
   --accent-foreground: oklch(0.20 0.03 254);
-  --amber: oklch(0.66 0.075 78);
-  --amber-glow: oklch(0.78 0.07 82);
+  --amber: oklch(0.62 0.15 76);
+  --amber-glow: oklch(0.74 0.13 80);
   --turquoise: oklch(0.60 0.06 195);
   --emerald-score: oklch(0.62 0.10 160);
   --rose-score: oklch(0.58 0.16 25);
   --border: oklch(0.86 0.03 85);
   --input: oklch(0.86 0.03 85);
-  --ring: oklch(0.66 0.075 78);
+  --ring: oklch(0.62 0.15 76);
   --font-display: "Frank Ruhl Libre", "Heebo", serif;
 }
