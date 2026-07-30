@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Trash2, ChevronLeft } from "lucide-react";
+import { SeatFillGrid } from "@/components/seat-fill-grid";
 import { toast } from "sonner";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -61,20 +62,20 @@ function ClassesPage() {
   });
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6">
       <div>
         <h1 className="text-2xl font-bold">הכיתות שלי</h1>
         <p className="text-sm text-muted-foreground">בחר כיתה כדי להתחיל לנהל תלמידים ואילוצים</p>
       </div>
 
-      <Card>
+      <Card className="rounded-2xl">
         <CardContent className="pt-6">
           <form
             onSubmit={(e) => { e.preventDefault(); if (name.trim()) createM.mutate(name.trim()); }}
-            className="flex gap-2"
+            className="flex flex-col gap-2 sm:flex-row"
           >
-            <Input placeholder="שם הכיתה (למשל: ז'1)" value={name} onChange={(e) => setName(e.target.value)} />
-            <Button type="submit" disabled={createM.isPending || !name.trim()}>
+            <Input className="rounded-xl" placeholder="שם הכיתה (למשל: ז'1)" value={name} onChange={(e) => setName(e.target.value)} />
+            <Button type="submit" className="rounded-xl shrink-0" disabled={createM.isPending || !name.trim()}>
               <Plus className="ms-1 h-4 w-4" /> הוסף כיתה
             </Button>
           </form>
@@ -86,20 +87,25 @@ function ClassesPage() {
       ) : classes.length === 0 ? (
         <Card><CardContent className="py-10 text-center text-muted-foreground">עדיין אין כיתות. צור את הראשונה למעלה.</CardContent></Card>
       ) : (
-        <div className="space-y-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {classes.map((c) => (
-            <Card key={c.id} className="transition hover:shadow-md">
-              <CardContent className="flex items-center justify-between py-4">
-                <Link to="/classes/$classId" params={{ classId: c.id }} className="flex flex-1 items-center justify-between">
-                  <div>
-                    <div className="font-semibold">{c.name}</div>
-                    <div className="text-xs text-muted-foreground">גריד {c.grid_cols}×{c.grid_rows}</div>
+            <Card key={c.id} className="overflow-hidden rounded-2xl transition hover:shadow-md">
+              <CardContent className="flex h-full flex-col gap-3 p-4">
+                <SeatFillGrid rows={2} cols={6} static className="opacity-80" />
+                <Link
+                  to="/classes/$classId"
+                  params={{ classId: c.id }}
+                  className="flex min-w-0 flex-1 items-center justify-between gap-2"
+                >
+                  <div className="min-w-0">
+                    <div className="truncate font-display text-lg font-bold">{c.name}</div>
+                    <div className="text-xs text-muted-foreground font-mono-tabular">גריד {c.grid_cols}×{c.grid_rows}</div>
                   </div>
-                  <ChevronLeft className="h-5 w-5 text-muted-foreground" />
+                  <ChevronLeft className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
                 </Link>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="icon" aria-label={`מחק את הכיתה ${c.name}`} className="ms-2 text-destructive">
+                    <Button variant="ghost" size="icon" aria-label={`מחק את הכיתה ${c.name}`} className="self-start text-destructive">
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </AlertDialogTrigger>
