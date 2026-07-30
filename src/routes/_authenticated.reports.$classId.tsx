@@ -18,6 +18,12 @@ import { buildClassReportPdf } from "@/lib/pdf/class-report-pdf";
 import { downloadPdfBlob } from "@/lib/pdf/pdf-builder";
 
 export const Route = createFileRoute("/_authenticated/reports/$classId")({
+  head: () => ({
+    meta: [
+      { title: "דוחות כיתה · הכיתה שלי" },
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
   component: ReportsPage,
 });
 

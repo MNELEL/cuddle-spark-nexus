@@ -15,6 +15,12 @@ import { listStudents } from "@/lib/students.functions";
 import { listParentTokens, createParentToken, revokeParentToken, deleteParentToken } from "@/lib/parents.functions";
 
 export const Route = createFileRoute("/_authenticated/parents/$classId")({
+  head: () => ({
+    meta: [
+      { title: "ניהול דיווח להורים · הכיתה שלי" },
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
   component: ParentsAdmin,
 });
 
