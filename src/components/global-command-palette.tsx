@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -62,6 +62,7 @@ const CLASS_GROUPS = ["דוחות והפקות", "AI ומבחנים", "מעור�
 
 export function GlobalCommandPalette() {
   const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLElement | null>(null);
   const navigate = useNavigate();
   const listCls = useServerFn(listClasses);
   const listSt = useServerFn(listStudents);
@@ -91,10 +92,16 @@ export function GlobalCommandPalette() {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
-        setOpen((v) => !v);
+        setOpen((v) => {
+          if (!v) triggerRef.current = document.activeElement as HTMLElement | null;
+          return !v;
+        });
       }
     };
-    const onOpen = () => setOpen(true);
+    const onOpen = () => {
+      triggerRef.current = document.activeElement as HTMLElement | null;
+      setOpen(true);
+    };
     window.addEventListener("keydown", onKey);
     window.addEventListener(OPEN_EVENT, onOpen);
     return () => {
@@ -103,7 +110,20 @@ export function GlobalCommandPalette() {
     };
   }, []);
 
+  // Return focus to whatever opened the palette once it closes.
+  const handleOpenChange = (next: boolean) => {
+    if (!next) {
+      const el = triggerRef.current;
+      triggerRef.current = null;
+      if (el && typeof el.focus === "function" && document.contains(el)) {
+        requestAnimationFrame(() => el.focus());
+      }
+    }
+    setOpen(next);
+  };
+
   const go = (to: string) => {
+    triggerRef.current = null; // navigating away: don't steal focus back
     setOpen(false);
     // Use string navigation to avoid TS typed-route strictness for dynamic paths
     navigate({ to: to as never });
@@ -112,8 +132,8 @@ export function GlobalCommandPalette() {
   const students = useMemo(() => allStudents as Array<{ id: string; name: string; class_id: string; class_name: string }>, [allStudents]);
 
   return (
-    <CommandDialog open={open} onOpenChange={setOpen}>
-      <CommandInput placeholder="חפש עמוד, כיתה או תלמיד... (Ctrl+K)" />
+    <CommandDialog open={open} onOpenChange={handleOpenChange}>
+      <CommandInput autoFocus placeholder="חפש עמוד, כיתה או תלמיד... (Ctrl+K)" />
       <CommandList>
         <CommandEmpty>לא נמצאו תוצאות.</CommandEmpty>
         <CommandGroup heading="ניווט מהיר">
