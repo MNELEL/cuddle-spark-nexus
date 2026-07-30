@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { LogOut, Wrench, Music, Sparkles, BellRing, LineChart, Palette, BookOpen, ShieldCheck } from "lucide-react";
+import { LogOut, Wrench, Sparkles, LineChart, Library, ShieldCheck } from "lucide-react";
 import { TorahLogo } from "@/components/torah-logo";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { useQuery } from "@tanstack/react-query";
@@ -59,29 +59,14 @@ function AuthLayout() {
             <Link to="/toolkit" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
               <Wrench className="me-1 inline h-4 w-4" />ארגז כלים
             </Link>
-            <Link to="/sound-board" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
-              <Music className="me-1 inline h-4 w-4" />לוח צלילים
-            </Link>
             <Link to="/resources" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
-              ספרייה
+              <Library className="me-1 inline h-4 w-4" />ספרייה
             </Link>
             <Link to="/insights" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
               <LineChart className="me-1 inline h-4 w-4" />תובנות
             </Link>
-            <Link to="/questions" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
-              שאלות
-            </Link>
             <Link to="/ingest" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
               <Sparkles className="me-1 inline h-4 w-4" />העלאה חכמה
-            </Link>
-            <Link to="/bell-schedule" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
-              <BellRing className="me-1 inline h-4 w-4" />לוח פעמונים
-            </Link>
-            <Link to="/settings/brand" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
-              <Palette className="me-1 inline h-4 w-4" />מיתוג מוסד
-            </Link>
-            <Link to="/blog" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
-              <BookOpen className="me-1 inline h-4 w-4" />מדריכים
             </Link>
             {adminFlag && (
               <Link to="/user-management" className="rounded-md px-3 py-1.5 text-sm font-medium text-primary hover:bg-accent hover:text-foreground">

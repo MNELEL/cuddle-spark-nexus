@@ -49,6 +49,18 @@ export const Route = createFileRoute("/_authenticated/resources/")({
 
 const GRADE_LEVELS = ["א", "ב", "ג", "ד", "ה", "ו", "ז", "ח"] as const;
 
+/** קטגוריות ראשיות לספרייה — כל קטגוריה מקבצת כמה סוגי עזר */
+const LIBRARY_CATEGORIES: { id: string; label: string; types: ResourceType[] }[] = [
+  { id: "all", label: "הכל", types: [] },
+  { id: "lesson_plan", label: "מערכי שיעור", types: ["lesson_plan"] },
+  { id: "worksheet", label: "דפי עבודה", types: ["worksheet"] },
+  { id: "exams", label: "מבחנים ושאלות", types: ["question_bank"] },
+  { id: "activities", label: "פעילויות ומשחקים", types: ["activity", "game", "riddle"] },
+  { id: "stories", label: "סיפורים ושירים", types: ["story", "song"] },
+  { id: "visual", label: "עזרים חזותיים", types: ["visual_aid"] },
+  { id: "other", label: "אחר", types: ["other"] },
+];
+
 /** Single, centralized filter state for the whole library screen. */
 type FilterState = {
   search: string;
@@ -80,6 +92,7 @@ function ResourcesPage() {
   const [aiSource, setAiSource] = useState<ResourceRow | null>(null);
   const [collOpen, setCollOpen] = useState(false);
   const [topOpen, setTopOpen] = useState(false);
+  const [category, setCategory] = useState("all");
 
   // Server query holds only server-side filters; collection/topic filtering runs
   // client-side on the same dataset so no control overwrites another.
@@ -107,6 +120,10 @@ function ResourcesPage() {
 
   const visibleResources = useMemo(() => {
     let out = resources;
+    const cat = LIBRARY_CATEGORIES.find((c) => c.id === category);
+    if (cat && cat.types.length > 0) {
+      out = out.filter((r) => cat.types.includes(r.resource_type as ResourceType));
+    }
     if (filters.collectionIds.length > 0) {
       const allowed = new Set(
         collectionItems
@@ -122,7 +139,7 @@ function ResourcesPage() {
       });
     }
     return out;
-  }, [resources, collectionItems, filters.collectionIds, filters.topicIds]);
+  }, [resources, collectionItems, filters.collectionIds, filters.topicIds, category]);
 
   const recs = useServerFn(getPersonalRecommendations);
   const recompute = useServerFn(recomputeStyleProfile);
@@ -176,6 +193,48 @@ function ResourcesPage() {
             <Sparkles className="ms-1 h-4 w-4" /> צור עם AI
           </Button>
         </div>
+      </div>
+
+      {/* קטגוריות ראשיות */}
+      <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="קטגוריות ספרייה">
+        {LIBRARY_CATEGORIES.map((c) => {
+          const on = category === c.id;
+          return (
+            <button
+              key={c.id}
+              type="button"
+              role="tab"
+              aria-selected={on}
+              onClick={() => setCategory(c.id)}
+              className={`shrink-0 rounded-full border px-3 py-1.5 text-sm transition ${on ? "border-primary bg-primary text-primary-foreground" : "hover:bg-accent"}`}
+            >
+              {c.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* נושאים טעונים מראש */}
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        <button
+          type="button"
+          aria-pressed={!filters.subject}
+          onClick={() => patch({ subject: "" })}
+          className={`shrink-0 rounded-full border px-3 py-1 text-xs transition ${!filters.subject ? "border-amber bg-amber/15 font-medium" : "hover:bg-accent"}`}
+        >
+          כל הנושאים
+        </button>
+        {KODESH_SUBJECTS.map((s) => (
+          <button
+            key={s}
+            type="button"
+            aria-pressed={filters.subject === s}
+            onClick={() => patch({ subject: filters.subject === s ? "" : s })}
+            className={`shrink-0 rounded-full border px-3 py-1 text-xs transition ${filters.subject === s ? "border-amber bg-amber/15 font-medium" : "hover:bg-accent"}`}
+          >
+            {s}
+          </button>
+        ))}
       </div>
 
       {filters.collectionIds.length > 0 && (
