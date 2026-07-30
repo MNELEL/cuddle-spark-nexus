@@ -122,6 +122,9 @@ function BlogIndex() {
           </li>
           <li className="rounded-2xl border border-border/60 bg-card/40 p-6">
             <Link to="/blog/free-tools-comparison" className="block">
+              <span className="sr-only" />
+            </Link>
+          </li>
               <h2 className="text-xl font-semibold">השוואת כלי ניהול כיתה חינמיים</h2>
               <p className="mt-2 text-muted-foreground">
                 פנקס, גיליון אקסל וכלים דיגיטליים ייעודיים — יתרונות, חסרונות והמלצה לכל שלב.
