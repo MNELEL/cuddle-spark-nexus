@@ -77,43 +77,52 @@ export const SOFT: [number, number, number] = [241, 245, 249];
 /* ------------------------------------------------------------------ *
  * Bidi (RTL) helpers
  * ------------------------------------------------------------------ *
- * jsPDF runs its bidi engine and then reverses each rendered line while
- * R2L is on. For a line that contains Hebrew that combination is correct
- * for the Hebrew and for numbers, but embedded Latin words come out
- * mirrored ("Report" -> "tropeR") and bracket glyphs are swapped. A line
- * with no Hebrew at all (a bare number in a table cell, "Moshe Levi")
- * gets no bidi compensation, so the whole line is reversed.
+ * jsPDF's setR2L(true) mode is not a bidi implementation: it reverses each
+ * rendered line and only partly compensates through its bidi engine, which
+ * is why Latin words, dates, percentages and brackets used to come out
+ * mirrored depending on where they sat in the line.
  *
- * bidi() pre-compensates for exactly those two cases, so Hebrew, Latin,
- * digits and punctuation always come out in the right visual order in
- * every viewer and on every platform.
+ * Instead we keep R2L off and reorder every string ourselves with jsPDF's
+ * own UAX#9 bidi engine (logical RTL -> visual LTR), then tell the engine
+ * the text is already visual so it does not touch it again. This produces
+ * identical, correct output for pure Hebrew, mixed Hebrew/Latin, numbers
+ * and punctuation in every PDF viewer and on every platform.
  */
 
-const MIRROR: Record<string, string> = {
-  "(": ")", ")": "(", "[": "]", "]": "[", "{": "}", "}": "{",
-  "<": ">", ">": "<", "«": "»", "»": "«",
-};
+type BidiEngine = { doBidiReorder: (t: string) => string };
 
-const HEBREW = /[\u0590-\u05FF\uFB1D-\uFB4F]/;
-// A Latin run: Latin letters plus digits/punctuation glued between them.
-const LATIN_RUN =
-  /[A-Za-z\u00C0-\u024F][A-Za-z0-9\u00C0-\u024F.,:;/\\\-+*=%&@#'"^_ ]*[A-Za-z0-9\u00C0-\u024F]|[A-Za-z\u00C0-\u024F]/g;
-
-const reverseStr = (s: string) =>
-  [...s].reverse().map((ch) => MIRROR[ch] ?? ch).join("");
+const visualEngine: BidiEngine = new (jsPDF as unknown as {
+  __bidiEngine__: new (o: Record<string, unknown>) => BidiEngine;
+}).__bidiEngine__({
+  isInputVisual: false,
+  isInputRtl: true,
+  isOutputVisual: true,
+  isOutputRtl: false,
+  isSymmetricSwapping: true,
+});
 
 /**
- * Prepares a string for jsPDF R2L rendering.
- * Safe to call on any string; returns it unchanged when there is nothing to fix.
+ * Text options that make jsPDF treat the string as already-visual and skip
+ * its own reordering pass.
+ */
+export const VISUAL_TEXT_OPTS = {
+  isInputVisual: true,
+  isOutputVisual: true,
+  isInputRtl: false,
+  isOutputRtl: false,
+} as const;
+
+/**
+ * Converts a logical (typed) Hebrew string into visual order for the PDF.
+ * Safe to call on any string, including pure Latin/numeric text.
  */
 export function bidi(text: string): string {
   if (!text) return text;
-  // No Hebrew: jsPDF's engine leaves it alone and R2L flips the whole line.
-  if (!HEBREW.test(text)) return reverseStr(text);
-  // Mixed line: only the Latin runs and mirrored brackets need compensating.
-  return text
-    .replace(LATIN_RUN, (run) => [...run].reverse().join(""))
-    .replace(/[()[\]{}<>«»]/g, (ch) => MIRROR[ch] ?? ch);
+  try {
+    return visualEngine.doBidiReorder(text);
+  } catch {
+    return text;
+  }
 }
 
 /** Applies bidi() to every line of a pre-split array (or a single string). */
