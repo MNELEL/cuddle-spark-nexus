@@ -19,7 +19,9 @@ function ChartTable({ chart }: { chart: RewardChart }) {
     <div className="reward-chart-sheet break-after-page">
       <div className="mb-2 flex items-baseline justify-between gap-4">
         <h3 className="text-base font-bold">{chart.name}</h3>
-        <span className="text-xs text-muted-foreground print:text-black">הכיתה שלי</span>
+        <span className="text-xs text-muted-foreground print:text-black">
+          {chart.classLabel || "הכיתה שלי"}
+        </span>
       </div>
       <p className="mb-3 text-xs text-muted-foreground print:text-black">
         יעד: {chart.goal} · סולם פרסים: {chart.reward}
