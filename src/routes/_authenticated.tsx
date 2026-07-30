@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { GraduationCap, LogOut, Wrench, Music, Sparkles, BellRing, LineChart, Palette, BookOpen } from "lucide-react";
+import { LogOut, Wrench, Music, Sparkles, BellRing, LineChart, Palette, BookOpen, ShieldCheck } from "lucide-react";
 import { TorahLogo } from "@/components/torah-logo";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { useQuery } from "@tanstack/react-query";
