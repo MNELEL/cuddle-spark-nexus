@@ -78,6 +78,7 @@ function LoginPage() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (busy) return; // form-level lock: no double submits while a request is in flight
     setSubmitting(true);
     setErrorMsg(null);
     try {
@@ -106,6 +107,7 @@ function LoginPage() {
   };
 
   const google = async () => {
+    if (busy) return;
     setGoogleBusy(true);
     setErrorMsg(null);
     const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
@@ -210,12 +212,7 @@ function LoginPage() {
           </p>
 
           <div aria-live="polite" role="status" className="mb-4 empty:mb-0">
-            {statusText && (
-              <p className="flex items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
-                {statusText}
-              </p>
-            )}
+            <span className="sr-only">{statusText}</span>
             {!statusText && errorMsg && (
               <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
                 {errorMsg}
@@ -234,7 +231,8 @@ function LoginPage() {
                 <span className="bg-background px-2 text-muted-foreground">או</span>
               </div>
             </div>
-            <form onSubmit={submit} className="space-y-3">
+            <fieldset disabled={busy} className="contents">
+            <form onSubmit={submit} className="space-y-3" aria-busy={busy}>
               {mode === "signup" && (
                 <div>
                   <Label htmlFor="name">שם</Label>
@@ -254,6 +252,7 @@ function LoginPage() {
                 {submitting ? (mode === "signin" ? "מתחבר..." : "יוצר חשבון...") : (mode === "signin" ? "התחבר" : "הרשם")}
               </Button>
             </form>
+            </fieldset>
           </div>
           </div>
         </div>
