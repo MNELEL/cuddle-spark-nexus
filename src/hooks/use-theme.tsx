@@ -13,7 +13,8 @@ export const THEMES: { id: ThemeName; label: string; description: string }[] = [
 
 type Ctx = { theme: ThemeName; setTheme: (t: ThemeName) => void };
 const ThemeContext = createContext<Ctx | null>(null);
-const STORAGE_KEY = "classpro-theme";
+export const THEME_STORAGE_KEY = "classpro-theme";
+const STORAGE_KEY = THEME_STORAGE_KEY;
 
 function apply(theme: ThemeName) {
   const root = document.documentElement;
@@ -26,7 +27,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const saved = (typeof window !== "undefined" && localStorage.getItem(STORAGE_KEY)) as ThemeName | null;
-   if (saved && ["modern","conservative","minimal","kitsch","mono","classalign","hakita-sheli"].includes(saved)) {
+    if (saved && THEMES.some((t) => t.id === saved)) {
       setThemeState(saved);
       apply(saved);
     }

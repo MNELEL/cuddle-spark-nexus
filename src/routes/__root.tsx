@@ -106,6 +106,12 @@ function RootShell({ children }: { children: React.ReactNode }) {
     <html lang="he" dir="rtl">
       <head>
         <HeadContent />
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var t=localStorage.getItem('classpro-theme');if(t&&t!=='modern'){document.documentElement.setAttribute('data-theme',t)}}catch(e){}",
+          }}
+        />
       </head>
       <body>
         {children}
