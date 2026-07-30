@@ -31,10 +31,15 @@ function applyBrand(brand?: RewardChartBrand) {
  * autoTable drops digits from cell labels under R2L mode, which would leave
  * every numbered column header blank.
  */
-function drawChart(hd: Awaited<ReturnType<typeof createHebrewDoc>>, chart: RewardChart) {
+function drawChart(
+  hd: Awaited<ReturnType<typeof createHebrewDoc>>,
+  chart: RewardChart,
+  teacherName?: string,
+) {
   const { doc, layout } = hd;
 
   hd.paragraph(`יעד המבצע: ${chart.goal}`, { size: 10 });
+  if (chart.classLabel) hd.paragraph(`כיתה: ${chart.classLabel}`, { size: 10 });
   hd.paragraph(`סולם פרסים: ${chart.reward}`, { size: 10, muted: true, gap: 4 });
 
   const nameW = 28;
@@ -89,7 +94,11 @@ function drawChart(hd: Awaited<ReturnType<typeof createHebrewDoc>>, chart: Rewar
 
   hd.ensureSpace(16);
   doc.setFont("Heebo", "normal");
-  hd.paragraph("חתימת המלמד: ______________          תאריך סיום המבצע: ______________", {
+  // No parentheses here: R2L rendering mirrors bracket glyphs in jsPDF.
+  const signer = teacherName?.trim()
+    ? `חתימת המלמד ${teacherName.trim()}: ______________`
+    : "חתימת המלמד: ______________";
+  hd.paragraph(`${signer}          תאריך סיום המבצע: ______________`, {
     size: 10,
     gap: 6,
   });
@@ -99,6 +108,7 @@ function drawChart(hd: Awaited<ReturnType<typeof createHebrewDoc>>, chart: Rewar
 export async function generateRewardChartPdf(
   chart: RewardChart,
   brand?: RewardChartBrand,
+  teacherName?: string,
 ): Promise<void> {
   const prev = getPdfBrand();
   applyBrand(brand);
@@ -109,7 +119,7 @@ export async function generateRewardChartPdf(
       subtitle: chart.grid,
       meta: "לוח מבצעים להדפסה · הכיתה שלי",
     });
-    drawChart(hd, chart);
+    drawChart(hd, chart, teacherName);
     drawFooter(hd, "לוח מבצעים להדפסה — הכיתה שלי");
     downloadPdfBlob(hd.doc.output("blob"), `reward-chart-${safeName(chart.id)}.pdf`);
   } finally {
@@ -118,7 +128,11 @@ export async function generateRewardChartPdf(
 }
 
 /** Downloads all five charts as one branded PDF booklet. */
-export async function generateAllRewardChartsPdf(brand?: RewardChartBrand): Promise<void> {
+export async function generateAllRewardChartsPdf(
+  brand?: RewardChartBrand,
+  charts: RewardChart[] = REWARD_CHARTS,
+  teacherName?: string,
+): Promise<void> {
   const prev = getPdfBrand();
   applyBrand(brand);
   try {
@@ -128,7 +142,7 @@ export async function generateAllRewardChartsPdf(brand?: RewardChartBrand): Prom
       subtitle: "חמישה לוחות מוכנים להדפסה ולתלייה בכיתה",
       meta: "הפקה: הכיתה שלי · מבוסס על המדריך המלא בבלוג",
     });
-    REWARD_CHARTS.forEach((chart, i) => {
+    charts.forEach((chart, i) => {
       if (i > 0) {
         hd.doc.addPage();
         hd.doc.setR2L(true);
@@ -136,7 +150,7 @@ export async function generateAllRewardChartsPdf(brand?: RewardChartBrand): Prom
       }
       // Heebo has no bold face registered, so hd.section() would render blank.
       hd.paragraph(chart.name, { size: 14, gap: 4 });
-      drawChart(hd, chart);
+      drawChart(hd, chart, teacherName);
     });
     drawFooter(hd, "ערכת לוחות מבצעים — הכיתה שלי");
     downloadPdfBlob(hd.doc.output("blob"), "reward-charts-kit.pdf");

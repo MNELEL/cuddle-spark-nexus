@@ -1,7 +1,15 @@
 import { useEffect, useState } from "react";
 import { Printer, Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { REWARD_CHARTS, type RewardChart } from "@/lib/reward-charts";
+import {
+  REWARD_CHARTS,
+  applyRewardChartCustomization,
+  DEFAULT_REWARD_CHART_CUSTOMIZATION,
+  type RewardChart,
+  type RewardChartCustomization,
+} from "@/lib/reward-charts";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { generateRewardChartPdf, generateAllRewardChartsPdf } from "@/lib/pdf/reward-chart-pdf";
 import { toast } from "sonner";
 
@@ -11,7 +19,9 @@ function ChartTable({ chart }: { chart: RewardChart }) {
     <div className="reward-chart-sheet break-after-page">
       <div className="mb-2 flex items-baseline justify-between gap-4">
         <h3 className="text-base font-bold">{chart.name}</h3>
-        <span className="text-xs text-muted-foreground print:text-black">הכיתה שלי</span>
+        <span className="text-xs text-muted-foreground print:text-black">
+          {chart.classLabel || "הכיתה שלי"}
+        </span>
       </div>
       <p className="mb-3 text-xs text-muted-foreground print:text-black">
         יעד: {chart.goal} · סולם פרסים: {chart.reward}
@@ -56,7 +66,9 @@ function ChartTable({ chart }: { chart: RewardChart }) {
 export function RewardChartPrintView() {
   const [selected, setSelected] = useState<string>("all");
   const [busy, setBusy] = useState<string | null>(null);
-  const charts = selected === "all" ? REWARD_CHARTS : REWARD_CHARTS.filter((c) => c.id === selected);
+  const [custom, setCustom] = useState<RewardChartCustomization>(DEFAULT_REWARD_CHART_CUSTOMIZATION);
+  const base = selected === "all" ? REWARD_CHARTS : REWARD_CHARTS.filter((c) => c.id === selected);
+  const charts = base.map((c) => applyRewardChartCustomization(c, custom));
   const landscape = charts.some((c) => c.orientation === "landscape");
 
   // Match the paper orientation to the widest chart being printed.
@@ -71,7 +83,7 @@ export function RewardChartPrintView() {
   const downloadOne = async (chart: RewardChart) => {
     setBusy(chart.id);
     try {
-      await generateRewardChartPdf(chart);
+      await generateRewardChartPdf(chart, undefined, custom.teacherName);
     } catch {
       toast.error("יצירת ה-PDF נכשלה, נסה שוב");
     } finally {
@@ -82,7 +94,7 @@ export function RewardChartPrintView() {
   const downloadAll = async () => {
     setBusy("all");
     try {
-      await generateAllRewardChartsPdf();
+      await generateAllRewardChartsPdf(undefined, charts, custom.teacherName);
     } catch {
       toast.error("יצירת ה-PDF נכשלה, נסה שוב");
     } finally {
@@ -123,6 +135,79 @@ export function RewardChartPrintView() {
           )}
           הורדת PDF
         </Button>
+      </div>
+
+      <div className="reward-chart-controls mt-4 grid gap-3 rounded-2xl border border-border/60 bg-card/40 p-4 sm:grid-cols-2 lg:grid-cols-3 print:hidden">
+        <div className="sm:col-span-2 lg:col-span-3 text-sm font-semibold">התאמה אישית של הלוח</div>
+        <div className="space-y-1">
+          <Label htmlFor="rc-class">שם הכיתה</Label>
+          <Input
+            id="rc-class"
+            value={custom.className}
+            placeholder="למשל: כיתה ג׳2"
+            onChange={(e) => setCustom((c) => ({ ...c, className: e.target.value }))}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="rc-teacher">שם המלמד</Label>
+          <Input
+            id="rc-teacher"
+            value={custom.teacherName}
+            placeholder="למשל: הרב כהן"
+            onChange={(e) => setCustom((c) => ({ ...c, teacherName: e.target.value }))}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="rc-cols">טווח ימים / משבצות</Label>
+          <Input
+            id="rc-cols"
+            type="number"
+            min={1}
+            max={40}
+            value={custom.columnCount || ""}
+            placeholder="ברירת מחדל לפי התבנית"
+            onChange={(e) => setCustom((c) => ({ ...c, columnCount: Number(e.target.value) || 0 }))}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="rc-rows">מספר שורות (תלמידים)</Label>
+          <Input
+            id="rc-rows"
+            type="number"
+            min={1}
+            max={40}
+            value={custom.rows || ""}
+            placeholder="ברירת מחדל לפי התבנית"
+            onChange={(e) => setCustom((c) => ({ ...c, rows: Number(e.target.value) || 0 }))}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="rc-goal">יעד המבצע</Label>
+          <Input
+            id="rc-goal"
+            value={custom.goal}
+            placeholder="השאר ריק לטקסט המקורי"
+            onChange={(e) => setCustom((c) => ({ ...c, goal: e.target.value }))}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="rc-reward">סולם פרסים</Label>
+          <Input
+            id="rc-reward"
+            value={custom.reward}
+            placeholder="למשל: 10 סימונים = פרס קטן"
+            onChange={(e) => setCustom((c) => ({ ...c, reward: e.target.value }))}
+          />
+        </div>
+        <div className="sm:col-span-2 lg:col-span-3">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setCustom(DEFAULT_REWARD_CHART_CUSTOMIZATION)}
+          >
+            איפוס להתאמות ברירת המחדל
+          </Button>
+        </div>
       </div>
 
       <div className="reward-chart-print-area mt-6 space-y-8">
