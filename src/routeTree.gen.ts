@@ -24,7 +24,6 @@ import { Route as AuthenticatedBellScheduleRouteImport } from './routes/_authent
 import { Route as AuthenticatedIngestRouteImport } from './routes/_authenticated.ingest'
 import { Route as AuthenticatedInsightsRouteImport } from './routes/_authenticated.insights'
 import { Route as AuthenticatedQuestionsRouteImport } from './routes/_authenticated.questions'
-import { Route as AuthenticatedResourcesRouteImport } from './routes/_authenticated.resources'
 import { Route as AuthenticatedSoundBoardRouteImport } from './routes/_authenticated.sound-board'
 import { Route as AuthenticatedToolkitRouteImport } from './routes/_authenticated.toolkit'
 import { Route as BlogIndexRouteImport } from './routes/blog.index'
@@ -61,6 +60,7 @@ import { Route as AuthenticatedPedagogicalClassIdRouteImport } from './routes/_a
 import { Route as AuthenticatedPollClassIdRouteImport } from './routes/_authenticated.poll.$classId'
 import { Route as AuthenticatedRaffleClassIdRouteImport } from './routes/_authenticated.raffle.$classId'
 import { Route as AuthenticatedReportsClassIdRouteImport } from './routes/_authenticated.reports.$classId'
+import { Route as AuthenticatedResourcesIndexRouteImport } from './routes/_authenticated.resources.index'
 import { Route as AuthenticatedResourcesResourceIdRouteImport } from './routes/_authenticated.resources.$resourceId'
 import { Route as AuthenticatedSettingsBrandRouteImport } from './routes/_authenticated.settings.brand'
 import { Route as AuthenticatedShareClassIdRouteImport } from './routes/_authenticated.share.$classId'
@@ -142,11 +142,6 @@ const AuthenticatedInsightsRoute = AuthenticatedInsightsRouteImport.update({
 const AuthenticatedQuestionsRoute = AuthenticatedQuestionsRouteImport.update({
   id: '/questions',
   path: '/questions',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedResourcesRoute = AuthenticatedResourcesRouteImport.update({
-  id: '/resources',
-  path: '/resources',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedSoundBoardRoute = AuthenticatedSoundBoardRouteImport.update({
@@ -350,11 +345,17 @@ const AuthenticatedReportsClassIdRoute =
     path: '/reports/$classId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedResourcesIndexRoute =
+  AuthenticatedResourcesIndexRouteImport.update({
+    id: '/resources/',
+    path: '/resources/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedResourcesResourceIdRoute =
   AuthenticatedResourcesResourceIdRouteImport.update({
-    id: '/$resourceId',
-    path: '/$resourceId',
-    getParentRoute: () => AuthenticatedResourcesRoute,
+    id: '/resources/$resourceId',
+    path: '/resources/$resourceId',
+    getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedSettingsBrandRoute =
   AuthenticatedSettingsBrandRouteImport.update({
@@ -408,7 +409,6 @@ export interface FileRoutesByFullPath {
   '/ingest': typeof AuthenticatedIngestRoute
   '/insights': typeof AuthenticatedInsightsRoute
   '/questions': typeof AuthenticatedQuestionsRoute
-  '/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/sound-board': typeof AuthenticatedSoundBoardRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
   '/blog/ai-seating-arrangements-guide': typeof BlogAiSeatingArrangementsGuideRoute
@@ -451,6 +451,7 @@ export interface FileRoutesByFullPath {
   '/weekly-schedule/$classId': typeof AuthenticatedWeeklyScheduleClassIdRoute
   '/blog/classroom-management-strategies/checklist': typeof BlogClassroomManagementStrategiesChecklistRoute
   '/classes/': typeof AuthenticatedClassesIndexRoute
+  '/resources/': typeof AuthenticatedResourcesIndexRoute
   '/classes/$classId/display': typeof AuthenticatedClassesClassIdDisplayRoute
 }
 export interface FileRoutesByTo {
@@ -465,7 +466,6 @@ export interface FileRoutesByTo {
   '/ingest': typeof AuthenticatedIngestRoute
   '/insights': typeof AuthenticatedInsightsRoute
   '/questions': typeof AuthenticatedQuestionsRoute
-  '/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/sound-board': typeof AuthenticatedSoundBoardRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
   '/blog/ai-seating-arrangements-guide': typeof BlogAiSeatingArrangementsGuideRoute
@@ -508,6 +508,7 @@ export interface FileRoutesByTo {
   '/weekly-schedule/$classId': typeof AuthenticatedWeeklyScheduleClassIdRoute
   '/blog/classroom-management-strategies/checklist': typeof BlogClassroomManagementStrategiesChecklistRoute
   '/classes': typeof AuthenticatedClassesIndexRoute
+  '/resources': typeof AuthenticatedResourcesIndexRoute
   '/classes/$classId/display': typeof AuthenticatedClassesClassIdDisplayRoute
 }
 export interface FileRoutesById {
@@ -527,7 +528,6 @@ export interface FileRoutesById {
   '/_authenticated/ingest': typeof AuthenticatedIngestRoute
   '/_authenticated/insights': typeof AuthenticatedInsightsRoute
   '/_authenticated/questions': typeof AuthenticatedQuestionsRoute
-  '/_authenticated/resources': typeof AuthenticatedResourcesRouteWithChildren
   '/_authenticated/sound-board': typeof AuthenticatedSoundBoardRoute
   '/_authenticated/toolkit': typeof AuthenticatedToolkitRoute
   '/blog/ai-seating-arrangements-guide': typeof BlogAiSeatingArrangementsGuideRoute
@@ -570,6 +570,7 @@ export interface FileRoutesById {
   '/_authenticated/weekly-schedule/$classId': typeof AuthenticatedWeeklyScheduleClassIdRoute
   '/blog/classroom-management-strategies/checklist': typeof BlogClassroomManagementStrategiesChecklistRoute
   '/_authenticated/classes/': typeof AuthenticatedClassesIndexRoute
+  '/_authenticated/resources/': typeof AuthenticatedResourcesIndexRoute
   '/_authenticated/classes/$classId/display': typeof AuthenticatedClassesClassIdDisplayRoute
 }
 export interface FileRouteTypes {
@@ -589,7 +590,6 @@ export interface FileRouteTypes {
     | '/ingest'
     | '/insights'
     | '/questions'
-    | '/resources'
     | '/sound-board'
     | '/toolkit'
     | '/blog/ai-seating-arrangements-guide'
@@ -632,6 +632,7 @@ export interface FileRouteTypes {
     | '/weekly-schedule/$classId'
     | '/blog/classroom-management-strategies/checklist'
     | '/classes/'
+    | '/resources/'
     | '/classes/$classId/display'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -646,7 +647,6 @@ export interface FileRouteTypes {
     | '/ingest'
     | '/insights'
     | '/questions'
-    | '/resources'
     | '/sound-board'
     | '/toolkit'
     | '/blog/ai-seating-arrangements-guide'
@@ -689,6 +689,7 @@ export interface FileRouteTypes {
     | '/weekly-schedule/$classId'
     | '/blog/classroom-management-strategies/checklist'
     | '/classes'
+    | '/resources'
     | '/classes/$classId/display'
   id:
     | '__root__'
@@ -707,7 +708,6 @@ export interface FileRouteTypes {
     | '/_authenticated/ingest'
     | '/_authenticated/insights'
     | '/_authenticated/questions'
-    | '/_authenticated/resources'
     | '/_authenticated/sound-board'
     | '/_authenticated/toolkit'
     | '/blog/ai-seating-arrangements-guide'
@@ -750,6 +750,7 @@ export interface FileRouteTypes {
     | '/_authenticated/weekly-schedule/$classId'
     | '/blog/classroom-management-strategies/checklist'
     | '/_authenticated/classes/'
+    | '/_authenticated/resources/'
     | '/_authenticated/classes/$classId/display'
   fileRoutesById: FileRoutesById
 }
@@ -875,13 +876,6 @@ declare module '@tanstack/react-router' {
       path: '/questions'
       fullPath: '/questions'
       preLoaderRoute: typeof AuthenticatedQuestionsRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/resources': {
-      id: '/_authenticated/resources'
-      path: '/resources'
-      fullPath: '/resources'
-      preLoaderRoute: typeof AuthenticatedResourcesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/sound-board': {
@@ -1136,12 +1130,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsClassIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/resources/': {
+      id: '/_authenticated/resources/'
+      path: '/resources'
+      fullPath: '/resources/'
+      preLoaderRoute: typeof AuthenticatedResourcesIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/resources/$resourceId': {
       id: '/_authenticated/resources/$resourceId'
-      path: '/$resourceId'
+      path: '/resources/$resourceId'
       fullPath: '/resources/$resourceId'
       preLoaderRoute: typeof AuthenticatedResourcesResourceIdRouteImport
-      parentRoute: typeof AuthenticatedResourcesRoute
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/settings/brand': {
       id: '/_authenticated/settings/brand'
@@ -1188,21 +1189,6 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AuthenticatedResourcesRouteChildren {
-  AuthenticatedResourcesResourceIdRoute: typeof AuthenticatedResourcesResourceIdRoute
-}
-
-const AuthenticatedResourcesRouteChildren: AuthenticatedResourcesRouteChildren =
-  {
-    AuthenticatedResourcesResourceIdRoute:
-      AuthenticatedResourcesResourceIdRoute,
-  }
-
-const AuthenticatedResourcesRouteWithChildren =
-  AuthenticatedResourcesRoute._addFileChildren(
-    AuthenticatedResourcesRouteChildren,
-  )
-
 interface AuthenticatedClassesClassIdRouteChildren {
   AuthenticatedClassesClassIdDisplayRoute: typeof AuthenticatedClassesClassIdDisplayRoute
 }
@@ -1223,7 +1209,6 @@ interface AuthenticatedRouteChildren {
   AuthenticatedIngestRoute: typeof AuthenticatedIngestRoute
   AuthenticatedInsightsRoute: typeof AuthenticatedInsightsRoute
   AuthenticatedQuestionsRoute: typeof AuthenticatedQuestionsRoute
-  AuthenticatedResourcesRoute: typeof AuthenticatedResourcesRouteWithChildren
   AuthenticatedSoundBoardRoute: typeof AuthenticatedSoundBoardRoute
   AuthenticatedToolkitRoute: typeof AuthenticatedToolkitRoute
   AuthenticatedAnalyticsClassIdRoute: typeof AuthenticatedAnalyticsClassIdRoute
@@ -1240,11 +1225,13 @@ interface AuthenticatedRouteChildren {
   AuthenticatedPollClassIdRoute: typeof AuthenticatedPollClassIdRoute
   AuthenticatedRaffleClassIdRoute: typeof AuthenticatedRaffleClassIdRoute
   AuthenticatedReportsClassIdRoute: typeof AuthenticatedReportsClassIdRoute
+  AuthenticatedResourcesResourceIdRoute: typeof AuthenticatedResourcesResourceIdRoute
   AuthenticatedSettingsBrandRoute: typeof AuthenticatedSettingsBrandRoute
   AuthenticatedShareClassIdRoute: typeof AuthenticatedShareClassIdRoute
   AuthenticatedStudentViewClassIdRoute: typeof AuthenticatedStudentViewClassIdRoute
   AuthenticatedWeeklyScheduleClassIdRoute: typeof AuthenticatedWeeklyScheduleClassIdRoute
   AuthenticatedClassesIndexRoute: typeof AuthenticatedClassesIndexRoute
+  AuthenticatedResourcesIndexRoute: typeof AuthenticatedResourcesIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -1252,7 +1239,6 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedIngestRoute: AuthenticatedIngestRoute,
   AuthenticatedInsightsRoute: AuthenticatedInsightsRoute,
   AuthenticatedQuestionsRoute: AuthenticatedQuestionsRoute,
-  AuthenticatedResourcesRoute: AuthenticatedResourcesRouteWithChildren,
   AuthenticatedSoundBoardRoute: AuthenticatedSoundBoardRoute,
   AuthenticatedToolkitRoute: AuthenticatedToolkitRoute,
   AuthenticatedAnalyticsClassIdRoute: AuthenticatedAnalyticsClassIdRoute,
@@ -1271,12 +1257,14 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedPollClassIdRoute: AuthenticatedPollClassIdRoute,
   AuthenticatedRaffleClassIdRoute: AuthenticatedRaffleClassIdRoute,
   AuthenticatedReportsClassIdRoute: AuthenticatedReportsClassIdRoute,
+  AuthenticatedResourcesResourceIdRoute: AuthenticatedResourcesResourceIdRoute,
   AuthenticatedSettingsBrandRoute: AuthenticatedSettingsBrandRoute,
   AuthenticatedShareClassIdRoute: AuthenticatedShareClassIdRoute,
   AuthenticatedStudentViewClassIdRoute: AuthenticatedStudentViewClassIdRoute,
   AuthenticatedWeeklyScheduleClassIdRoute:
     AuthenticatedWeeklyScheduleClassIdRoute,
   AuthenticatedClassesIndexRoute: AuthenticatedClassesIndexRoute,
+  AuthenticatedResourcesIndexRoute: AuthenticatedResourcesIndexRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(

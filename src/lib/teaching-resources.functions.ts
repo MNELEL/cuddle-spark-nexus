@@ -264,6 +264,15 @@ export const upsertCollection = createServerFn({ method: "POST" })
     return { id: ins!.id };
   });
 
+export const listCollectionItems = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ collection_id: string; resource_id: string }[]> => {
+    const { data, error } = await context.supabase
+      .from("resource_collection_items").select("collection_id,resource_id");
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    return (data ?? []) as { collection_id: string; resource_id: string }[];
+  });
+
 export const deleteCollection = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: uuid }).parse(d))

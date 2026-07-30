@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Sparkles, Loader2, Save, Trash2, Printer, Plus, Search,
   BookOpen, FileText, FolderPlus, X, ArrowRight, Tag, Library,
+  ChevronDown, ChevronUp, Download, Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +24,7 @@ import { KODESH_SUBJECTS } from "@/lib/kodesh-subjects";
 import {
   listResources, upsertResource, deleteResource, generateResourceWithAI,
   listCollections, upsertCollection, deleteCollection, toggleCollectionItem,
+  listCollectionItems,
   RESOURCE_TYPES, RESOURCE_TYPE_LABELS,
   type ResourceRow, type ResourceContent, type ResourceType,
 } from "@/lib/teaching-resources.functions";
@@ -31,7 +33,7 @@ import { Wand2 } from "lucide-react";
 import { WeeklyPaceCard } from "@/components/weekly-pace-card";
 import { TopicTreeFilter } from "@/components/topic-tree-filter";
 
-export const Route = createFileRoute("/_authenticated/resources")({
+export const Route = createFileRoute("/_authenticated/resources/")({
   component: ResourcesPage,
   head: () => ({
     meta: [
@@ -47,17 +49,20 @@ export const Route = createFileRoute("/_authenticated/resources")({
 
 const GRADE_LEVELS = ["א", "ב", "ג", "ד", "ה", "ו", "ז", "ח"] as const;
 
-type Filters = {
+/** Single, centralized filter state for the whole library screen. */
+type FilterState = {
   search: string;
   resource_type: ResourceType | "";
   subject: string;
   grade_level: string;
   tag: string;
-  collection_id: string;
+  topicIds: string[];
+  collectionIds: string[];
 };
 
-const emptyFilters: Filters = {
-  search: "", resource_type: "", subject: "", grade_level: "", tag: "", collection_id: "",
+const emptyFilters: FilterState = {
+  search: "", resource_type: "", subject: "", grade_level: "", tag: "",
+  topicIds: [], collectionIds: [],
 };
 
 function ResourcesPage() {
@@ -65,32 +70,59 @@ function ResourcesPage() {
   const list = useServerFn(listResources);
   const del = useServerFn(deleteResource);
   const listColls = useServerFn(listCollections);
+  const listCollItems = useServerFn(listCollectionItems);
 
-  const [filters, setFilters] = useState<Filters>(emptyFilters);
-  const [topicIds, setTopicIds] = useState<string[]>([]);
+  const [filters, setFilters] = useState<FilterState>(emptyFilters);
+  const patch = (p: Partial<FilterState>) => setFilters((f) => ({ ...f, ...p }));
   const [editing, setEditing] = useState<Partial<ResourceRow> | null>(null);
+  const [viewing, setViewing] = useState<ResourceRow | null>(null);
   const [aiOpen, setAiOpen] = useState(false);
   const [aiSource, setAiSource] = useState<ResourceRow | null>(null);
   const [collOpen, setCollOpen] = useState(false);
+  const [topOpen, setTopOpen] = useState(false);
 
-  const queryArgs = {
+  // Server query holds only server-side filters; collection/topic filtering runs
+  // client-side on the same dataset so no control overwrites another.
+  const serverArgs = {
     search: filters.search || undefined,
     resource_type: filters.resource_type || undefined,
     subject: filters.subject || undefined,
     grade_level: filters.grade_level || undefined,
     tag: filters.tag || undefined,
-    collection_id: filters.collection_id || undefined,
   };
 
   const { data: resources = [], isLoading } = useQuery({
-    queryKey: ["teaching-resources", filters],
-    queryFn: () => list({ data: queryArgs }),
+    queryKey: ["teaching-resources", serverArgs],
+    queryFn: () => list({ data: serverArgs }),
   });
 
   const { data: collections = [] } = useQuery({
     queryKey: ["resource-collections"],
     queryFn: () => listColls(),
   });
+  const { data: collectionItems = [] } = useQuery({
+    queryKey: ["resource-collection-items"],
+    queryFn: () => listCollItems(),
+  });
+
+  const visibleResources = useMemo(() => {
+    let out = resources;
+    if (filters.collectionIds.length > 0) {
+      const allowed = new Set(
+        collectionItems
+          .filter((i) => filters.collectionIds.includes(i.collection_id))
+          .map((i) => i.resource_id),
+      );
+      out = out.filter((r) => allowed.has(r.id));
+    }
+    if (filters.topicIds.length > 0) {
+      out = out.filter((r) => {
+        const tid = (r as unknown as { topic_id: string | null }).topic_id;
+        return tid !== null && filters.topicIds.includes(tid);
+      });
+    }
+    return out;
+  }, [resources, collectionItems, filters.collectionIds, filters.topicIds]);
 
   const recs = useServerFn(getPersonalRecommendations);
   const recompute = useServerFn(recomputeStyleProfile);
@@ -123,8 +155,8 @@ function ResourcesPage() {
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Library className="h-3.5 w-3.5" /> ספרייה
           </div>
-          <h1 className="font-display text-3xl font-bold tracking-tight">חומרי הוראה ועזרים</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">חומרי הוראה ועזרים</h1>
+          <p className="mt-1 hidden text-sm text-muted-foreground sm:block">
             מאגר אישי של דפי עבודה, חידות, סיפורים, מערכי שיעור ועזרים — עם יצירת תוכן ב-AI
           </p>
         </div>
@@ -146,7 +178,42 @@ function ResourcesPage() {
         </div>
       </div>
 
-      {recommendations.length > 0 && (
+      {filters.collectionIds.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="text-muted-foreground">אוספים מסוננים:</span>
+          {collections
+            .filter((c) => filters.collectionIds.includes(c.id))
+            .map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 hover:bg-accent"
+                onClick={() => patch({ collectionIds: filters.collectionIds.filter((id) => id !== c.id) })}
+              >
+                <span className="h-2 w-2 rounded-full" style={{ background: c.color }} />
+                {c.name} <X className="h-3 w-3" />
+              </button>
+            ))}
+        </div>
+      )}
+
+      {/* Compact, collapsible top section — keeps the materials list high on mobile */}
+      <div className="rounded-xl border bg-card">
+        <button
+          type="button"
+          className="flex w-full items-center justify-between px-3 py-2 text-sm font-medium"
+          onClick={() => setTopOpen((v) => !v)}
+          aria-expanded={topOpen}
+        >
+          <span className="flex items-center gap-2">
+            <Wand2 className="h-4 w-4 text-amber" /> קצב ההפקה שלך והמלצות
+          </span>
+          {topOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </button>
+        {topOpen && (
+          <div className="space-y-3 border-t p-3">
+            <WeeklyPaceCard />
+            {recommendations.length > 0 && (
         <Card className="border-amber/40 bg-amber/5">
           <CardHeader className="pb-2 flex flex-row items-center justify-between">
             <CardTitle className="text-sm flex items-center gap-2">
@@ -174,9 +241,10 @@ function ResourcesPage() {
             ))}
           </CardContent>
         </Card>
-      )}
-
-      <WeeklyPaceCard />
+            )}
+          </div>
+        )}
+      </div>
 
       <div className="grid gap-4 lg:grid-cols-[260px_1fr]">
         {/* Filters */}
@@ -191,13 +259,13 @@ function ResourcesPage() {
                 <Search className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                 <Input className="pe-7" placeholder="כותרת או תיאור…"
                   value={filters.search}
-                  onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))} />
+                  onChange={(e) => patch({ search: e.target.value })} />
               </div>
             </div>
             <div>
               <Label className="text-xs">סוג</Label>
               <Select value={filters.resource_type || "all"}
-                onValueChange={(v) => setFilters((f) => ({ ...f, resource_type: v === "all" ? "" : v as ResourceType }))}>
+                onValueChange={(v) => patch({ resource_type: v === "all" ? "" : (v as ResourceType) })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">הכל</SelectItem>
@@ -210,7 +278,7 @@ function ResourcesPage() {
             <div>
               <Label className="text-xs">מקצוע</Label>
               <Select value={filters.subject || "all"}
-                onValueChange={(v) => setFilters((f) => ({ ...f, subject: v === "all" ? "" : v }))}>
+                onValueChange={(v) => patch({ subject: v === "all" ? "" : v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">הכל</SelectItem>
@@ -223,7 +291,7 @@ function ResourcesPage() {
             <div>
               <Label className="text-xs">כיתה</Label>
               <Select value={filters.grade_level || "all"}
-                onValueChange={(v) => setFilters((f) => ({ ...f, grade_level: v === "all" ? "" : v }))}>
+                onValueChange={(v) => patch({ grade_level: v === "all" ? "" : v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">הכל</SelectItem>
@@ -236,21 +304,34 @@ function ResourcesPage() {
             <div>
               <Label className="text-xs">תגית</Label>
               <Input placeholder="פרשת ויצא…" value={filters.tag}
-                onChange={(e) => setFilters((f) => ({ ...f, tag: e.target.value }))} />
+                onChange={(e) => patch({ tag: e.target.value })} />
             </div>
             {collections.length > 0 && (
               <div>
-                <Label className="text-xs">אוסף</Label>
-                <Select value={filters.collection_id || "all"}
-                  onValueChange={(v) => setFilters((f) => ({ ...f, collection_id: v === "all" ? "" : v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">הכל</SelectItem>
-                    {collections.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label className="text-xs">אוספים</Label>
+                <div className="mt-1 space-y-1">
+                  {collections.map((c) => {
+                    const on = filters.collectionIds.includes(c.id);
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        aria-pressed={on}
+                        className={`flex w-full items-center gap-2 rounded px-2 py-1 text-right text-sm hover:bg-accent ${on ? "bg-accent font-medium" : ""}`}
+                        onClick={() =>
+                          patch({
+                            collectionIds: on
+                              ? filters.collectionIds.filter((id) => id !== c.id)
+                              : [...filters.collectionIds, c.id],
+                          })
+                        }
+                      >
+                        <span className="h-3 w-3 rounded" style={{ background: c.color }} />
+                        {c.name}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
             <Button variant="ghost" size="sm" className="w-full"
@@ -262,7 +343,7 @@ function ResourcesPage() {
 
         <Card className="lg:col-start-1">
           <CardContent className="pt-4">
-            <TopicTreeFilter value={topicIds} onChange={setTopicIds} />
+            <TopicTreeFilter value={filters.topicIds} onChange={(ids) => patch({ topicIds: ids })} />
           </CardContent>
         </Card>
 
@@ -273,7 +354,7 @@ function ResourcesPage() {
               <Loader2 className="mx-auto mb-2 h-6 w-6 animate-spin" /> טוען חומרים…
             </CardContent></Card>
           )}
-          {!isLoading && resources.length === 0 && (
+          {!isLoading && visibleResources.length === 0 && (
             <Card><CardContent className="py-16 text-center">
               <BookOpen className="mx-auto mb-3 h-10 w-10 text-muted-foreground/50" />
               <div className="text-muted-foreground">אין עדיין חומרים — צור את הראשון עם AI ✨</div>
@@ -283,23 +364,27 @@ function ResourcesPage() {
             </CardContent></Card>
           )}
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {(topicIds.length > 0
-              ? resources.filter((r) => {
-                  const tid = (r as unknown as { topic_id: string | null }).topic_id;
-                  return tid !== null && topicIds.includes(tid);
-                })
-              : resources
-            ).map((r) => (
+            {visibleResources.map((r) => (
               <ResourceCard
                 key={r.id}
                 resource={r}
-                onOpen={() => setEditing(r)}
+                onView={() => setViewing(r)}
+                onEdit={() => setEditing(r)}
                 onVariant={(src) => { setAiSource(src); setAiOpen(true); }}
               />
             ))}
           </div>
         </div>
       </div>
+
+      {/* Document viewer */}
+      {viewing && (
+        <ResourceViewerDialog
+          resource={viewing}
+          onClose={() => setViewing(null)}
+          onEdit={() => { setEditing(viewing); setViewing(null); }}
+        />
+      )}
 
       {/* Editor / viewer */}
       {editing && (
@@ -320,7 +405,18 @@ function ResourcesPage() {
       />
 
       {/* Collections manager */}
-      <CollectionsDialog open={collOpen} onClose={() => setCollOpen(false)} />
+      <CollectionsDialog
+        open={collOpen}
+        onClose={() => setCollOpen(false)}
+        selectedIds={filters.collectionIds}
+        onToggleSelected={(id) =>
+          patch({
+            collectionIds: filters.collectionIds.includes(id)
+              ? filters.collectionIds.filter((x) => x !== id)
+              : [...filters.collectionIds, id],
+          })
+        }
+      />
     </div>
   );
 }
@@ -328,10 +424,11 @@ function ResourcesPage() {
 /* -------------------- card -------------------- */
 
 function ResourceCard({
-  resource, onOpen, onVariant,
+  resource, onView, onEdit, onVariant,
 }: {
   resource: ResourceRow;
-  onOpen: () => void;
+  onView: () => void;
+  onEdit: () => void;
   onVariant: (r: ResourceRow) => void;
 }) {
   return (
@@ -362,15 +459,123 @@ function ResourceCard({
         </div>
       )}
       <div className="mt-3 flex gap-2">
-        <Button asChild size="sm" variant="outline" className="flex-1">
-          <Link to="/resources/$resourceId" params={{ resourceId: resource.id }}>פתח</Link>
+        <Button size="sm" variant="outline" className="flex-1" onClick={onView}>
+          <Eye className="ms-1 h-4 w-4" /> פתח
         </Button>
-        <Button size="sm" variant="ghost" onClick={onOpen}>ערוך</Button>
+        <Button size="sm" variant="ghost" onClick={onEdit}>ערוך</Button>
         <Button size="sm" variant="ghost" onClick={() => onVariant(resource)} title="צור וריאציה עם AI מפריט זה">
           <Sparkles className="h-4 w-4 text-amber" />
         </Button>
       </div>
     </div>
+  );
+}
+
+/* -------------------- viewer -------------------- */
+
+function resourceToHtml(r: ResourceRow) {
+  const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const c = r.content ?? {};
+  const parts: string[] = [`<h1>${esc(r.title)}</h1>`];
+  if (r.description) parts.push(`<p>${esc(r.description)}</p>`);
+  if (c.body) parts.push(`<div style="white-space:pre-wrap">${esc(c.body)}</div>`);
+  if (c.materials?.length) parts.push(`<h2>חומרים נדרשים</h2><ul>${c.materials.map((m) => `<li>${esc(m)}</li>`).join("")}</ul>`);
+  if (c.steps?.length) parts.push(`<h2>מהלך הפעילות</h2><ol>${c.steps.map((s) => `<li>${esc(s)}</li>`).join("")}</ol>`);
+  if (c.questions?.length)
+    parts.push(`<h2>שאלות</h2><ol>${c.questions
+      .map((q) => `<li>${esc(q.q)}${q.a ? `<div><em>תשובה: ${esc(q.a)}</em></div>` : ""}</li>`)
+      .join("")}</ol>`);
+  return `<!doctype html><html dir="rtl" lang="he"><head><meta charset="utf-8"><title>${esc(r.title)}</title>
+<style>body{font-family:'Heebo',system-ui,sans-serif;margin:2rem;line-height:1.7}h1{font-size:1.6rem}h2{font-size:1.1rem;margin-top:1.2rem}</style>
+</head><body>${parts.join("\n")}</body></html>`;
+}
+
+function ResourceViewerDialog({
+  resource, onClose, onEdit,
+}: {
+  resource: ResourceRow;
+  onClose: () => void;
+  onEdit: () => void;
+}) {
+  const c = resource.content ?? {};
+
+  const printDoc = () => {
+    const w = window.open("", "_blank", "width=800,height=900");
+    if (!w) { toast.error("החלון נחסם על ידי הדפדפן"); return; }
+    w.document.write(resourceToHtml(resource));
+    w.document.close();
+    w.focus();
+    setTimeout(() => w.print(), 300);
+  };
+
+  const download = () => {
+    const blob = new Blob([resourceToHtml(resource)], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${resource.title.replace(/[\\/:*?"<>|]/g, "-")}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const empty = !c.body && !c.questions?.length && !c.steps?.length && !c.materials?.length;
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent
+        className="max-w-3xl max-h-[90vh] overflow-y-auto"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
+        <DialogHeader>
+          <DialogTitle className="text-right">{resource.title}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 text-right" dir="rtl">
+          <div className="flex flex-wrap gap-1">
+            <Badge variant="outline">{RESOURCE_TYPE_LABELS[resource.resource_type] ?? resource.resource_type}</Badge>
+            {resource.subject && <Badge variant="secondary">{resource.subject}</Badge>}
+            {resource.grade_level && <Badge variant="secondary">כיתה {resource.grade_level}</Badge>}
+          </div>
+          {resource.description && <p className="text-sm text-muted-foreground">{resource.description}</p>}
+          {c.body && (
+            <div className="whitespace-pre-wrap rounded-lg border bg-muted/20 p-3 text-sm leading-relaxed">{c.body}</div>
+          )}
+          {c.materials && c.materials.length > 0 && (
+            <div>
+              <h3 className="mb-1 font-semibold">חומרים נדרשים</h3>
+              <ul className="list-disc pe-5 text-sm">{c.materials.map((m, i) => <li key={i}>{m}</li>)}</ul>
+            </div>
+          )}
+          {c.steps && c.steps.length > 0 && (
+            <div>
+              <h3 className="mb-1 font-semibold">מהלך הפעילות</h3>
+              <ol className="list-decimal pe-5 space-y-1 text-sm">{c.steps.map((s, i) => <li key={i}>{s}</li>)}</ol>
+            </div>
+          )}
+          {c.questions && c.questions.length > 0 && (
+            <div>
+              <h3 className="mb-1 font-semibold">שאלות</h3>
+              <ol className="list-decimal pe-5 space-y-2 text-sm">
+                {c.questions.map((q, i) => (
+                  <li key={i}>
+                    <div className="font-medium">{q.q}</div>
+                    {q.a && <div className="mt-0.5 rounded bg-muted/40 p-1.5 text-muted-foreground">תשובה: {q.a}</div>}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+          {empty && <p className="text-sm text-muted-foreground">אין תוכן שמור לחומר זה — לחץ "ערוך" כדי להוסיף.</p>}
+        </div>
+        <DialogFooter className="flex-wrap gap-2">
+          <Button variant="ghost" asChild className="me-auto">
+            <Link to="/resources/$resourceId" params={{ resourceId: resource.id }}>לעמוד המלא</Link>
+          </Button>
+          <Button variant="outline" onClick={printDoc}><Printer className="ms-1 h-4 w-4" /> הדפס</Button>
+          <Button variant="outline" onClick={download}><Download className="ms-1 h-4 w-4" /> הורד</Button>
+          <Button onClick={onEdit}>ערוך</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -422,7 +627,7 @@ function ResourceEditorDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" onOpenAutoFocus={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle>{initial.id ? "עריכת חומר" : "חומר חדש"}</DialogTitle>
         </DialogHeader>
@@ -590,7 +795,7 @@ function AIGeneratorDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-xl">
+      <DialogContent className="max-w-xl" onOpenAutoFocus={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-amber" />
@@ -655,7 +860,14 @@ function AIGeneratorDialog({
 
 /* -------------------- collections dialog -------------------- */
 
-function CollectionsDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+function CollectionsDialog({
+  open, onClose, selectedIds, onToggleSelected,
+}: {
+  open: boolean;
+  onClose: () => void;
+  selectedIds: string[];
+  onToggleSelected: (id: string) => void;
+}) {
   const qc = useQueryClient();
   const list = useServerFn(listCollections);
   const save = useServerFn(upsertCollection);
@@ -678,11 +890,12 @@ function CollectionsDialog({ open, onClose }: { open: boolean; onClose: () => vo
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
+      <DialogContent onOpenAutoFocus={(e) => e.preventDefault()}>
         <DialogHeader><DialogTitle>אוספים</DialogTitle></DialogHeader>
         <div className="space-y-3">
+          <p className="text-xs text-muted-foreground">בחר אוספים כדי לסנן את רשימת החומרים.</p>
           <div className="flex gap-2">
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="שם האוסף…" />
+            <Input autoFocus={false} value={name} onChange={(e) => setName(e.target.value)} placeholder="שם האוסף…" />
             <Input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="w-16 p-1" />
             <Button disabled={!name.trim() || create.isPending} onClick={() => create.mutate()}>הוסף</Button>
           </div>
@@ -692,9 +905,20 @@ function CollectionsDialog({ open, onClose }: { open: boolean; onClose: () => vo
             </div>
           )}
           {collections.map((c) => (
-            <div key={c.id} className="flex items-center gap-3 rounded-lg border p-2">
+            <div
+              key={c.id}
+              className={`flex items-center gap-3 rounded-lg border p-2 ${selectedIds.includes(c.id) ? "border-amber bg-amber/10" : ""}`}
+            >
               <div className="h-6 w-6 rounded" style={{ background: c.color }} />
-              <div className="flex-1 font-medium">{c.name}</div>
+              <button
+                type="button"
+                className="flex-1 text-right font-medium"
+                aria-pressed={selectedIds.includes(c.id)}
+                onClick={() => onToggleSelected(c.id)}
+              >
+                {c.name}
+                {selectedIds.includes(c.id) && <span className="ms-2 text-xs text-amber">מסונן</span>}
+              </button>
               <Button variant="ghost" size="icon" className="text-destructive" aria-label={`מחק את ${c.name}`}
                 onClick={() => remove.mutate(c.id)}>
                 <Trash2 className="h-4 w-4" />
