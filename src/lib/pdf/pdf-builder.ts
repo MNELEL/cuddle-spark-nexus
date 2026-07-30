@@ -77,12 +77,16 @@ export const SOFT: [number, number, number] = [241, 245, 249];
 /* ------------------------------------------------------------------ *
  * Bidi (RTL) helpers
  * ------------------------------------------------------------------ *
- * jsPDF's R2L mode reverses each rendered line character-by-character.
- * That is correct for pure Hebrew, but it flips embedded Latin words,
- * digits ("2026" -> "6202"), and mirrors bracket glyphs. Pre-reversing
- * every LTR run (and swapping mirrored pairs) makes jsPDF's own reversal
- * restore them, so mixed Hebrew/Latin/number text always aligns correctly
- * regardless of viewer, screen or platform.
+ * jsPDF runs its bidi engine and then reverses each rendered line while
+ * R2L is on. For a line that contains Hebrew that combination is correct
+ * for the Hebrew and for numbers, but embedded Latin words come out
+ * mirrored ("Report" -> "tropeR") and bracket glyphs are swapped. A line
+ * with no Hebrew at all (a bare number in a table cell, "Moshe Levi")
+ * gets no bidi compensation, so the whole line is reversed.
+ *
+ * bidi() pre-compensates for exactly those two cases, so Hebrew, Latin,
+ * digits and punctuation always come out in the right visual order in
+ * every viewer and on every platform.
  */
 
 const MIRROR: Record<string, string> = {
@@ -90,8 +94,13 @@ const MIRROR: Record<string, string> = {
   "<": ">", ">": "<", "«": "»", "»": "«",
 };
 
-// A left-to-right run: Latin letters / digits plus punctuation glued inside it.
-const LTR_RUN = /[A-Za-z0-9\u00C0-\u024F](?:[A-Za-z0-9\u00C0-\u024F.,:;/\\\-+*=%&@#'"^_]*[A-Za-z0-9\u00C0-\u024F])?/g;
+const HEBREW = /[\u0590-\u05FF\uFB1D-\uFB4F]/;
+// A Latin run: Latin letters plus digits/punctuation glued between them.
+const LATIN_RUN =
+  /[A-Za-z\u00C0-\u024F][A-Za-z0-9\u00C0-\u024F.,:;/\\\-+*=%&@#'"^_ ]*[A-Za-z0-9\u00C0-\u024F]|[A-Za-z\u00C0-\u024F]/g;
+
+const reverseStr = (s: string) =>
+  [...s].reverse().map((ch) => MIRROR[ch] ?? ch).join("");
 
 /**
  * Prepares a string for jsPDF R2L rendering.
@@ -99,9 +108,11 @@ const LTR_RUN = /[A-Za-z0-9\u00C0-\u024F](?:[A-Za-z0-9\u00C0-\u024F.,:;/\\\-+*=%
  */
 export function bidi(text: string): string {
   if (!text) return text;
-  if (typeof process !== "undefined" && process.env?.NOBIDI) return text;
+  // No Hebrew: jsPDF's engine leaves it alone and R2L flips the whole line.
+  if (!HEBREW.test(text)) return reverseStr(text);
+  // Mixed line: only the Latin runs and mirrored brackets need compensating.
   return text
-    .replace(LTR_RUN, (run) => [...run].reverse().join(""))
+    .replace(LATIN_RUN, (run) => reverseStr(run))
     .replace(/[()[\]{}<>«»]/g, (ch) => MIRROR[ch] ?? ch);
 }
 
