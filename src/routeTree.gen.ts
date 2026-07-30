@@ -35,6 +35,7 @@ import { Route as BlogClassroomManagementStrategiesRouteImport } from './routes/
 import { Route as BlogClassroomToolsTeachersRouteImport } from './routes/blog.classroom-tools-teachers'
 import { Route as BlogDigitalHallPassGuideRouteImport } from './routes/blog.digital-hall-pass-guide'
 import { Route as BlogFreeToolsComparisonRouteImport } from './routes/blog.free-tools-comparison'
+import { Route as BlogParashaReportTemplatesRouteImport } from './routes/blog.parasha-report-templates'
 import { Route as BlogProgressTrackingGuideRouteImport } from './routes/blog.progress-tracking-guide'
 import { Route as BlogWeeklyReportTemplateRouteImport } from './routes/blog.weekly-report-template'
 import { Route as CSlugRouteImport } from './routes/c.$slug'
@@ -206,6 +207,12 @@ const BlogFreeToolsComparisonRoute = BlogFreeToolsComparisonRouteImport.update({
   path: '/free-tools-comparison',
   getParentRoute: () => BlogRoute,
 } as any)
+const BlogParashaReportTemplatesRoute =
+  BlogParashaReportTemplatesRouteImport.update({
+    id: '/parasha-report-templates',
+    path: '/parasha-report-templates',
+    getParentRoute: () => BlogRoute,
+  } as any)
 const BlogProgressTrackingGuideRoute =
   BlogProgressTrackingGuideRouteImport.update({
     id: '/progress-tracking-guide',
@@ -432,6 +439,7 @@ export interface FileRoutesByFullPath {
   '/blog/classroom-tools-teachers': typeof BlogClassroomToolsTeachersRoute
   '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
   '/blog/free-tools-comparison': typeof BlogFreeToolsComparisonRoute
+  '/blog/parasha-report-templates': typeof BlogParashaReportTemplatesRoute
   '/blog/progress-tracking-guide': typeof BlogProgressTrackingGuideRoute
   '/blog/weekly-report-template': typeof BlogWeeklyReportTemplateRoute
   '/c/$slug': typeof CSlugRoute
@@ -491,6 +499,7 @@ export interface FileRoutesByTo {
   '/blog/classroom-tools-teachers': typeof BlogClassroomToolsTeachersRoute
   '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
   '/blog/free-tools-comparison': typeof BlogFreeToolsComparisonRoute
+  '/blog/parasha-report-templates': typeof BlogParashaReportTemplatesRoute
   '/blog/progress-tracking-guide': typeof BlogProgressTrackingGuideRoute
   '/blog/weekly-report-template': typeof BlogWeeklyReportTemplateRoute
   '/c/$slug': typeof CSlugRoute
@@ -555,6 +564,7 @@ export interface FileRoutesById {
   '/blog/classroom-tools-teachers': typeof BlogClassroomToolsTeachersRoute
   '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
   '/blog/free-tools-comparison': typeof BlogFreeToolsComparisonRoute
+  '/blog/parasha-report-templates': typeof BlogParashaReportTemplatesRoute
   '/blog/progress-tracking-guide': typeof BlogProgressTrackingGuideRoute
   '/blog/weekly-report-template': typeof BlogWeeklyReportTemplateRoute
   '/c/$slug': typeof CSlugRoute
@@ -619,6 +629,7 @@ export interface FileRouteTypes {
     | '/blog/classroom-tools-teachers'
     | '/blog/digital-hall-pass-guide'
     | '/blog/free-tools-comparison'
+    | '/blog/parasha-report-templates'
     | '/blog/progress-tracking-guide'
     | '/blog/weekly-report-template'
     | '/c/$slug'
@@ -678,6 +689,7 @@ export interface FileRouteTypes {
     | '/blog/classroom-tools-teachers'
     | '/blog/digital-hall-pass-guide'
     | '/blog/free-tools-comparison'
+    | '/blog/parasha-report-templates'
     | '/blog/progress-tracking-guide'
     | '/blog/weekly-report-template'
     | '/c/$slug'
@@ -741,6 +753,7 @@ export interface FileRouteTypes {
     | '/blog/classroom-tools-teachers'
     | '/blog/digital-hall-pass-guide'
     | '/blog/free-tools-comparison'
+    | '/blog/parasha-report-templates'
     | '/blog/progress-tracking-guide'
     | '/blog/weekly-report-template'
     | '/c/$slug'
@@ -979,6 +992,13 @@ declare module '@tanstack/react-router' {
       path: '/free-tools-comparison'
       fullPath: '/blog/free-tools-comparison'
       preLoaderRoute: typeof BlogFreeToolsComparisonRouteImport
+      parentRoute: typeof BlogRoute
+    }
+    '/blog/parasha-report-templates': {
+      id: '/blog/parasha-report-templates'
+      path: '/parasha-report-templates'
+      fullPath: '/blog/parasha-report-templates'
+      preLoaderRoute: typeof BlogParashaReportTemplatesRouteImport
       parentRoute: typeof BlogRoute
     }
     '/blog/progress-tracking-guide': {
@@ -1335,6 +1355,7 @@ interface BlogRouteChildren {
   BlogClassroomToolsTeachersRoute: typeof BlogClassroomToolsTeachersRoute
   BlogDigitalHallPassGuideRoute: typeof BlogDigitalHallPassGuideRoute
   BlogFreeToolsComparisonRoute: typeof BlogFreeToolsComparisonRoute
+  BlogParashaReportTemplatesRoute: typeof BlogParashaReportTemplatesRoute
   BlogProgressTrackingGuideRoute: typeof BlogProgressTrackingGuideRoute
   BlogWeeklyReportTemplateRoute: typeof BlogWeeklyReportTemplateRoute
   BlogIndexRoute: typeof BlogIndexRoute
@@ -1348,6 +1369,7 @@ const BlogRouteChildren: BlogRouteChildren = {
   BlogClassroomToolsTeachersRoute: BlogClassroomToolsTeachersRoute,
   BlogDigitalHallPassGuideRoute: BlogDigitalHallPassGuideRoute,
   BlogFreeToolsComparisonRoute: BlogFreeToolsComparisonRoute,
+  BlogParashaReportTemplatesRoute: BlogParashaReportTemplatesRoute,
   BlogProgressTrackingGuideRoute: BlogProgressTrackingGuideRoute,
   BlogWeeklyReportTemplateRoute: BlogWeeklyReportTemplateRoute,
   BlogIndexRoute: BlogIndexRoute,
