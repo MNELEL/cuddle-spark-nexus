@@ -31,9 +31,11 @@ function LoginPage() {
   const [name, setName] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [googleBusy, setGoogleBusy] = useState(false);
+  const [resetBusy, setResetBusy] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  const busy = submitting || googleBusy;
+  const busy = submitting || googleBusy || resetBusy;
 
   const headingRef = useRef<HTMLHeadingElement | null>(null);
   const firstFieldRef = useRef<HTMLInputElement | null>(null);
@@ -81,6 +83,7 @@ function LoginPage() {
     if (busy) return; // form-level lock: no double submits while a request is in flight
     setSubmitting(true);
     setErrorMsg(null);
+    setSuccessMsg(null);
     try {
       if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
@@ -110,6 +113,7 @@ function LoginPage() {
     if (busy) return;
     setGoogleBusy(true);
     setErrorMsg(null);
+    setSuccessMsg(null);
     const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
     if (result.error) {
       setErrorMsg("שגיאה בהתחברות עם Google");
@@ -121,6 +125,33 @@ function LoginPage() {
     navigate({ to: "/classes" });
   };
 
+  const forgotPassword = async () => {
+    if (busy) return;
+    if (!email.trim()) {
+      setSuccessMsg(null);
+      setErrorMsg("הזן כתובת אימייל ולאחר מכן לחץ על ״שכחתי סיסמה״");
+      firstFieldRef.current?.focus();
+      return;
+    }
+    setResetBusy(true);
+    setErrorMsg(null);
+    setSuccessMsg(null);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      setSuccessMsg("שלחנו קישור לאיפוס סיסמה לכתובת האימייל שלך. בדוק גם בתיבת הספאם.");
+      toast.success("נשלח קישור לאיפוס סיסמה");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "שליחת קישור האיפוס נכשלה";
+      setErrorMsg(msg);
+      toast.error(msg);
+    } finally {
+      setResetBusy(false);
+    }
+  };
+
   const tabClass = (active: boolean) =>
     `flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none ${
       active
@@ -130,7 +161,8 @@ function LoginPage() {
 
   const statusText = submitting
     ? mode === "signin" ? "מתחברים לחשבון שלך..." : "יוצרים עבורך חשבון..."
-    : googleBusy ? "מפנים אותך ל-Google..." : null;
+    : googleBusy ? "מפנים אותך ל-Google..."
+    : resetBusy ? "שולחים קישור לאיפוס סיסמה..." : null;
 
   return (
     <div className="grid min-h-dvh md:grid-cols-2">
@@ -211,11 +243,21 @@ function LoginPage() {
             {mode === "signin" ? "התחבר כדי לנהל את הכיתות שלך" : "התחל לנהל את הכיתות שלך בחינם"}
           </p>
 
-          <div aria-live="polite" role="status" className="mb-4 empty:mb-0">
-            <span className="sr-only">{statusText}</span>
+          <div aria-live="polite" aria-atomic="true" role="status" className="mb-4 space-y-2 empty:mb-0">
+            {statusText && (
+              <p className="flex items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                {statusText}
+              </p>
+            )}
             {!statusText && errorMsg && (
               <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
                 {errorMsg}
+              </p>
+            )}
+            {!statusText && successMsg && (
+              <p className="rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-sm text-foreground">
+                {successMsg}
               </p>
             )}
           </div>
@@ -247,6 +289,18 @@ function LoginPage() {
                 <Label htmlFor="password">סיסמה</Label>
                 <Input id="password" type="password" required minLength={6} disabled={busy} value={password} onChange={(e) => setPassword(e.target.value)} dir="ltr" />
               </div>
+              {mode === "signin" && (
+                <div className="flex justify-start">
+                  <button
+                    type="button"
+                    onClick={forgotPassword}
+                    disabled={busy}
+                    className="rounded-sm text-sm font-medium text-primary underline-offset-4 hover:underline disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  >
+                    {resetBusy ? "שולח קישור..." : "שכחתי סיסמה"}
+                  </button>
+                </div>
+              )}
               <Button type="submit" className="w-full" disabled={busy}>
                 {submitting && <Loader2 className="ms-2 h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />}
                 {submitting ? (mode === "signin" ? "מתחבר..." : "יוצר חשבון...") : (mode === "signin" ? "התחבר" : "הרשם")}
