@@ -31,7 +31,7 @@ import { Wand2 } from "lucide-react";
 import { WeeklyPaceCard } from "@/components/weekly-pace-card";
 import { TopicTreeFilter } from "@/components/topic-tree-filter";
 
-export const Route = createFileRoute("/_authenticated/resources")({
+export const Route = createFileRoute("/_authenticated/resources/")({
   component: ResourcesPage,
   head: () => ({
     meta: [
