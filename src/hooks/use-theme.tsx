@@ -7,7 +7,7 @@ export const THEMES: { id: ThemeName; label: string; description: string }[] = [
   { id: "minimal",      label: "מינימלי",  description: "שחור/לבן, פינות חדות, מקסימום בהירות" },
   { id: "kitsch",       label: "צבעוני",   description: "ורוד תוסס, פינות מעוגלות, אנרגיה" },
   { id: "mono",         label: "טרמינל",   description: "ירוק קיברנטי על שחור — מונוספייס" },
-  { id: "classalign",   label: "קלאסאליין", description: "טורקיז-כתום-צהוב — עיצוב אפליקציית מובייל" },
+  { id: "classalign",   label: "מודרני מובייל", description: "טורקיז-כתום-צהוב — עיצוב אפליקציית מובייל" },
   { id: "hakita-sheli", label: "הכיתה שלי", description: "קלף, דיו כהה, פליז וטורקיז — קלאסי ורך" },
 ];
 

@@ -3,11 +3,13 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { GraduationCap, LogOut, Wrench, Music, Sparkles, BellRing, LineChart, Palette, BookOpen } from "lucide-react";
+import { LogOut, Wrench, Music, Sparkles, BellRing, LineChart, Palette, BookOpen, ShieldCheck } from "lucide-react";
+import { TorahLogo } from "@/components/torah-logo";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getSecurity } from "@/lib/security.functions";
+import { isAdmin } from "@/lib/user-roles.functions";
 import { PinLockScreen } from "@/components/pin-lock-screen";
 import { GlobalCommandPalette } from "@/components/global-command-palette";
 
@@ -19,9 +21,15 @@ function AuthLayout() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const getSec = useServerFn(getSecurity);
+  const checkAdmin = useServerFn(isAdmin);
   const { data: sec } = useQuery({
     queryKey: ["app_security"],
     queryFn: () => getSec(),
+    enabled: Boolean(user),
+  });
+  const { data: adminFlag } = useQuery({
+    queryKey: ["is-admin"],
+    queryFn: () => checkAdmin(),
     enabled: Boolean(user),
   });
   const [unlocked, setUnlocked] = useState<boolean>(() => {
@@ -44,7 +52,7 @@ function AuthLayout() {
       <header className="border-b bg-card">
         <div className="container mx-auto grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-3 py-3 sm:flex sm:px-6">
           <Link to="/classes" className="flex min-w-0 items-center gap-2">
-            <GraduationCap className="h-6 w-6 shrink-0 text-primary" />
+            <TorahLogo size={24} className="shrink-0 text-primary" />
             <span className="truncate font-bold">הכיתה שלי</span>
           </Link>
           <nav className="hidden items-center gap-1 md:flex">
@@ -75,6 +83,11 @@ function AuthLayout() {
             <Link to="/blog" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
               <BookOpen className="me-1 inline h-4 w-4" />מדריכים
             </Link>
+            {adminFlag && (
+              <Link to="/user-management" className="rounded-md px-3 py-1.5 text-sm font-medium text-primary hover:bg-accent hover:text-foreground">
+                <ShieldCheck className="me-1 inline h-4 w-4" />ניהול משתמשים
+              </Link>
+            )}
           </nav>
           <div className="flex shrink-0 items-center gap-1 sm:gap-3">
             <span className="hidden max-w-[14rem] truncate text-sm text-muted-foreground md:inline">{user.email}</span>

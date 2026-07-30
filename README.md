@@ -1,4 +1,4 @@
-# ClassAlign Studio
+# הכיתה שלי — ClassPro Studio
 
 ## TanStack package versions (compatibility)
 

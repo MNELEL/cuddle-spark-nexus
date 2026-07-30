@@ -1,22 +1,23 @@
 import { SeatFillGrid } from "@/components/seat-fill-grid";
+import { TorahLogo } from "@/components/torah-logo";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { GraduationCap, Users, Sparkles, Layout, Brain, BarChart3, Presentation, ArrowLeft } from "lucide-react";
+import { Users, Sparkles, Layout, Brain, BarChart3, Presentation, ArrowLeft } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   component: Index,
   head: () => ({
     meta: [
-      { title: "הכיתה שלי · ניהול כיתה חכם עם AI" },
-      { name: "description", content: "סטודיו ניהול כיתה לרוח המודרנית — סידור הושבה AI, מעקב פדגוגי, דוחות חכמים, וחוויית 3D עוצרת נשימה." },
-      { property: "og:title", content: "הכיתה שלי · ניהול כיתה חכם עם AI" },
-      { property: "og:description", content: "סטודיו ניהול כיתה לרוח המודרנית — סידור הושבה AI, מעקב פדגוגי, דוחות חכמים, וחוויית 3D עוצרת נשימה." },
+      { title: "הכיתה שלי · ניהול כיתה חכם לתלמודי תורה וחיידרים" },
+      { name: "description", content: "כלי ניהול כיתה מותאם לתלמודי תורה, חיידרים ובתי ספר — סידור הושבה AI, מעקב פדגוגי, דוחות חכמים, וחוויית 3D עוצרת נשימה." },
+      { property: "og:title", content: "הכיתה שלי · ניהול כיתה חכם לתלמודי תורה וחיידרים" },
+      { property: "og:description", content: "כלי ניהול כיתה מותאם לתלמודי תורה, חיידרים ובתי ספר — סידור הושבה AI, מעקב פדגוגי, דוחות חכמים, וחוויית 3D עוצרת נשימה." },
       { property: "og:url", content: "https://cuddle-spark-nexus.lovable.app/" },
       { property: "og:type", content: "website" },
       { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/05baaa1b-2e2c-4979-b6f1-619d01883919" },
       { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/05baaa1b-2e2c-4979-b6f1-619d01883919" },
-      { name: "twitter:title", content: "הכיתה שלי · ניהול כיתה חכם עם AI" },
-      { name: "twitter:description", content: "סטודיו ניהול כיתה לרוח המודרנית — סידור הושבה AI, מעקב פדגוגי, דוחות חכמים, וחוויית 3D עוצרת נשימה." },
+      { name: "twitter:title", content: "הכיתה שלי · ניהול כיתה חכם לתלמודי תורה וחיידרים" },
+      { name: "twitter:description", content: "כלי ניהול כיתה מותאם לתלמודי תורה, חיידרים ובתי ספר — סידור הושבה AI, מעקב פדגוגי, דוחות חכמים, וחוויית 3D עוצרת נשימה." },
     ],
     links: [{ rel: "canonical", href: "https://cuddle-spark-nexus.lovable.app/" }],
     scripts: [
@@ -37,7 +38,7 @@ export const Route = createFileRoute("/")({
           "@type": "Organization",
           name: "הכיתה שלי",
           url: "https://cuddle-spark-nexus.lovable.app/",
-          description: "סטודיו ניהול כיתה לתלמודי תורה, חיידרים ובתי ספר.",
+          description: "כלי ניהול כיתה מותאם לתלמודי תורה, חיידרים ובתי ספר.",
         }),
       },
       {
@@ -74,7 +75,7 @@ function Index() {
       <header className="relative container mx-auto flex items-center justify-between px-6 py-5">
         <div className="flex items-center gap-2.5">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-glow-primary">
-            <GraduationCap className="h-5 w-5" />
+            <TorahLogo size={20} />
           </div>
           <span className="font-display text-xl font-bold tracking-tight">הכיתה <span className="text-gradient-amber">שלי</span></span>
         </div>
@@ -87,14 +88,14 @@ function Index() {
         <div className="mx-auto max-w-4xl text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-amber/40 bg-amber/15 px-3 py-1 text-xs font-medium text-foreground sm:text-sm">
             <Sparkles className="h-3.5 w-3.5 text-amber" aria-hidden="true" />
-            סטודיו ניהול כיתה · גרסת AI מלאה
+            ניהול כיתה · מותאם לתלמודי תורה וחיידרים
           </div>
           <h1 className="mt-6 font-display text-5xl font-bold leading-[1.05] tracking-tight md:text-7xl">
             הכיתה שלך,<br />
             <span className="text-amber">מסונכרנת בשלמות.</span>
           </h1>
           <p className="mt-7 mx-auto max-w-2xl font-sans text-lg text-muted-foreground md:text-xl">
-            הושבה, מעקב פדגוגי ודוחות — הכל מסונכרן במקום אחד, בעברית מלאה.
+            הושבה, מעקב פדגוגי ודוחות — הכל מסונכרן במקום אחד, בעברית מלאה ולרוח החדר והכיתה.
           </p>
           <div className="mt-10 flex flex-wrap justify-center gap-3">
             <Link to="/login">

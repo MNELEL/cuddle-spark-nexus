@@ -296,7 +296,7 @@
   --font-display: "JetBrains Mono", "Heebo", monospace;
   --font-body: "JetBrains Mono", "Heebo", monospace;
 }
-/* ClassAlign — טורקיז-כתום-צהוב, עגול ותוסס, בהשראת עיצוב מובייל */
+/* הכיתה שלי — טורקיז-כתום-צהוב, עגול ותוסס, בהשראת עיצוב מובייל */
 [data-theme="classalign"] {
   --radius: 1.25rem;
   --background: oklch(0.98 0.015 200);
