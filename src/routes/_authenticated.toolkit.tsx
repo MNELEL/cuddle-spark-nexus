@@ -156,7 +156,7 @@ function ToolLinkGrid({ items }: { items: ToolLink[] }) {
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {items.map((it) => (
-        <Link key={it.to} to={it.to} className="block">
+        <Link key={it.to} to={it.to as never} className="block">
           <ToolCardShell icon={it.icon} label={it.label} desc={it.desc} />
         </Link>
       ))}
@@ -192,7 +192,7 @@ function ClassScopedTools({ title, items }: { title: string; items: ToolLink[] }
             </Select>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {items.map((it) => (
-                <Link key={it.to} to={it.to} params={{ classId: active }} className="block">
+                <Link key={it.to} to={it.to as never} params={{ classId: active } as never} className="block">
                   <ToolCardShell icon={it.icon} label={it.label} desc={it.desc} />
                 </Link>
               ))}
