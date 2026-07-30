@@ -37,6 +37,7 @@ import { Route as BlogDigitalHallPassGuideRouteImport } from './routes/blog.digi
 import { Route as BlogFreeToolsComparisonRouteImport } from './routes/blog.free-tools-comparison'
 import { Route as BlogParashaReportTemplatesRouteImport } from './routes/blog.parasha-report-templates'
 import { Route as BlogProgressTrackingGuideRouteImport } from './routes/blog.progress-tracking-guide'
+import { Route as BlogTorahStudyRewardChartsRouteImport } from './routes/blog.torah-study-reward-charts'
 import { Route as BlogWeeklyReportTemplateRouteImport } from './routes/blog.weekly-report-template'
 import { Route as CSlugRouteImport } from './routes/c.$slug'
 import { Route as HelpIndexRouteImport } from './routes/help.index'
@@ -217,6 +218,12 @@ const BlogProgressTrackingGuideRoute =
   BlogProgressTrackingGuideRouteImport.update({
     id: '/progress-tracking-guide',
     path: '/progress-tracking-guide',
+    getParentRoute: () => BlogRoute,
+  } as any)
+const BlogTorahStudyRewardChartsRoute =
+  BlogTorahStudyRewardChartsRouteImport.update({
+    id: '/torah-study-reward-charts',
+    path: '/torah-study-reward-charts',
     getParentRoute: () => BlogRoute,
   } as any)
 const BlogWeeklyReportTemplateRoute =
@@ -441,6 +448,7 @@ export interface FileRoutesByFullPath {
   '/blog/free-tools-comparison': typeof BlogFreeToolsComparisonRoute
   '/blog/parasha-report-templates': typeof BlogParashaReportTemplatesRoute
   '/blog/progress-tracking-guide': typeof BlogProgressTrackingGuideRoute
+  '/blog/torah-study-reward-charts': typeof BlogTorahStudyRewardChartsRoute
   '/blog/weekly-report-template': typeof BlogWeeklyReportTemplateRoute
   '/c/$slug': typeof CSlugRoute
   '/help/$slug': typeof HelpSlugRoute
@@ -501,6 +509,7 @@ export interface FileRoutesByTo {
   '/blog/free-tools-comparison': typeof BlogFreeToolsComparisonRoute
   '/blog/parasha-report-templates': typeof BlogParashaReportTemplatesRoute
   '/blog/progress-tracking-guide': typeof BlogProgressTrackingGuideRoute
+  '/blog/torah-study-reward-charts': typeof BlogTorahStudyRewardChartsRoute
   '/blog/weekly-report-template': typeof BlogWeeklyReportTemplateRoute
   '/c/$slug': typeof CSlugRoute
   '/help/$slug': typeof HelpSlugRoute
@@ -566,6 +575,7 @@ export interface FileRoutesById {
   '/blog/free-tools-comparison': typeof BlogFreeToolsComparisonRoute
   '/blog/parasha-report-templates': typeof BlogParashaReportTemplatesRoute
   '/blog/progress-tracking-guide': typeof BlogProgressTrackingGuideRoute
+  '/blog/torah-study-reward-charts': typeof BlogTorahStudyRewardChartsRoute
   '/blog/weekly-report-template': typeof BlogWeeklyReportTemplateRoute
   '/c/$slug': typeof CSlugRoute
   '/help/$slug': typeof HelpSlugRoute
@@ -631,6 +641,7 @@ export interface FileRouteTypes {
     | '/blog/free-tools-comparison'
     | '/blog/parasha-report-templates'
     | '/blog/progress-tracking-guide'
+    | '/blog/torah-study-reward-charts'
     | '/blog/weekly-report-template'
     | '/c/$slug'
     | '/help/$slug'
@@ -691,6 +702,7 @@ export interface FileRouteTypes {
     | '/blog/free-tools-comparison'
     | '/blog/parasha-report-templates'
     | '/blog/progress-tracking-guide'
+    | '/blog/torah-study-reward-charts'
     | '/blog/weekly-report-template'
     | '/c/$slug'
     | '/help/$slug'
@@ -755,6 +767,7 @@ export interface FileRouteTypes {
     | '/blog/free-tools-comparison'
     | '/blog/parasha-report-templates'
     | '/blog/progress-tracking-guide'
+    | '/blog/torah-study-reward-charts'
     | '/blog/weekly-report-template'
     | '/c/$slug'
     | '/help/$slug'
@@ -1006,6 +1019,13 @@ declare module '@tanstack/react-router' {
       path: '/progress-tracking-guide'
       fullPath: '/blog/progress-tracking-guide'
       preLoaderRoute: typeof BlogProgressTrackingGuideRouteImport
+      parentRoute: typeof BlogRoute
+    }
+    '/blog/torah-study-reward-charts': {
+      id: '/blog/torah-study-reward-charts'
+      path: '/torah-study-reward-charts'
+      fullPath: '/blog/torah-study-reward-charts'
+      preLoaderRoute: typeof BlogTorahStudyRewardChartsRouteImport
       parentRoute: typeof BlogRoute
     }
     '/blog/weekly-report-template': {
@@ -1357,6 +1377,7 @@ interface BlogRouteChildren {
   BlogFreeToolsComparisonRoute: typeof BlogFreeToolsComparisonRoute
   BlogParashaReportTemplatesRoute: typeof BlogParashaReportTemplatesRoute
   BlogProgressTrackingGuideRoute: typeof BlogProgressTrackingGuideRoute
+  BlogTorahStudyRewardChartsRoute: typeof BlogTorahStudyRewardChartsRoute
   BlogWeeklyReportTemplateRoute: typeof BlogWeeklyReportTemplateRoute
   BlogIndexRoute: typeof BlogIndexRoute
 }
@@ -1371,6 +1392,7 @@ const BlogRouteChildren: BlogRouteChildren = {
   BlogFreeToolsComparisonRoute: BlogFreeToolsComparisonRoute,
   BlogParashaReportTemplatesRoute: BlogParashaReportTemplatesRoute,
   BlogProgressTrackingGuideRoute: BlogProgressTrackingGuideRoute,
+  BlogTorahStudyRewardChartsRoute: BlogTorahStudyRewardChartsRoute,
   BlogWeeklyReportTemplateRoute: BlogWeeklyReportTemplateRoute,
   BlogIndexRoute: BlogIndexRoute,
 }
