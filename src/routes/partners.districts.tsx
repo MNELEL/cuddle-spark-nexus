@@ -85,7 +85,7 @@ function DistrictsPage() {
             <a href="mailto:nm0527603669@gmail.com?subject=פנייה%20ממחוז%20חינוך">
               <Button size="lg" className="gap-2"><Mail className="h-4 w-4" /> קביעת פגישת הכרות</Button>
             </a>
-            <a href="/downloads/classalign-implementation-guide.html" target="_blank" rel="noreferrer">
+            <a href="/downloads/hakita-sheli-implementation-guide.html" target="_blank" rel="noreferrer">
               <Button size="lg" variant="outline" className="gap-2"><Download className="h-4 w-4" /> מסמך הטמעה</Button>
             </a>
           </div>
