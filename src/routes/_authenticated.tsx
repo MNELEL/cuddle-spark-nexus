@@ -9,6 +9,7 @@ import { ThemeSwitcher } from "@/components/theme-switcher";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getSecurity } from "@/lib/security.functions";
+import { isAdmin } from "@/lib/user-roles.functions";
 import { PinLockScreen } from "@/components/pin-lock-screen";
 import { GlobalCommandPalette } from "@/components/global-command-palette";
 
