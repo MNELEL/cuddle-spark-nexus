@@ -1,11 +1,11 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { GraduationCap } from "lucide-react";
+import { GraduationCap, Loader2 } from "lucide-react";
 import { SeatFillGrid } from "@/components/seat-fill-grid";
 import { toast } from "sonner";
 
@@ -29,7 +29,46 @@ function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [googleBusy, setGoogleBusy] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const busy = submitting || googleBusy;
+
+  const headingRef = useRef<HTMLHeadingElement | null>(null);
+  const firstFieldRef = useRef<HTMLInputElement | null>(null);
+  const signinTabRef = useRef<HTMLButtonElement | null>(null);
+  const signupTabRef = useRef<HTMLButtonElement | null>(null);
+  // null on first render → don't steal focus on initial page load
+  const focusTargetRef = useRef<"heading" | "field" | null>(null);
+
+  useEffect(() => {
+    const target = focusTargetRef.current;
+    focusTargetRef.current = null;
+    if (!target) return;
+    if (target === "field") firstFieldRef.current?.focus();
+    else headingRef.current?.focus();
+  }, [mode]);
+
+  const switchMode = (next: "signin" | "signup", viaKeyboard: boolean) => {
+    if (busy || next === mode) return;
+    setErrorMsg(null);
+    focusTargetRef.current = viaKeyboard ? "field" : "heading";
+    setMode(next);
+  };
+
+  const onTabKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    // RTL tablist: ArrowLeft moves forward visually, ArrowRight backwards.
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    e.preventDefault();
+    const next = mode === "signin" ? "signup" : "signin";
+    setErrorMsg(null);
+    focusTargetRef.current = null;
+    setMode(next);
+    requestAnimationFrame(() => {
+      (next === "signin" ? signinTabRef : signupTabRef).current?.focus();
+    });
+  };
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -39,7 +78,8 @@ function LoginPage() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setBusy(true);
+    setSubmitting(true);
+    setErrorMsg(null);
     try {
       if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
@@ -57,18 +97,22 @@ function LoginPage() {
         navigate({ to: "/classes" });
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "שגיאה בהתחברות");
+      const msg = err instanceof Error ? err.message : "שגיאה בהתחברות";
+      setErrorMsg(msg);
+      toast.error(msg);
     } finally {
-      setBusy(false);
+      setSubmitting(false);
     }
   };
 
   const google = async () => {
-    setBusy(true);
+    setGoogleBusy(true);
+    setErrorMsg(null);
     const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
     if (result.error) {
+      setErrorMsg("שגיאה בהתחברות עם Google");
       toast.error("שגיאה בהתחברות עם Google");
-      setBusy(false);
+      setGoogleBusy(false);
       return;
     }
     if (result.redirected) return;
@@ -76,11 +120,15 @@ function LoginPage() {
   };
 
   const tabClass = (active: boolean) =>
-    `flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+    `flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none ${
       active
         ? "bg-background text-foreground shadow-sm"
         : "text-muted-foreground hover:text-foreground"
     }`;
+
+  const statusText = submitting
+    ? mode === "signin" ? "מתחברים לחשבון שלך..." : "יוצרים עבורך חשבון..."
+    : googleBusy ? "מפנים אותך ל-Google..." : null;
 
   return (
     <div className="grid min-h-dvh md:grid-cols-2">
@@ -118,35 +166,67 @@ function LoginPage() {
 
           <div role="tablist" aria-label="מצב כניסה" className="mb-6 flex gap-1 rounded-xl bg-muted p-1">
             <button
+              ref={signinTabRef}
+              id="auth-tab-signin"
               type="button"
               role="tab"
+              aria-controls="auth-panel"
+              tabIndex={mode === "signin" ? 0 : -1}
               aria-selected={mode === "signin"}
+              disabled={busy}
               className={tabClass(mode === "signin")}
-              onClick={() => setMode("signin")}
+              onKeyDown={onTabKeyDown}
+              onClick={(e) => switchMode("signin", e.detail === 0)}
             >
               התחברות
             </button>
             <button
+              ref={signupTabRef}
+              id="auth-tab-signup"
               type="button"
               role="tab"
+              aria-controls="auth-panel"
+              tabIndex={mode === "signup" ? 0 : -1}
               aria-selected={mode === "signup"}
+              disabled={busy}
               className={tabClass(mode === "signup")}
-              onClick={() => setMode("signup")}
+              onKeyDown={onTabKeyDown}
+              onClick={(e) => switchMode("signup", e.detail === 0)}
             >
               הרשמה
             </button>
           </div>
 
-          <h2 className="font-display text-2xl font-bold">
+          <div id="auth-panel" role="tabpanel" aria-labelledby={mode === "signin" ? "auth-tab-signin" : "auth-tab-signup"}>
+          <h2
+            ref={headingRef}
+            tabIndex={-1}
+            className="font-display text-2xl font-bold outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 rounded-sm"
+          >
             {mode === "signin" ? "ברוך שובך" : "צור חשבון"}
           </h2>
           <p className="mt-1 mb-6 text-sm text-muted-foreground">
             {mode === "signin" ? "התחבר כדי לנהל את הכיתות שלך" : "התחל לנהל את הכיתות שלך בחינם"}
           </p>
 
+          <div aria-live="polite" role="status" className="mb-4 empty:mb-0">
+            {statusText && (
+              <p className="flex items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                {statusText}
+              </p>
+            )}
+            {!statusText && errorMsg && (
+              <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {errorMsg}
+              </p>
+            )}
+          </div>
+
           <div className="space-y-4">
             <Button variant="outline" className="w-full" onClick={google} disabled={busy}>
-              המשך עם Google
+              {googleBusy && <Loader2 className="ms-2 h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />}
+              {googleBusy ? "מתחבר ל-Google..." : "המשך עם Google"}
             </Button>
             <div className="relative">
               <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
@@ -158,21 +238,23 @@ function LoginPage() {
               {mode === "signup" && (
                 <div>
                   <Label htmlFor="name">שם</Label>
-                  <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="הרב ישראל / המלמד" />
+                  <Input ref={firstFieldRef} id="name" disabled={busy} value={name} onChange={(e) => setName(e.target.value)} placeholder="הרב ישראל / המלמד" />
                 </div>
               )}
               <div>
                 <Label htmlFor="email">אימייל</Label>
-                <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} dir="ltr" />
+                <Input ref={mode === "signin" ? firstFieldRef : undefined} id="email" type="email" required disabled={busy} value={email} onChange={(e) => setEmail(e.target.value)} dir="ltr" />
               </div>
               <div>
                 <Label htmlFor="password">סיסמה</Label>
-                <Input id="password" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} dir="ltr" />
+                <Input id="password" type="password" required minLength={6} disabled={busy} value={password} onChange={(e) => setPassword(e.target.value)} dir="ltr" />
               </div>
               <Button type="submit" className="w-full" disabled={busy}>
-                {mode === "signin" ? "התחבר" : "הרשם"}
+                {submitting && <Loader2 className="ms-2 h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />}
+                {submitting ? (mode === "signin" ? "מתחבר..." : "יוצר חשבון...") : (mode === "signin" ? "התחבר" : "הרשם")}
               </Button>
             </form>
+          </div>
           </div>
         </div>
       </main>
