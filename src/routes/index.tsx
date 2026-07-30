@@ -85,8 +85,8 @@ function Index() {
 
       <main className="relative container mx-auto px-6 py-20 md:py-28">
         <div className="mx-auto max-w-4xl text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-amber/30 bg-amber/10 px-3 py-1 text-xs font-medium text-amber-foreground/80">
-            <Sparkles className="h-3.5 w-3.5 text-amber" />
+          <div className="inline-flex items-center gap-2 rounded-full border border-amber/40 bg-amber/15 px-3 py-1 text-xs font-medium text-foreground sm:text-sm">
+            <Sparkles className="h-3.5 w-3.5 text-amber" aria-hidden="true" />
             סטודיו ניהול כיתה · גרסת AI מלאה
           </div>
           <h1 className="mt-6 font-display text-5xl font-bold leading-[1.05] tracking-tight md:text-7xl">
@@ -99,7 +99,7 @@ function Index() {
           <div className="mt-10 flex flex-wrap justify-center gap-3">
             <Link to="/login">
               <Button size="lg" className="text-base shadow-glow-primary gap-2">
-                להתחיל עכשיו <ArrowLeft className="h-4 w-4" />
+                להתחיל עכשיו <ArrowLeft className="h-4 w-4" aria-hidden="true" />
               </Button>
             </Link>
             <a href="#features">
@@ -107,7 +107,7 @@ function Index() {
             </a>
           </div>
 
-          <div className="mt-14 mx-auto max-w-2xl">
+          <div className="mt-14 mx-auto max-w-2xl" aria-hidden="true">
             <SeatFillGrid />
           </div>
 
