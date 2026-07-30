@@ -21,9 +21,15 @@ function AuthLayout() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const getSec = useServerFn(getSecurity);
+  const checkAdmin = useServerFn(isAdmin);
   const { data: sec } = useQuery({
     queryKey: ["app_security"],
     queryFn: () => getSec(),
+    enabled: Boolean(user),
+  });
+  const { data: adminFlag } = useQuery({
+    queryKey: ["is-admin"],
+    queryFn: () => checkAdmin(),
     enabled: Boolean(user),
   });
   const [unlocked, setUnlocked] = useState<boolean>(() => {
