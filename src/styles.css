@@ -61,6 +61,7 @@
   --color-sidebar-ring: var(--sidebar-ring);
   --color-amber: var(--amber);
   --color-amber-glow: var(--amber-glow);
+  --color-turquoise: var(--turquoise);
   --color-emerald-score: var(--emerald-score);
   --color-rose-score: var(--rose-score);
   --font-display: "Space Grotesk", "Heebo", system-ui, sans-serif;
@@ -86,6 +87,7 @@
   --accent-foreground: oklch(0.22 0.06 60);
   --amber: oklch(0.78 0.17 70);
   --amber-glow: oklch(0.88 0.15 80);
+  --turquoise: oklch(0.60 0.06 195);
   --emerald-score: oklch(0.70 0.16 155);
   --rose-score: oklch(0.65 0.20 25);
   --destructive: oklch(0.577 0.245 27.325);
@@ -319,4 +321,32 @@
   --input: oklch(0.90 0.03 200);
   --ring: oklch(0.72 0.13 200);
   --font-display: "Heebo", system-ui, sans-serif;
+}
+
+/* הכיתה שלי — קלף מרוכך, דיו כהה, פליז וטורקיז */
+[data-theme="hakita-sheli"] {
+  --radius: 1rem;
+  --background: oklch(0.94 0.026 87);
+  --foreground: oklch(0.28 0.033 254);
+  --card: oklch(0.972 0.016 87);
+  --card-foreground: oklch(0.28 0.033 254);
+  --popover: oklch(0.972 0.016 87);
+  --popover-foreground: oklch(0.28 0.033 254);
+  --primary: oklch(0.28 0.033 254);
+  --primary-foreground: oklch(0.97 0.02 87);
+  --secondary: oklch(0.90 0.03 87);
+  --secondary-foreground: oklch(0.32 0.035 254);
+  --muted: oklch(0.915 0.024 87);
+  --muted-foreground: oklch(0.50 0.025 250);
+  --accent: oklch(0.66 0.075 78);
+  --accent-foreground: oklch(0.20 0.03 254);
+  --amber: oklch(0.66 0.075 78);
+  --amber-glow: oklch(0.78 0.07 82);
+  --turquoise: oklch(0.60 0.06 195);
+  --emerald-score: oklch(0.62 0.10 160);
+  --rose-score: oklch(0.58 0.16 25);
+  --border: oklch(0.86 0.03 85);
+  --input: oklch(0.86 0.03 85);
+  --ring: oklch(0.66 0.075 78);
+  --font-display: "Frank Ruhl Libre", "Heebo", serif;
 }
