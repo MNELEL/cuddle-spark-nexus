@@ -130,6 +130,39 @@ export function bidiLines(input: string | string[]): string[] {
   return (Array.isArray(input) ? input : [input]).map((l) => bidi(l));
 }
 
+const PATCHED = Symbol.for("hakita.rtlTextPatched");
+
+/**
+ * Wraps doc.text so every string drawn into the document — including text
+ * drawn by jsPDF-autotable and by feature-specific PDF builders — is
+ * reordered to visual order exactly once, with jsPDF's own reorder disabled.
+ */
+export function patchTextForRtl(doc: jsPDF): void {
+  const target = doc as unknown as Record<string | symbol, unknown>;
+  if (target[PATCHED]) return;
+  target[PATCHED] = true;
+  const original = doc.text.bind(doc);
+  (doc as unknown as { text: (...a: unknown[]) => unknown }).text = (
+    ...args: unknown[]
+  ) => {
+    const [text, x, y, options, ...rest] = args as [
+      string | string[],
+      number,
+      number,
+      Record<string, unknown> | undefined,
+      ...unknown[],
+    ];
+    const converted = Array.isArray(text) ? bidiLines(text) : bidi(String(text));
+    return (original as unknown as (...a: unknown[]) => unknown)(
+      converted,
+      x,
+      y,
+      { ...(options ?? {}), ...VISUAL_TEXT_OPTS },
+      ...rest,
+    );
+  };
+}
+
 /** Draws RTL-safe text at (x, y). Use instead of doc.text for Hebrew content. */
 export function rtlText(
   doc: jsPDF,
