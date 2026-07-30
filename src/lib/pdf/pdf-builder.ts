@@ -112,7 +112,7 @@ export function bidi(text: string): string {
   if (!HEBREW.test(text)) return reverseStr(text);
   // Mixed line: only the Latin runs and mirrored brackets need compensating.
   return text
-    .replace(LATIN_RUN, (run) => reverseStr(run))
+    .replace(LATIN_RUN, (run) => [...run].reverse().join(""))
     .replace(/[()[\]{}<>«»]/g, (ch) => MIRROR[ch] ?? ch);
 }
 
