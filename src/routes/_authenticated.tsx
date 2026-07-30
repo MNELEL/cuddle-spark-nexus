@@ -83,6 +83,11 @@ function AuthLayout() {
             <Link to="/blog" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
               <BookOpen className="me-1 inline h-4 w-4" />מדריכים
             </Link>
+            {adminFlag && (
+              <Link to="/user-management" className="rounded-md px-3 py-1.5 text-sm font-medium text-primary hover:bg-accent hover:text-foreground">
+                <ShieldCheck className="me-1 inline h-4 w-4" />ניהול משתמשים
+              </Link>
+            )}
           </nav>
           <div className="flex shrink-0 items-center gap-1 sm:gap-3">
             <span className="hidden max-w-[14rem] truncate text-sm text-muted-foreground md:inline">{user.email}</span>
