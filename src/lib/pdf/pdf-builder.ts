@@ -324,7 +324,7 @@ export function drawFooter(hd: HebrewDoc, meta?: string): void {
     doc.setTextColor(150);
     if (meta) doc.text(meta, layout.rightX, layout.pageH - 7, { align: "right" });
     doc.text(
-      `ClassAlign Studio · עמ׳ ${i} מתוך ${pageCount}`,
+      `הכיתה שלי · עמ׳ ${i} מתוך ${pageCount}`,
       layout.pageW / 2,
       layout.pageH - 7,
       { align: "center" },

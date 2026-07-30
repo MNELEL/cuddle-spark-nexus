@@ -10,7 +10,7 @@ export const Route = createFileRoute("/_authenticated/student-view/$classId")({
   component: StudentViewPage,
   head: () => ({
     meta: [
-      { title: "מסך תלמידים · ClassAlign Studio" },
+      { title: "מסך תלמידים · הכיתה שלי" },
       { name: "description", content: "מסך תצוגה פשוט לתלמידים — שמות בלבד, ללא מידע רגיש." },
       { name: "robots", content: "noindex" },
     ],

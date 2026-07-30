@@ -25,7 +25,7 @@ export const Route = createFileRoute("/_authenticated/exam-generator/$classId")(
   component: ExamGeneratorPage,
   head: () => ({
     meta: [
-      { title: "מחולל מבחנים · ClassAlign Studio" },
+      { title: "מחולל מבחנים · הכיתה שלי" },
       { name: "description", content: "צור מבחן AI מותאם: פתוחות + אמריקאיות, בדיקה אוטומטית וזרימה ישירה לטבלת הציונים." },
       { name: "robots", content: "noindex" },
     ],

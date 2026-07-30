@@ -16,7 +16,7 @@ export const Route = createFileRoute("/_authenticated/bell-schedule")({
   component: BellSchedulePage,
   head: () => ({
     meta: [
-      { title: "לוח פעמונים · ClassAlign Studio" },
+      { title: "לוח פעמונים · הכיתה שלי" },
       { name: "description", content: "מתזמן פעמוני שיעורים אוטומטי עם צלילים מותאמים." },
       { name: "robots", content: "noindex" },
     ],

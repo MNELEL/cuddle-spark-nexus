@@ -90,7 +90,7 @@ function ShowcasePage() {
     <div dir="rtl" className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border/60">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
-          <Link to="/" className="text-sm font-semibold">ClassAlign Studio</Link>
+          <Link to="/" className="text-sm font-semibold">הכיתה שלי</Link>
           <Link to="/blog" className="text-sm text-muted-foreground hover:text-foreground">בלוג</Link>
         </div>
       </header>
@@ -167,7 +167,7 @@ function ShowcasePage() {
 
         <section className="rounded-2xl border border-border/60 bg-card/40 p-6">
           <p className="text-sm text-muted-foreground">
-            העמוד הזה נבנה עם ClassAlign Studio — מערכת ניהול כיתה, מעקב התקדמות ותקשורת
+            העמוד הזה נבנה עם הכיתה שלי — מערכת ניהול כיתה, מעקב התקדמות ותקשורת
             עם הורים לתלמודי תורה ובתי ספר.
           </p>
           <div className="mt-2 flex flex-wrap gap-4">

@@ -23,7 +23,7 @@ export const Route = createFileRoute("/_authenticated/exam-scanner/$classId")({
   component: ExamScannerPage,
   head: () => ({
     meta: [
-      { title: "סורק מבחנים · ClassAlign Studio" },
+      { title: "סורק מבחנים · הכיתה שלי" },
       { name: "description", content: "צלם מבחן בכתב-יד — הבינה המלאכותית מזהה שם, מנקדת לפי מחוון ושומרת את הציון." },
       { name: "robots", content: "noindex" },
     ],

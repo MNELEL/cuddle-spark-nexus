@@ -46,7 +46,7 @@ export const Route = createFileRoute("/_authenticated/certificates/$classId")({
   component: CertificatesPage,
   head: () => ({
     meta: [
-      { title: "הפקת תעודות · ClassAlign Studio" },
+      { title: "הפקת תעודות · הכיתה שלי" },
       { name: "description", content: "הפקת תעודות מעקב, ציונים והליכות בסגנון קלאסי — חצי שנתי, שליש שנתי ושנתי, כולל דף הכנה לפגישת הורים ומורים." },
       { name: "robots", content: "noindex" },
     ],

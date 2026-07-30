@@ -76,10 +76,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "ClassAlign Studio" },
+      { title: "הכיתה שלי" },
       { name: "google-site-verification", content: "w_7aZfmmsb4xs5uYzAFOwVBFEM3g30NYEkNKX9GrGdo" },
       { property: "og:type", content: "website" },
-      { property: "og:site_name", content: "ClassAlign Studio" },
+      { property: "og:site_name", content: "הכיתה שלי" },
       { name: "twitter:card", content: "summary" },
     ],
     links: [

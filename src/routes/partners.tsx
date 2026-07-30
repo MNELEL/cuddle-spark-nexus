@@ -64,7 +64,7 @@ export const Route = createFileRoute("/partners")({
           "@type": "Service",
           name: "ClassAlign Partnerships",
           serviceType: "Educational technology partnership",
-          provider: { "@type": "Organization", name: "ClassAlign Studio" },
+          provider: { "@type": "Organization", name: "הכיתה שלי" },
           areaServed: "IL",
           audience: {
             "@type": "EducationalAudience",

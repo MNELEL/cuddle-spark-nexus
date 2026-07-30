@@ -38,9 +38,9 @@ export const Route = createFileRoute("/_authenticated/ingest")({
   }),
   head: () => ({
     meta: [
-      { title: "העלאה חכמה · ClassAlign Studio" },
+      { title: "העלאה חכמה · הכיתה שלי" },
       { name: "description", content: "העלאה חכמה של קבצים – רשימות תלמידים, חומרי לימוד והקלטות שיעור מנותחים אוטומטית ומשובצים למקומם." },
-      { property: "og:title", content: "העלאה חכמה · ClassAlign Studio" },
+      { property: "og:title", content: "העלאה חכמה · הכיתה שלי" },
       { property: "og:description", content: "רשימות תלמידים, חומרי לימוד והקלטות שיעור — מנותחים ומשובצים אוטומטית." },
       { property: "og:url", content: "https://cuddle-spark-nexus.lovable.app/ingest" },
       { name: "robots", content: "noindex" },

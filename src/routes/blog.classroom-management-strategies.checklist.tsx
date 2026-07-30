@@ -127,7 +127,7 @@ function ChecklistPage() {
         },
       });
       await generateClassroomManagementChecklistPdf({
-        schoolName: institution.trim() || "ClassAlign Studio",
+        schoolName: institution.trim() || "הכיתה שלי",
         headerLine: `הופק עבור ${fullName.trim()} • צ'קליסט ניהול כיתה`,
       });
       setStatus("done");
@@ -179,7 +179,7 @@ function ChecklistPage() {
               type="button"
               onClick={() =>
                 generateClassroomManagementChecklistPdf({
-                  schoolName: institution.trim() || "ClassAlign Studio",
+                  schoolName: institution.trim() || "הכיתה שלי",
                   headerLine: `הופק עבור ${fullName.trim()} • צ'קליסט ניהול כיתה`,
                 })
               }

@@ -255,7 +255,7 @@ function GroupMakerPage() {
           <p className="text-muted-foreground mb-4">מחפשים ניהול כיתה מלא עם AI?</p>
           <Link to="/">
             <Button size="lg" className="gap-2">
-              גלו את ClassAlign Studio <ArrowLeft className="h-4 w-4" />
+              גלו את הכיתה שלי <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
         </div>

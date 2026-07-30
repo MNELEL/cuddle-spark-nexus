@@ -115,7 +115,7 @@ async function sendReminderDigestEmail(digest: TeacherDigest): Promise<boolean> 
         <tbody>${rows}</tbody>
       </table>
       <p style="margin:20px 0 0 0;color:#64748b;font-size:12px;text-align:right;">
-        הודעה אוטומטית מ-ClassAlign Studio.
+        הודעה אוטומטית מ-הכיתה שלי.
       </p>
     </div>
   </body>

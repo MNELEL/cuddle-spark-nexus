@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_authenticated/pedagogical/$classId")({
   component: PedagogicalPage,
   head: () => ({
     meta: [
-      { title: "דוח פדגוגי כיתתי · ClassAlign Studio" },
+      { title: "דוח פדגוגי כיתתי · הכיתה שלי" },
       { name: "description", content: "ניתוח AI של הישגי הכיתה, אקלים ומגמות התנהגות." },
       { name: "robots", content: "noindex" },
     ],

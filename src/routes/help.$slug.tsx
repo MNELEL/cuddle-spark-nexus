@@ -147,7 +147,7 @@ export const Route = createFileRoute("/help/$slug")({
             description: article.description,
             inLanguage: "he",
             mainEntityOfPage: url,
-            author: { "@type": "Organization", name: "ClassAlign Studio" },
+            author: { "@type": "Organization", name: "הכיתה שלי" },
           }),
         },
         ...(article.faq

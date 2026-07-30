@@ -47,8 +47,8 @@ export const Route = createFileRoute("/blog/progress-tracking-guide")({
           description: DESCRIPTION,
           inLanguage: "he",
           mainEntityOfPage: URL,
-          author: { "@type": "Organization", name: "ClassAlign Studio" },
-          publisher: { "@type": "Organization", name: "ClassAlign Studio", url: "https://cuddle-spark-nexus.lovable.app/" },
+          author: { "@type": "Organization", name: "הכיתה שלי" },
+          publisher: { "@type": "Organization", name: "הכיתה שלי", url: "https://cuddle-spark-nexus.lovable.app/" },
         }),
       },
       {
@@ -112,7 +112,7 @@ function Article() {
           <h2>כלים דיגיטליים שחוסכים זמן</h2>
           <p>
             במקום להחזיק שלושה מחברות שונות, מערכת דיגיטלית כמו{" "}
-            <Link to="/" className="text-primary hover:underline">ClassAlign Studio</Link>{" "}
+            <Link to="/" className="text-primary hover:underline">הכיתה שלי</Link>{" "}
             מרכזת את כל הנתונים במקום אחד: נוכחות, ציונים, הערות התנהגות, ותצוגה גרפית
             של ההתקדמות לכל תלמיד. גם{" "}
             <Link to="/blog/digital-hall-pass-guide" className="text-primary hover:underline">
@@ -139,7 +139,7 @@ function Article() {
           <div className="mt-12 rounded-2xl border border-border/60 bg-card/40 p-6">
             <p className="text-sm text-muted-foreground">רוצה לראות איך נראה מעקב התקדמות מסודר במערכת אחת?</p>
             <Link to="/" className="mt-2 inline-block text-base font-semibold text-primary hover:underline">
-              גלה את ClassAlign Studio ←
+              גלה את הכיתה שלי ←
             </Link>
           </div>
         </article>

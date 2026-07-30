@@ -2,9 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { FaqSection, faqJsonLd, type FaqItem } from "@/components/faq-section";
 
 const URL = "https://cuddle-spark-nexus.lovable.app/blog/classdojo-comparison";
-const TITLE = "ClassDojo מול ClassAlign Studio — השוואה למלמדים בתלמודי תורה";
+const TITLE = "ClassDojo מול הכיתה שלי — השוואה למלמדים בתלמודי תורה";
 const DESCRIPTION =
-  "השוואה מלאה בין ClassDojo ל-ClassAlign Studio: עברית ו-RTL, מקצועות קודש, מונחי חיידר (מלמד, רב, פרשת שבוע), פרטיות, ודו״חות פדגוגיים פרטיים מול פיצ׳רים חברתיים ציבוריים.";
+  "השוואה מלאה בין ClassDojo ל-הכיתה שלי: עברית ו-RTL, מקצועות קודש, מונחי חיידר (מלמד, רב, פרשת שבוע), פרטיות, ודו״חות פדגוגיים פרטיים מול פיצ׳רים חברתיים ציבוריים.";
 
 type Row = { feature: string; classdojo: string; classalign: string };
 
@@ -129,17 +129,17 @@ function Article() {
             ClassDojo היא אחת מהאפליקציות המוכרות בעולם לניהול כיתה, אבל היא נבנתה עבור בתי ספר
             אמריקאיים, בשפה אנגלית, ועם מודל חברתי־ציבורי בין הורים לתלמידים. במגזר החרדי, לתלמודי
             תורה וחיידרים, יש צרכים שונים: עברית מלאה, מקצועות קודש, מונחי חיידר, ודו״ח פדגוגי פרטי
-            להורה — לא פיד ציבורי. ClassAlign Studio נבנה בדיוק לצורך הזה.
+            להורה — לא פיד ציבורי. הכיתה שלי נבנה בדיוק לצורך הזה.
           </p>
 
-          <h2>טבלת השוואה — ClassDojo מול ClassAlign Studio</h2>
+          <h2>טבלת השוואה — ClassDojo מול הכיתה שלי</h2>
           <div className="mt-4 overflow-hidden rounded-2xl border border-border/60">
             <table className="w-full text-right text-sm">
               <thead className="bg-card/60">
                 <tr>
                   <th className="px-4 py-3 font-semibold">פיצ׳ר</th>
                   <th className="px-4 py-3 font-semibold">ClassDojo</th>
-                  <th className="px-4 py-3 font-semibold">ClassAlign Studio</th>
+                  <th className="px-4 py-3 font-semibold">הכיתה שלי</th>
                 </tr>
               </thead>
               <tbody>

@@ -17,7 +17,7 @@ import { listGroups } from "@/lib/groups.functions";
 
 export const Route = createFileRoute("/_authenticated/raffle/$classId")({
   component: RafflePage,
-  head: () => ({ meta: [{ title: "הגרלות · גלגל מזל · ClassAlign Studio" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({ meta: [{ title: "הגרלות · גלגל מזל · הכיתה שלי" }, { name: "robots", content: "noindex" }] }),
 });
 
 const DEFAULT_PRIZES = [

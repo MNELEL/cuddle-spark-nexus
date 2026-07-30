@@ -28,7 +28,7 @@ export const Route = createFileRoute("/_authenticated/calendar/$classId")({
   component: CalendarPage,
   head: () => ({
     meta: [
-      { title: "יומן אירועים כיתתי · ClassAlign Studio" },
+      { title: "יומן אירועים כיתתי · הכיתה שלי" },
       { name: "description", content: "יומן אירועים חודשי לכיתה עם סיכום שבועי AI, תאריך עברי וחגים." },
       { name: "robots", content: "noindex" },
     ],
