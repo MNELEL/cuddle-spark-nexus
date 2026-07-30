@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Sparkles, Loader2, Save, Trash2, Printer, Plus, Search,
   BookOpen, FileText, FolderPlus, X, ArrowRight, Tag, Library,
+  ChevronDown, ChevronUp, Download, Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +24,7 @@ import { KODESH_SUBJECTS } from "@/lib/kodesh-subjects";
 import {
   listResources, upsertResource, deleteResource, generateResourceWithAI,
   listCollections, upsertCollection, deleteCollection, toggleCollectionItem,
+  listCollectionItems,
   RESOURCE_TYPES, RESOURCE_TYPE_LABELS,
   type ResourceRow, type ResourceContent, type ResourceType,
 } from "@/lib/teaching-resources.functions";
