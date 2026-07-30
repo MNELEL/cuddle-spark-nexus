@@ -1,3 +1,4 @@
+import { SeatFillGrid } from "@/components/seat-fill-grid";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { GraduationCap, Users, Sparkles, Layout, Brain, BarChart3, Presentation, ArrowLeft } from "lucide-react";
