@@ -79,3 +79,62 @@ export const REWARD_CHARTS: RewardChart[] = [
 export function getRewardChart(id: string): RewardChart | undefined {
   return REWARD_CHARTS.find((c) => c.id === id);
 }
+
+/** Teacher-supplied tweaks applied on top of a built-in chart template. */
+export type RewardChartCustomization = {
+  /** Class name printed in the chart title / PDF meta line. */
+  className: string;
+  /** Teacher (מלמד) name printed in the signature line. */
+  teacherName: string;
+  /** How many day/step columns to print. */
+  columnCount: number;
+  /** How many blank student rows to print. */
+  rows: number;
+  /** Overrides the reward ladder text. Empty = keep the template text. */
+  reward: string;
+  /** Overrides the campaign goal text. Empty = keep the template text. */
+  goal: string;
+};
+
+export const DEFAULT_REWARD_CHART_CUSTOMIZATION: RewardChartCustomization = {
+  className: "",
+  teacherName: "",
+  columnCount: 0,
+  rows: 0,
+  reward: "",
+  goal: "",
+};
+
+/**
+ * Rebuilds column headers for a different column count, keeping the template's
+ * labelling style: pure numbers stay numbers, prefixed labels ("שבוע 1") keep
+ * their prefix, and free-form label lists are cycled.
+ */
+function buildColumns(chart: RewardChart, count: number): string[] {
+  const first = chart.columns[0] ?? "1";
+  if (/^[0-9]+$/.test(first)) return Array.from({ length: count }, (_, i) => String(i + 1));
+  const prefixMatch = first.match(/^(.*?)\s*[0-9]+$/);
+  if (prefixMatch) {
+    const prefix = prefixMatch[1];
+    return Array.from({ length: count }, (_, i) => `${prefix} ${i + 1}`);
+  }
+  return Array.from({ length: count }, (_, i) => chart.columns[i % chart.columns.length]);
+}
+
+/** Applies teacher customization to a template, returning a new chart object. */
+export function applyRewardChartCustomization(
+  chart: RewardChart,
+  custom?: Partial<RewardChartCustomization>,
+): RewardChart {
+  if (!custom) return chart;
+  const columnCount = Math.max(1, Math.min(40, custom.columnCount || chart.columns.length));
+  const rows = Math.max(1, Math.min(40, custom.rows || chart.rows));
+  return {
+    ...chart,
+    name: custom.className?.trim() ? `${chart.name} — ${custom.className.trim()}` : chart.name,
+    goal: custom.goal?.trim() || chart.goal,
+    reward: custom.reward?.trim() || chart.reward,
+    columns: columnCount === chart.columns.length ? chart.columns : buildColumns(chart, columnCount),
+    rows,
+  };
+}
