@@ -155,8 +155,8 @@ function ResourcesPage() {
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Library className="h-3.5 w-3.5" /> ספרייה
           </div>
-          <h1 className="font-display text-3xl font-bold tracking-tight">חומרי הוראה ועזרים</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">חומרי הוראה ועזרים</h1>
+          <p className="mt-1 hidden text-sm text-muted-foreground sm:block">
             מאגר אישי של דפי עבודה, חידות, סיפורים, מערכי שיעור ועזרים — עם יצירת תוכן ב-AI
           </p>
         </div>
@@ -178,7 +178,42 @@ function ResourcesPage() {
         </div>
       </div>
 
-      {recommendations.length > 0 && (
+      {filters.collectionIds.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="text-muted-foreground">אוספים מסוננים:</span>
+          {collections
+            .filter((c) => filters.collectionIds.includes(c.id))
+            .map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 hover:bg-accent"
+                onClick={() => patch({ collectionIds: filters.collectionIds.filter((id) => id !== c.id) })}
+              >
+                <span className="h-2 w-2 rounded-full" style={{ background: c.color }} />
+                {c.name} <X className="h-3 w-3" />
+              </button>
+            ))}
+        </div>
+      )}
+
+      {/* Compact, collapsible top section — keeps the materials list high on mobile */}
+      <div className="rounded-xl border bg-card">
+        <button
+          type="button"
+          className="flex w-full items-center justify-between px-3 py-2 text-sm font-medium"
+          onClick={() => setTopOpen((v) => !v)}
+          aria-expanded={topOpen}
+        >
+          <span className="flex items-center gap-2">
+            <Wand2 className="h-4 w-4 text-amber" /> קצב ההפקה שלך והמלצות
+          </span>
+          {topOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </button>
+        {topOpen && (
+          <div className="space-y-3 border-t p-3">
+            <WeeklyPaceCard />
+            {recommendations.length > 0 && (
         <Card className="border-amber/40 bg-amber/5">
           <CardHeader className="pb-2 flex flex-row items-center justify-between">
             <CardTitle className="text-sm flex items-center gap-2">
@@ -206,9 +241,10 @@ function ResourcesPage() {
             ))}
           </CardContent>
         </Card>
-      )}
-
-      <WeeklyPaceCard />
+            )}
+          </div>
+        )}
+      </div>
 
       <div className="grid gap-4 lg:grid-cols-[260px_1fr]">
         {/* Filters */}
