@@ -8,6 +8,7 @@ import {
 import {
   Wrench, Music, Sparkles, BellRing, LineChart, Palette, BookOpen, GraduationCap,
   ScanText, TrendingUp, ClipboardList, Library, User, Users, Calendar,
+  Award, FileText, Wand2, Trophy, Dices, Globe2, MessageSquare,
 } from "lucide-react";
 import { listClasses } from "@/lib/classes.functions";
 import { listStudents } from "@/lib/students.functions";
