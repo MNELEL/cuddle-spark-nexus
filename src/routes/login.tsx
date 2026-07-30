@@ -5,8 +5,8 @@ import { lovable } from "@/integrations/lovable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { GraduationCap } from "lucide-react";
+import { SeatFillGrid } from "@/components/seat-fill-grid";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({
@@ -75,61 +75,107 @@ function LoginPage() {
     navigate({ to: "/classes" });
   };
 
+  const tabClass = (active: boolean) =>
+    `flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+      active
+        ? "bg-background text-foreground shadow-sm"
+        : "text-muted-foreground hover:text-foreground"
+    }`;
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background to-secondary/40 p-4">
+    <div className="grid min-h-dvh md:grid-cols-2">
       <h1 className="sr-only">התחברות ל-״הכיתה שלי״</h1>
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <Link to="/" className="mx-auto mb-2 flex items-center gap-2">
-            <GraduationCap className="h-7 w-7 text-primary" />
-            <span className="text-lg font-bold">הכיתה שלי</span>
-          </Link>
-          <CardTitle>{mode === "signin" ? "ברוך הבא" : "צור חשבון"}</CardTitle>
-          <CardDescription>
-            {mode === "signin" ? "התחבר כדי לנהל את הכיתות שלך" : "התחל לנהל את הכיתות שלך בחינם"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Button variant="outline" className="w-full" onClick={google} disabled={busy}>
-            המשך עם Google
-          </Button>
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">או</span>
-            </div>
+
+      {/* visual panel — left column on RTL screens, hidden on small screens */}
+      <aside className="relative hidden flex-col justify-between overflow-hidden bg-primary p-10 text-primary-foreground md:order-2 md:flex">
+        <Link to="/" className="flex items-center gap-2.5">
+          <GraduationCap className="h-7 w-7" aria-hidden="true" />
+          <span className="font-display text-xl font-bold tracking-tight">הכיתה שלי</span>
+        </Link>
+
+        <div className="max-w-sm">
+          <p className="font-display text-3xl font-bold leading-snug">
+            כל הכיתה במקום אחד
+          </p>
+          <p className="mt-3 text-base text-primary-foreground/85">
+            הושבה, ציונים, דוחות פדגוגיים וכלי AI — מסונכרנים בעברית מלאה.
+          </p>
+          <div className="mt-10">
+            <SeatFillGrid rows={3} cols={7} />
           </div>
-          <form onSubmit={submit} className="space-y-3">
-            {mode === "signup" && (
-              <div>
-                <Label htmlFor="name">שם</Label>
-                <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="הרב ישראל / המלמד" />
-              </div>
-            )}
-            <div>
-              <Label htmlFor="email">אימייל</Label>
-              <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} dir="ltr" />
-            </div>
-            <div>
-              <Label htmlFor="password">סיסמה</Label>
-              <Input id="password" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} dir="ltr" />
-            </div>
-            <Button type="submit" className="w-full" disabled={busy}>
-              {mode === "signin" ? "התחבר" : "הרשם"}
-            </Button>
-          </form>
-          <p className="text-center text-sm text-muted-foreground">
-            {mode === "signin" ? "אין לך חשבון? " : "כבר יש לך חשבון? "}
+        </div>
+
+        <p className="text-xs text-primary-foreground/70">© הכיתה שלי</p>
+      </aside>
+
+      {/* form panel */}
+      <main className="flex items-center justify-center bg-background p-6 md:order-1">
+        <div className="w-full max-w-md">
+          <Link to="/" className="mb-8 flex items-center gap-2 md:hidden">
+            <GraduationCap className="h-6 w-6 text-primary" aria-hidden="true" />
+            <span className="font-display text-lg font-bold">הכיתה שלי</span>
+          </Link>
+
+          <div role="tablist" aria-label="מצב כניסה" className="mb-6 flex gap-1 rounded-xl bg-muted p-1">
             <button
               type="button"
-              className="font-medium text-primary hover:underline"
-              onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+              role="tab"
+              aria-selected={mode === "signin"}
+              className={tabClass(mode === "signin")}
+              onClick={() => setMode("signin")}
             >
-              {mode === "signin" ? "הירשם" : "התחבר"}
+              התחברות
             </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mode === "signup"}
+              className={tabClass(mode === "signup")}
+              onClick={() => setMode("signup")}
+            >
+              הרשמה
+            </button>
+          </div>
+
+          <h2 className="font-display text-2xl font-bold">
+            {mode === "signin" ? "ברוך שובך" : "צור חשבון"}
+          </h2>
+          <p className="mt-1 mb-6 text-sm text-muted-foreground">
+            {mode === "signin" ? "התחבר כדי לנהל את הכיתות שלך" : "התחל לנהל את הכיתות שלך בחינם"}
           </p>
-        </CardContent>
-      </Card>
+
+          <div className="space-y-4">
+            <Button variant="outline" className="w-full" onClick={google} disabled={busy}>
+              המשך עם Google
+            </Button>
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">או</span>
+              </div>
+            </div>
+            <form onSubmit={submit} className="space-y-3">
+              {mode === "signup" && (
+                <div>
+                  <Label htmlFor="name">שם</Label>
+                  <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="הרב ישראל / המלמד" />
+                </div>
+              )}
+              <div>
+                <Label htmlFor="email">אימייל</Label>
+                <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} dir="ltr" />
+              </div>
+              <div>
+                <Label htmlFor="password">סיסמה</Label>
+                <Input id="password" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} dir="ltr" />
+              </div>
+              <Button type="submit" className="w-full" disabled={busy}>
+                {mode === "signin" ? "התחבר" : "הרשם"}
+              </Button>
+            </form>
+          </div>
+        </div>
+      </main>
     </div>
   );
 }
