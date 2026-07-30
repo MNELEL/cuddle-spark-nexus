@@ -50,6 +50,7 @@ function UserManagementPage() {
   const listUsers = useServerFn(listUsersWithRoles);
   const assignRoleFn = useServerFn(assignRole);
   const removeRoleFn = useServerFn(removeRole);
+  const bootstrapFn = useServerFn(bootstrapFirstAdmin);
   const queryClient = useQueryClient();
 
   const { data: isAdminUser, isLoading: isAdminLoading } = useQuery({
