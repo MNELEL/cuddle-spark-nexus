@@ -23,7 +23,7 @@ export function openCommandPalette() {
 type NavItem = { label: string; to: string; icon: React.ComponentType<{ className?: string }>; keywords?: string };
 
 const GLOBAL_ITEMS: NavItem[] = [
-  { label: "כיתות", to: "/classes", icon: GraduationCap, keywords: "class classes" },
+  { label: "כיתות", to: "/classes", icon: School, keywords: "class classes" },
   { label: "ארגז כלים", to: "/toolkit", icon: Wrench, keywords: "tools timer" },
   { label: "לוח צלילים", to: "/sound-board", icon: Music, keywords: "sound" },
   { label: "ספריית חומרים", to: "/resources", icon: Library, keywords: "resources library" },
