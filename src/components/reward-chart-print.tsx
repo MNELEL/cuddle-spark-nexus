@@ -135,6 +135,79 @@ export function RewardChartPrintView() {
         </Button>
       </div>
 
+      <div className="reward-chart-controls mt-4 grid gap-3 rounded-2xl border border-border/60 bg-card/40 p-4 sm:grid-cols-2 lg:grid-cols-3 print:hidden">
+        <div className="sm:col-span-2 lg:col-span-3 text-sm font-semibold">התאמה אישית של הלוח</div>
+        <div className="space-y-1">
+          <Label htmlFor="rc-class">שם הכיתה</Label>
+          <Input
+            id="rc-class"
+            value={custom.className}
+            placeholder="למשל: כיתה ג׳2"
+            onChange={(e) => setCustom((c) => ({ ...c, className: e.target.value }))}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="rc-teacher">שם המלמד</Label>
+          <Input
+            id="rc-teacher"
+            value={custom.teacherName}
+            placeholder="למשל: הרב כהן"
+            onChange={(e) => setCustom((c) => ({ ...c, teacherName: e.target.value }))}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="rc-cols">טווח ימים / משבצות</Label>
+          <Input
+            id="rc-cols"
+            type="number"
+            min={1}
+            max={40}
+            value={custom.columnCount || ""}
+            placeholder="ברירת מחדל לפי התבנית"
+            onChange={(e) => setCustom((c) => ({ ...c, columnCount: Number(e.target.value) || 0 }))}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="rc-rows">מספר שורות (תלמידים)</Label>
+          <Input
+            id="rc-rows"
+            type="number"
+            min={1}
+            max={40}
+            value={custom.rows || ""}
+            placeholder="ברירת מחדל לפי התבנית"
+            onChange={(e) => setCustom((c) => ({ ...c, rows: Number(e.target.value) || 0 }))}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="rc-goal">יעד המבצע</Label>
+          <Input
+            id="rc-goal"
+            value={custom.goal}
+            placeholder="השאר ריק לטקסט המקורי"
+            onChange={(e) => setCustom((c) => ({ ...c, goal: e.target.value }))}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="rc-reward">סולם פרסים</Label>
+          <Input
+            id="rc-reward"
+            value={custom.reward}
+            placeholder="למשל: 10 סימונים = פרס קטן"
+            onChange={(e) => setCustom((c) => ({ ...c, reward: e.target.value }))}
+          />
+        </div>
+        <div className="sm:col-span-2 lg:col-span-3">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setCustom(DEFAULT_REWARD_CHART_CUSTOMIZATION)}
+          >
+            איפוס להתאמות ברירת המחדל
+          </Button>
+        </div>
+      </div>
+
       <div className="reward-chart-print-area mt-6 space-y-8">
         {charts.map((c) => (
           <div key={c.id} className="rounded-2xl border border-border/60 bg-card/40 p-4 print:rounded-none print:border-0 print:bg-white print:p-0 print:text-black">
