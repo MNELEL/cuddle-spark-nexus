@@ -10,7 +10,7 @@ export const Route = createFileRoute("/p/$token")({
   component: ParentPage,
   head: () => ({
     meta: [
-      { title: "פורטל הורים · ClassAlign Studio" },
+      { title: "פורטל הורים · הכיתה שלי" },
       { name: "description", content: "צפייה בהתקדמות התלמיד — ציונים, נוכחות והתנהגות — קישור אישי מהרב המלמד." },
       { name: "robots", content: "noindex" },
     ],
@@ -50,7 +50,7 @@ function ParentPage() {
       <div className="mx-auto max-w-3xl space-y-5 p-4 md:p-8">
         <div className="rounded-2xl border bg-card bg-mesh p-6 shadow-sm">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Sparkles className="h-3.5 w-3.5 text-amber" /> ClassAlign Studio · פורטל הורים
+            <Sparkles className="h-3.5 w-3.5 text-amber" /> הכיתה שלי · פורטל הורים
           </div>
           <h1 className="mt-2 font-display text-3xl font-bold tracking-tight">
             {data.studentName ? `התקדמות ${data.studentName}` : `כיתה ${data.className}`}

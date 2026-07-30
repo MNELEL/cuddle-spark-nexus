@@ -28,7 +28,7 @@ export const Route = createFileRoute("/_authenticated/share/$classId")({
   component: ShareSettings,
   head: () => ({
     meta: [
-      { title: "שיתוף עמוד כיתה ציבורי · ClassAlign" },
+      { title: "שיתוף עמוד כיתה ציבורי · הכיתה שלי" },
       { name: "robots", content: "noindex" },
     ],
   }),

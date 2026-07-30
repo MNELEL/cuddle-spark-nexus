@@ -4,10 +4,10 @@ export const Route = createFileRoute("/privacy")({
   component: PrivacyPage,
   head: () => ({
     meta: [
-      { title: "מדיניות פרטיות — ClassAlign Studio" },
-      { name: "description", content: "מדיניות הפרטיות של ClassAlign Studio — איזה מידע נאסף, איך הוא נשמר ומה הזכויות שלך." },
-      { property: "og:title", content: "מדיניות פרטיות — ClassAlign Studio" },
-      { property: "og:description", content: "מדיניות הפרטיות של ClassAlign Studio — איזה מידע נאסף, איך הוא נשמר ומה הזכויות שלך." },
+      { title: "מדיניות פרטיות — הכיתה שלי" },
+      { name: "description", content: "מדיניות הפרטיות של הכיתה שלי — איזה מידע נאסף, איך הוא נשמר ומה הזכויות שלך." },
+      { property: "og:title", content: "מדיניות פרטיות — הכיתה שלי" },
+      { property: "og:description", content: "מדיניות הפרטיות של הכיתה שלי — איזה מידע נאסף, איך הוא נשמר ומה הזכויות שלך." },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://cuddle-spark-nexus.lovable.app/privacy" },
     ],
@@ -21,12 +21,12 @@ function PrivacyPage() {
       <main className="container mx-auto max-w-3xl px-4 py-10 sm:px-6">
         <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">← חזרה לעמוד הבית</Link>
         <h1 className="mt-3 font-display text-3xl font-bold">מדיניות פרטיות</h1>
-        <p className="mt-1 text-sm text-muted-foreground">עדכון אחרון: 21 ביוני 2026 · עמוד זה נכתב ומתוחזק על-ידי בעל האפליקציה ClassAlign Studio.</p>
+        <p className="mt-1 text-sm text-muted-foreground">עדכון אחרון: 21 ביוני 2026 · עמוד זה נכתב ומתוחזק על-ידי בעל האפליקציה הכיתה שלי.</p>
 
         <section className="prose prose-sm mt-6 max-w-none space-y-4 text-foreground">
           <h2 className="font-display text-xl font-semibold">מי אנחנו</h2>
           <p>
-            ClassAlign Studio הוא כלי ניהול כיתה לחיידרים, תלמודי תורה ובתי ספר, המסייע למלמדים ולרבנים
+            הכיתה שלי הוא כלי ניהול כיתה לחיידרים, תלמודי תורה ובתי ספר, המסייע למלמדים ולרבנים
             לתעד נוכחות, התנהגות, הישגים ותקשורת עם הורים.
           </p>
 

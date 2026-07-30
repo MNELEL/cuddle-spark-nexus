@@ -167,7 +167,7 @@ export const Route = createFileRoute("/parents-guide/$slug")({
             inLanguage: "he",
             datePublished: guide.updated,
             dateModified: guide.updated,
-            author: { "@type": "Organization", name: "ClassAlign" },
+            author: { "@type": "Organization", name: "הכיתה שלי" },
             mainEntityOfPage: url,
           }),
         },
@@ -211,7 +211,7 @@ function GuidePage() {
           <Link to="/parents-guide" className="text-sm text-muted-foreground hover:text-foreground">
             → מרכז ההורים
           </Link>
-          <span className="text-sm font-semibold">ClassAlign</span>
+          <span className="text-sm font-semibold">הכיתה שלי</span>
         </div>
       </header>
       <main className="mx-auto max-w-3xl px-6 py-12">

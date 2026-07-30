@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_authenticated/analytics/$classId")({
   component: AnalyticsPage,
   head: () => ({
     meta: [
-      { title: "אנליטיקת ציונים · ClassAlign Studio" },
+      { title: "אנליטיקת ציונים · הכיתה שלי" },
       { name: "description", content: "דשבורד מגמות ציונים לפי מקצוע ותלמיד — קו, עמודות ורדאר." },
       { name: "robots", content: "noindex" },
     ],

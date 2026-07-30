@@ -12,7 +12,7 @@ export const Route = createFileRoute("/theme-test")({
   component: ThemeTestPage,
   head: () => ({
     meta: [
-      { title: "בדיקת ערכות נושא · ClassAlign Studio" },
+      { title: "בדיקת ערכות נושא · הכיתה שלי" },
       { name: "description", content: "תצוגת בדיקה מהירה של כל ערכות הנושא במערכת." },
       { name: "robots", content: "noindex" },
     ],

@@ -115,7 +115,7 @@ async function sendReminderDigestEmail(digest: TeacherDigest): Promise<boolean> 
         <tbody>${rows}</tbody>
       </table>
       <p style="margin:20px 0 0 0;color:#64748b;font-size:12px;text-align:right;">
-        הודעה אוטומטית מ-ClassAlign Studio.
+        הודעה אוטומטית מ-״הכיתה שלי״.
       </p>
     </div>
   </body>
@@ -124,7 +124,7 @@ async function sendReminderDigestEmail(digest: TeacherDigest): Promise<boolean> 
   try {
     const resend = new Resend(apiKey);
     const { error } = await resend.emails.send({
-      from: "ClassAlign <reminders@notifications.classalign.app>",
+      from: "הכיתה שלי <reminders@notifications.classalign.app>",
       to: digest.email,
       subject: `יש לך ${digest.items.length} תזכורות באיחור`,
       html,

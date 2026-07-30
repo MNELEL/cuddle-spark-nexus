@@ -26,7 +26,7 @@ export const Route = createFileRoute("/_authenticated/poll/$classId")({
   component: PollPage,
   head: () => ({
     meta: [
-      { title: "סקר כיתה חי · ClassAlign Studio" },
+      { title: "סקר כיתה חי · הכיתה שלי" },
       { name: "robots", content: "noindex" },
     ],
   }),

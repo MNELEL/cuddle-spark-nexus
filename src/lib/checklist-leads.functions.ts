@@ -76,7 +76,7 @@ export const submitChecklistLead = createServerFn({ method: "POST" })
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            from: "ClassAlign <noreply@classalign.dev>",
+            from: "הכיתה שלי <noreply@classalign.dev>",
             to: ["nm0527603669@gmail.com"],
             subject: `ליד חדש לצ'קליסט (${data.checklist_slug})`,
             text: `שם: ${data.full_name}\nמוסד: ${data.institution}\nתפקיד: ${data.role}\nאימייל: ${data.email}\nצ'קליסט: ${data.checklist_slug}`,

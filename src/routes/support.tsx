@@ -4,10 +4,10 @@ export const Route = createFileRoute("/support")({
   component: SupportPage,
   head: () => ({
     meta: [
-      { title: "תמיכה — ClassAlign Studio" },
-      { name: "description", content: "תמיכה למשתמשי ClassAlign Studio — שאלות נפוצות, יצירת קשר וקישורים שימושיים." },
-      { property: "og:title", content: "תמיכה — ClassAlign Studio" },
-      { property: "og:description", content: "תמיכה למשתמשי ClassAlign Studio — שאלות נפוצות, יצירת קשר וקישורים שימושיים." },
+      { title: "תמיכה — הכיתה שלי" },
+      { name: "description", content: "תמיכה למשתמשי הכיתה שלי — שאלות נפוצות, יצירת קשר וקישורים שימושיים." },
+      { property: "og:title", content: "תמיכה — הכיתה שלי" },
+      { property: "og:description", content: "תמיכה למשתמשי הכיתה שלי — שאלות נפוצות, יצירת קשר וקישורים שימושיים." },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://cuddle-spark-nexus.lovable.app/support" },
     ],

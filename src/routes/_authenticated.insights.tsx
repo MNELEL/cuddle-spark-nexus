@@ -20,9 +20,9 @@ export const Route = createFileRoute("/_authenticated/insights")({
   component: InsightsPage,
   head: () => ({
     meta: [
-      { title: "תובנות מורה · ClassAlign Studio" },
+      { title: "תובנות מורה · הכיתה שלי" },
       { name: "description", content: "דשבורד תובנות אישי — סגנון הכתיבה, המקצועות המועדפים וקצב יצירת התוכן שלך." },
-      { property: "og:title", content: "תובנות מורה · ClassAlign Studio" },
+      { property: "og:title", content: "תובנות מורה · הכיתה שלי" },
       { property: "og:description", content: "תקציר AI, מקצועות מועדפים, סוגי חומר וקצב יצירת תוכן." },
       { name: "robots", content: "noindex" },
     ],

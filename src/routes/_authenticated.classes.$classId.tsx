@@ -90,9 +90,9 @@ export const Route = createFileRoute("/_authenticated/classes/$classId")({
     const url = `https://cuddle-spark-nexus.lovable.app/classes/${params.classId}`;
     return {
       meta: [
-        { title: `${name} · ניהול כיתה · ClassAlign Studio` },
-        { name: "description", content: `סידור הושבה, ציונים, התנהגות וקשר עם הורים עבור כיתה ${name} ב-ClassAlign Studio.` },
-        { property: "og:title", content: `${name} · ניהול כיתה · ClassAlign Studio` },
+        { title: `${name} · ניהול כיתה · הכיתה שלי` },
+        { name: "description", content: `סידור הושבה, ציונים, התנהגות וקשר עם הורים עבור כיתה ${name} ב-״הכיתה שלי״.` },
+        { property: "og:title", content: `${name} · ניהול כיתה · הכיתה שלי` },
         { property: "og:description", content: `סידור הושבה, ציונים, התנהגות וקשר עם הורים עבור כיתה ${name}.` },
         { property: "og:url", content: url },
       ],

@@ -18,10 +18,10 @@ export const Route = createFileRoute("/_authenticated/classes/")({
   component: ClassesPage,
   head: () => ({
     meta: [
-      { title: "הכיתות שלי · ClassAlign Studio" },
-      { name: "description", content: "נהל את הכיתות, התלמידים והאילוצים הפדגוגיים שלך במקום אחד עם ClassAlign Studio." },
-      { property: "og:title", content: "הכיתות שלי · ClassAlign Studio" },
-      { property: "og:description", content: "נהל את הכיתות, התלמידים והאילוצים הפדגוגיים שלך במקום אחד עם ClassAlign Studio." },
+      { title: "הכיתות שלי · הכיתה שלי" },
+      { name: "description", content: "נהל את הכיתות, התלמידים והאילוצים הפדגוגיים שלך במקום אחד עם הכיתה שלי." },
+      { property: "og:title", content: "הכיתות שלי · הכיתה שלי" },
+      { property: "og:description", content: "נהל את הכיתות, התלמידים והאילוצים הפדגוגיים שלך במקום אחד עם הכיתה שלי." },
       { property: "og:url", content: "https://cuddle-spark-nexus.lovable.app/classes" },
     ],
     links: [{ rel: "canonical", href: "https://cuddle-spark-nexus.lovable.app/classes" }],

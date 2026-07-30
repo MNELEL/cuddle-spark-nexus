@@ -29,9 +29,9 @@ export const Route = createFileRoute("/_authenticated/questions")({
   component: QuestionsBankPage,
   head: () => ({
     meta: [
-      { title: "בנק שאלות · ClassAlign Studio" },
+      { title: "בנק שאלות · הכיתה שלי" },
       { name: "description", content: "חיפוש, סינון ובחירת שאלות מוכנות מהספרייה לשימוש חוזר במבחנים ובדפי עבודה." },
-      { property: "og:title", content: "בנק שאלות · ClassAlign Studio" },
+      { property: "og:title", content: "בנק שאלות · הכיתה שלי" },
       { property: "og:description", content: "חיפוש ובחירת שאלות מוכנות למבחנים ולדפי עבודה." },
       { property: "og:url", content: "https://cuddle-spark-nexus.lovable.app/questions" },
       { name: "robots", content: "noindex" },

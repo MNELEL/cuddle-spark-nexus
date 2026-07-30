@@ -27,7 +27,7 @@ export const Route = createFileRoute("/c/$slug")({
         meta: [{ title: "עמוד לא נמצא" }, { name: "robots", content: "noindex" }],
       };
     }
-    const title = `${loaderData.className} · התקדמות לימודית · ClassAlign`;
+    const title = `${loaderData.className} · התקדמות לימודית · הכיתה שלי`;
     const desc =
       loaderData.description ??
       loaderData.headline ??
@@ -70,7 +70,7 @@ function NotFound() {
         <h1 className="text-2xl font-bold">הדף אינו זמין</h1>
         <p className="mt-2 text-sm text-muted-foreground">ייתכן שהרב סגר את השיתוף הציבורי, או שהכתובת שגויה.</p>
         <Link to="/" className="mt-4 inline-block text-sm text-primary hover:underline">
-          ← לעמוד הבית של ClassAlign
+          ← לעמוד הבית של הכיתה שלי
         </Link>
       </div>
     </div>
@@ -90,7 +90,7 @@ function ShowcasePage() {
     <div dir="rtl" className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border/60">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
-          <Link to="/" className="text-sm font-semibold">ClassAlign Studio</Link>
+          <Link to="/" className="text-sm font-semibold">הכיתה שלי</Link>
           <Link to="/blog" className="text-sm text-muted-foreground hover:text-foreground">בלוג</Link>
         </div>
       </header>
@@ -167,12 +167,12 @@ function ShowcasePage() {
 
         <section className="rounded-2xl border border-border/60 bg-card/40 p-6">
           <p className="text-sm text-muted-foreground">
-            העמוד הזה נבנה עם ClassAlign Studio — מערכת ניהול כיתה, מעקב התקדמות ותקשורת
+            העמוד הזה נבנה עם הכיתה שלי — מערכת ניהול כיתה, מעקב התקדמות ותקשורת
             עם הורים לתלמודי תורה ובתי ספר.
           </p>
           <div className="mt-2 flex flex-wrap gap-4">
             <Link to="/" className="text-base font-semibold text-primary hover:underline">
-              גלה את ClassAlign ←
+              גלה את הכיתה שלי ←
             </Link>
             <Link to="/parents-guide" className="text-base font-semibold text-primary hover:underline">
               משאבים להורים ←

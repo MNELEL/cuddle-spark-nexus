@@ -4,13 +4,13 @@ export const Route = createFileRoute("/blog/")({
   component: BlogIndex,
   head: () => ({
     meta: [
-      { title: "בלוג ClassAlign · מאמרים ומדריכים לתלמודי תורה" },
+      { title: "בלוג הכיתה שלי · מאמרים ומדריכים לתלמודי תורה" },
       {
         name: "description",
         content:
           "מדריכים מקצועיים לרבנים, מלמדים ומנהלי תלמודי תורה — ניהול כיתה, מעקב פדגוגי, וכלים דיגיטליים בגובה העיניים.",
       },
-      { property: "og:title", content: "בלוג ClassAlign · מאמרים ומדריכים לתלמודי תורה" },
+      { property: "og:title", content: "בלוג הכיתה שלי · מאמרים ומדריכים לתלמודי תורה" },
       {
         property: "og:description",
         content:
@@ -31,7 +31,7 @@ function BlogIndex() {
           <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">
             → חזרה לדף הבית
           </Link>
-          <span className="text-sm font-semibold">בלוג ClassAlign</span>
+          <span className="text-sm font-semibold">בלוג הכיתה שלי</span>
         </div>
       </header>
       <main className="mx-auto max-w-3xl px-6 py-12">
@@ -92,7 +92,7 @@ function BlogIndex() {
           </li>
           <li className="rounded-2xl border border-border/60 bg-card/40 p-6">
             <Link to="/blog/classdojo-comparison" className="block">
-              <h2 className="text-xl font-semibold">ClassDojo מול ClassAlign — השוואה לחיידר</h2>
+              <h2 className="text-xl font-semibold">ClassDojo מול הכיתה שלי — השוואה לחיידר</h2>
               <p className="mt-2 text-muted-foreground">
                 השוואה מלאה: עברית ו-RTL, מקצועות קודש, מונחי חיידר, פרטיות ודו״ח פדגוגי פרטי
                 מול פיד חברתי ציבורי.

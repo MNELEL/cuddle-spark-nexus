@@ -57,7 +57,7 @@ function Article() {
       <header className="border-b border-border/60">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-4">
           <Link to="/blog" className="text-sm text-muted-foreground hover:text-foreground">→ חזרה לבלוג</Link>
-          <span className="text-sm font-semibold">ClassAlign</span>
+          <span className="text-sm font-semibold">הכיתה שלי</span>
         </div>
       </header>
       <main className="mx-auto max-w-3xl px-6 py-12">
@@ -90,14 +90,14 @@ function Article() {
           </p>
           <p>
             כל הכלים ברשימה קיימים ב-
-            <Link to="/" className="text-primary hover:underline"> ClassAlign Studio</Link>{" "}
+            <Link to="/" className="text-primary hover:underline"> הכיתה שלי</Link>{" "}
             כמערכת אחת מסונכרנת — כדי שלא תצטרך לזכור עשר סיסמאות ולעבור בין עשר לשוניות.
           </p>
 
           <div className="mt-12 rounded-2xl border border-border/60 bg-card/40 p-6">
             <p className="text-sm text-muted-foreground">רוצה לראות את כל הכלים במקום אחד?</p>
             <Link to="/" className="mt-2 inline-block text-base font-semibold text-primary hover:underline">
-              התנסה ב-ClassAlign Studio ←
+              התנסה ב-״הכיתה שלי״ ←
             </Link>
           </div>
         </article>

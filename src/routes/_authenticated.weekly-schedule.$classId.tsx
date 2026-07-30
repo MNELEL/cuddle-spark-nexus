@@ -25,7 +25,7 @@ export const Route = createFileRoute("/_authenticated/weekly-schedule/$classId")
   component: WeeklySchedulePage,
   head: () => ({
     meta: [
-      { title: "לוח שבועי · ClassAlign Studio" },
+      { title: "לוח שבועי · הכיתה שלי" },
       { name: "description", content: "לוח שיעורים שבועי לכיתה, ניתן לעריכה בגרירה." },
       { name: "robots", content: "noindex" },
     ],

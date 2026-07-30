@@ -3,9 +3,9 @@ import { FaqSection, faqJsonLd, type FaqItem } from "@/components/faq-section";
 
 const BASE = "https://cuddle-spark-nexus.lovable.app";
 const URL = `${BASE}/partners/case-studies`;
-const TITLE = "Case Studies — סיפורי הטמעה של ClassAlign בבתי ספר ותלמודי תורה";
+const TITLE = "Case Studies — סיפורי הטמעה של הכיתה שלי בבתי ספר ותלמודי תורה";
 const DESCRIPTION =
-  "דוגמאות אמיתיות של הטמעת ClassAlign במחוזות, ישיבות קטנות ותלמודי תורה: יעדים, שלבי עבודה, לוחות זמנים ותוצאות מדידות בטווח 90 יום.";
+  "דוגמאות אמיתיות של הטמעת הכיתה שלי במחוזות, ישיבות קטנות ותלמודי תורה: יעדים, שלבי עבודה, לוחות זמנים ותוצאות מדידות בטווח 90 יום.";
 
 type CaseStudy = {
   slug: string;
@@ -125,7 +125,7 @@ const STUDIES: CaseStudy[] = [
 const FAQ: FaqItem[] = [
   {
     q: "התוצאות שמופיעות כאן ריאליסטיות למוסד שלי?",
-    a: "כן. שלושת המקרים מייצגים תמונת מצב טיפוסית של מוסדות שהטמיעו את ClassAlign בעונה מלאה. שיפורים משמעותיים ביותר מופיעים כשמנהל המוסד עצמו מוביל את התהליך ומקצה זמן לסדנאות.",
+    a: "כן. שלושת המקרים מייצגים תמונת מצב טיפוסית של מוסדות שהטמיעו את הכיתה שלי בעונה מלאה. שיפורים משמעותיים ביותר מופיעים כשמנהל המוסד עצמו מוביל את התהליך ומקצה זמן לסדנאות.",
   },
   {
     q: "כמה זמן לוקח להגיע לתוצאות דומות?",
@@ -185,7 +185,7 @@ function CaseStudiesPage() {
       <header className="border-b border-border/60">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-6">
           <Link to="/partners" className="text-sm text-muted-foreground hover:text-foreground">→ שיתופי פעולה</Link>
-          <span className="text-sm font-semibold">ClassAlign</span>
+          <span className="text-sm font-semibold">הכיתה שלי</span>
         </div>
       </header>
       <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">

@@ -14,13 +14,13 @@ export const Route = createFileRoute("/tools/group-maker")({
   component: GroupMakerPage,
   head: () => ({
     meta: [
-      { title: "מחולל קבוצות אקראי · בחירת תלמיד רנדומלי | ClassAlign" },
+      { title: "מחולל קבוצות אקראי · בחירת תלמיד רנדומלי | הכיתה שלי" },
       { name: "description", content: "כלי חינמי ומהיר לחלוקת תלמידים לקבוצות אקראיות ולהגרלת תלמיד בודד — מותאם לכיתות, חיידרים ותלמודי תורה. ללא הרשמה." },
       { property: "og:title", content: "מחולל קבוצות אקראי · בחירת תלמיד רנדומלי" },
       { property: "og:description", content: "חלקו כיתה לקבוצות שוות בקליק. הזנת שמות, בחירת מספר קבוצות, וקבלת חלוקה אקראית + בוחר שמות." },
       { property: "og:type", content: "website" },
       { property: "og:url", content: URL_SELF },
-      { name: "twitter:title", content: "מחולל קבוצות אקראי · ClassAlign" },
+      { name: "twitter:title", content: "מחולל קבוצות אקראי · הכיתה שלי" },
       { name: "twitter:description", content: "כלי חינמי לחלוקת תלמידים לקבוצות ולהגרלת שם — ללא הרשמה." },
     ],
     links: [{ rel: "canonical", href: URL_SELF }],
@@ -255,7 +255,7 @@ function GroupMakerPage() {
           <p className="text-muted-foreground mb-4">מחפשים ניהול כיתה מלא עם AI?</p>
           <Link to="/">
             <Button size="lg" className="gap-2">
-              גלו את ClassAlign Studio <ArrowLeft className="h-4 w-4" />
+              גלו את הכיתה שלי <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
         </div>

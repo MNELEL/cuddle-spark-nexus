@@ -15,7 +15,7 @@ export const Route = createFileRoute("/_authenticated/settings/brand")({
   component: BrandSettingsPage,
   head: () => ({
     meta: [
-      { title: "מיתוג המוסד · ClassAlign Studio" },
+      { title: "מיתוג המוסד · הכיתה שלי" },
       { name: "description", content: "הגדרת שם המוסד והלוגו שיוטמעו בכל התעודות, המסמכים והמיילים להורים." },
       { name: "robots", content: "noindex" },
     ],

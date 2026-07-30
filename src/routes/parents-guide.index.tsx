@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 
 const BASE = "https://cuddle-spark-nexus.lovable.app";
 const URL = `${BASE}/parents-guide`;
-const TITLE = "מרכז המשאבים להורים · ClassAlign";
+const TITLE = "מרכז המשאבים להורים · הכיתה שלי";
 const DESCRIPTION =
   "דפי הסבר קצרים להורים על הדוח השבועי, סולם הציונים, מערכת הנקודות והמעקב הפדגוגי — מוכנים לקישור מדף הכיתה או מקבוצת הוואטסאפ.";
 
@@ -67,7 +67,7 @@ function Index() {
     <div dir="rtl" className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border/60">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-4">
-          <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">→ ClassAlign</Link>
+          <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">→ הכיתה שלי</Link>
           <span className="text-sm font-semibold">מרכז הורים</span>
         </div>
       </header>

@@ -69,13 +69,13 @@ export async function generateClassroomManagementChecklistPdf(brand?: ChecklistB
   const prev = getPdfBrand();
   if (brand) {
     setPdfBrand({
-      schoolName: brand.schoolName || "ClassAlign Studio",
+      schoolName: brand.schoolName || "הכיתה שלי",
       headerLine: brand.headerLine || "צ'קליסט מקצועי למלמד • ניהול כיתה בתלמוד תורה",
       logoDataUrl: brand.logoDataUrl,
     });
   } else {
     setPdfBrand({
-      schoolName: "ClassAlign Studio",
+      schoolName: "הכיתה שלי",
       headerLine: "צ'קליסט מקצועי למלמד • ניהול כיתה בתלמוד תורה",
     });
   }
@@ -84,7 +84,7 @@ export async function generateClassroomManagementChecklistPdf(brand?: ChecklistB
     drawBrandHeader(hd, {
       title: "צ'קליסט ניהול כיתה בתלמוד תורה",
       subtitle: "5 אסטרטגיות מקצועיות + מעקב שבועי — לשימוש יומיומי במלמד",
-      meta: "הפקה: ClassAlign Studio · מבוסס על המדריך המלא בבלוג",
+      meta: "הפקה: הכיתה שלי · מבוסס על המדריך המלא בבלוג",
     });
 
     const { doc, layout } = hd;
@@ -120,7 +120,7 @@ export async function generateClassroomManagementChecklistPdf(brand?: ChecklistB
       hd.advance(7);
     }
 
-    drawFooter(hd, "צ'קליסט זה מהווה השלמה למדריך: בלוג ClassAlign — אסטרטגיות ניהול כיתה");
+    drawFooter(hd, "צ'קליסט זה מהווה השלמה למדריך: בלוג הכיתה שלי — אסטרטגיות ניהול כיתה");
     const blob = doc.output("blob");
     const school = brand?.schoolName ? `-${safeName(brand.schoolName)}` : "";
     downloadPdfBlob(blob, `checklist-classroom-management${school}.pdf`);

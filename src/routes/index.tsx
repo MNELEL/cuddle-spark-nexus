@@ -6,15 +6,15 @@ export const Route = createFileRoute("/")({
   component: Index,
   head: () => ({
     meta: [
-      { title: "ClassAlign Studio · ניהול כיתה חכם עם AI" },
+      { title: "הכיתה שלי · ניהול כיתה חכם עם AI" },
       { name: "description", content: "סטודיו ניהול כיתה לרוח המודרנית — סידור הושבה AI, מעקב פדגוגי, דוחות חכמים, וחוויית 3D עוצרת נשימה." },
-      { property: "og:title", content: "ClassAlign Studio · ניהול כיתה חכם עם AI" },
+      { property: "og:title", content: "הכיתה שלי · ניהול כיתה חכם עם AI" },
       { property: "og:description", content: "סטודיו ניהול כיתה לרוח המודרנית — סידור הושבה AI, מעקב פדגוגי, דוחות חכמים, וחוויית 3D עוצרת נשימה." },
       { property: "og:url", content: "https://cuddle-spark-nexus.lovable.app/" },
       { property: "og:type", content: "website" },
       { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/05baaa1b-2e2c-4979-b6f1-619d01883919" },
       { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/05baaa1b-2e2c-4979-b6f1-619d01883919" },
-      { name: "twitter:title", content: "ClassAlign Studio · ניהול כיתה חכם עם AI" },
+      { name: "twitter:title", content: "הכיתה שלי · ניהול כיתה חכם עם AI" },
       { name: "twitter:description", content: "סטודיו ניהול כיתה לרוח המודרנית — סידור הושבה AI, מעקב פדגוגי, דוחות חכמים, וחוויית 3D עוצרת נשימה." },
     ],
     links: [{ rel: "canonical", href: "https://cuddle-spark-nexus.lovable.app/" }],
@@ -24,7 +24,7 @@ export const Route = createFileRoute("/")({
         children: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "WebSite",
-          name: "ClassAlign Studio",
+          name: "הכיתה שלי",
           url: "https://cuddle-spark-nexus.lovable.app/",
           inLanguage: "he",
         }),
@@ -34,7 +34,7 @@ export const Route = createFileRoute("/")({
         children: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "Organization",
-          name: "ClassAlign Studio",
+          name: "הכיתה שלי",
           url: "https://cuddle-spark-nexus.lovable.app/",
           description: "סטודיו ניהול כיתה לתלמודי תורה, חיידרים ובתי ספר.",
         }),
@@ -44,7 +44,7 @@ export const Route = createFileRoute("/")({
         children: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "SoftwareApplication",
-          name: "ClassAlign Studio",
+          name: "הכיתה שלי",
           applicationCategory: "EducationalApplication",
           operatingSystem: "Web",
           inLanguage: "he",
@@ -75,7 +75,7 @@ function Index() {
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-glow-primary">
             <GraduationCap className="h-5 w-5" />
           </div>
-          <span className="font-display text-xl font-bold tracking-tight">ClassAlign <span className="text-gradient-amber">Studio</span></span>
+          <span className="font-display text-xl font-bold tracking-tight">הכיתה <span className="text-gradient-amber">שלי</span></span>
         </div>
         <Link to="/login">
           <Button variant="outline" className="border-primary/20 backdrop-blur">התחברות</Button>
@@ -156,7 +156,7 @@ function Index() {
         </section>
 
         <footer className="mt-28 text-center text-xs text-muted-foreground">
-          נבנה עם אהבה למלמדים ולרבנים · ClassAlign Studio © {new Date().getFullYear()}
+          נבנה עם אהבה למלמדים ולרבנים · הכיתה שלי © {new Date().getFullYear()}
         </footer>
       </main>
     </div>

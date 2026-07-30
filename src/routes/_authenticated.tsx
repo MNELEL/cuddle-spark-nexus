@@ -45,7 +45,7 @@ function AuthLayout() {
         <div className="container mx-auto grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-3 py-3 sm:flex sm:px-6">
           <Link to="/classes" className="flex min-w-0 items-center gap-2">
             <GraduationCap className="h-6 w-6 shrink-0 text-primary" />
-            <span className="truncate font-bold">ClassAlign Studio</span>
+            <span className="truncate font-bold">הכיתה שלי</span>
           </Link>
           <nav className="hidden items-center gap-1 md:flex">
             <Link to="/toolkit" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">

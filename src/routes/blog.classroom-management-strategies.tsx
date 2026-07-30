@@ -105,7 +105,7 @@ function Article() {
       <header className="border-b border-border/60">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-4">
           <Link to="/blog" className="text-sm text-muted-foreground hover:text-foreground">→ חזרה לבלוג</Link>
-          <span className="text-sm font-semibold">ClassAlign</span>
+          <span className="text-sm font-semibold">הכיתה שלי</span>
         </div>
       </header>
       <main className="mx-auto max-w-3xl px-6 py-12">
@@ -115,7 +115,7 @@ function Article() {
             אסטרטגיות ניהול כיתה טובות מפחיתות שחיקה למלמד, מעלות את רמת ההוראה ומשפרות את
             אווירת החיידר. המדריך הזה מסכם חמש אסטרטגיות מקצועיות שמתאימות במיוחד לרבנים
             ומלמדים בתלמודי תורה, יחד עם דרכים פרקטיות ליישם כל אחת מהן — עם או בלי הכלים
-            הדיגיטליים של ClassAlign Studio.
+            הדיגיטליים של הכיתה שלי.
           </p>
 
           <div className="mt-8 space-y-6">
@@ -130,10 +130,10 @@ function Article() {
             ))}
           </div>
 
-          <h2>איך ClassAlign מסייע ליישם את האסטרטגיות?</h2>
+          <h2>איך הכיתה שלי מסייע ליישם את האסטרטגיות?</h2>
           <p>
             הכלים של{" "}
-            <Link to="/" className="text-primary hover:underline">ClassAlign Studio</Link>{" "}
+            <Link to="/" className="text-primary hover:underline">הכיתה שלי</Link>{" "}
             תוכננו סביב חמש האסטרטגיות שלמעלה: מערכת נקודות התנהגות עם הגרלות ופרסים,
             מחולל קבוצות ומפת ישיבה חכמה, שגרות סאונד־בורד לניהול מעברים, דו״חות שבועיים
             אוטומטיים להורים, וסיכומי תעודה תקופתיים מבוססי נתונים אמיתיים.
@@ -148,7 +148,7 @@ function Article() {
           <div className="mt-12 rounded-2xl border border-border/60 bg-card/40 p-6">
             <p className="text-sm text-muted-foreground">רוצה כלים שיטתיים שמיישמים את זה בכיתה שלך?</p>
             <Link to="/" className="mt-2 inline-block text-base font-semibold text-primary hover:underline">
-              פתח כיתה ב-ClassAlign ←
+              פתח כיתה ב-״הכיתה שלי״ ←
             </Link>
           </div>
 

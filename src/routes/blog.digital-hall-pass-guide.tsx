@@ -8,11 +8,11 @@ const DESCRIPTION =
 const FAQ = [
   {
     q: "מהי החלופה הטובה ביותר ל-eHallPass עבור תלמוד תורה?",
-    a: "מערכת בעברית עם ממשק RTL שמתאימה למבנה החיידר (כמה מלמדים, סדר יום של לימודי קודש) — כמו ClassAlign Studio — תיתן יותר ערך מ-eHallPass שתוכנן לבתי ספר אמריקאיים.",
+    a: "מערכת בעברית עם ממשק RTL שמתאימה למבנה החיידר (כמה מלמדים, סדר יום של לימודי קודש) — כמו הכיתה שלי — תיתן יותר ערך מ-eHallPass שתוכנן לבתי ספר אמריקאיים.",
   },
   {
     q: "האם אפשר לנהל אישורי יציאה בלי אינטרנט?",
-    a: "כן. ClassAlign עובדת במצב מקומי, רושמת את היציאות והחזרות במכשיר, ומסתנכרנת ברגע שהחיבור חוזר.",
+    a: "כן. הכיתה שלי עובדת במצב מקומי, רושמת את היציאות והחזרות במכשיר, ומסתנכרנת ברגע שהחיבור חוזר.",
   },
   {
     q: "כמה זמן לוקח להטמיע מערכת אישורי יציאה דיגיטלית?",
@@ -53,10 +53,10 @@ export const Route = createFileRoute("/blog/digital-hall-pass-guide")({
           description: DESCRIPTION,
           inLanguage: "he",
           mainEntityOfPage: URL,
-          author: { "@type": "Organization", name: "ClassAlign Studio" },
+          author: { "@type": "Organization", name: "הכיתה שלי" },
           publisher: {
             "@type": "Organization",
-            name: "ClassAlign Studio",
+            name: "הכיתה שלי",
             url: "https://cuddle-spark-nexus.lovable.app/",
           },
         }),
@@ -98,7 +98,7 @@ function Article() {
           <Link to="/blog" className="text-sm text-muted-foreground hover:text-foreground">
             → חזרה לבלוג
           </Link>
-          <span className="text-sm font-semibold">ClassAlign</span>
+          <span className="text-sm font-semibold">הכיתה שלי</span>
         </div>
       </header>
 
@@ -167,7 +167,7 @@ function Article() {
             פתרון נפוץ בהרבה חיידרים — זול ופשוט, אך אינו שורד אחרי שבוע. הפתקים
             הולכים לאיבוד, אין דו"חות, ואין דרך לראות דפוסים לאורך זמן.
           </p>
-          <h3>ClassAlign Studio</h3>
+          <h3>הכיתה שלי</h3>
           <p>
             המערכת שלנו נבנתה מההתחלה עבור תלמודי תורה, חיידרים ובתי ספר חרדיים:
             ממשק עברית RTL מלא, מינוחים של "הרב" ו"המלמד", מקצועות קודש (גמרא, משנה,
@@ -175,7 +175,7 @@ function Article() {
             הקיימים. אישור היציאה הוא חלק מתוך מערכת מעקב שלמה — ולא אפליקציה נפרדת.
           </p>
           <p className="text-sm text-muted-foreground">
-            רוצה להעמיק? עיין ב<Link to="/" className="text-primary hover:underline">דף הבית של ClassAlign</Link>
+            רוצה להעמיק? עיין ב<Link to="/" className="text-primary hover:underline">דף הבית של הכיתה שלי</Link>
             {" "}או חזור ל<Link to="/blog" className="text-primary hover:underline">מאמרים נוספים בבלוג</Link>.
           </p>
 
@@ -217,7 +217,7 @@ function Article() {
               to="/"
               className="mt-2 inline-block text-base font-semibold text-primary hover:underline"
             >
-              גלה את ClassAlign Studio ←
+              גלה את הכיתה שלי ←
             </Link>
           </div>
         </article>

@@ -35,9 +35,9 @@ export const Route = createFileRoute("/_authenticated/resources")({
   component: ResourcesPage,
   head: () => ({
     meta: [
-      { title: "ספריית חומרי הוראה · ClassAlign Studio" },
+      { title: "ספריית חומרי הוראה · הכיתה שלי" },
       { name: "description", content: "ספרייה חכמה של דפי עבודה, מבחנים ושאלות לפי מקצועות קודש — ניתן לחפש, לסנן, לערוך ולייצא." },
-      { property: "og:title", content: "ספריית חומרי הוראה · ClassAlign Studio" },
+      { property: "og:title", content: "ספריית חומרי הוראה · הכיתה שלי" },
       { property: "og:description", content: "ספרייה חכמה של דפי עבודה, מבחנים ושאלות לפי מקצועות קודש." },
       { property: "og:url", content: "https://cuddle-spark-nexus.lovable.app/resources" },
       { name: "robots", content: "noindex" },

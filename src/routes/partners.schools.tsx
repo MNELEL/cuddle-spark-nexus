@@ -37,9 +37,9 @@ export const Route = createFileRoute("/partners/schools")({
   component: SchoolsPage,
   head: () => ({
     meta: [
-      { title: "רישיון מוסדי לבתי ספר, חיידרים ותלמודי תורה | ClassAlign" },
-      { name: "description", content: "ClassAlign למוסד יחיד: רישיון שנתי לכל המלמדים, סדנאות הדרכה בעברית, תבניות סדר יום, וסנכרון עם המזכירות. מותאם לחיידר, תלמוד תורה ובית ספר." },
-      { property: "og:title", content: "רישיון מוסדי · ClassAlign לבתי ספר וחיידרים" },
+      { title: "רישיון מוסדי לבתי ספר, חיידרים ותלמודי תורה | הכיתה שלי" },
+      { name: "description", content: "הכיתה שלי למוסד יחיד: רישיון שנתי לכל המלמדים, סדנאות הדרכה בעברית, תבניות סדר יום, וסנכרון עם המזכירות. מותאם לחיידר, תלמוד תורה ובית ספר." },
+      { property: "og:title", content: "רישיון מוסדי · הכיתה שלי לבתי ספר וחיידרים" },
       { property: "og:description", content: "רישיון מוסדי כולל הדרכה, תבניות ותמיכה טכנית לאורך שנת הלימודים." },
       { property: "og:type", content: "website" },
       { property: "og:url", content: URL_SELF },
