@@ -99,6 +99,7 @@ const LTR_RUN = /[A-Za-z0-9\u00C0-\u024F](?:[A-Za-z0-9\u00C0-\u024F.,:;/\\\-+*=%
  */
 export function bidi(text: string): string {
   if (!text) return text;
+  if (typeof process !== "undefined" && process.env?.NOBIDI) return text;
   return text
     .replace(LTR_RUN, (run) => [...run].reverse().join(""))
     .replace(/[()[\]{}<>«»]/g, (ch) => MIRROR[ch] ?? ch);
