@@ -6,7 +6,7 @@ import {
   CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator,
 } from "@/components/ui/command";
 import {
-  Wrench, Music, Sparkles, BellRing, LineChart, Palette, BookOpen, GraduationCap,
+  Wrench, Music, Sparkles, BellRing, LineChart, Palette, BookOpen, School,
   ScanText, TrendingUp, ClipboardList, Library, User, Users, Calendar,
   Award, FileText, Wand2, Trophy, Dices, Globe2, MessageSquare,
 } from "lucide-react";
