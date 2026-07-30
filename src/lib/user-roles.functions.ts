@@ -92,7 +92,7 @@ export const assignRole = createServerFn({ method: "POST" })
       .from("user_roles")
       .insert({
         user_id: data.user_id,
-        role: data.role as Role,
+        role: data.role,
         institution_id: data.institution_id ?? null,
       })
       .select()
@@ -118,4 +118,26 @@ export const removeRole = createServerFn({ method: "POST" })
       .eq("id", data.role_id);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+export const bootstrapFirstAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+
+    const { data: existingAdmin } = await supabase
+      .from("user_roles")
+      .select("id")
+      .eq("role", "admin")
+      .limit(1)
+      .single();
+    if (existingAdmin) {
+      return { ok: false, message: "כבר קיים מנהל במערכת" };
+    }
+
+    const { error } = await supabase
+      .from("user_roles")
+      .insert({ user_id: userId, role: "admin" });
+    if (error) throw new Error(error.message);
+    return { ok: true, message: "נוצר מנהל מערכת ראשון" };
   });
