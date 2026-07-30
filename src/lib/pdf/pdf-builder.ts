@@ -142,7 +142,8 @@ export function rtlText(
   const lines = opts?.maxWidth
     ? src.flatMap((t) => doc.splitTextToSize(t, opts.maxWidth!) as string[])
     : src;
-  doc.text(bidiLines(lines), x, y, { align: opts?.align ?? "right" });
+  // doc.text is patched by createHebrewDoc to reorder to visual order.
+  doc.text(lines, x, y, { align: opts?.align ?? "right" });
 }
 
 /** Institution brand snapshot used by every PDF header. */
@@ -203,8 +204,10 @@ export async function createHebrewDoc(): Promise<HebrewDoc> {
   doc.addFileToVFS("Heebo-Bold.ttf", boldB64);
   doc.addFont("Heebo-Bold.ttf", "Heebo", "bold");
   doc.setFont("Heebo", "normal");
-  doc.setR2L(true);
+  // R2L stays OFF: we reorder to visual order ourselves (see bidi()).
+  doc.setR2L(false);
   try { doc.setLanguage("he"); } catch { /* older jsPDF builds */ }
+  patchTextForRtl(doc);
   doc.setProperties({ title: "הכיתה שלי" });
 
   const pageW = doc.internal.pageSize.getWidth();
@@ -221,11 +224,11 @@ export async function createHebrewDoc(): Promise<HebrewDoc> {
   let sectionNum = 0;
   let subNum = 0;
 
-  // Every new page must re-assert the RTL + font state; jsPDF resets some of
-  // it per page and a stale state is what makes single pages come out LTR.
+  // Every new page must re-assert the font/direction state so a page never
+  // renders with a stale (left-to-right) setup.
   const newPage = () => {
     doc.addPage();
-    doc.setR2L(true);
+    doc.setR2L(false);
     doc.setFont("Heebo", "normal");
     y = 16;
   };
@@ -244,8 +247,9 @@ export async function createHebrewDoc(): Promise<HebrewDoc> {
     // autoTable draws through doc.text, so each wrapped line needs bidi fixing
     // after the wrap is computed — otherwise numbers/Latin flip inside cells.
     willDrawCell: (data) => {
-      const cell = data.cell as unknown as { text: string[] };
-      if (Array.isArray(cell.text)) cell.text = bidiLines(cell.text);
+      // Cell text is reordered by the patched doc.text; nothing to do here
+      // beyond keeping the Hebrew font on every cell.
+      data.doc.setFont("Heebo", data.cell.styles.fontStyle === "bold" ? "bold" : "normal");
     },
   };
 
@@ -310,7 +314,7 @@ export async function createHebrewDoc(): Promise<HebrewDoc> {
       const avail = pageH - 18 - y;
       const canFit = Math.max(1, Math.floor(avail / lineH));
       const chunk = lines.slice(i, i + canFit);
-      doc.text(bidiLines(chunk), layout.rightX, y + lineH, { align: "right" });
+      doc.text(chunk, layout.rightX, y + lineH, { align: "right" });
       y += chunk.length * lineH;
       i += chunk.length;
       if (i < lines.length) newPage();
@@ -377,7 +381,7 @@ export function drawBrandHeader(
   doc.setFontSize(18);
   doc.setTextColor(...SLATE);
   const titleLines = doc.splitTextToSize(args.title, layout.contentW) as string[];
-  doc.text(bidiLines(titleLines), layout.rightX, hd.currentY(), { align: "right" });
+  doc.text(titleLines, layout.rightX, hd.currentY(), { align: "right" });
   hd.advance(titleLines.length * 7);
 
   if (args.subtitle) {
@@ -385,7 +389,7 @@ export function drawBrandHeader(
     doc.setFontSize(11);
     doc.setTextColor(80);
     const subLines = doc.splitTextToSize(args.subtitle, layout.contentW) as string[];
-    doc.text(bidiLines(subLines), layout.rightX, hd.currentY(), { align: "right" });
+    doc.text(subLines, layout.rightX, hd.currentY(), { align: "right" });
     hd.advance(subLines.length * 5);
   }
 
@@ -394,7 +398,7 @@ export function drawBrandHeader(
     doc.setFontSize(9.5);
     doc.setTextColor(110);
     const metaLines = doc.splitTextToSize(args.meta, layout.contentW) as string[];
-    doc.text(bidiLines(metaLines), layout.rightX, hd.currentY(), { align: "right" });
+    doc.text(metaLines, layout.rightX, hd.currentY(), { align: "right" });
     hd.advance(metaLines.length * 4.5);
   }
 
@@ -409,7 +413,7 @@ export function drawFooter(hd: HebrewDoc, meta?: string): void {
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
-    doc.setR2L(true);
+    doc.setR2L(false);
     doc.setFont("Heebo", "normal");
     doc.setFontSize(8);
     doc.setDrawColor(226, 232, 240);
