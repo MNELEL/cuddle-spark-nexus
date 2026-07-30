@@ -113,17 +113,54 @@ export const Route = createFileRoute("/sitemap.xml")({
           entries.push({ path: `/parents-guide/${slug}`, changefreq: "monthly", priority: "0.7" });
         }
 
-        // 2b. Public class showcase pages (DB-backed).
+        // 2b. DB-backed dynamic routes — one entry per real row, emitted only
+        // while that row is publicly accessible without a session.
+        //
+        // Public reachability rules (mirror the routes' own loaders):
+        //   /c/$slug                 -> classes.public_enabled = true AND public_slug not null
+        //   /classes/$classId        -> lives under /_authenticated; a signed-out
+        //                               crawler is redirected to /login, so the row's
+        //                               public surface is /c/$slug (emitted above),
+        //                               never the raw id URL.
+        //   /bulletins/$classId      -> same: authenticated-only. A bulletin becomes
+        //                               public through its class showcase page, so the
+        //                               class's /c/$slug entry covers it.
+        // Both authenticated routes also send robots: noindex, so emitting them
+        // would put conflicting signals in the sitemap.
         try {
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-          const { data } = await supabaseAdmin
+
+          const { data: publicClasses } = await supabaseAdmin
             .from("classes")
-            .select("public_slug")
+            .select("id, public_slug")
             .eq("public_enabled", true)
             .not("public_slug", "is", null);
-          for (const row of data ?? []) {
-            if (row.public_slug) {
-              entries.push({ path: `/c/${row.public_slug}`, changefreq: "weekly", priority: "0.6" });
+
+          const rows = (publicClasses ?? []).filter(
+            (r): r is { id: string; public_slug: string } => Boolean(r.public_slug),
+          );
+
+          for (const row of rows) {
+            entries.push({ path: `/c/${row.public_slug}`, changefreq: "weekly", priority: "0.6" });
+          }
+
+          // Bulletins belonging to a publicly shared class: they surface inside the
+          // showcase page, so we keep the class URL fresh rather than inventing a
+          // per-bulletin URL that has no public route.
+          if (rows.length > 0) {
+            const { data: bulletins } = await supabaseAdmin
+              .from("weekly_bulletins")
+              .select("class_id")
+              .in(
+                "class_id",
+                rows.map((r) => r.id),
+              );
+            const withBulletins = new Set((bulletins ?? []).map((b) => b.class_id));
+            for (const row of rows) {
+              if (withBulletins.has(row.id)) {
+                const entry = entries.find((e) => e.path === `/c/${row.public_slug}`);
+                if (entry) entry.changefreq = "daily";
+              }
             }
           }
         } catch {
