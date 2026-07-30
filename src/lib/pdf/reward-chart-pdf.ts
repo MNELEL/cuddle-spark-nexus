@@ -155,7 +155,7 @@ export async function generateAllRewardChartsPdf(
     charts.forEach((chart, i) => {
       if (i > 0) {
         hd.doc.addPage();
-        hd.doc.setR2L(true);
+        hd.doc.setR2L(false);
         hd.setY(16);
       }
       // Same branded header band on every page so the booklet looks uniform
