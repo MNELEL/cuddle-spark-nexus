@@ -3,6 +3,18 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const roleSchema = z.enum(["admin", "principal", "teacher", "secretary"]);
+const roleName = z.enum(["admin", "principal", "teacher", "secretary"]);
+
+async function verifyAdmin(supabase: ReturnType<typeof import("@/integrations/supabase/client").supabase>, userId: string) {
+  const { data, error } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .eq("role", "admin")
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("אין הרשאות מנהל");
+}
 
 export const getMyRoles = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -10,10 +22,10 @@ export const getMyRoles = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
     const { data, error } = await supabase
       .from("user_roles")
-      .select("role")
+      .select("role, institution_id")
       .eq("user_id", userId);
     if (error) throw new Error(error.message);
-    return (data ?? []).map((r) => r.role);
+    return (data ?? []).map((r) => ({ role: r.role, institutionId: r.institution_id }));
   });
 
 export const isAdmin = createServerFn({ method: "GET" })
@@ -34,25 +46,38 @@ export const listUsersWithRoles = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    const { data: adminCheck, error: adminError } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId)
-      .eq("role", "admin")
-      .maybeSingle();
-    if (adminError) throw new Error(adminError.message);
-    if (!adminCheck) throw new Error("אין הרשאות מנהל");
+    await verifyAdmin(supabase, userId);
 
-    const { data, error } = await supabase
+    const { createClient: createServiceClient } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = createServiceClient();
+
+    const { data: users, error: usersError } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+    if (usersError) throw new Error(usersError.message);
+
+    const { data: roles, error: rolesError } = await supabaseAdmin
       .from("user_roles")
-      .select("id, user_id, role, profiles:profiles(id, display_name)");
-    if (error) throw new Error(error.message);
-    return data ?? [];
+      .select("id, user_id, role, institution_id, created_at, updated_at");
+    if (rolesError) throw new Error(rolesError.message);
+
+    const rolesByUser = (roles ?? []).reduce((acc, r) => {
+      if (!acc[r.user_id]) acc[r.user_id] = [];
+      acc[r.user_id].push(r);
+      return acc;
+    }, {} as Record<string, typeof roles>);
+
+    return (users.users ?? []).map((u) => ({
+      id: u.id,
+      email: u.email,
+      displayName: u.user_metadata?.display_name ?? u.email?.split("@")[0] ?? "",
+      roles: rolesByUser[u.id] ?? [],
+      createdAt: u.created_at,
+    }));
   });
 
 const assignRoleSchema = z.object({
   user_id: z.string().uuid(),
-  role: roleSchema,
+  role: roleName,
+  institution_id: z.string().uuid().optional(),
 });
 
 export const assignRole = createServerFn({ method: "POST" })
@@ -60,18 +85,15 @@ export const assignRole = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => assignRoleSchema.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { data: adminCheck, error: adminError } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId)
-      .eq("role", "admin")
-      .maybeSingle();
-    if (adminError) throw new Error(adminError.message);
-    if (!adminCheck) throw new Error("אין הרשאות מנהל");
+    await verifyAdmin(supabase, userId);
 
     const { error } = await supabase
       .from("user_roles")
-      .insert({ user_id: data.user_id, role: data.role })
+      .insert({
+        user_id: data.user_id,
+        role: data.role,
+        institution_id: data.institution_id ?? null,
+      })
       .select()
       .single();
     if (error) throw new Error(error.message);
@@ -79,8 +101,7 @@ export const assignRole = createServerFn({ method: "POST" })
   });
 
 const removeRoleSchema = z.object({
-  user_id: z.string().uuid(),
-  role: roleSchema,
+  role_id: z.string().uuid(),
 });
 
 export const removeRole = createServerFn({ method: "POST" })
@@ -88,20 +109,12 @@ export const removeRole = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => removeRoleSchema.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { data: adminCheck, error: adminError } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId)
-      .eq("role", "admin")
-      .maybeSingle();
-    if (adminError) throw new Error(adminError.message);
-    if (!adminCheck) throw new Error("אין הרשאות מנהל");
+    await verifyAdmin(supabase, userId);
 
     const { error } = await supabase
       .from("user_roles")
       .delete()
-      .eq("user_id", data.user_id)
-      .eq("role", data.role);
+      .eq("id", data.role_id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
