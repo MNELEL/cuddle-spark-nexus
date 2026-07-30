@@ -16,6 +16,8 @@ export type RewardChart = {
   /** How many blank rows to print. */
   rows: number;
   orientation: "portrait" | "landscape";
+  /** Optional class label added by the teacher (printed as a sub-line). */
+  classLabel?: string;
 };
 
 export const REWARD_CHARTS: RewardChart[] = [
@@ -131,7 +133,7 @@ export function applyRewardChartCustomization(
   const rows = Math.max(1, Math.min(40, custom.rows || chart.rows));
   return {
     ...chart,
-    name: custom.className?.trim() ? `${chart.name} — ${custom.className.trim()}` : chart.name,
+    classLabel: custom.className?.trim() || undefined,
     goal: custom.goal?.trim() || chart.goal,
     reward: custom.reward?.trim() || chart.reward,
     columns: columnCount === chart.columns.length ? chart.columns : buildColumns(chart, columnCount),
