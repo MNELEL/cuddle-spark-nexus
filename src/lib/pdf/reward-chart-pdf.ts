@@ -154,9 +154,7 @@ export async function generateAllRewardChartsPdf(
     const hd = await createHebrewDoc();
     charts.forEach((chart, i) => {
       if (i > 0) {
-        hd.doc.addPage();
-        hd.doc.setR2L(false);
-        hd.setY(16);
+        hd.newPage();
       }
       // Same branded header band on every page so the booklet looks uniform
       // with the single-chart export.
