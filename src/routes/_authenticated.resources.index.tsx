@@ -49,17 +49,20 @@ export const Route = createFileRoute("/_authenticated/resources/")({
 
 const GRADE_LEVELS = ["א", "ב", "ג", "ד", "ה", "ו", "ז", "ח"] as const;
 
-type Filters = {
+/** Single, centralized filter state for the whole library screen. */
+type FilterState = {
   search: string;
   resource_type: ResourceType | "";
   subject: string;
   grade_level: string;
   tag: string;
-  collection_id: string;
+  topicIds: string[];
+  collectionIds: string[];
 };
 
-const emptyFilters: Filters = {
-  search: "", resource_type: "", subject: "", grade_level: "", tag: "", collection_id: "",
+const emptyFilters: FilterState = {
+  search: "", resource_type: "", subject: "", grade_level: "", tag: "",
+  topicIds: [], collectionIds: [],
 };
 
 function ResourcesPage() {
@@ -67,32 +70,59 @@ function ResourcesPage() {
   const list = useServerFn(listResources);
   const del = useServerFn(deleteResource);
   const listColls = useServerFn(listCollections);
+  const listCollItems = useServerFn(listCollectionItems);
 
-  const [filters, setFilters] = useState<Filters>(emptyFilters);
-  const [topicIds, setTopicIds] = useState<string[]>([]);
+  const [filters, setFilters] = useState<FilterState>(emptyFilters);
+  const patch = (p: Partial<FilterState>) => setFilters((f) => ({ ...f, ...p }));
   const [editing, setEditing] = useState<Partial<ResourceRow> | null>(null);
+  const [viewing, setViewing] = useState<ResourceRow | null>(null);
   const [aiOpen, setAiOpen] = useState(false);
   const [aiSource, setAiSource] = useState<ResourceRow | null>(null);
   const [collOpen, setCollOpen] = useState(false);
+  const [topOpen, setTopOpen] = useState(false);
 
-  const queryArgs = {
+  // Server query holds only server-side filters; collection/topic filtering runs
+  // client-side on the same dataset so no control overwrites another.
+  const serverArgs = {
     search: filters.search || undefined,
     resource_type: filters.resource_type || undefined,
     subject: filters.subject || undefined,
     grade_level: filters.grade_level || undefined,
     tag: filters.tag || undefined,
-    collection_id: filters.collection_id || undefined,
   };
 
   const { data: resources = [], isLoading } = useQuery({
-    queryKey: ["teaching-resources", filters],
-    queryFn: () => list({ data: queryArgs }),
+    queryKey: ["teaching-resources", serverArgs],
+    queryFn: () => list({ data: serverArgs }),
   });
 
   const { data: collections = [] } = useQuery({
     queryKey: ["resource-collections"],
     queryFn: () => listColls(),
   });
+  const { data: collectionItems = [] } = useQuery({
+    queryKey: ["resource-collection-items"],
+    queryFn: () => listCollItems(),
+  });
+
+  const visibleResources = useMemo(() => {
+    let out = resources;
+    if (filters.collectionIds.length > 0) {
+      const allowed = new Set(
+        collectionItems
+          .filter((i) => filters.collectionIds.includes(i.collection_id))
+          .map((i) => i.resource_id),
+      );
+      out = out.filter((r) => allowed.has(r.id));
+    }
+    if (filters.topicIds.length > 0) {
+      out = out.filter((r) => {
+        const tid = (r as unknown as { topic_id: string | null }).topic_id;
+        return tid !== null && filters.topicIds.includes(tid);
+      });
+    }
+    return out;
+  }, [resources, collectionItems, filters.collectionIds, filters.topicIds]);
 
   const recs = useServerFn(getPersonalRecommendations);
   const recompute = useServerFn(recomputeStyleProfile);
