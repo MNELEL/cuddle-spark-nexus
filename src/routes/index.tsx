@@ -88,14 +88,17 @@ function Index() {
         <div className="mx-auto max-w-4xl text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-amber/40 bg-amber/15 px-3 py-1 text-xs font-medium text-foreground sm:text-sm">
             <Sparkles className="h-3.5 w-3.5 text-amber" aria-hidden="true" />
-            ניהול כיתה · מותאם לתלמודי תורה וחיידרים
+            ניהול כיתה · מותאם לישיבות, חיידרים ותלמודי תורה
           </div>
           <h1 className="mt-6 font-display text-5xl font-bold leading-[1.05] tracking-tight md:text-7xl">
             הכיתה שלך,<br />
             <span className="text-amber">מסונכרנת בשלמות.</span>
           </h1>
           <p className="mt-7 mx-auto max-w-2xl font-sans text-lg text-muted-foreground md:text-xl">
-            הושבה, מעקב פדגוגי ודוחות — הכל מסונכרן במקום אחד, בעברית מלאה ולרוח החדר והכיתה.
+            שיבוץ, לוחות זמנים ויעדים, הושבה, מעקב פדגוגי ודוחות, חומרי לימוד, מבצעים ופגישות הורים — הכל במקום אחד.
+          </p>
+          <p className="mt-3 font-sans text-sm text-muted-foreground/80">
+            נבנה עבור מלמדים ורבנים
           </p>
           <div className="mt-10 flex flex-wrap justify-center gap-3">
             <Link to="/login">
