@@ -131,6 +131,18 @@ function UserManagementPage() {
             <p className="mt-2 text-sm text-muted-foreground">
               דף זה זמין רק למנהלי מערכת. אם נדרשת גישה, פנה למנהל המוסד.
             </p>
+            <Button
+              variant="outline"
+              className="mt-4"
+              disabled={bootstrapMutation.isPending}
+              onClick={() => bootstrapMutation.mutate()}
+            >
+              {bootstrapMutation.isPending && <Loader2 className="ms-2 h-4 w-4 animate-spin" />}
+              אתחל מנהל מערכת ראשון
+            </Button>
+            <p className="mt-3 text-xs text-muted-foreground">
+              כפתור זה פועל רק כאשר אין עדיין מנהל במערכת.
+            </p>
             <Link to="/classes" className="mt-4 inline-block text-primary hover:underline">
               <ArrowLeft className="me-1 inline h-4 w-4" /> חזרה לכיתות
             </Link>
