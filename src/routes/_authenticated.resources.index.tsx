@@ -405,7 +405,18 @@ function ResourcesPage() {
       />
 
       {/* Collections manager */}
-      <CollectionsDialog open={collOpen} onClose={() => setCollOpen(false)} />
+      <CollectionsDialog
+        open={collOpen}
+        onClose={() => setCollOpen(false)}
+        selectedIds={filters.collectionIds}
+        onToggleSelected={(id) =>
+          patch({
+            collectionIds: filters.collectionIds.includes(id)
+              ? filters.collectionIds.filter((x) => x !== id)
+              : [...filters.collectionIds, id],
+          })
+        }
+      />
     </div>
   );
 }
