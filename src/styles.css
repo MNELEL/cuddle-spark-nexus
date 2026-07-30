@@ -350,3 +350,25 @@
   --ring: oklch(0.62 0.15 76);
   --font-display: "Frank Ruhl Libre", "Heebo", serif;
 }
+
+/* תצוגת הדפסה — לוח מבצעים ופרסים */
+@media print {
+  body:has(.reward-chart-print-area) header,
+  body:has(.reward-chart-print-area) footer,
+  body:has(.reward-chart-print-area) main > article > *:not(.reward-charts-print-section) {
+    display: none !important;
+  }
+  body:has(.reward-chart-print-area) {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .reward-charts-print-section > .reward-charts-print-intro {
+    display: none !important;
+  }
+  .reward-chart-sheet {
+    page-break-inside: avoid;
+  }
+  .reward-chart-sheet:last-child {
+    page-break-after: auto;
+  }
+}
