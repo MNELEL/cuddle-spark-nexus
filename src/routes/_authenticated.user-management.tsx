@@ -21,6 +21,7 @@ import {
   listUsersWithRoles,
   assignRole,
   removeRole,
+  bootstrapFirstAdmin,
   type Role,
 } from "@/lib/user-roles.functions";
 
