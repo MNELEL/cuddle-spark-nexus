@@ -195,6 +195,48 @@ function ResourcesPage() {
         </div>
       </div>
 
+      {/* קטגוריות ראשיות */}
+      <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="קטגוריות ספרייה">
+        {LIBRARY_CATEGORIES.map((c) => {
+          const on = category === c.id;
+          return (
+            <button
+              key={c.id}
+              type="button"
+              role="tab"
+              aria-selected={on}
+              onClick={() => setCategory(c.id)}
+              className={`shrink-0 rounded-full border px-3 py-1.5 text-sm transition ${on ? "border-primary bg-primary text-primary-foreground" : "hover:bg-accent"}`}
+            >
+              {c.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* נושאים טעונים מראש */}
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        <button
+          type="button"
+          aria-pressed={!filters.subject}
+          onClick={() => patch({ subject: "" })}
+          className={`shrink-0 rounded-full border px-3 py-1 text-xs transition ${!filters.subject ? "border-amber bg-amber/15 font-medium" : "hover:bg-accent"}`}
+        >
+          כל הנושאים
+        </button>
+        {KODESH_SUBJECTS.map((s) => (
+          <button
+            key={s}
+            type="button"
+            aria-pressed={filters.subject === s}
+            onClick={() => patch({ subject: filters.subject === s ? "" : s })}
+            className={`shrink-0 rounded-full border px-3 py-1 text-xs transition ${filters.subject === s ? "border-amber bg-amber/15 font-medium" : "hover:bg-accent"}`}
+          >
+            {s}
+          </button>
+        ))}
+      </div>
+
       {filters.collectionIds.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="text-muted-foreground">אוספים מסוננים:</span>
