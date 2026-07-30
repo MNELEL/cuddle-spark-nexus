@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
-  appId: "studio.classalign.app",
-  appName: "ClassAlign Studio",
+  appId: "app.hakita-sheli.studio",
+  appName: "הכיתה שלי",
   webDir: "dist/client",
   android: {
     allowMixedContent: false,

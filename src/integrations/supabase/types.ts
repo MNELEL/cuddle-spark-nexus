@@ -1474,6 +1474,33 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          institution_id: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          institution_id?: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          institution_id?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       weekly_bulletins: {
         Row: {
           activities: Json
@@ -1594,6 +1621,13 @@ export type Database = {
     }
     Functions: {
       export_my_data: { Args: never; Returns: Json }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       match_resources: {
         Args: {
           exclude_id?: string
@@ -1608,6 +1642,7 @@ export type Database = {
       }
     }
     Enums: {
+      app_role: "admin" | "principal" | "teacher" | "secretary"
       class_event_type:
         | "birthday"
         | "exam"
@@ -1744,6 +1779,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "principal", "teacher", "secretary"],
       class_event_type: [
         "birthday",
         "exam",

@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { GraduationCap, LogOut, Wrench, Music, Sparkles, BellRing, LineChart, Palette, BookOpen } from "lucide-react";
+import { TorahLogo } from "@/components/torah-logo";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -44,7 +45,7 @@ function AuthLayout() {
       <header className="border-b bg-card">
         <div className="container mx-auto grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-3 py-3 sm:flex sm:px-6">
           <Link to="/classes" className="flex min-w-0 items-center gap-2">
-            <GraduationCap className="h-6 w-6 shrink-0 text-primary" />
+            <TorahLogo size={24} className="shrink-0 text-primary" />
             <span className="truncate font-bold">הכיתה שלי</span>
           </Link>
           <nav className="hidden items-center gap-1 md:flex">

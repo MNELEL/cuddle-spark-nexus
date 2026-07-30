@@ -1,12 +1,13 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link, useSearch } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { GraduationCap, Loader2 } from "lucide-react";
+import { Loader2, AlertTriangle } from "lucide-react";
 import { SeatFillGrid } from "@/components/seat-fill-grid";
+import { TorahLogo } from "@/components/torah-logo";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({
@@ -14,9 +15,9 @@ export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
       { title: "כניסה למערכת · הכיתה שלי" },
-      { name: "description", content: "התחבר ל-״הכיתה שלי״ כדי לנהל כיתה, סידור הושבה, ציונים ודוחות פדגוגיים בעברית מלאה." },
+      { name: "description", content: "התחבר ל-״הכיתה שלי״ — סטודיו לניהול כיתה תורנית: סידור הושבה, ציונים, דוחות פדגוגיים וכלי AI בעברית מלאה." },
       { property: "og:title", content: "כניסה למערכת · הכיתה שלי" },
-      { property: "og:description", content: "התחבר ל-״הכיתה שלי״ כדי לנהל כיתה, סידור הושבה, ציונים ודוחות פדגוגיים בעברית מלאה." },
+      { property: "og:description", content: "התחבר ל-״הכיתה שלי״ — סטודיו לניהול כיתה תורנית בעברית מלאה." },
       { property: "og:url", content: "https://cuddle-spark-nexus.lovable.app/login" },
     ],
     links: [{ rel: "canonical", href: "https://cuddle-spark-nexus.lovable.app/login" }],
@@ -25,6 +26,8 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
   const navigate = useNavigate();
+  const search = useSearch({ from: "/login" }) as { reset?: string };
+  const resetExpired = search.reset === "expired";
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -171,7 +174,7 @@ function LoginPage() {
       {/* visual panel — left column on RTL screens, hidden on small screens */}
       <aside className="relative hidden flex-col justify-between overflow-hidden bg-primary p-10 text-primary-foreground md:order-2 md:flex">
         <Link to="/" className="flex items-center gap-2.5">
-          <GraduationCap className="h-7 w-7" aria-hidden="true" />
+          <TorahLogo size={28} />
           <span className="font-display text-xl font-bold tracking-tight">הכיתה שלי</span>
         </Link>
 
@@ -194,7 +197,7 @@ function LoginPage() {
       <main className="flex items-center justify-center bg-background p-6 md:order-1">
         <div className="w-full max-w-md">
           <Link to="/" className="mb-8 flex items-center gap-2 md:hidden">
-            <GraduationCap className="h-6 w-6 text-primary" aria-hidden="true" />
+            <TorahLogo size={24} className="text-primary" />
             <span className="font-display text-lg font-bold">הכיתה שלי</span>
           </Link>
 
@@ -243,7 +246,25 @@ function LoginPage() {
             {mode === "signin" ? "התחבר כדי לנהל את הכיתות שלך" : "התחל לנהל את הכיתות שלך בחינם"}
           </p>
 
-          <div aria-live="polite" aria-atomic="true" role="status" className="mb-4 space-y-2 empty:mb-0">
+          <div
+            aria-live={resetExpired ? "assertive" : "polite"}
+            aria-atomic="true"
+            role="status"
+            className="mb-4 space-y-2 empty:mb-0"
+          >
+            {resetExpired && !statusText && (
+              <div className="rounded-lg border border-amber/40 bg-amber/10 px-3 py-3 text-sm text-foreground">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber" aria-hidden="true" />
+                  <div>
+                    <p className="font-medium">הקישור לאיפוס הסיסמה פג</p>
+                    <p className="mt-1 text-muted-foreground">
+                      הזן את כתובת האימייל שלך ולחץ על "שכחתי סיסמה" כדי לקבל קישור חדש.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
             {statusText && (
               <p className="flex items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
