@@ -124,7 +124,11 @@ export async function generateRewardChartPdf(
 }
 
 /** Downloads all five charts as one branded PDF booklet. */
-export async function generateAllRewardChartsPdf(brand?: RewardChartBrand): Promise<void> {
+export async function generateAllRewardChartsPdf(
+  brand?: RewardChartBrand,
+  charts: RewardChart[] = REWARD_CHARTS,
+  teacherName?: string,
+): Promise<void> {
   const prev = getPdfBrand();
   applyBrand(brand);
   try {
@@ -134,7 +138,7 @@ export async function generateAllRewardChartsPdf(brand?: RewardChartBrand): Prom
       subtitle: "חמישה לוחות מוכנים להדפסה ולתלייה בכיתה",
       meta: "הפקה: הכיתה שלי · מבוסס על המדריך המלא בבלוג",
     });
-    REWARD_CHARTS.forEach((chart, i) => {
+    charts.forEach((chart, i) => {
       if (i > 0) {
         hd.doc.addPage();
         hd.doc.setR2L(true);
@@ -142,7 +146,7 @@ export async function generateAllRewardChartsPdf(brand?: RewardChartBrand): Prom
       }
       // Heebo has no bold face registered, so hd.section() would render blank.
       hd.paragraph(chart.name, { size: 14, gap: 4 });
-      drawChart(hd, chart);
+      drawChart(hd, chart, teacherName);
     });
     drawFooter(hd, "ערכת לוחות מבצעים — הכיתה שלי");
     downloadPdfBlob(hd.doc.output("blob"), "reward-charts-kit.pdf");
