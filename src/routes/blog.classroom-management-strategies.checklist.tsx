@@ -189,7 +189,7 @@ function ChecklistPage() {
             </button>
             <div className="mt-6 text-sm">
               <Link to="/" className="text-primary hover:underline">
-                מוכן להטמיע את זה בכיתה? פתח כיתה ב"הכיתה שלי" ←
+                מוכן להטמיע את זה בכיתה? פתח כיתה ב-״הכיתה שלי״ ←
               </Link>
             </div>
           </div>
