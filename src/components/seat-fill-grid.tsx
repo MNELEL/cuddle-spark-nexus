@@ -37,18 +37,25 @@ export function SeatFillGrid({ rows = 4, cols = 8, stagger = 50, className = "" 
   return (
     <div
       aria-hidden="true"
-      className={`grid gap-2 ${className}`}
+      role="presentation"
+      // decorative only: hidden from assistive tech and not focusable/interactive
+      tabIndex={-1}
+      className={`pointer-events-none select-none grid gap-2 ${className}`}
       style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
     >
       {accents.map((a, i) => (
         <div
           key={i}
+          aria-hidden="true"
           className={`aspect-square rounded-xl border ${accentClass(a)} ${
             animate ? "animate-scale-in" : ""
           }`}
           style={
             animate
-              ? { animationDelay: `${i * stagger}ms`, animationFillMode: "both" }
+              ? {
+                  animationDelay: `${Math.min(i * stagger, 1200)}ms`,
+                  animationFillMode: "both",
+                }
               : undefined
           }
         />
