@@ -273,28 +273,6 @@ export const listCollectionItems = createServerFn({ method: "POST" })
     return (data ?? []) as { collection_id: string; resource_id: string }[];
   });
 
-const _unusedUpsertCollection = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({
-    id: uuid.optional(),
-    name: z.string().min(1).max(120),
-    description: z.string().max(1000).default(""),
-    color: z.string().regex(/^#[0-9a-fA-F]{6}$/).default("#f59e0b"),
-  }).parse(d))
-  .handler(async ({ data, context }) => {
-    if (data.id) {
-      const { id, ...rest } = data;
-      const { error } = await context.supabase.from("resource_collections").update(rest).eq("id", id);
-      if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
-      return { id };
-    }
-    const { data: ins, error } = await context.supabase
-      .from("resource_collections").insert({ ...data, owner_id: context.userId } as never)
-      .select("id").single() as unknown as { data: { id: string } | null; error: { message: string } | null };
-    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
-    return { id: ins!.id };
-  });
-
 export const deleteCollection = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: uuid }).parse(d))
