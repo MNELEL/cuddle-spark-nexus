@@ -23,13 +23,15 @@ function apply(theme: ThemeName) {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<ThemeName>("modern");
+  const [theme, setThemeState] = useState<ThemeName>(DEFAULT_THEME);
 
   useEffect(() => {
     const saved = (typeof window !== "undefined" && localStorage.getItem(STORAGE_KEY)) as ThemeName | null;
     if (saved && THEMES.some((t) => t.id === saved)) {
       setThemeState(saved);
       apply(saved);
+    } else {
+      apply(DEFAULT_THEME);
     }
   }, []);
 
