@@ -1,11 +1,11 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { GraduationCap } from "lucide-react";
+import { GraduationCap, Loader2 } from "lucide-react";
 import { SeatFillGrid } from "@/components/seat-fill-grid";
 import { toast } from "sonner";
 
@@ -29,7 +29,46 @@ function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [googleBusy, setGoogleBusy] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const busy = submitting || googleBusy;
+
+  const headingRef = useRef<HTMLHeadingElement | null>(null);
+  const firstFieldRef = useRef<HTMLInputElement | null>(null);
+  const signinTabRef = useRef<HTMLButtonElement | null>(null);
+  const signupTabRef = useRef<HTMLButtonElement | null>(null);
+  // null on first render → don't steal focus on initial page load
+  const focusTargetRef = useRef<"heading" | "field" | null>(null);
+
+  useEffect(() => {
+    const target = focusTargetRef.current;
+    focusTargetRef.current = null;
+    if (!target) return;
+    if (target === "field") firstFieldRef.current?.focus();
+    else headingRef.current?.focus();
+  }, [mode]);
+
+  const switchMode = (next: "signin" | "signup", viaKeyboard: boolean) => {
+    if (busy || next === mode) return;
+    setErrorMsg(null);
+    focusTargetRef.current = viaKeyboard ? "field" : "heading";
+    setMode(next);
+  };
+
+  const onTabKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    // RTL tablist: ArrowLeft moves forward visually, ArrowRight backwards.
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    e.preventDefault();
+    const next = mode === "signin" ? "signup" : "signin";
+    setErrorMsg(null);
+    focusTargetRef.current = null;
+    setMode(next);
+    requestAnimationFrame(() => {
+      (next === "signin" ? signinTabRef : signupTabRef).current?.focus();
+    });
+  };
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -39,7 +78,8 @@ function LoginPage() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setBusy(true);
+    setSubmitting(true);
+    setErrorMsg(null);
     try {
       if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
@@ -57,18 +97,22 @@ function LoginPage() {
         navigate({ to: "/classes" });
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "שגיאה בהתחברות");
+      const msg = err instanceof Error ? err.message : "שגיאה בהתחברות";
+      setErrorMsg(msg);
+      toast.error(msg);
     } finally {
-      setBusy(false);
+      setSubmitting(false);
     }
   };
 
   const google = async () => {
-    setBusy(true);
+    setGoogleBusy(true);
+    setErrorMsg(null);
     const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
     if (result.error) {
+      setErrorMsg("שגיאה בהתחברות עם Google");
       toast.error("שגיאה בהתחברות עם Google");
-      setBusy(false);
+      setGoogleBusy(false);
       return;
     }
     if (result.redirected) return;
@@ -76,11 +120,15 @@ function LoginPage() {
   };
 
   const tabClass = (active: boolean) =>
-    `flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+    `flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none ${
       active
         ? "bg-background text-foreground shadow-sm"
         : "text-muted-foreground hover:text-foreground"
     }`;
+
+  const statusText = submitting
+    ? mode === "signin" ? "מתחברים לחשבון שלך..." : "יוצרים עבורך חשבון..."
+    : googleBusy ? "מפנים אותך ל-Google..." : null;
 
   return (
     <div className="grid min-h-dvh md:grid-cols-2">
