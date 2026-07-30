@@ -28,6 +28,7 @@ import {
 } from "@/lib/gamification.functions";
 
 export const Route = createFileRoute("/_authenticated/gamification/$classId")({
+  head: () => ({ meta: [{ name: "robots", content: "noindex, nofollow" }] }),
   component: GamificationPage,
 });
 

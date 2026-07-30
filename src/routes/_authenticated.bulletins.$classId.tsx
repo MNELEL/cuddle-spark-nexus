@@ -27,6 +27,7 @@ import { downloadPdfBlob } from "@/lib/pdf/pdf-builder";
 import { getClass } from "@/lib/classes.functions";
 
 export const Route = createFileRoute("/_authenticated/bulletins/$classId")({
+  head: () => ({ meta: [{ name: "robots", content: "noindex, nofollow" }] }),
   component: BulletinsPage,
 });
 
