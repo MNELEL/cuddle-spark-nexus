@@ -121,7 +121,7 @@ function BlogIndex() {
             </Link>
           </li>
           <li className="rounded-2xl border border-border/60 bg-card/40 p-6">
-            <Link to="/blog/free-tools-comparison" className="block">
+            <Link to="/blog/torah-study-reward-charts" className="block">
               <h2 className="text-xl font-semibold">לוח מבצעים ופרסים לתלמידים — מדריך ותבניות</h2>
               <p className="mt-2 text-muted-foreground">
                 חמישה לוחות מבצעים להדפסה, שיטת ניקוד שעובדת וסולם פרסים לפי גיל — ואיך לחבר
@@ -130,6 +130,8 @@ function BlogIndex() {
               <span className="mt-3 inline-block text-sm text-primary">למדריך ←</span>
             </Link>
           </li>
+          <li className="rounded-2xl border border-border/60 bg-card/40 p-6">
+            <Link to="/blog/free-tools-comparison" className="block">
               <h2 className="text-xl font-semibold">השוואת כלי ניהול כיתה חינמיים</h2>
               <p className="mt-2 text-muted-foreground">
                 פנקס, גיליון אקסל וכלים דיגיטליים ייעודיים — יתרונות, חסרונות והמלצה לכל שלב.
