@@ -444,6 +444,7 @@ export type Database = {
           public_headline: string | null
           public_slug: string | null
           room_objects: Json
+          status: string
           updated_at: string
         }
         Insert: {
@@ -459,6 +460,7 @@ export type Database = {
           public_headline?: string | null
           public_slug?: string | null
           room_objects?: Json
+          status?: string
           updated_at?: string
         }
         Update: {
@@ -474,6 +476,7 @@ export type Database = {
           public_headline?: string | null
           public_slug?: string | null
           room_objects?: Json
+          status?: string
           updated_at?: string
         }
         Relationships: []
