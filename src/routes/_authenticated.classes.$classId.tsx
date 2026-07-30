@@ -112,7 +112,7 @@ function ClassDetail() {
   const listR = useServerFn(listRelations);
   const listInputs = useServerFn(listClassScoreInputs);
 
-  const { data: cls } = useQuery({ queryKey: ["class", classId], queryFn: () => getC({ data: { id: classId } }) });
+  const { data: cls, isLoading: clsLoading } = useQuery({ queryKey: ["class", classId], queryFn: () => getC({ data: { id: classId } }) });
   const { data: students = [] } = useQuery({ queryKey: ["students", classId], queryFn: () => listS({ data: { classId } }) });
   const { data: relations = [] } = useQuery({ queryKey: ["relations", classId], queryFn: () => listR({ data: { classId } }) });
   const { data: scoreInputs } = useQuery({ queryKey: ["score-inputs", classId], queryFn: () => listInputs({ data: { classId } }) });
@@ -130,10 +130,21 @@ function ClassDetail() {
           <SeatFillGrid rows={4} cols={12} className="h-full" />
         </div>
         <div className="relative z-10">
-          <h1 className="font-display text-3xl font-bold tracking-tight">{cls?.name ?? "..."}</h1>
-          <p className="mt-1 text-sm text-primary-foreground/85 font-mono-tabular">
-            {students.length} תלמידים · {relations.length} אילוצים
-          </p>
+          {clsLoading ? (
+            <div aria-busy="true" aria-label="טוען פרטי כיתה">
+              <div aria-hidden="true">
+                <Skeleton className="h-9 w-52 bg-primary-foreground/20" />
+                <Skeleton className="mt-2 h-4 w-40 bg-primary-foreground/20" />
+              </div>
+            </div>
+          ) : (
+            <>
+              <h1 className="font-display text-3xl font-bold tracking-tight">{cls?.name ?? "כיתה"}</h1>
+              <p className="mt-1 text-sm text-primary-foreground/85 font-mono-tabular">
+                {students.length} תלמידים · {relations.length} אילוצים
+              </p>
+            </>
+          )}
         </div>
       </div>
 
