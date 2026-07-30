@@ -74,6 +74,56 @@ export const SLATE: [number, number, number] = [15, 23, 42];
 export const AMBER: [number, number, number] = [245, 158, 11];
 export const SOFT: [number, number, number] = [241, 245, 249];
 
+/* ------------------------------------------------------------------ *
+ * Bidi (RTL) helpers
+ * ------------------------------------------------------------------ *
+ * jsPDF's R2L mode reverses each rendered line character-by-character.
+ * That is correct for pure Hebrew, but it flips embedded Latin words,
+ * digits ("2026" -> "6202"), and mirrors bracket glyphs. Pre-reversing
+ * every LTR run (and swapping mirrored pairs) makes jsPDF's own reversal
+ * restore them, so mixed Hebrew/Latin/number text always aligns correctly
+ * regardless of viewer, screen or platform.
+ */
+
+const MIRROR: Record<string, string> = {
+  "(": ")", ")": "(", "[": "]", "]": "[", "{": "}", "}": "{",
+  "<": ">", ">": "<", "«": "»", "»": "«",
+};
+
+// A left-to-right run: Latin letters / digits plus punctuation glued inside it.
+const LTR_RUN = /[A-Za-z0-9\u00C0-\u024F](?:[A-Za-z0-9\u00C0-\u024F.,:;/\\\-+*=%&@#'"^_]*[A-Za-z0-9\u00C0-\u024F])?/g;
+
+/**
+ * Prepares a string for jsPDF R2L rendering.
+ * Safe to call on any string; returns it unchanged when there is nothing to fix.
+ */
+export function bidi(text: string): string {
+  if (!text) return text;
+  return text
+    .replace(LTR_RUN, (run) => [...run].reverse().join(""))
+    .replace(/[()[\]{}<>«»]/g, (ch) => MIRROR[ch] ?? ch);
+}
+
+/** Applies bidi() to every line of a pre-split array (or a single string). */
+export function bidiLines(input: string | string[]): string[] {
+  return (Array.isArray(input) ? input : [input]).map((l) => bidi(l));
+}
+
+/** Draws RTL-safe text at (x, y). Use instead of doc.text for Hebrew content. */
+export function rtlText(
+  doc: jsPDF,
+  text: string | string[],
+  x: number,
+  y: number,
+  opts?: { align?: "right" | "center" | "left"; maxWidth?: number },
+): void {
+  const src = Array.isArray(text) ? text : [text];
+  const lines = opts?.maxWidth
+    ? src.flatMap((t) => doc.splitTextToSize(t, opts.maxWidth!) as string[])
+    : src;
+  doc.text(bidiLines(lines), x, y, { align: opts?.align ?? "right" });
+}
+
 /** Institution brand snapshot used by every PDF header. */
 export type PdfBrand = {
   schoolName?: string;
@@ -107,6 +157,8 @@ export type HebrewDoc = {
   doc: jsPDF;
   layout: PdfLayout;
   ensureSpace: (needed: number) => void;
+  newPage: () => void;
+  text: (text: string | string[], x: number, y: number, opts?: { align?: "right" | "center" | "left"; maxWidth?: number }) => void;
   section: (title: string) => void;
   subSection: (title: string) => void;
   resetSubCounter: () => void;
@@ -131,6 +183,8 @@ export async function createHebrewDoc(): Promise<HebrewDoc> {
   doc.addFont("Heebo-Bold.ttf", "Heebo", "bold");
   doc.setFont("Heebo", "normal");
   doc.setR2L(true);
+  try { doc.setLanguage("he"); } catch { /* older jsPDF builds */ }
+  doc.setProperties({ title: "הכיתה שלי" });
 
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
@@ -146,12 +200,17 @@ export async function createHebrewDoc(): Promise<HebrewDoc> {
   let sectionNum = 0;
   let subNum = 0;
 
+  // Every new page must re-assert the RTL + font state; jsPDF resets some of
+  // it per page and a stale state is what makes single pages come out LTR.
+  const newPage = () => {
+    doc.addPage();
+    doc.setR2L(true);
+    doc.setFont("Heebo", "normal");
+    y = 16;
+  };
+
   const ensureSpace = (needed: number) => {
-    if (y + needed > pageH - 18) {
-      doc.addPage();
-      doc.setR2L(true);
-      y = 16;
-    }
+    if (y + needed > pageH - 18) newPage();
   };
 
   const baseTable: UserOptions = {
@@ -161,6 +220,12 @@ export async function createHebrewDoc(): Promise<HebrewDoc> {
     alternateRowStyles: { fillColor: [250, 250, 252] },
     theme: "grid",
     margin: { right: marginL, left: marginR },
+    // autoTable draws through doc.text, so each wrapped line needs bidi fixing
+    // after the wrap is computed — otherwise numbers/Latin flip inside cells.
+    willDrawCell: (data) => {
+      const cell = data.cell as unknown as { text: string[] };
+      if (Array.isArray(cell.text)) cell.text = bidiLines(cell.text);
+    },
   };
 
   const section = (title: string) => {
@@ -175,7 +240,7 @@ export async function createHebrewDoc(): Promise<HebrewDoc> {
     doc.setFont("Heebo", "bold");
     doc.setFontSize(12);
     doc.setTextColor(...SLATE);
-    doc.text(`§${sectionNum}. ${title}`, layout.rightX - 4, y + 4.8, { align: "right" });
+    rtlText(doc, `§${sectionNum}. ${title}`, layout.rightX - 4, y + 4.8, { align: "right" });
     doc.setFont("Heebo", "normal");
     y += 11;
   };
@@ -186,7 +251,7 @@ export async function createHebrewDoc(): Promise<HebrewDoc> {
     doc.setFont("Heebo", "bold");
     doc.setFontSize(10.5);
     doc.setTextColor(60);
-    doc.text(`§${sectionNum}.${subNum} ${title}`, layout.rightX, y + 3, { align: "right" });
+    rtlText(doc, `§${sectionNum}.${subNum} ${title}`, layout.rightX, y + 3, { align: "right" });
     doc.setFont("Heebo", "normal");
     y += 6;
   };
@@ -197,7 +262,17 @@ export async function createHebrewDoc(): Promise<HebrewDoc> {
     (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
 
   const table = (opts: UserOptions) => {
-    autoTable(doc, { ...baseTable, startY: y, ...opts, styles: { ...baseTable.styles, ...(opts.styles ?? {}) } });
+    const userWillDraw = opts.willDrawCell;
+    autoTable(doc, {
+      ...baseTable,
+      startY: y,
+      ...opts,
+      styles: { ...baseTable.styles, ...(opts.styles ?? {}) },
+      willDrawCell: (data) => {
+        baseTable.willDrawCell?.(data);
+        userWillDraw?.(data);
+      },
+    });
     y = afterTable() + 6;
   };
 
@@ -214,20 +289,17 @@ export async function createHebrewDoc(): Promise<HebrewDoc> {
       const avail = pageH - 18 - y;
       const canFit = Math.max(1, Math.floor(avail / lineH));
       const chunk = lines.slice(i, i + canFit);
-      doc.text(chunk, layout.rightX, y + lineH, { align: "right" });
+      doc.text(bidiLines(chunk), layout.rightX, y + lineH, { align: "right" });
       y += chunk.length * lineH;
       i += chunk.length;
-      if (i < lines.length) {
-        doc.addPage();
-        doc.setR2L(true);
-        y = 16;
-      }
+      if (i < lines.length) newPage();
     }
     y += opts?.gap ?? 3;
   };
 
   return {
-    doc, layout, ensureSpace, section, subSection, resetSubCounter,
+    doc, layout, ensureSpace, newPage, section, subSection, resetSubCounter,
+    text: (t, x, ty, o) => rtlText(doc, t, x, ty, o),
     afterTable, table, paragraph, baseTable,
     currentY: () => y,
     setY: (next: number) => { y = next; },
