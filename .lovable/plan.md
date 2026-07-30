@@ -1,43 +1,35 @@
+# חיפוש וסינון בכיתות + נגישות ו-Skeletons
 
-## דוח ממצאים (בדיקה בלבד — לא נערך קוד)
+## מה ייבנה
 
-### 1. טבלת `grades` והצגה בתעודה
-עמודות בפועל:
-`id, class_id, student_id, subject (text), value (numeric), max_value (numeric), date, notes, created_at`.
-אין עמודת `period` ואין ציון מילולי מאוחסן — הכל מספרי.
+### 1. שדה סטטוס אמיתי לכיתות
+- מיגרציה: הוספת עמודה `status` לטבלת `classes` עם ערכים `active` / `archived`, ברירת מחדל `active` (לא null).
+- עדכון `src/lib/classes.functions.ts`: פונקציה חדשה לעדכון סטטוס כיתה (מוגן באימות, ולידציה עם zod).
 
-איך התעודה מציגה ציון מילולי כרגע (`_authenticated.certificates.$classId.tsx`):
-- `getCertificateData` (ב-`src/lib/certificates.functions.ts`) מושך grades בטווח `from..to` לפי `class_id`.
-- `computeStudentRow` מקבץ לפי `subject`, סוכם `value/max_value`, מחשב אחוז, וממפה דרך `labelForPercent()` (ב-`src/lib/pdf/certificate-pdf.ts`) לתווית מ-`GRADE_LABELS` (מצוין/טוב מאוד/כמעט טוב מאוד/טוב/כמעט טוב/להשתדל יותר). ההערה בשורה היא `"{אחוז}%"`.
-- המורה יכול לערוך ידנית בטבלה (`patchSubject`), כולל שינוי ה-label ל-`GradeLabel` אחר, ולהוסיף/למחוק מקצועות. השינויים חיים ב-state בלבד — לא נשמרים ל-DB.
-- טווחי תקופה (חצי-שנתי/שליש/שנתי/מותאם) מחושבים ב-`periodRange()` בקליינט; אין entity "period" בסכימה.
+### 2. חיפוש וסינון בגריד הכיתות
+בעמוד `הכיתות שלי`:
+- שדה חיפוש חופשי לפי שם כיתה (סינון מיידי בצד לקוח, ללא רגישות לרישיות).
+- מסנן סטטוס: הכל / פעילות / בארכיון.
+- מונה תוצאות ומצב ריק ייעודי ("לא נמצאו כיתות התואמות לחיפוש") עם כפתור ניקוי.
+- על כל כרטיס: תג סטטוס, ופעולה בתפריט הכרטיס להעברה לארכיון / החזרה לפעילות.
+- ברירת המחדל בתצוגה: כיתות פעילות.
 
-### 2. `behavior_points`, `discipline_events`, `attendance`
-- `behavior_points`: `id, class_id, student_id, category (text), points (int), note, date, created_at`.
-- `discipline_events`: `id, class_id, student_id, type, category, severity (int), description, date, parents_notified (bool), created_at`. **לא נצרך היום** ב-`getCertificateData`.
-- `attendance`: `id, class_id, student_id, date, status (text: present/absent/late), notes, created_at`. כן נצרך בתעודה — מוצג כספירה של present/absent/late.
+### 3. נגישות הפלטה הגלובלית (Ctrl+K)
+- בפתיחה: פוקוס עובר אוטומטית לשדה החיפוש והפריט הראשון מסומן.
+- בסגירה: הפוקוס חוזר לאלמנט שפתח את הפלטה (הכפתור "עוד כלים" או כל טריגר אחר), כולל כשנפתחה דרך מקלדת.
+- מימוש: שמירת `document.activeElement` ברגע הפתיחה והחזרת פוקוס אליו ב-`onOpenChange` לסגירה.
 
-חישוב "הליכות" בתעודה: סכימת `points` פשוטה עם ספי `>=10 / >=0 / >=-5 / else` → אחת מ-`BEHAVIOR_LABELS` (ראוי לשבח/נאות/בינוני/טעון שיפור). אותה תווית מועתקת גם ל-diligence ול-manners כברירת מחדל — המורה יכול לשנות ידנית לכל תחום.
+### 4. Skeletons
+- גריד הכיתות: 6 כרטיסי שלד בזמן טעינה במקום הטקסט "טוען...".
+- כותרת עמוד כיתה: שלד לשם הכיתה, למטא-דאטה ולשורת 4 הפעולות בזמן טעינה.
+- שימוש ברכיב `Skeleton` הקיים, עם `aria-busy` ו-`aria-hidden` כדי שקוראי מסך לא יקריאו שלדים.
 
-### 3. הערות teacherNote / principalNote
-לא נשמרות בשום entity — קיימות כשדות state בקליינט בלבד:
-- ב-`StudentRow` (בתוך `certificates.$classId.tsx`): `teacherNote: string`, `principalNote: string`, מאותחלים ל-`""` ב-`computeStudentRow`.
-- נערכים בכרטיס התלמיד (`StudentCertCard`) ומוזרמים ל-`buildCertificatePdfBlob({ teacherNote, principalNote })`.
-- OCR תעודה (`analyzeCertificatePhoto`) יכול למלא אותם אוטומטית מתמונה, אך שוב — רק ב-state הרינדור, נעלם בריענון עמוד. אין טבלת `certificates` או `certificate_notes` בסכימה.
+### 5. Hover ו-Focus עדינים
+- כרטיסי כיתה: הרמה קלה + הדגשת מסגרת ב-hover, וטבעת פוקוס ברורה במעבר מקלדת (`focus-visible`).
+- כפתורי הפעולות הראשיים: מעבר צבע/צל עדין.
+- כל האנימציות עוטפות ב-`motion-reduce:transition-none` ו-`motion-reduce:transform-none` כדי לכבד `prefers-reduced-motion`; אפקטי הפוקוס נשארים גם אז.
 
-### 4. תשתית קריאה ל-Lovable AI Gateway
-כן — קיימת ומאוחדת ב-`src/lib/ai-gateway.server.ts`:
-- `callLovableAI({ messages, jsonResponse?, model? })` — chat/completions, ברירת מחדל `google/gemini-2.5-flash`, טיפול ב-429/402, מחזיר `choices[0].message.content`.
-- `callLovableAIEmbeddings(text, model?)` — embeddings, מחזיר `null` בכשל.
-
-דפוסים לשכפול (server functions עטופים ב-`createServerFn` + `requireSupabaseAuth` + Zod `inputValidator`):
-- `src/lib/ai-certificate.functions.ts` — OCR תעודה (multimodal image+text, `jsonResponse: true`, סניטציה מלאה של הפלט).
-- `src/lib/teaching-resources.functions.ts` — `generateResourceWithAI` (כולל `source_resource_id` להקשר).
-- `src/lib/ai-grades.functions.ts`, `src/lib/ai-exam.functions.ts`, `src/lib/ai-assistant.functions.ts` — דוגמאות טקסטואליות ו-JSON.
-
-### מסקנה מהירה לתכנון הבא
-- כדי לשמור הערות/תעודות בין רינדורים דרושה טבלה חדשה (למשל `certificates` או `certificate_notes` עם `student_id + period_key`).
-- כדי לתמוך ב"תקופה" (חצי/שליש/שנתי) בציונים עצמם — או להישאר עם חלון תאריכים (הגישה הנוכחית), או להוסיף `period` ל-`grades`.
-- הצעות AI להערות מורה/הנהלה ולניתוח שבועי — אפשר לממש בקלות ב-server function חדש שמשתמש ב-`callLovableAI` על סמך grades/behavior/attendance/discipline_events של התלמיד בטווח.
-
-מוכן להמשיך לתוכנית בנייה כשתאשר את הכיוון (איפה לשמור הערות, האם להוסיף `period` ל-grades, ומה בדיוק להזין ל-AI).
+## פרטים טכניים
+- קבצים: `src/routes/_authenticated.classes.index.tsx`, `src/routes/_authenticated.classes.$classId.tsx`, `src/components/global-command-palette.tsx`, `src/lib/classes.functions.ts`, `src/components/ui/skeleton.tsx` (שימוש בלבד).
+- מיגרציה אחת: `ALTER TABLE public.classes ADD COLUMN status text NOT NULL DEFAULT 'active'` + אילוץ ערכים חוקיים. מדיניות ההרשאות הקיימת של `classes` נשארת ללא שינוי.
+- הסינון מתבצע בצד לקוח על תוצאת `listClasses` הקיימת (רשימת כיתות של מורה בודד — קטנה).
