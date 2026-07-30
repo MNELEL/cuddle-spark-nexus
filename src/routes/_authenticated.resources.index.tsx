@@ -849,7 +849,14 @@ function AIGeneratorDialog({
 
 /* -------------------- collections dialog -------------------- */
 
-function CollectionsDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+function CollectionsDialog({
+  open, onClose, selectedIds, onToggleSelected,
+}: {
+  open: boolean;
+  onClose: () => void;
+  selectedIds: string[];
+  onToggleSelected: (id: string) => void;
+}) {
   const qc = useQueryClient();
   const list = useServerFn(listCollections);
   const save = useServerFn(upsertCollection);
@@ -872,11 +879,12 @@ function CollectionsDialog({ open, onClose }: { open: boolean; onClose: () => vo
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
+      <DialogContent onOpenAutoFocus={(e) => e.preventDefault()}>
         <DialogHeader><DialogTitle>אוספים</DialogTitle></DialogHeader>
         <div className="space-y-3">
+          <p className="text-xs text-muted-foreground">בחר אוספים כדי לסנן את רשימת החומרים.</p>
           <div className="flex gap-2">
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="שם האוסף…" />
+            <Input autoFocus={false} value={name} onChange={(e) => setName(e.target.value)} placeholder="שם האוסף…" />
             <Input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="w-16 p-1" />
             <Button disabled={!name.trim() || create.isPending} onClick={() => create.mutate()}>הוסף</Button>
           </div>
@@ -886,9 +894,20 @@ function CollectionsDialog({ open, onClose }: { open: boolean; onClose: () => vo
             </div>
           )}
           {collections.map((c) => (
-            <div key={c.id} className="flex items-center gap-3 rounded-lg border p-2">
+            <div
+              key={c.id}
+              className={`flex items-center gap-3 rounded-lg border p-2 ${selectedIds.includes(c.id) ? "border-amber bg-amber/10" : ""}`}
+            >
               <div className="h-6 w-6 rounded" style={{ background: c.color }} />
-              <div className="flex-1 font-medium">{c.name}</div>
+              <button
+                type="button"
+                className="flex-1 text-right font-medium"
+                aria-pressed={selectedIds.includes(c.id)}
+                onClick={() => onToggleSelected(c.id)}
+              >
+                {c.name}
+                {selectedIds.includes(c.id) && <span className="ms-2 text-xs text-amber">מסונן</span>}
+              </button>
               <Button variant="ghost" size="icon" className="text-destructive" aria-label={`מחק את ${c.name}`}
                 onClick={() => remove.mutate(c.id)}>
                 <Trash2 className="h-4 w-4" />
