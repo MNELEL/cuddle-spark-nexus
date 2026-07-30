@@ -8,9 +8,17 @@ import {
 import {
   Wrench, Music, Sparkles, BellRing, LineChart, Palette, BookOpen, GraduationCap,
   ScanText, TrendingUp, ClipboardList, Library, User, Users, Calendar,
+  Award, FileText, Wand2, Trophy, Dices, Globe2, MessageSquare,
 } from "lucide-react";
 import { listClasses } from "@/lib/classes.functions";
 import { listStudents } from "@/lib/students.functions";
+
+const OPEN_EVENT = "app:open-command-palette";
+
+/** Open the global command palette from anywhere (e.g. a "more tools" button). */
+export function openCommandPalette() {
+  if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent(OPEN_EVENT));
+}
 
 type NavItem = { label: string; to: string; icon: React.ComponentType<{ className?: string }>; keywords?: string };
 
@@ -27,12 +35,30 @@ const GLOBAL_ITEMS: NavItem[] = [
   { label: "מדריכים", to: "/blog", icon: BookOpen, keywords: "blog guides" },
 ];
 
-const CLASS_ACTIONS: { label: string; template: string; icon: React.ComponentType<{ className?: string }> }[] = [
-  { label: "אנליטיקה", template: "/analytics/", icon: TrendingUp },
-  { label: "סורק מבחנים", template: "/exam-scanner/", icon: ScanText },
-  { label: "יומן אירועים", template: "/calendar/", icon: Calendar },
-  { label: "תעודות", template: "/certificates/", icon: BookOpen },
+type ClassAction = {
+  label: string;
+  template: string;
+  icon: React.ComponentType<{ className?: string }>;
+  group: "דוחות והפקות" | "AI ומבחנים" | "מעורבות והורים";
+};
+
+const CLASS_ACTIONS: ClassAction[] = [
+  { label: "תעודות", template: "/certificates/", icon: Award, group: "דוחות והפקות" },
+  { label: "דוח כיתה", template: "/reports/", icon: FileText, group: "דוחות והפקות" },
+  { label: "אנליטיקה", template: "/analytics/", icon: TrendingUp, group: "דוחות והפקות" },
+  { label: "יומן אירועים", template: "/calendar/", icon: Calendar, group: "דוחות והפקות" },
+  { label: "עלון שבועי", template: "/bulletins/", icon: Sparkles, group: "AI ומבחנים" },
+  { label: "סורק מבחנים", template: "/exam-scanner/", icon: ScanText, group: "AI ומבחנים" },
+  { label: "מחולל מבחנים", template: "/exam-generator/", icon: Wand2, group: "AI ומבחנים" },
+  { label: "ספריית עזרים", template: "/resources", icon: Library, group: "AI ומבחנים" },
+  { label: "גיימיפיקציה", template: "/gamification/", icon: Trophy, group: "מעורבות והורים" },
+  { label: "הגרלות", template: "/raffle/", icon: Dices, group: "מעורבות והורים" },
+  { label: "פורטל הורים", template: "/parents/", icon: Users, group: "מעורבות והורים" },
+  { label: "דף ציבורי", template: "/share/", icon: Globe2, group: "מעורבות והורים" },
+  { label: "סקר כיתה חי", template: "/poll/", icon: MessageSquare, group: "מעורבות והורים" },
 ];
+
+const CLASS_GROUPS = ["דוחות והפקות", "AI ומבחנים", "מעורבות והורים"] as const;
 
 export function GlobalCommandPalette() {
   const [open, setOpen] = useState(false);
@@ -68,8 +94,13 @@ export function GlobalCommandPalette() {
         setOpen((v) => !v);
       }
     };
+    const onOpen = () => setOpen(true);
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener(OPEN_EVENT, onOpen);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener(OPEN_EVENT, onOpen);
+    };
   }, []);
 
   const go = (to: string) => {
@@ -104,21 +135,25 @@ export function GlobalCommandPalette() {
                 </CommandItem>
               ))}
             </CommandGroup>
-            <CommandSeparator />
-            <CommandGroup heading="פעולות כיתה">
-              {classes.flatMap((c) =>
-                CLASS_ACTIONS.map((a) => (
-                  <CommandItem
-                    key={`${c.id}-${a.template}`}
-                    value={`${a.label} ${c.name}`}
-                    onSelect={() => go(`${a.template}${c.id}`)}
-                  >
-                    <a.icon className="ms-2 h-4 w-4" />
-                    <span>{a.label} · {c.name}</span>
-                  </CommandItem>
-                )),
-              )}
-            </CommandGroup>
+            {CLASS_GROUPS.map((g) => (
+              <div key={g}>
+                <CommandSeparator />
+                <CommandGroup heading={g}>
+                  {classes.flatMap((c) =>
+                    CLASS_ACTIONS.filter((a) => a.group === g).map((a) => (
+                      <CommandItem
+                        key={`${c.id}-${a.template}`}
+                        value={`${a.label} ${c.name}`}
+                        onSelect={() => go(a.template.endsWith("/") ? `${a.template}${c.id}` : a.template)}
+                      >
+                        <a.icon className="ms-2 h-4 w-4" />
+                        <span>{a.label} · {c.name}</span>
+                      </CommandItem>
+                    )),
+                  )}
+                </CommandGroup>
+              </div>
+            ))}
           </>
         )}
         {students.length > 0 && (

@@ -21,7 +21,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Heart, Ban, MoveHorizontal, Pencil, Plus, Trash2, FolderOpen, FileText, Sparkles, Trophy, Users, Library, Monitor, Upload, Printer, Copy, Dices, Globe2, Award, ScanText, TrendingUp, CalendarDays, Wand2, MessageSquare } from "lucide-react";
+import { ArrowRight, Heart, Ban, MoveHorizontal, Pencil, Plus, Trash2, FolderOpen, FileText, Sparkles, Trophy, Users, Library, Monitor, Upload, Printer, Copy, Dices, Globe2, Award, ScanText, TrendingUp, CalendarDays, Wand2, MessageSquare, MoreHorizontal, LayoutGrid } from "lucide-react";
 import { toast } from "sonner";
 import { copyList, printList } from "@/lib/print-list";
 import { SeatingGrid } from "@/components/seating-grid";
@@ -35,6 +35,8 @@ import { ScoreBadge } from "@/components/score-badge";
 import { StudentFileSheet } from "@/components/student-file-sheet";
 import { AiAssistantDock } from "@/components/ai-assistant-dock";
 import { LessonsTab } from "@/components/lessons-tab";
+import { SeatFillGrid } from "@/components/seat-fill-grid";
+import { openCommandPalette } from "@/components/global-command-palette";
 
 /* ---------------- Action grid (responsive toolbar) ---------------- */
 
@@ -51,25 +53,19 @@ function ActionBtn({ icon: Icon, label, variant = "outline" }: { icon: typeof Up
   );
 }
 
-function ClassActionGrid({ classId }: { classId: string }) {
+function ClassActionGrid({ classId, onSeating }: { classId: string; onSeating: () => void }) {
   return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-      <Link to="/ingest" search={{ classId }}><ActionBtn icon={Upload} label="העלאה חכמה" variant="default" /></Link>
-      <Link to="/classes/$classId/display" params={{ classId }}><ActionBtn icon={Monitor} label="מצב תצוגה" /></Link>
-      <Link to="/certificates/$classId" params={{ classId }}><ActionBtn icon={Award} label="הפקת תעודות" /></Link>
-      <Link to="/bulletins/$classId" params={{ classId }}><ActionBtn icon={Sparkles} label="עלון שבועי" /></Link>
-      <Link to="/reports/$classId" params={{ classId }}><ActionBtn icon={FileText} label="דוח כיתה" /></Link>
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <Button size="sm" className="w-full justify-start" onClick={onSeating}>
+        <LayoutGrid className="ms-1 h-4 w-4 shrink-0" />
+        <span className="truncate">סידור הושבה</span>
+      </Button>
+      <Link to="/ingest" search={{ classId }}><ActionBtn icon={Upload} label="העלאה חכמה" /></Link>
       <Link to="/daily/$classId" params={{ classId }}><ActionBtn icon={FileText} label="סיכום יומי" /></Link>
-      <Link to="/gamification/$classId" params={{ classId }}><ActionBtn icon={Trophy} label="גיימיפיקציה" /></Link>
-      <Link to="/raffle/$classId" params={{ classId }}><ActionBtn icon={Dices} label="הגרלות" /></Link>
-      <Link to="/parents/$classId" params={{ classId }}><ActionBtn icon={Users} label="פורטל הורים" /></Link>
-      <Link to="/share/$classId" params={{ classId }}><ActionBtn icon={Globe2} label="דף ציבורי" /></Link>
-      <Link to="/resources"><ActionBtn icon={Library} label="ספריית עזרים" /></Link>
-      <Link to="/exam-scanner/$classId" params={{ classId }}><ActionBtn icon={ScanText} label="סורק מבחנים" /></Link>
-      <Link to="/exam-generator/$classId" params={{ classId }}><ActionBtn icon={Wand2} label="מחולל מבחנים" /></Link>
-      <Link to="/analytics/$classId" params={{ classId }}><ActionBtn icon={TrendingUp} label="אנליטיקה" /></Link>
-      <Link to="/calendar/$classId" params={{ classId }}><ActionBtn icon={CalendarDays} label="יומן אירועים" /></Link>
-      <Link to="/poll/$classId" params={{ classId }}><ActionBtn icon={MessageSquare} label="סקר כיתה חי" /></Link>
+      <Button variant="outline" size="sm" className="w-full justify-start" onClick={openCommandPalette}>
+        <MoreHorizontal className="ms-1 h-4 w-4 shrink-0" />
+        <span className="truncate">עוד כלים</span>
+      </Button>
     </div>
   );
 }
@@ -109,6 +105,7 @@ type Student = {
 
 function ClassDetail() {
   const { classId } = Route.useParams();
+  const [tab, setTab] = useState("students");
   const getC = useServerFn(getClass);
   const listS = useServerFn(listStudents);
   const listR = useServerFn(listRelations);
@@ -126,15 +123,20 @@ function ClassDetail() {
           <ArrowRight className="h-4 w-4" /> חזרה לכיתות
         </Link>
       </div>
-      <ClassActionGrid classId={classId} />
-      <div className="rounded-2xl border bg-card bg-mesh p-6 shadow-sm">
-        <h1 className="font-display text-3xl font-bold tracking-tight">{cls?.name ?? "..."}</h1>
-        <p className="mt-1 text-sm text-muted-foreground font-mono-tabular">
-          {students.length} תלמידים · {relations.length} אילוצים
-        </p>
+      <ClassActionGrid classId={classId} onSeating={() => setTab("seating")} />
+      <div className="relative overflow-hidden rounded-2xl border bg-primary p-6 text-primary-foreground shadow-sm">
+        <div className="pointer-events-none absolute inset-0 opacity-20">
+          <SeatFillGrid rows={4} cols={12} className="h-full" />
+        </div>
+        <div className="relative z-10">
+          <h1 className="font-display text-3xl font-bold tracking-tight">{cls?.name ?? "..."}</h1>
+          <p className="mt-1 text-sm text-primary-foreground/85 font-mono-tabular">
+            {students.length} תלמידים · {relations.length} אילוצים
+          </p>
+        </div>
       </div>
 
-      <Tabs defaultValue="students" dir="rtl">
+      <Tabs value={tab} onValueChange={setTab} dir="rtl">
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="students">תלמידים</TabsTrigger>
           <TabsTrigger value="relations">אילוצים</TabsTrigger>
