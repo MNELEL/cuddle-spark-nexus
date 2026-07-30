@@ -75,7 +75,7 @@ function Index() {
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-glow-primary">
             <GraduationCap className="h-5 w-5" />
           </div>
-          <span className="font-display text-xl font-bold tracking-tight">הכיתה שלי <span className="text-gradient-amber">Studio</span></span>
+          <span className="font-display text-xl font-bold tracking-tight">הכיתה <span className="text-gradient-amber">שלי</span></span>
         </div>
         <Link to="/login">
           <Button variant="outline" className="border-primary/20 backdrop-blur">התחברות</Button>
