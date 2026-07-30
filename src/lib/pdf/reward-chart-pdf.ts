@@ -10,6 +10,7 @@ import {
 } from "./pdf-builder";
 import type { RewardChart } from "@/lib/reward-charts";
 import { REWARD_CHARTS } from "@/lib/reward-charts";
+import { ensurePdfBrandLoaded } from "./brand-loader";
 
 export type RewardChartBrand = {
   schoolName?: string;
@@ -17,12 +18,29 @@ export type RewardChartBrand = {
   logoDataUrl?: string;
 };
 
-function applyBrand(brand?: RewardChartBrand) {
+/**
+ * Loads the institution brand (school name + logo) once per session and merges
+ * it with any explicit overrides, so every reward-chart document carries the
+ * same header band and logo as the rest of the app's PDFs.
+ */
+async function applyBrand(brand?: RewardChartBrand) {
+  await ensurePdfBrandLoaded();
+  const current = getPdfBrand();
   setPdfBrand({
-    schoolName: brand?.schoolName || "הכיתה שלי",
-    headerLine: brand?.headerLine || "לוח מבצעים ופרסים • להדפסה ותלייה בכיתה",
-    logoDataUrl: brand?.logoDataUrl,
+    ...current,
+    schoolName: brand?.schoolName || current.schoolName || "הכיתה שלי",
+    headerLine:
+      brand?.headerLine || current.headerLine || "לוח מבצעים ופרסים • להדפסה ותלייה בכיתה",
+    logoDataUrl: brand?.logoDataUrl || current.logoDataUrl,
   });
+}
+
+/** Meta line shown under every chart title — kept identical across templates. */
+function chartMeta(chart: RewardChart): string {
+  const school = getPdfBrand().schoolName || "הכיתה שלי";
+  return chart.classLabel
+    ? `לוח מבצעים להדפסה · ${school} · ${chart.classLabel}`
+    : `לוח מבצעים להדפסה · ${school}`;
 }
 
 /**
@@ -111,16 +129,16 @@ export async function generateRewardChartPdf(
   teacherName?: string,
 ): Promise<void> {
   const prev = getPdfBrand();
-  applyBrand(brand);
+  await applyBrand(brand);
   try {
     const hd = await createHebrewDoc();
     drawBrandHeader(hd, {
       title: chart.name,
       subtitle: chart.grid,
-      meta: "לוח מבצעים להדפסה · הכיתה שלי",
+      meta: chartMeta(chart),
     });
     drawChart(hd, chart, teacherName);
-    drawFooter(hd, "לוח מבצעים להדפסה — הכיתה שלי");
+    drawFooter(hd, `לוח מבצעים להדפסה — ${getPdfBrand().schoolName || "הכיתה שלי"}`);
     downloadPdfBlob(hd.doc.output("blob"), `reward-chart-${safeName(chart.id)}.pdf`);
   } finally {
     setPdfBrand(prev);
@@ -134,25 +152,25 @@ export async function generateAllRewardChartsPdf(
   teacherName?: string,
 ): Promise<void> {
   const prev = getPdfBrand();
-  applyBrand(brand);
+  await applyBrand(brand);
   try {
     const hd = await createHebrewDoc();
-    drawBrandHeader(hd, {
-      title: "ערכת לוחות מבצעים ופרסים",
-      subtitle: "חמישה לוחות מוכנים להדפסה ולתלייה בכיתה",
-      meta: "הפקה: הכיתה שלי · מבוסס על המדריך המלא בבלוג",
-    });
     charts.forEach((chart, i) => {
       if (i > 0) {
         hd.doc.addPage();
         hd.doc.setR2L(true);
         hd.setY(16);
       }
-      // Heebo has no bold face registered, so hd.section() would render blank.
-      hd.paragraph(chart.name, { size: 14, gap: 4 });
+      // Same branded header band on every page so the booklet looks uniform
+      // with the single-chart export.
+      drawBrandHeader(hd, {
+        title: chart.name,
+        subtitle: chart.grid,
+        meta: chartMeta(chart),
+      });
       drawChart(hd, chart, teacherName);
     });
-    drawFooter(hd, "ערכת לוחות מבצעים — הכיתה שלי");
+    drawFooter(hd, `ערכת לוחות מבצעים — ${getPdfBrand().schoolName || "הכיתה שלי"}`);
     downloadPdfBlob(hd.doc.output("blob"), "reward-charts-kit.pdf");
   } finally {
     setPdfBrand(prev);
