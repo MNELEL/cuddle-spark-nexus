@@ -104,7 +104,7 @@ export async function generateClassroomManagementChecklistPdf(brand?: ChecklistB
         doc.setFontSize(10);
         doc.setTextColor(30);
         const lines = doc.splitTextToSize(item, layout.contentW - boxSize - 3) as string[];
-        doc.text(lines, layout.rightX - boxSize - 3, y + 3, { align: "right" });
+        hd.text(lines, layout.rightX - boxSize - 3, y + 3, { align: "right" });
         hd.advance(Math.max(boxSize + 2, lines.length * 4.6));
       }
       hd.advance(2);

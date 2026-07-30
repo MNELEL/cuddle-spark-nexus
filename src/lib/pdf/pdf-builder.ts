@@ -74,6 +74,111 @@ export const SLATE: [number, number, number] = [15, 23, 42];
 export const AMBER: [number, number, number] = [245, 158, 11];
 export const SOFT: [number, number, number] = [241, 245, 249];
 
+/* ------------------------------------------------------------------ *
+ * Bidi (RTL) helpers
+ * ------------------------------------------------------------------ *
+ * jsPDF's setR2L(true) mode is not a bidi implementation: it reverses each
+ * rendered line and only partly compensates through its bidi engine, which
+ * is why Latin words, dates, percentages and brackets used to come out
+ * mirrored depending on where they sat in the line.
+ *
+ * Instead we keep R2L off and reorder every string ourselves with jsPDF's
+ * own UAX#9 bidi engine (logical RTL -> visual LTR), then tell the engine
+ * the text is already visual so it does not touch it again. This produces
+ * identical, correct output for pure Hebrew, mixed Hebrew/Latin, numbers
+ * and punctuation in every PDF viewer and on every platform.
+ */
+
+type BidiEngine = { doBidiReorder: (t: string) => string };
+
+const visualEngine: BidiEngine = new (jsPDF as unknown as {
+  __bidiEngine__: new (o: Record<string, unknown>) => BidiEngine;
+}).__bidiEngine__({
+  isInputVisual: false,
+  isInputRtl: true,
+  isOutputVisual: true,
+  isOutputRtl: false,
+  isSymmetricSwapping: true,
+});
+
+/**
+ * Text options that make jsPDF treat the string as already-visual and skip
+ * its own reordering pass.
+ */
+export const VISUAL_TEXT_OPTS = {
+  isInputVisual: true,
+  isOutputVisual: true,
+  isInputRtl: false,
+  isOutputRtl: false,
+} as const;
+
+/**
+ * Converts a logical (typed) Hebrew string into visual order for the PDF.
+ * Safe to call on any string, including pure Latin/numeric text.
+ */
+export function bidi(text: string): string {
+  if (!text) return text;
+  try {
+    return visualEngine.doBidiReorder(text);
+  } catch {
+    return text;
+  }
+}
+
+/** Applies bidi() to every line of a pre-split array (or a single string). */
+export function bidiLines(input: string | string[]): string[] {
+  return (Array.isArray(input) ? input : [input]).map((l) => bidi(l));
+}
+
+const PATCHED = Symbol.for("hakita.rtlTextPatched");
+
+/**
+ * Wraps doc.text so every string drawn into the document — including text
+ * drawn by jsPDF-autotable and by feature-specific PDF builders — is
+ * reordered to visual order exactly once, with jsPDF's own reorder disabled.
+ */
+export function patchTextForRtl(doc: jsPDF): void {
+  const target = doc as unknown as Record<string | symbol, unknown>;
+  if (target[PATCHED]) return;
+  target[PATCHED] = true;
+  const original = doc.text.bind(doc);
+  (doc as unknown as { text: (...a: unknown[]) => unknown }).text = (
+    ...args: unknown[]
+  ) => {
+    const [text, x, y, options, ...rest] = args as [
+      string | string[],
+      number,
+      number,
+      Record<string, unknown> | undefined,
+      ...unknown[],
+    ];
+    const converted = Array.isArray(text) ? bidiLines(text) : bidi(String(text));
+    return (original as unknown as (...a: unknown[]) => unknown)(
+      converted,
+      x,
+      y,
+      { ...(options ?? {}), ...VISUAL_TEXT_OPTS },
+      ...rest,
+    );
+  };
+}
+
+/** Draws RTL-safe text at (x, y). Use instead of doc.text for Hebrew content. */
+export function rtlText(
+  doc: jsPDF,
+  text: string | string[],
+  x: number,
+  y: number,
+  opts?: { align?: "right" | "center" | "left"; maxWidth?: number },
+): void {
+  const src = Array.isArray(text) ? text : [text];
+  const lines = opts?.maxWidth
+    ? src.flatMap((t) => doc.splitTextToSize(t, opts.maxWidth!) as string[])
+    : src;
+  // doc.text is patched by createHebrewDoc to reorder to visual order.
+  doc.text(lines, x, y, { align: opts?.align ?? "right" });
+}
+
 /** Institution brand snapshot used by every PDF header. */
 export type PdfBrand = {
   schoolName?: string;
@@ -107,6 +212,8 @@ export type HebrewDoc = {
   doc: jsPDF;
   layout: PdfLayout;
   ensureSpace: (needed: number) => void;
+  newPage: () => void;
+  text: (text: string | string[], x: number, y: number, opts?: { align?: "right" | "center" | "left"; maxWidth?: number }) => void;
   section: (title: string) => void;
   subSection: (title: string) => void;
   resetSubCounter: () => void;
@@ -130,7 +237,11 @@ export async function createHebrewDoc(): Promise<HebrewDoc> {
   doc.addFileToVFS("Heebo-Bold.ttf", boldB64);
   doc.addFont("Heebo-Bold.ttf", "Heebo", "bold");
   doc.setFont("Heebo", "normal");
-  doc.setR2L(true);
+  // R2L stays OFF: we reorder to visual order ourselves (see bidi()).
+  doc.setR2L(false);
+  try { doc.setLanguage("he"); } catch { /* older jsPDF builds */ }
+  patchTextForRtl(doc);
+  doc.setProperties({ title: "הכיתה שלי" });
 
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
@@ -146,12 +257,17 @@ export async function createHebrewDoc(): Promise<HebrewDoc> {
   let sectionNum = 0;
   let subNum = 0;
 
+  // Every new page must re-assert the font/direction state so a page never
+  // renders with a stale (left-to-right) setup.
+  const newPage = () => {
+    doc.addPage();
+    doc.setR2L(false);
+    doc.setFont("Heebo", "normal");
+    y = 16;
+  };
+
   const ensureSpace = (needed: number) => {
-    if (y + needed > pageH - 18) {
-      doc.addPage();
-      doc.setR2L(true);
-      y = 16;
-    }
+    if (y + needed > pageH - 18) newPage();
   };
 
   const baseTable: UserOptions = {
@@ -161,6 +277,13 @@ export async function createHebrewDoc(): Promise<HebrewDoc> {
     alternateRowStyles: { fillColor: [250, 250, 252] },
     theme: "grid",
     margin: { right: marginL, left: marginR },
+    // autoTable draws through doc.text, so each wrapped line needs bidi fixing
+    // after the wrap is computed — otherwise numbers/Latin flip inside cells.
+    willDrawCell: (data) => {
+      // Cell text is reordered by the patched doc.text; nothing to do here
+      // beyond keeping the Hebrew font on every cell.
+      data.doc.setFont("Heebo", data.cell.styles.fontStyle === "bold" ? "bold" : "normal");
+    },
   };
 
   const section = (title: string) => {
@@ -175,7 +298,7 @@ export async function createHebrewDoc(): Promise<HebrewDoc> {
     doc.setFont("Heebo", "bold");
     doc.setFontSize(12);
     doc.setTextColor(...SLATE);
-    doc.text(`§${sectionNum}. ${title}`, layout.rightX - 4, y + 4.8, { align: "right" });
+    rtlText(doc, `§${sectionNum}. ${title}`, layout.rightX - 4, y + 4.8, { align: "right" });
     doc.setFont("Heebo", "normal");
     y += 11;
   };
@@ -186,7 +309,7 @@ export async function createHebrewDoc(): Promise<HebrewDoc> {
     doc.setFont("Heebo", "bold");
     doc.setFontSize(10.5);
     doc.setTextColor(60);
-    doc.text(`§${sectionNum}.${subNum} ${title}`, layout.rightX, y + 3, { align: "right" });
+    rtlText(doc, `§${sectionNum}.${subNum} ${title}`, layout.rightX, y + 3, { align: "right" });
     doc.setFont("Heebo", "normal");
     y += 6;
   };
@@ -197,7 +320,17 @@ export async function createHebrewDoc(): Promise<HebrewDoc> {
     (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
 
   const table = (opts: UserOptions) => {
-    autoTable(doc, { ...baseTable, startY: y, ...opts, styles: { ...baseTable.styles, ...(opts.styles ?? {}) } });
+    const userWillDraw = opts.willDrawCell;
+    autoTable(doc, {
+      ...baseTable,
+      startY: y,
+      ...opts,
+      styles: { ...baseTable.styles, ...(opts.styles ?? {}) },
+      willDrawCell: (data) => {
+        baseTable.willDrawCell?.(data);
+        userWillDraw?.(data);
+      },
+    });
     y = afterTable() + 6;
   };
 
@@ -217,17 +350,14 @@ export async function createHebrewDoc(): Promise<HebrewDoc> {
       doc.text(chunk, layout.rightX, y + lineH, { align: "right" });
       y += chunk.length * lineH;
       i += chunk.length;
-      if (i < lines.length) {
-        doc.addPage();
-        doc.setR2L(true);
-        y = 16;
-      }
+      if (i < lines.length) newPage();
     }
     y += opts?.gap ?? 3;
   };
 
   return {
-    doc, layout, ensureSpace, section, subSection, resetSubCounter,
+    doc, layout, ensureSpace, newPage, section, subSection, resetSubCounter,
+    text: (t, x, ty, o) => rtlText(doc, t, x, ty, o),
     afterTable, table, paragraph, baseTable,
     currentY: () => y,
     setY: (next: number) => { y = next; },
@@ -262,14 +392,14 @@ export function drawBrandHeader(
     doc.setFont("Heebo", "bold");
     doc.setFontSize(13);
     doc.setTextColor(...SLATE);
-    doc.text(brand.schoolName, layout.rightX, hd.currentY(), { align: "right" });
+    rtlText(doc, brand.schoolName, layout.rightX, hd.currentY(), { align: "right" });
     hd.advance(5.5);
   }
   if (brand.headerLine) {
     doc.setFont("Heebo", "normal");
     doc.setFontSize(9);
     doc.setTextColor(120);
-    doc.text(brand.headerLine, layout.rightX, hd.currentY(), { align: "right" });
+    rtlText(doc, brand.headerLine, layout.rightX, hd.currentY(), { align: "right" });
     hd.advance(4.5);
   }
   if (brand.schoolName || brand.headerLine) {
@@ -307,7 +437,7 @@ export function drawBrandHeader(
 
   doc.setFontSize(8);
   doc.setTextColor(150);
-  doc.text(`הופק ב-${new Date().toLocaleString("he-IL")}`, layout.rightX, hd.currentY(), { align: "right" });
+  rtlText(doc, `הופק ב-${new Date().toLocaleString("he-IL")}`, layout.rightX, hd.currentY(), { align: "right" });
   hd.advance(6);
 }
 
@@ -316,14 +446,15 @@ export function drawFooter(hd: HebrewDoc, meta?: string): void {
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
-    doc.setR2L(true);
+    doc.setR2L(false);
     doc.setFont("Heebo", "normal");
     doc.setFontSize(8);
     doc.setDrawColor(226, 232, 240);
     doc.line(layout.marginL, layout.pageH - 12, layout.pageW - layout.marginR, layout.pageH - 12);
     doc.setTextColor(150);
-    if (meta) doc.text(meta, layout.rightX, layout.pageH - 7, { align: "right" });
-    doc.text(
+    if (meta) rtlText(doc, meta, layout.rightX, layout.pageH - 7, { align: "right" });
+    rtlText(
+      doc,
       `הכיתה שלי · עמ׳ ${i} מתוך ${pageCount}`,
       layout.pageW / 2,
       layout.pageH - 7,

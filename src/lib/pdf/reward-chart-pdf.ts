@@ -82,16 +82,13 @@ function drawChart(
   doc.setFont("Heebo", "normal");
   doc.setTextColor(255);
   doc.setFontSize(8);
-  doc.text(chart.rowLabel, right - 2, top + headH / 2 + 1.6, { align: "right" });
+  hd.text(chart.rowLabel, right - 2, top + headH / 2 + 1.6, { align: "right" });
   doc.setFontSize(headFont);
   chart.columns.forEach((label, i) => {
     const cx = right - nameW - colW * i - colW / 2;
-    // Pure-number labels ("12") get their digits reversed by R2L mode, so
-    // draw those with R2L temporarily disabled.
-    const numeric = /^[0-9]+$/.test(label.trim());
-    if (numeric) doc.setR2L(false);
-    doc.text(label, cx, top + headH / 2 + 1.4, { align: "center" });
-    if (numeric) doc.setR2L(true);
+    // hd.text runs the shared bidi fix, so numeric labels ("12") keep their
+    // digit order under R2L without toggling global state.
+    hd.text(label, cx, top + headH / 2 + 1.4, { align: "center" });
   });
 
   // Grid lines.
@@ -157,9 +154,7 @@ export async function generateAllRewardChartsPdf(
     const hd = await createHebrewDoc();
     charts.forEach((chart, i) => {
       if (i > 0) {
-        hd.doc.addPage();
-        hd.doc.setR2L(true);
-        hd.setY(16);
+        hd.newPage();
       }
       // Same branded header band on every page so the booklet looks uniform
       // with the single-chart export.
