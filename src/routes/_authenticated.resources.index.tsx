@@ -259,13 +259,13 @@ function ResourcesPage() {
                 <Search className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                 <Input className="pe-7" placeholder="כותרת או תיאור…"
                   value={filters.search}
-                  onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))} />
+                  onChange={(e) => patch({ search: e.target.value })} />
               </div>
             </div>
             <div>
               <Label className="text-xs">סוג</Label>
               <Select value={filters.resource_type || "all"}
-                onValueChange={(v) => setFilters((f) => ({ ...f, resource_type: v === "all" ? "" : v as ResourceType }))}>
+                onValueChange={(v) => patch({ resource_type: v === "all" ? "" : (v as ResourceType) })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">הכל</SelectItem>
@@ -278,7 +278,7 @@ function ResourcesPage() {
             <div>
               <Label className="text-xs">מקצוע</Label>
               <Select value={filters.subject || "all"}
-                onValueChange={(v) => setFilters((f) => ({ ...f, subject: v === "all" ? "" : v }))}>
+                onValueChange={(v) => patch({ subject: v === "all" ? "" : v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">הכל</SelectItem>
@@ -291,7 +291,7 @@ function ResourcesPage() {
             <div>
               <Label className="text-xs">כיתה</Label>
               <Select value={filters.grade_level || "all"}
-                onValueChange={(v) => setFilters((f) => ({ ...f, grade_level: v === "all" ? "" : v }))}>
+                onValueChange={(v) => patch({ grade_level: v === "all" ? "" : v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">הכל</SelectItem>
@@ -304,21 +304,34 @@ function ResourcesPage() {
             <div>
               <Label className="text-xs">תגית</Label>
               <Input placeholder="פרשת ויצא…" value={filters.tag}
-                onChange={(e) => setFilters((f) => ({ ...f, tag: e.target.value }))} />
+                onChange={(e) => patch({ tag: e.target.value })} />
             </div>
             {collections.length > 0 && (
               <div>
-                <Label className="text-xs">אוסף</Label>
-                <Select value={filters.collection_id || "all"}
-                  onValueChange={(v) => setFilters((f) => ({ ...f, collection_id: v === "all" ? "" : v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">הכל</SelectItem>
-                    {collections.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label className="text-xs">אוספים</Label>
+                <div className="mt-1 space-y-1">
+                  {collections.map((c) => {
+                    const on = filters.collectionIds.includes(c.id);
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        aria-pressed={on}
+                        className={`flex w-full items-center gap-2 rounded px-2 py-1 text-right text-sm hover:bg-accent ${on ? "bg-accent font-medium" : ""}`}
+                        onClick={() =>
+                          patch({
+                            collectionIds: on
+                              ? filters.collectionIds.filter((id) => id !== c.id)
+                              : [...filters.collectionIds, c.id],
+                          })
+                        }
+                      >
+                        <span className="h-3 w-3 rounded" style={{ background: c.color }} />
+                        {c.name}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
             <Button variant="ghost" size="sm" className="w-full"
@@ -330,7 +343,7 @@ function ResourcesPage() {
 
         <Card className="lg:col-start-1">
           <CardContent className="pt-4">
-            <TopicTreeFilter value={topicIds} onChange={setTopicIds} />
+            <TopicTreeFilter value={filters.topicIds} onChange={(ids) => patch({ topicIds: ids })} />
           </CardContent>
         </Card>
 
@@ -341,7 +354,7 @@ function ResourcesPage() {
               <Loader2 className="mx-auto mb-2 h-6 w-6 animate-spin" /> טוען חומרים…
             </CardContent></Card>
           )}
-          {!isLoading && resources.length === 0 && (
+          {!isLoading && visibleResources.length === 0 && (
             <Card><CardContent className="py-16 text-center">
               <BookOpen className="mx-auto mb-3 h-10 w-10 text-muted-foreground/50" />
               <div className="text-muted-foreground">אין עדיין חומרים — צור את הראשון עם AI ✨</div>
@@ -351,23 +364,27 @@ function ResourcesPage() {
             </CardContent></Card>
           )}
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {(topicIds.length > 0
-              ? resources.filter((r) => {
-                  const tid = (r as unknown as { topic_id: string | null }).topic_id;
-                  return tid !== null && topicIds.includes(tid);
-                })
-              : resources
-            ).map((r) => (
+            {visibleResources.map((r) => (
               <ResourceCard
                 key={r.id}
                 resource={r}
-                onOpen={() => setEditing(r)}
+                onView={() => setViewing(r)}
+                onEdit={() => setEditing(r)}
                 onVariant={(src) => { setAiSource(src); setAiOpen(true); }}
               />
             ))}
           </div>
         </div>
       </div>
+
+      {/* Document viewer */}
+      {viewing && (
+        <ResourceViewerDialog
+          resource={viewing}
+          onClose={() => setViewing(null)}
+          onEdit={() => { setEditing(viewing); setViewing(null); }}
+        />
+      )}
 
       {/* Editor / viewer */}
       {editing && (
