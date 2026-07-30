@@ -73,6 +73,14 @@ function ThemePreviewCard({ theme, label, description }: { theme: ThemeName; lab
             <span className="text-muted-foreground">accent</span>
             <span className="h-4 w-4 rounded-full bg-amber" />
             <span className="text-muted-foreground">amber</span>
+            <span className="h-4 w-4 rounded-full bg-turquoise" />
+            <span className="text-turquoise">turquoise</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center rounded-md bg-turquoise px-2 py-1 text-xs font-medium text-primary-foreground">
+              רקע טורקיז
+            </span>
+            <span className="text-sm text-turquoise">טקסט טורקיז</span>
           </div>
         </CardContent>
       </Card>
