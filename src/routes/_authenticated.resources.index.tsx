@@ -413,10 +413,11 @@ function ResourcesPage() {
 /* -------------------- card -------------------- */
 
 function ResourceCard({
-  resource, onOpen, onVariant,
+  resource, onView, onEdit, onVariant,
 }: {
   resource: ResourceRow;
-  onOpen: () => void;
+  onView: () => void;
+  onEdit: () => void;
   onVariant: (r: ResourceRow) => void;
 }) {
   return (
@@ -447,15 +448,123 @@ function ResourceCard({
         </div>
       )}
       <div className="mt-3 flex gap-2">
-        <Button asChild size="sm" variant="outline" className="flex-1">
-          <Link to="/resources/$resourceId" params={{ resourceId: resource.id }}>פתח</Link>
+        <Button size="sm" variant="outline" className="flex-1" onClick={onView}>
+          <Eye className="ms-1 h-4 w-4" /> פתח
         </Button>
-        <Button size="sm" variant="ghost" onClick={onOpen}>ערוך</Button>
+        <Button size="sm" variant="ghost" onClick={onEdit}>ערוך</Button>
         <Button size="sm" variant="ghost" onClick={() => onVariant(resource)} title="צור וריאציה עם AI מפריט זה">
           <Sparkles className="h-4 w-4 text-amber" />
         </Button>
       </div>
     </div>
+  );
+}
+
+/* -------------------- viewer -------------------- */
+
+function resourceToHtml(r: ResourceRow) {
+  const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const c = r.content ?? {};
+  const parts: string[] = [`<h1>${esc(r.title)}</h1>`];
+  if (r.description) parts.push(`<p>${esc(r.description)}</p>`);
+  if (c.body) parts.push(`<div style="white-space:pre-wrap">${esc(c.body)}</div>`);
+  if (c.materials?.length) parts.push(`<h2>חומרים נדרשים</h2><ul>${c.materials.map((m) => `<li>${esc(m)}</li>`).join("")}</ul>`);
+  if (c.steps?.length) parts.push(`<h2>מהלך הפעילות</h2><ol>${c.steps.map((s) => `<li>${esc(s)}</li>`).join("")}</ol>`);
+  if (c.questions?.length)
+    parts.push(`<h2>שאלות</h2><ol>${c.questions
+      .map((q) => `<li>${esc(q.q)}${q.a ? `<div><em>תשובה: ${esc(q.a)}</em></div>` : ""}</li>`)
+      .join("")}</ol>`);
+  return `<!doctype html><html dir="rtl" lang="he"><head><meta charset="utf-8"><title>${esc(r.title)}</title>
+<style>body{font-family:'Heebo',system-ui,sans-serif;margin:2rem;line-height:1.7}h1{font-size:1.6rem}h2{font-size:1.1rem;margin-top:1.2rem}</style>
+</head><body>${parts.join("\n")}</body></html>`;
+}
+
+function ResourceViewerDialog({
+  resource, onClose, onEdit,
+}: {
+  resource: ResourceRow;
+  onClose: () => void;
+  onEdit: () => void;
+}) {
+  const c = resource.content ?? {};
+
+  const printDoc = () => {
+    const w = window.open("", "_blank", "width=800,height=900");
+    if (!w) { toast.error("החלון נחסם על ידי הדפדפן"); return; }
+    w.document.write(resourceToHtml(resource));
+    w.document.close();
+    w.focus();
+    setTimeout(() => w.print(), 300);
+  };
+
+  const download = () => {
+    const blob = new Blob([resourceToHtml(resource)], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${resource.title.replace(/[\\/:*?"<>|]/g, "-")}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const empty = !c.body && !c.questions?.length && !c.steps?.length && !c.materials?.length;
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent
+        className="max-w-3xl max-h-[90vh] overflow-y-auto"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
+        <DialogHeader>
+          <DialogTitle className="text-right">{resource.title}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 text-right" dir="rtl">
+          <div className="flex flex-wrap gap-1">
+            <Badge variant="outline">{RESOURCE_TYPE_LABELS[resource.resource_type] ?? resource.resource_type}</Badge>
+            {resource.subject && <Badge variant="secondary">{resource.subject}</Badge>}
+            {resource.grade_level && <Badge variant="secondary">כיתה {resource.grade_level}</Badge>}
+          </div>
+          {resource.description && <p className="text-sm text-muted-foreground">{resource.description}</p>}
+          {c.body && (
+            <div className="whitespace-pre-wrap rounded-lg border bg-muted/20 p-3 text-sm leading-relaxed">{c.body}</div>
+          )}
+          {c.materials && c.materials.length > 0 && (
+            <div>
+              <h3 className="mb-1 font-semibold">חומרים נדרשים</h3>
+              <ul className="list-disc pe-5 text-sm">{c.materials.map((m, i) => <li key={i}>{m}</li>)}</ul>
+            </div>
+          )}
+          {c.steps && c.steps.length > 0 && (
+            <div>
+              <h3 className="mb-1 font-semibold">מהלך הפעילות</h3>
+              <ol className="list-decimal pe-5 space-y-1 text-sm">{c.steps.map((s, i) => <li key={i}>{s}</li>)}</ol>
+            </div>
+          )}
+          {c.questions && c.questions.length > 0 && (
+            <div>
+              <h3 className="mb-1 font-semibold">שאלות</h3>
+              <ol className="list-decimal pe-5 space-y-2 text-sm">
+                {c.questions.map((q, i) => (
+                  <li key={i}>
+                    <div className="font-medium">{q.q}</div>
+                    {q.a && <div className="mt-0.5 rounded bg-muted/40 p-1.5 text-muted-foreground">תשובה: {q.a}</div>}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+          {empty && <p className="text-sm text-muted-foreground">אין תוכן שמור לחומר זה — לחץ "ערוך" כדי להוסיף.</p>}
+        </div>
+        <DialogFooter className="flex-wrap gap-2">
+          <Button variant="ghost" asChild className="me-auto">
+            <Link to="/resources/$resourceId" params={{ resourceId: resource.id }}>לעמוד המלא</Link>
+          </Button>
+          <Button variant="outline" onClick={printDoc}><Printer className="ms-1 h-4 w-4" /> הדפס</Button>
+          <Button variant="outline" onClick={download}><Download className="ms-1 h-4 w-4" /> הורד</Button>
+          <Button onClick={onEdit}>ערוך</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
