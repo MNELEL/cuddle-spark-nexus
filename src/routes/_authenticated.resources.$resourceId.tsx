@@ -18,6 +18,12 @@ import { suggestResourceEdits } from "@/lib/teacher-style.functions";
 import { listClasses } from "@/lib/classes.functions";
 
 export const Route = createFileRoute("/_authenticated/resources/$resourceId")({
+  head: () => ({
+    meta: [
+      { title: "פריט בספריית העזרים · הכיתה שלי" },
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
   component: ResourceDetailPage,
 });
 
