@@ -93,7 +93,10 @@ function drawChart(
 
   hd.ensureSpace(16);
   doc.setFont("Heebo", "normal");
-  const signer = teacherName?.trim() ? `חתימת המלמד (${teacherName.trim()}): ______________` : "חתימת המלמד: ______________";
+  // No parentheses here: R2L rendering mirrors bracket glyphs in jsPDF.
+  const signer = teacherName?.trim()
+    ? `חתימת המלמד ${teacherName.trim()}: ______________`
+    : "חתימת המלמד: ______________";
   hd.paragraph(`${signer}          תאריך סיום המבצע: ______________`, {
     size: 10,
     gap: 6,
