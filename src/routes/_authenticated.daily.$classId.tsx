@@ -20,6 +20,7 @@ import { downloadPdfBlob } from "@/lib/pdf/pdf-builder";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/daily/$classId")({
+  head: () => ({ meta: [{ name: "robots", content: "noindex, nofollow" }] }),
   component: DailySummaryPage,
 });
 
