@@ -1,3 +1,4 @@
+import { SeatFillGrid } from "@/components/seat-fill-grid";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { GraduationCap, Users, Sparkles, Layout, Brain, BarChart3, Presentation, ArrowLeft } from "lucide-react";
@@ -90,10 +91,10 @@ function Index() {
           </div>
           <h1 className="mt-6 font-display text-5xl font-bold leading-[1.05] tracking-tight md:text-7xl">
             הכיתה שלך,<br />
-            <span className="text-gradient-amber">מסונכרנת בשלמות.</span>
+            <span className="text-amber">מסונכרנת בשלמות.</span>
           </h1>
-          <p className="mt-7 mx-auto max-w-2xl text-lg text-muted-foreground md:text-xl">
-            סידור הושבה אופטימלי בעזרת AI, מעקב פדגוגי חי, מצב מצגת תלת-ממדי ודוחות מקצועיים — מותאם לתלמודי תורה, חיידרים ובתי ספר, בממשק עברית מלא וחווייתי.
+          <p className="mt-7 mx-auto max-w-2xl font-sans text-lg text-muted-foreground md:text-xl">
+            הושבה, מעקב פדגוגי ודוחות — הכל מסונכרן במקום אחד, בעברית מלאה.
           </p>
           <div className="mt-10 flex flex-wrap justify-center gap-3">
             <Link to="/login">
@@ -104,6 +105,10 @@ function Index() {
             <a href="#features">
               <Button size="lg" variant="outline" className="text-base">גלה תכונות</Button>
             </a>
+          </div>
+
+          <div className="mt-14 mx-auto max-w-2xl">
+            <SeatFillGrid />
           </div>
 
           {/* preview card */}

@@ -103,13 +103,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="he" dir="rtl">
+    <html lang="he" dir="rtl" data-theme="hakita-sheli">
       <head>
         <HeadContent />
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "try{var t=localStorage.getItem('classpro-theme');if(t&&t!=='modern'){document.documentElement.setAttribute('data-theme',t)}}catch(e){}",
+              "try{var t=localStorage.getItem('classpro-theme');if(t){if(t==='modern'){document.documentElement.removeAttribute('data-theme')}else{document.documentElement.setAttribute('data-theme',t)}}}catch(e){}",
           }}
         />
       </head>
