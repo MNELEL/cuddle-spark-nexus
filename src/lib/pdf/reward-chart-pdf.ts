@@ -39,6 +39,7 @@ function drawChart(
   const { doc, layout } = hd;
 
   hd.paragraph(`יעד המבצע: ${chart.goal}`, { size: 10 });
+  if (chart.classLabel) hd.paragraph(`כיתה: ${chart.classLabel}`, { size: 10 });
   hd.paragraph(`סולם פרסים: ${chart.reward}`, { size: 10, muted: true, gap: 4 });
 
   const nameW = 28;
