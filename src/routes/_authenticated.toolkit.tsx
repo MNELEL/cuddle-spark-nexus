@@ -1,10 +1,20 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { listClasses } from "@/lib/classes.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Play, Pause, RotateCcw, Shuffle, ChevronRight, ChevronLeft, Mic, MicOff, Wrench, ShieldCheck, BellRing } from "lucide-react";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import {
+  Play, Pause, RotateCcw, Shuffle, ChevronRight, ChevronLeft, Mic, MicOff, Wrench, ShieldCheck, BellRing,
+  Music, Trophy, Dices, ClipboardList, ScanText, Wand2, Award, TrendingUp, FileText, Palette, Mail,
+  Globe2, CalendarDays, LineChart, BookOpen, Library, MessageSquare,
+} from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SecuritySettings } from "@/components/security-settings";
 import { ReminderPreferencesCard } from "@/components/reminder-preferences-card";
@@ -28,11 +38,15 @@ function ToolkitPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">ארגז כלים לכיתה</h1>
-        <p className="text-sm text-muted-foreground">כלים מהירים להוראה, לניהול הכיתה ולאבטחת לוח הבקרה.</p>
+        <p className="text-sm text-muted-foreground">כל הכלים במקום אחד — כלי שיעור, צלצולים, מוטיבציה ופרסים, הערכה, מסמכים והגדרות.</p>
       </div>
       <Tabs defaultValue="tools" dir="rtl">
-        <TabsList>
+        <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="tools"><Wrench className="ms-1 h-4 w-4" /> כלים</TabsTrigger>
+          <TabsTrigger value="sound"><BellRing className="ms-1 h-4 w-4" /> צלצולים וסאונד</TabsTrigger>
+          <TabsTrigger value="motivation"><Trophy className="ms-1 h-4 w-4" /> מוטיבציה ופרסים</TabsTrigger>
+          <TabsTrigger value="assess"><ClipboardList className="ms-1 h-4 w-4" /> הערכה ומבחנים</TabsTrigger>
+          <TabsTrigger value="docs"><FileText className="ms-1 h-4 w-4" /> מסמכים ותבניות</TabsTrigger>
           <TabsTrigger value="reminders"><BellRing className="ms-1 h-4 w-4" /> תזכורות</TabsTrigger>
           <TabsTrigger value="security"><ShieldCheck className="ms-1 h-4 w-4" /> אבטחה</TabsTrigger>
         </TabsList>
@@ -44,6 +58,72 @@ function ToolkitPage() {
             <FlashCards />
           </div>
         </TabsContent>
+
+        <TabsContent value="sound" className="mt-4">
+          <ToolLinkGrid
+            items={[
+              { to: "/bell-schedule", icon: BellRing, label: "לוח צלצולים", desc: "תזמון פעמוני שיעור והפסקות לאורך היום" },
+              { to: "/sound-board", icon: Music, label: "לוח צלילים", desc: "צלילי כיתה מהירים — שקט, מחיאות כפיים, טיימר" },
+            ]}
+          />
+        </TabsContent>
+
+        <TabsContent value="motivation" className="mt-4">
+          <ClassScopedTools
+            title="בחר כיתה כדי לפתוח את כלי המוטיבציה"
+            items={[
+              { to: "/gamification/$classId", icon: Trophy, label: "מבצעים וגמיפיקציה", desc: "נקודות, פרסים, מבצעים כיתתיים וטבלת מובילים" },
+              { to: "/raffle/$classId", icon: Dices, label: "הגרלות", desc: "גלגל מזל אינטראקטיבי להגרלת תלמידים ופרסים" },
+              { to: "/poll/$classId", icon: MessageSquare, label: "סקר כיתה חי", desc: "שאלה לכיתה עם תוצאות בזמן אמת" },
+            ]}
+          />
+        </TabsContent>
+
+        <TabsContent value="assess" className="mt-4">
+          <div className="space-y-4">
+            <ToolLinkGrid
+              items={[
+                { to: "/questions", icon: ClipboardList, label: "מאגר שאלות", desc: "בנק שאלות לפי נושא ומקצוע" },
+                { to: "/insights", icon: LineChart, label: "תובנות", desc: "מגמות ציונים, נוכחות והתנהגות" },
+                { to: "/resources", icon: Library, label: "ספריית חומרי הוראה", desc: "מערכי שיעור, דפי עבודה ועזרים" },
+              ]}
+            />
+            <ClassScopedTools
+              title="כלים ברמת כיתה"
+              items={[
+                { to: "/exam-generator/$classId", icon: Wand2, label: "מחולל מבחנים AI", desc: "יצירת מבחן מותאם מהחומר שנלמד" },
+                { to: "/exam-scanner/$classId", icon: ScanText, label: "סורק מבחנים", desc: "ניקוד מבחנים סרוקים בעזרת AI" },
+                { to: "/analytics/$classId", icon: TrendingUp, label: "אנליטיקת כיתה", desc: "מגמות והתפלגות ציונים" },
+                { to: "/pedagogical/$classId", icon: Award, label: "דוח פדגוגי", desc: "תמונת מצב פדגוגית והפקת דוח" },
+              ]}
+            />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="docs" className="mt-4">
+          <div className="space-y-4">
+            <ToolLinkGrid
+              items={[
+                { to: "/settings/brand", icon: Palette, label: "תבנית ומיתוג המוסד", desc: "לוגו, שם מוסד וכותרת קבועה — מוטמעים בכל מסמך שמופק" },
+                { to: "/ingest", icon: FileText, label: "העלאה חכמה", desc: "העלאת קבצים ושיבוץ אוטומטי של הנתונים" },
+                { to: "/blog", icon: BookOpen, label: "מדריכים", desc: "מדריכים ותבניות מוכנות" },
+              ]}
+            />
+            <ClassScopedTools
+              title="הפקת מסמכים לכיתה"
+              items={[
+                { to: "/certificates/$classId", icon: Award, label: "תעודות", desc: "הפקת תעודות עם התבנית והלוגו של המוסד" },
+                { to: "/daily/$classId", icon: FileText, label: "סיכום יומי", desc: "דוח יומי להדפסה ולשליחה" },
+                { to: "/bulletins/$classId", icon: FileText, label: "עלון שבועי", desc: "עלון כיתתי עם סיכום, חידה ופעילויות" },
+                { to: "/reports/$classId", icon: FileText, label: "דוחות", desc: "דוחות מעקב והתקדמות" },
+                { to: "/parents/$classId", icon: Mail, label: "קשר עם הורים", desc: "מיילים ותקשורת עם ההורים" },
+                { to: "/share/$classId", icon: Globe2, label: "שיתוף וקישורים", desc: "קישורי צפייה להורים ולעמוד הכיתה" },
+                { to: "/calendar/$classId", icon: CalendarDays, label: "לוח אירועים", desc: "אירועי כיתה, מבחנים וימי הולדת" },
+              ]}
+            />
+          </div>
+        </TabsContent>
+
         <TabsContent value="reminders" className="mt-4">
           <div className="grid gap-4 md:grid-cols-2">
             <ReminderPreferencesCard />
@@ -54,6 +134,73 @@ function ToolkitPage() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+/* ---------- Tool link cards ---------- */
+type ToolLink = { to: string; icon: typeof Wrench; label: string; desc: string };
+
+function ToolCardShell({ icon: Icon, label, desc }: { icon: typeof Wrench; label: string; desc: string }) {
+  return (
+    <div className="flex h-full items-start gap-3 rounded-xl border bg-card p-4 transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm motion-reduce:transition-none motion-reduce:hover:translate-y-0">
+      <span className="rounded-lg bg-primary/10 p-2 text-primary"><Icon className="h-5 w-5" /></span>
+      <span className="min-w-0">
+        <span className="block font-semibold">{label}</span>
+        <span className="mt-0.5 block text-xs text-muted-foreground">{desc}</span>
+      </span>
+    </div>
+  );
+}
+
+function ToolLinkGrid({ items }: { items: ToolLink[] }) {
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {items.map((it) => (
+        <Link key={it.to} to={it.to} className="block">
+          <ToolCardShell icon={it.icon} label={it.label} desc={it.desc} />
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+function ClassScopedTools({ title, items }: { title: string; items: ToolLink[] }) {
+  const list = useServerFn(listClasses);
+  const { data: classes = [] } = useQuery({ queryKey: ["classes"], queryFn: () => list() });
+  const [classId, setClassId] = useState<string>("");
+  const active = classId || classes[0]?.id || "";
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm">{title}</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {classes.length === 0 ? (
+          <p className="py-4 text-center text-sm text-muted-foreground">
+            עדיין אין כיתות. <Link to="/classes" className="underline">צור כיתה ראשונה</Link>
+          </p>
+        ) : (
+          <>
+            <Select value={active} onValueChange={setClassId}>
+              <SelectTrigger className="max-w-xs"><SelectValue placeholder="בחר כיתה" /></SelectTrigger>
+              <SelectContent>
+                {classes.map((c: { id: string; name: string }) => (
+                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {items.map((it) => (
+                <Link key={it.to} to={it.to} params={{ classId: active }} className="block">
+                  <ToolCardShell icon={it.icon} label={it.label} desc={it.desc} />
+                </Link>
+              ))}
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
