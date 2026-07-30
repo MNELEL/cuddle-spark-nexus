@@ -4,8 +4,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 
-const roleSchema = z.enum(["admin", "principal", "teacher", "secretary"]);
-type Role = z.infer<typeof roleSchema>;
+export const roleSchema = z.enum(["admin", "principal", "teacher", "secretary"]);
+export type Role = z.infer<typeof roleSchema>;
 
 async function verifyAdmin(supabase: SupabaseClient<Database>, userId: string) {
   const { data, error } = await supabase
