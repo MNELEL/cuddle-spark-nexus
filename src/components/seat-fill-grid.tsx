@@ -13,20 +13,23 @@ export interface SeatFillGridProps {
   cols?: number;
   /** delay between seats, ms */
   stagger?: number;
+  /** render without the fill-in animation */
+  static?: boolean;
   className?: string;
 }
 
 /** Decorative, non-interactive seating grid with a staggered fill-in animation. */
-export function SeatFillGrid({ rows = 4, cols = 8, stagger = 50, className = "" }: SeatFillGridProps) {
+export function SeatFillGrid({ rows = 4, cols = 8, stagger = 50, static: isStatic = false, className = "" }: SeatFillGridProps) {
   const total = rows * cols;
   const [animate, setAnimate] = useState(false);
 
   useEffect(() => {
+    if (isStatic) return;
     const reduced =
       typeof window !== "undefined" &&
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     if (!reduced) setAnimate(true);
-  }, []);
+  }, [isStatic]);
 
   const accents: Accent[] = Array.from({ length: total }, (_, i) => {
     if (i % 7 === 2) return "amber";
