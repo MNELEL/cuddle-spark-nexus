@@ -27,6 +27,7 @@ import { Route as AuthenticatedInsightsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedQuestionsRouteImport } from './routes/_authenticated.questions'
 import { Route as AuthenticatedSoundBoardRouteImport } from './routes/_authenticated.sound-board'
 import { Route as AuthenticatedToolkitRouteImport } from './routes/_authenticated.toolkit'
+import { Route as AuthenticatedUserManagementRouteImport } from './routes/_authenticated.user-management'
 import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as BlogAiSeatingArrangementsGuideRouteImport } from './routes/blog.ai-seating-arrangements-guide'
 import { Route as BlogClassdojoComparisonRouteImport } from './routes/blog.classdojo-comparison'
@@ -160,6 +161,12 @@ const AuthenticatedToolkitRoute = AuthenticatedToolkitRouteImport.update({
   path: '/toolkit',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedUserManagementRoute =
+  AuthenticatedUserManagementRouteImport.update({
+    id: '/user-management',
+    path: '/user-management',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const BlogIndexRoute = BlogIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -418,6 +425,7 @@ export interface FileRoutesByFullPath {
   '/questions': typeof AuthenticatedQuestionsRoute
   '/sound-board': typeof AuthenticatedSoundBoardRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
+  '/user-management': typeof AuthenticatedUserManagementRoute
   '/blog/ai-seating-arrangements-guide': typeof BlogAiSeatingArrangementsGuideRoute
   '/blog/classdojo-comparison': typeof BlogClassdojoComparisonRoute
   '/blog/classroom-management-strategies': typeof BlogClassroomManagementStrategiesRouteWithChildren
@@ -476,6 +484,7 @@ export interface FileRoutesByTo {
   '/questions': typeof AuthenticatedQuestionsRoute
   '/sound-board': typeof AuthenticatedSoundBoardRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
+  '/user-management': typeof AuthenticatedUserManagementRoute
   '/blog/ai-seating-arrangements-guide': typeof BlogAiSeatingArrangementsGuideRoute
   '/blog/classdojo-comparison': typeof BlogClassdojoComparisonRoute
   '/blog/classroom-management-strategies': typeof BlogClassroomManagementStrategiesRouteWithChildren
@@ -539,6 +548,7 @@ export interface FileRoutesById {
   '/_authenticated/questions': typeof AuthenticatedQuestionsRoute
   '/_authenticated/sound-board': typeof AuthenticatedSoundBoardRoute
   '/_authenticated/toolkit': typeof AuthenticatedToolkitRoute
+  '/_authenticated/user-management': typeof AuthenticatedUserManagementRoute
   '/blog/ai-seating-arrangements-guide': typeof BlogAiSeatingArrangementsGuideRoute
   '/blog/classdojo-comparison': typeof BlogClassdojoComparisonRoute
   '/blog/classroom-management-strategies': typeof BlogClassroomManagementStrategiesRouteWithChildren
@@ -602,6 +612,7 @@ export interface FileRouteTypes {
     | '/questions'
     | '/sound-board'
     | '/toolkit'
+    | '/user-management'
     | '/blog/ai-seating-arrangements-guide'
     | '/blog/classdojo-comparison'
     | '/blog/classroom-management-strategies'
@@ -660,6 +671,7 @@ export interface FileRouteTypes {
     | '/questions'
     | '/sound-board'
     | '/toolkit'
+    | '/user-management'
     | '/blog/ai-seating-arrangements-guide'
     | '/blog/classdojo-comparison'
     | '/blog/classroom-management-strategies'
@@ -722,6 +734,7 @@ export interface FileRouteTypes {
     | '/_authenticated/questions'
     | '/_authenticated/sound-board'
     | '/_authenticated/toolkit'
+    | '/_authenticated/user-management'
     | '/blog/ai-seating-arrangements-guide'
     | '/blog/classdojo-comparison'
     | '/blog/classroom-management-strategies'
@@ -910,6 +923,13 @@ declare module '@tanstack/react-router' {
       path: '/toolkit'
       fullPath: '/toolkit'
       preLoaderRoute: typeof AuthenticatedToolkitRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/user-management': {
+      id: '/_authenticated/user-management'
+      path: '/user-management'
+      fullPath: '/user-management'
+      preLoaderRoute: typeof AuthenticatedUserManagementRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/blog/': {
@@ -1231,6 +1251,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedQuestionsRoute: typeof AuthenticatedQuestionsRoute
   AuthenticatedSoundBoardRoute: typeof AuthenticatedSoundBoardRoute
   AuthenticatedToolkitRoute: typeof AuthenticatedToolkitRoute
+  AuthenticatedUserManagementRoute: typeof AuthenticatedUserManagementRoute
   AuthenticatedAnalyticsClassIdRoute: typeof AuthenticatedAnalyticsClassIdRoute
   AuthenticatedBulletinsClassIdRoute: typeof AuthenticatedBulletinsClassIdRoute
   AuthenticatedCalendarClassIdRoute: typeof AuthenticatedCalendarClassIdRoute
@@ -1261,6 +1282,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedQuestionsRoute: AuthenticatedQuestionsRoute,
   AuthenticatedSoundBoardRoute: AuthenticatedSoundBoardRoute,
   AuthenticatedToolkitRoute: AuthenticatedToolkitRoute,
+  AuthenticatedUserManagementRoute: AuthenticatedUserManagementRoute,
   AuthenticatedAnalyticsClassIdRoute: AuthenticatedAnalyticsClassIdRoute,
   AuthenticatedBulletinsClassIdRoute: AuthenticatedBulletinsClassIdRoute,
   AuthenticatedCalendarClassIdRoute: AuthenticatedCalendarClassIdRoute,
