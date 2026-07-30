@@ -120,7 +120,7 @@ export async function generateClassroomManagementChecklistPdf(brand?: ChecklistB
       hd.advance(7);
     }
 
-    drawFooter(hd, "צ'קליסט זה מהווה השלמה למדריך: בלוג ClassAlign — אסטרטגיות ניהול כיתה");
+    drawFooter(hd, "צ'קליסט זה מהווה השלמה למדריך: בלוג הכיתה שלי — אסטרטגיות ניהול כיתה");
     const blob = doc.output("blob");
     const school = brand?.schoolName ? `-${safeName(brand.schoolName)}` : "";
     downloadPdfBlob(blob, `checklist-classroom-management${school}.pdf`);

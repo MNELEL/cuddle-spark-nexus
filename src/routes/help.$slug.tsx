@@ -14,7 +14,7 @@ export const ARTICLES: Record<string, Article> = {
   "setup-grade-tracking": {
     title: "איך להגדיר מעקב ציונים בכיתה שלך",
     description:
-      "מדריך מלא להתחלת מעקב ציונים ב-ClassAlign: יצירת כיתה, הוספת תלמידים, קליטת ציונים וצפייה בדוחות.",
+      "מדריך מלא להתחלת מעקב ציונים ב-הכיתה שלי: יצירת כיתה, הוספת תלמידים, קליטת ציונים וצפייה בדוחות.",
     sections: [
       {
         id: "create-class",
@@ -128,7 +128,7 @@ export const Route = createFileRoute("/help/$slug")({
     const { article } = loaderData;
     return {
       meta: [
-        { title: `${article.title} — מרכז עזרה ClassAlign` },
+        { title: `${article.title} — מרכז עזרה הכיתה שלי` },
         { name: "description", content: article.description },
         { property: "og:title", content: article.title },
         { property: "og:description", content: article.description },
@@ -179,7 +179,7 @@ function ArticlePage() {
       <header className="border-b border-border/60">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4 sm:px-6">
           <Link to="/help" className="text-sm text-muted-foreground hover:text-foreground">→ מרכז עזרה</Link>
-          <span className="text-sm font-semibold">ClassAlign</span>
+          <span className="text-sm font-semibold">הכיתה שלי</span>
         </div>
       </header>
       <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">

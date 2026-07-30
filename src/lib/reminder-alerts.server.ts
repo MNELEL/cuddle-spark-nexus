@@ -124,7 +124,7 @@ async function sendReminderDigestEmail(digest: TeacherDigest): Promise<boolean> 
   try {
     const resend = new Resend(apiKey);
     const { error } = await resend.emails.send({
-      from: "ClassAlign <reminders@notifications.classalign.app>",
+      from: "הכיתה שלי <reminders@notifications.classalign.app>",
       to: digest.email,
       subject: `יש לך ${digest.items.length} תזכורות באיחור`,
       html,

@@ -37,9 +37,9 @@ export const Route = createFileRoute("/partners/districts")({
   component: DistrictsPage,
   head: () => ({
     meta: [
-      { title: "פתרון מחוזי למחוזות חינוך ורשתות | ClassAlign" },
-      { name: "description", content: "ClassAlign למחוזות חינוך ורשתות מוסדות: לוח בקרה מחוזי, דוחות אגרגטיביים, הטמעה מרוכזת ורישוי בהיקף. תוכנית 90 יום ואיש קשר ייעודי." },
-      { property: "og:title", content: "פתרון מחוזי · ClassAlign למחוזות חינוך" },
+      { title: "פתרון מחוזי למחוזות חינוך ורשתות | הכיתה שלי" },
+      { name: "description", content: "הכיתה שלי למחוזות חינוך ורשתות מוסדות: לוח בקרה מחוזי, דוחות אגרגטיביים, הטמעה מרוכזת ורישוי בהיקף. תוכנית 90 יום ואיש קשר ייעודי." },
+      { property: "og:title", content: "פתרון מחוזי · הכיתה שלי למחוזות חינוך" },
       { property: "og:description", content: "לוח בקרה מחוזי, דוחות אגרגטיביים, ורישוי מוסדי לרשתות חינוך." },
       { property: "og:type", content: "website" },
       { property: "og:url", content: URL_SELF },
@@ -78,7 +78,7 @@ function DistrictsPage() {
           <Building2 className="h-10 w-10 text-primary mx-auto mb-4" />
           <h1 className="text-4xl font-bold mb-3">פתרון מחוזי לרשתות חינוך</h1>
           <p className="text-lg text-muted-foreground">
-            ClassAlign מספקת למחוזות חינוך ולרשתות מוסדות תשתית ניהול כיתה אחידה, עם לוח בקרה
+            הכיתה שלי מספקת למחוזות חינוך ולרשתות מוסדות תשתית ניהול כיתה אחידה, עם לוח בקרה
             מחוזי, דוחות אגרגטיביים, וכלים פדגוגיים בקדושת המקצוע — כל זאת תחת רישוי מוסדי אחד.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">

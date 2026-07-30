@@ -14,7 +14,7 @@ const URL_SELF = "https://cuddle-spark-nexus.lovable.app/partners";
 
 const FAQ: FaqItem[] = [
   {
-    q: "האם ClassAlign מתאים לחיידרים ותלמודי תורה, ולא רק לבתי ספר?",
+    q: "האם הכיתה שלי מתאים לחיידרים ותלמודי תורה, ולא רק לבתי ספר?",
     a: "כן. המערכת נבנתה מלכתחילה לקהל היעד החרדי — מונחי גמרא, משנה וחומש, ממשק RTL מלא, תבניות עלון בסגנון תלמוד תורה, וסידורים לר״מים ולמשגיחים. יש רשימת מקצועות קודש ברירת מחדל שאפשר להתאים לרוח המוסד.",
   },
   {
@@ -47,9 +47,9 @@ export const Route = createFileRoute("/partners")({
   component: PartnersPage,
   head: () => ({
     meta: [
-      { title: "שיתופי פעולה למחוזות חינוך ובתי ספר | ClassAlign" },
-      { name: "description", content: "תוכנית שיתופי פעולה של ClassAlign למחוזות חינוך, רשתות חינוך ובתי ספר: הטמעה מרוכזת, הדרכת צוותים, ומסמכי דוגמה להכנסה מהירה לכיתות." },
-      { property: "og:title", content: "שיתופי פעולה למחוזות חינוך ובתי ספר · ClassAlign" },
+      { title: "שיתופי פעולה למחוזות חינוך ובתי ספר | הכיתה שלי" },
+      { name: "description", content: "תוכנית שיתופי פעולה של הכיתה שלי למחוזות חינוך, רשתות חינוך ובתי ספר: הטמעה מרוכזת, הדרכת צוותים, ומסמכי דוגמה להכנסה מהירה לכיתות." },
+      { property: "og:title", content: "שיתופי פעולה למחוזות חינוך ובתי ספר · הכיתה שלי" },
       { property: "og:description", content: "פתרון ניהול כיתה חכם למחוזות ובתי ספר, כולל הטמעה מרוכזת, הדרכה, ומסמכי דוגמה." },
       { property: "og:type", content: "website" },
       { property: "og:url", content: URL_SELF },
@@ -62,7 +62,7 @@ export const Route = createFileRoute("/partners")({
         children: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "Service",
-          name: "ClassAlign Partnerships",
+          name: "הכיתה שלי Partnerships",
           serviceType: "Educational technology partnership",
           provider: { "@type": "Organization", name: "הכיתה שלי" },
           areaServed: "IL",
@@ -98,10 +98,10 @@ function PartnersPage() {
             <Handshake className="h-4 w-4" /> תוכנית שיתופי פעולה
           </div>
           <h1 className="text-4xl md:text-5xl font-bold mb-4 leading-tight">
-            ClassAlign למחוזות חינוך, רשתות ובתי ספר
+            הכיתה שלי למחוזות חינוך, רשתות ובתי ספר
           </h1>
           <p className="text-lg text-muted-foreground">
-            אנו מלווים מחוזות חינוך, רשתות מוסדות ובתי ספר בהטמעה מרוכזת של ClassAlign — עם הדרכה
+            אנו מלווים מחוזות חינוך, רשתות מוסדות ובתי ספר בהטמעה מרוכזת של הכיתה שלי — עם הדרכה
             מקצועית לצוות, הגדרות מותאמות לרוח המוסד, ומסמכי דוגמה להכנסה חלקה של הכלי לכיתות
             הגמרא, המשנה והחומש.
           </p>

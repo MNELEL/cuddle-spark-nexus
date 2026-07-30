@@ -27,7 +27,7 @@ export const Route = createFileRoute("/c/$slug")({
         meta: [{ title: "עמוד לא נמצא" }, { name: "robots", content: "noindex" }],
       };
     }
-    const title = `${loaderData.className} · התקדמות לימודית · ClassAlign`;
+    const title = `${loaderData.className} · התקדמות לימודית · הכיתה שלי`;
     const desc =
       loaderData.description ??
       loaderData.headline ??
@@ -70,7 +70,7 @@ function NotFound() {
         <h1 className="text-2xl font-bold">הדף אינו זמין</h1>
         <p className="mt-2 text-sm text-muted-foreground">ייתכן שהרב סגר את השיתוף הציבורי, או שהכתובת שגויה.</p>
         <Link to="/" className="mt-4 inline-block text-sm text-primary hover:underline">
-          ← לעמוד הבית של ClassAlign
+          ← לעמוד הבית של הכיתה שלי
         </Link>
       </div>
     </div>
@@ -172,7 +172,7 @@ function ShowcasePage() {
           </p>
           <div className="mt-2 flex flex-wrap gap-4">
             <Link to="/" className="text-base font-semibold text-primary hover:underline">
-              גלה את ClassAlign ←
+              גלה את הכיתה שלי ←
             </Link>
             <Link to="/parents-guide" className="text-base font-semibold text-primary hover:underline">
               משאבים להורים ←

@@ -14,13 +14,13 @@ export const Route = createFileRoute("/tools/group-maker")({
   component: GroupMakerPage,
   head: () => ({
     meta: [
-      { title: "מחולל קבוצות אקראי · בחירת תלמיד רנדומלי | ClassAlign" },
+      { title: "מחולל קבוצות אקראי · בחירת תלמיד רנדומלי | הכיתה שלי" },
       { name: "description", content: "כלי חינמי ומהיר לחלוקת תלמידים לקבוצות אקראיות ולהגרלת תלמיד בודד — מותאם לכיתות, חיידרים ותלמודי תורה. ללא הרשמה." },
       { property: "og:title", content: "מחולל קבוצות אקראי · בחירת תלמיד רנדומלי" },
       { property: "og:description", content: "חלקו כיתה לקבוצות שוות בקליק. הזנת שמות, בחירת מספר קבוצות, וקבלת חלוקה אקראית + בוחר שמות." },
       { property: "og:type", content: "website" },
       { property: "og:url", content: URL_SELF },
-      { name: "twitter:title", content: "מחולל קבוצות אקראי · ClassAlign" },
+      { name: "twitter:title", content: "מחולל קבוצות אקראי · הכיתה שלי" },
       { name: "twitter:description", content: "כלי חינמי לחלוקת תלמידים לקבוצות ולהגרלת שם — ללא הרשמה." },
     ],
     links: [{ rel: "canonical", href: URL_SELF }],

@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 
 const BASE = "https://cuddle-spark-nexus.lovable.app";
 const URL = `${BASE}/help`;
-const TITLE = "מרכז העזרה של ClassAlign — מדריכים ושאלות נפוצות";
+const TITLE = "מרכז העזרה של הכיתה שלי — מדריכים ושאלות נפוצות";
 const DESCRIPTION =
   "מרכז העזרה של הכיתה שלי: מדריכים מעשיים להגדרת מעקב ציונים, נוכחות, קבוצות ודוחות — עם שאלות ותשובות, ידידותי למובייל ולקישור מפורטלי ידע.";
 
@@ -117,12 +117,12 @@ function HelpIndex() {
     <div dir="rtl" className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border/60">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4 sm:px-6">
-          <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">→ ClassAlign</Link>
+          <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">→ הכיתה שלי</Link>
           <span className="text-sm font-semibold">מרכז עזרה</span>
         </div>
       </header>
       <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-12">
-        <h1 className="text-2xl font-bold tracking-tight sm:text-4xl">מרכז העזרה של ClassAlign</h1>
+        <h1 className="text-2xl font-bold tracking-tight sm:text-4xl">מרכז העזרה של הכיתה שלי</h1>
         <p className="mt-3 text-muted-foreground leading-relaxed">
           מדריכים קצרים, ברורים ומעשיים — מעקב ציונים, נוכחות, קבוצות ודוחות. כל מאמר יש
           לו קישור קבוע (כולל עוגן לכל כותרת פנימית), מתאים לשילוב בפורטלי ידע ובוויקי

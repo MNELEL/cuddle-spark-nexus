@@ -74,7 +74,7 @@ function Article() {
       <header className="border-b border-border/60">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-4">
           <Link to="/blog" className="text-sm text-muted-foreground hover:text-foreground">→ חזרה לבלוג</Link>
-          <span className="text-sm font-semibold">ClassAlign</span>
+          <span className="text-sm font-semibold">הכיתה שלי</span>
         </div>
       </header>
       <main className="mx-auto max-w-3xl px-6 py-12">

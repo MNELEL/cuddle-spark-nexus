@@ -8,7 +8,7 @@ import { generateClassroomManagementChecklistPdf } from "@/lib/pdf/classroom-man
 const URL = "https://cuddle-spark-nexus.lovable.app/blog/classroom-management-strategies/checklist";
 const TITLE = "צ'קליסט ניהול כיתה בתלמוד תורה — PDF להורדה חינם";
 const DESCRIPTION =
-  "צ'קליסט מקצועי (PDF) עם 5 אסטרטגיות ניהול כיתה + מעקב שבועי למלמד. הרשמה קצרה ותוריד מיד עם מיתוג ClassAlign.";
+  "צ'קליסט מקצועי (PDF) עם 5 אסטרטגיות ניהול כיתה + מעקב שבועי למלמד. הרשמה קצרה ותוריד מיד עם מיתוג הכיתה שלי.";
 
 export const Route = createFileRoute("/blog/classroom-management-strategies/checklist")({
   component: ChecklistPage,
@@ -151,7 +151,7 @@ function ChecklistPage() {
           <Link to="/blog/classroom-management-strategies" className="text-sm text-muted-foreground hover:text-foreground">
             → חזרה למדריך
           </Link>
-          <span className="text-sm font-semibold">ClassAlign</span>
+          <span className="text-sm font-semibold">הכיתה שלי</span>
         </div>
       </header>
       <main className="mx-auto max-w-2xl px-6 py-12">
@@ -189,7 +189,7 @@ function ChecklistPage() {
             </button>
             <div className="mt-6 text-sm">
               <Link to="/" className="text-primary hover:underline">
-                מוכן להטמיע את זה בכיתה? פתח כיתה ב-ClassAlign ←
+                מוכן להטמיע את זה בכיתה? פתח כיתה ב-הכיתה שלי ←
               </Link>
             </div>
           </div>
@@ -269,7 +269,7 @@ function ChecklistPage() {
               {status === "loading" ? "מכין את ה-PDF..." : "הורד צ'קליסט (PDF)"}
             </button>
             <p className="text-xs text-muted-foreground">
-              בהרשמה אתה מסכים שנשמור את הפרטים כדי לשלוח לפעמים עדכונים על ClassAlign. אפשר להסיר בכל עת.
+              בהרשמה אתה מסכים שנשמור את הפרטים כדי לשלוח לפעמים עדכונים על הכיתה שלי. אפשר להסיר בכל עת.
             </p>
           </form>
         )}

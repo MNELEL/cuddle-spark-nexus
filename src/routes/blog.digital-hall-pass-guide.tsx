@@ -12,7 +12,7 @@ const FAQ = [
   },
   {
     q: "האם אפשר לנהל אישורי יציאה בלי אינטרנט?",
-    a: "כן. ClassAlign עובדת במצב מקומי, רושמת את היציאות והחזרות במכשיר, ומסתנכרנת ברגע שהחיבור חוזר.",
+    a: "כן. הכיתה שלי עובדת במצב מקומי, רושמת את היציאות והחזרות במכשיר, ומסתנכרנת ברגע שהחיבור חוזר.",
   },
   {
     q: "כמה זמן לוקח להטמיע מערכת אישורי יציאה דיגיטלית?",
@@ -98,7 +98,7 @@ function Article() {
           <Link to="/blog" className="text-sm text-muted-foreground hover:text-foreground">
             → חזרה לבלוג
           </Link>
-          <span className="text-sm font-semibold">ClassAlign</span>
+          <span className="text-sm font-semibold">הכיתה שלי</span>
         </div>
       </header>
 
@@ -175,7 +175,7 @@ function Article() {
             הקיימים. אישור היציאה הוא חלק מתוך מערכת מעקב שלמה — ולא אפליקציה נפרדת.
           </p>
           <p className="text-sm text-muted-foreground">
-            רוצה להעמיק? עיין ב<Link to="/" className="text-primary hover:underline">דף הבית של ClassAlign</Link>
+            רוצה להעמיק? עיין ב<Link to="/" className="text-primary hover:underline">דף הבית של הכיתה שלי</Link>
             {" "}או חזור ל<Link to="/blog" className="text-primary hover:underline">מאמרים נוספים בבלוג</Link>.
           </p>
 
