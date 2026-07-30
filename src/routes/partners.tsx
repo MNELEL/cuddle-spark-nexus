@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Building2, School, GraduationCap, Handshake, FileText, ShieldCheck, Users, Sparkles, ArrowLeft, Download, Mail, Send } from "lucide-react";
+import { Building2, School, Handshake, FileText, ShieldCheck, Users, Sparkles, ArrowLeft, Download, Mail, Send } from "lucide-react";
 import { FaqSection, faqJsonLd, type FaqItem } from "@/components/faq-section";
 import { toast } from "sonner";
 
@@ -164,7 +164,7 @@ function PartnersPage() {
           <h2 className="text-2xl font-bold mb-6 text-center">מה נכלל בשיתוף הפעולה</h2>
           <div className="grid md:grid-cols-3 gap-4">
             {[
-              { icon: GraduationCap, title: "הדרכת צוות", body: "סדנאות למלמדים ולמנהלים — כולל חומרי לימוד בעברית והקלטות." },
+              { icon: School, title: "הדרכת צוות", body: "סדנאות למלמדים ולמנהלים — כולל חומרי לימוד בעברית והקלטות." },
               { icon: ShieldCheck, title: "פרטיות ותאימות", body: "עמידה בדרישות משרד החינוך, PIN למכשירים משותפים ו-RLS מלא." },
               { icon: Users, title: "מנהל חשבון ייעודי", body: "איש קשר טכני ופדגוגי לאורך כל שנת הלימודים." },
               { icon: FileText, title: "מסמכי הטמעה", body: "תוכנית 30/60/90 יום, טפסי אישור הורים ותבניות תקשורת." },
