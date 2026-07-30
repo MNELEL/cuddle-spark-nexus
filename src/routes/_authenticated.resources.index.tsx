@@ -627,7 +627,7 @@ function ResourceEditorDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" onOpenAutoFocus={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle>{initial.id ? "עריכת חומר" : "חומר חדש"}</DialogTitle>
         </DialogHeader>
