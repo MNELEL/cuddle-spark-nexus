@@ -5,8 +5,8 @@ import { lovable } from "@/integrations/lovable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { GraduationCap } from "lucide-react";
+import { SeatFillGrid } from "@/components/seat-fill-grid";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({
