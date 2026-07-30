@@ -1,11 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 
 const roleSchema = z.enum(["admin", "principal", "teacher", "secretary"]);
-const roleName = z.enum(["admin", "principal", "teacher", "secretary"]);
+type Role = z.infer<typeof roleSchema>;
 
-async function verifyAdmin(supabase: ReturnType<typeof import("@/integrations/supabase/client").supabase>, userId: string) {
+async function verifyAdmin(supabase: SupabaseClient<Database>, userId: string) {
   const { data, error } = await supabase
     .from("user_roles")
     .select("role")
@@ -48,8 +50,7 @@ export const listUsersWithRoles = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
     await verifyAdmin(supabase, userId);
 
-    const { createClient: createServiceClient } = await import("@/integrations/supabase/client.server");
-    const supabaseAdmin = createServiceClient();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data: users, error: usersError } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
     if (usersError) throw new Error(usersError.message);
@@ -59,16 +60,16 @@ export const listUsersWithRoles = createServerFn({ method: "GET" })
       .select("id, user_id, role, institution_id, created_at, updated_at");
     if (rolesError) throw new Error(rolesError.message);
 
-    const rolesByUser = (roles ?? []).reduce((acc, r) => {
+    const rolesByUser = (roles ?? []).reduce<Record<string, typeof roles>>((acc, r) => {
       if (!acc[r.user_id]) acc[r.user_id] = [];
       acc[r.user_id].push(r);
       return acc;
-    }, {} as Record<string, typeof roles>);
+    }, {});
 
     return (users.users ?? []).map((u) => ({
       id: u.id,
       email: u.email,
-      displayName: u.user_metadata?.display_name ?? u.email?.split("@")[0] ?? "",
+      displayName: (u.user_metadata?.display_name as string | undefined) ?? u.email?.split("@")[0] ?? "",
       roles: rolesByUser[u.id] ?? [],
       createdAt: u.created_at,
     }));
@@ -76,7 +77,7 @@ export const listUsersWithRoles = createServerFn({ method: "GET" })
 
 const assignRoleSchema = z.object({
   user_id: z.string().uuid(),
-  role: roleName,
+  role: roleSchema,
   institution_id: z.string().uuid().optional(),
 });
 
@@ -91,7 +92,7 @@ export const assignRole = createServerFn({ method: "POST" })
       .from("user_roles")
       .insert({
         user_id: data.user_id,
-        role: data.role,
+        role: data.role as Role,
         institution_id: data.institution_id ?? null,
       })
       .select()
