@@ -311,14 +311,14 @@ function PrizesPanel({ classId }: { classId: string }) {
                 {editId === p.id ? (
                   <>
                     <Input autoFocus value={editText} onChange={(e) => setEditText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && saveEdit()} />
-                    <Button size="icon" variant="ghost" onClick={saveEdit}><Check className="h-4 w-4" /></Button>
-                    <Button size="icon" variant="ghost" onClick={() => setEditId(null)}><X className="h-4 w-4" /></Button>
+                    <Button aria-label="שמור פרס" size="icon" variant="ghost" onClick={saveEdit}><Check className="h-4 w-4" /></Button>
+                    <Button aria-label="בטל עריכה" size="icon" variant="ghost" onClick={() => setEditId(null)}><X className="h-4 w-4" /></Button>
                   </>
                 ) : (
                   <>
                     <span className="flex-1 text-sm">{p.text}</span>
-                    <Button size="icon" variant="ghost" onClick={() => { setEditId(p.id); setEditText(p.text); }}><Pencil className="h-4 w-4" /></Button>
-                    <Button size="icon" variant="ghost" className="text-destructive" onClick={() => remove(p.id)}><Trash2 className="h-4 w-4" /></Button>
+                    <Button aria-label="ערוך פרס" size="icon" variant="ghost" onClick={() => { setEditId(p.id); setEditText(p.text); }}><Pencil className="h-4 w-4" /></Button>
+                    <Button aria-label="מחק פרס" size="icon" variant="ghost" className="text-destructive" onClick={() => remove(p.id)}><Trash2 className="h-4 w-4" /></Button>
                   </>
                 )}
               </div>
@@ -352,9 +352,9 @@ function GroupScoresPanel({ classId, groups }: { classId: string; groups: { id: 
             <p className="text-xs text-muted-foreground">ניקוד קולקטיבי לכיתה כתמריץ כללי.</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={() => setClassScore(classScore - 1)}><Minus className="h-4 w-4" /></Button>
+            <Button aria-label="הפחת נקודה לכיתה" variant="outline" size="icon" onClick={() => setClassScore(classScore - 1)}><Minus className="h-4 w-4" /></Button>
             <div className="font-display text-3xl font-bold w-16 text-center font-mono-tabular">{classScore}</div>
-            <Button variant="outline" size="icon" onClick={() => setClassScore(classScore + 1)}><Plus className="h-4 w-4" /></Button>
+            <Button aria-label="הוסף נקודה לכיתה" variant="outline" size="icon" onClick={() => setClassScore(classScore + 1)}><Plus className="h-4 w-4" /></Button>
             <Button variant="ghost" size="sm" onClick={() => setClassScore(classScore + 5)}>+5</Button>
             <Button variant="ghost" size="sm" onClick={reset} className="ms-2"><RotateCcw className="ms-1 h-3.5 w-3.5" /> אפס הכל</Button>
           </div>
@@ -385,8 +385,8 @@ function GroupScoresPanel({ classId, groups }: { classId: string; groups: { id: 
                     </div>
                   </div>
                   <div className="flex gap-1">
-                    <Button variant="outline" size="icon" onClick={() => add(g.id, -1)}><Minus className="h-3.5 w-3.5" /></Button>
-                    <Button variant="outline" size="icon" onClick={() => add(g.id, 1)}><Plus className="h-3.5 w-3.5" /></Button>
+                    <Button aria-label="הפחת נקודה לקבוצה" variant="outline" size="icon" onClick={() => add(g.id, -1)}><Minus className="h-3.5 w-3.5" /></Button>
+                    <Button aria-label="הוסף נקודה לקבוצה" variant="outline" size="icon" onClick={() => add(g.id, 1)}><Plus className="h-3.5 w-3.5" /></Button>
                     <Button variant="ghost" size="sm" onClick={() => add(g.id, 5)}>+5</Button>
                   </div>
                 </div>

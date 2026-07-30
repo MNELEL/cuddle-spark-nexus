@@ -231,8 +231,8 @@ function CampaignCard({
             {c.description && <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{c.description}</p>}
           </div>
           <div className="flex gap-1">
-            <Button variant="ghost" size="icon" onClick={onEdit}><Pencil className="h-4 w-4" /></Button>
-            <Button variant="ghost" size="icon" className="text-destructive" onClick={onDelete}><Trash2 className="h-4 w-4" /></Button>
+            <Button aria-label="ערוך פריט" variant="ghost" size="icon" onClick={onEdit}><Pencil className="h-4 w-4" /></Button>
+            <Button aria-label="מחק פריט" variant="ghost" size="icon" className="text-destructive" onClick={onDelete}><Trash2 className="h-4 w-4" /></Button>
           </div>
         </div>
 
@@ -380,8 +380,8 @@ function RewardsTab({ classId }: { classId: string }) {
                   {r.description && <p className="mt-1 text-xs text-muted-foreground line-clamp-1">{r.description}</p>}
                 </div>
                 <div className="flex gap-1">
-                  <Button variant="ghost" size="icon" onClick={() => { setEditing(r); setOpen(true); }}><Pencil className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="icon" className="text-destructive" onClick={() => removeM.mutate(r.id)}><Trash2 className="h-4 w-4" /></Button>
+                  <Button aria-label="ערוך תגמול" variant="ghost" size="icon" onClick={() => { setEditing(r); setOpen(true); }}><Pencil className="h-4 w-4" /></Button>
+                  <Button aria-label="מחק תגמול" variant="ghost" size="icon" className="text-destructive" onClick={() => removeM.mutate(r.id)}><Trash2 className="h-4 w-4" /></Button>
                 </div>
               </CardContent>
             </Card>
@@ -545,7 +545,7 @@ function RedemptionsTab({ classId }: { classId: string }) {
                   <div className="font-medium">{nameOf(r.student_id)} · {r.prize_name}</div>
                   <div className="text-xs text-muted-foreground font-mono-tabular">{r.date} · {r.points_spent} נק'</div>
                 </div>
-                <Button variant="ghost" size="icon" className="text-destructive" onClick={() => removeM.mutate(r.id)}>
+                <Button aria-label="מחק רשומה" variant="ghost" size="icon" className="text-destructive" onClick={() => removeM.mutate(r.id)}>
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </CardContent>
