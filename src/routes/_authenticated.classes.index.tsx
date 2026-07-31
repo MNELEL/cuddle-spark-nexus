@@ -27,6 +27,7 @@ export const Route = createFileRoute("/_authenticated/classes/")({
       { property: "og:title", content: "הכיתות שלי · הכיתה שלי" },
       { property: "og:description", content: "נהל את הכיתות, התלמידים והאילוצים הפדגוגיים שלך במקום אחד עם הכיתה שלי." },
       { property: "og:url", content: "https://cuddle-spark-nexus.lovable.app/classes" },
+      { name: "robots", content: "noindex, nofollow" },
     ],
     links: [{ rel: "canonical", href: "https://cuddle-spark-nexus.lovable.app/classes" }],
   }),
