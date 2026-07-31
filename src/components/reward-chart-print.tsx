@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Printer, Download, Loader2 } from "lucide-react";
+import { Printer, Download, Loader2, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   REWARD_CHARTS,
@@ -10,7 +10,13 @@ import {
 } from "@/lib/reward-charts";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { generateRewardChartPdf, generateAllRewardChartsPdf } from "@/lib/pdf/reward-chart-pdf";
+import {
+  generateRewardChartPdf,
+  generateAllRewardChartsPdf,
+  buildRewardChartPdf,
+  buildAllRewardChartsPdf,
+} from "@/lib/pdf/reward-chart-pdf";
+import { PdfPreviewModal } from "@/components/pdf-preview-modal";
 import { toast } from "sonner";
 
 /** Blank printable grid for one chart — rendered on screen and on paper. */
@@ -67,9 +73,17 @@ export function RewardChartPrintView() {
   const [selected, setSelected] = useState<string>("all");
   const [busy, setBusy] = useState<string | null>(null);
   const [custom, setCustom] = useState<RewardChartCustomization>(DEFAULT_REWARD_CHART_CUSTOMIZATION);
+  const [previewChartId, setPreviewChartId] = useState<string | null>(null);
   const base = selected === "all" ? REWARD_CHARTS : REWARD_CHARTS.filter((c) => c.id === selected);
   const charts = base.map((c) => applyRewardChartCustomization(c, custom));
   const landscape = charts.some((c) => c.orientation === "landscape");
+  const previewChart =
+    previewChartId && previewChartId !== "all"
+      ? charts.find((c) => c.id === previewChartId) ??
+        REWARD_CHARTS.filter((c) => c.id === previewChartId).map((c) =>
+          applyRewardChartCustomization(c, custom),
+        )[0]
+      : null;
 
   // Match the paper orientation to the widest chart being printed.
   useEffect(() => {
@@ -122,6 +136,10 @@ export function RewardChartPrintView() {
         <Button size="sm" variant="secondary" onClick={() => window.print()}>
           <Printer className="ml-2 h-4 w-4" aria-hidden="true" />
           הדפסה
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => setPreviewChartId(selected)}>
+          <Eye className="ml-2 h-4 w-4" aria-hidden="true" />
+          תצוגה מקדימה
         </Button>
         <Button
           size="sm"
@@ -215,6 +233,15 @@ export function RewardChartPrintView() {
           <div key={c.id} className="rounded-2xl border border-border/60 bg-card/40 p-4 print:rounded-none print:border-0 print:bg-white print:p-0 print:text-black">
             <ChartTable chart={c} />
             <div className="mt-3 print:hidden">
+              <Button
+                size="sm"
+                variant="ghost"
+                className="ml-2"
+                onClick={() => setPreviewChartId(c.id)}
+              >
+                <Eye className="ml-2 h-4 w-4" aria-hidden="true" />
+                תצוגה מקדימה
+              </Button>
               <Button size="sm" variant="outline" onClick={() => downloadOne(c)} disabled={busy !== null}>
                 {busy === c.id ? (
                   <Loader2 className="ml-2 h-4 w-4 animate-spin" aria-hidden="true" />
@@ -227,6 +254,17 @@ export function RewardChartPrintView() {
           </div>
         ))}
       </div>
+
+      <PdfPreviewModal
+        open={previewChartId !== null}
+        onOpenChange={(v) => !v && setPreviewChartId(null)}
+        title="תצוגה מקדימה · לוח מבצעים"
+        build={() =>
+          previewChart
+            ? buildRewardChartPdf(previewChart, undefined, custom.teacherName)
+            : buildAllRewardChartsPdf(undefined, charts, custom.teacherName)
+        }
+      />
     </div>
   );
 }
