@@ -119,12 +119,14 @@ function drawChart(
   });
 }
 
-/** Downloads a single printable chart as a branded A4 PDF. */
-export async function generateRewardChartPdf(
+export type PdfResult = { blob: Blob; filename: string };
+
+/** Builds a single printable chart as a branded A4 PDF blob. */
+export async function buildRewardChartPdf(
   chart: RewardChart,
   brand?: RewardChartBrand,
   teacherName?: string,
-): Promise<void> {
+): Promise<PdfResult> {
   const prev = getPdfBrand();
   await applyBrand(brand);
   try {
@@ -136,18 +138,31 @@ export async function generateRewardChartPdf(
     });
     drawChart(hd, chart, teacherName);
     drawFooter(hd, `לוח מבצעים להדפסה — ${getPdfBrand().schoolName || "הכיתה שלי"}`);
-    downloadPdfBlob(hd.doc.output("blob"), `reward-chart-${safeName(chart.id)}.pdf`);
+    return {
+      blob: hd.doc.output("blob"),
+      filename: `reward-chart-${safeName(chart.id)}.pdf`,
+    };
   } finally {
     setPdfBrand(prev);
   }
 }
 
-/** Downloads all five charts as one branded PDF booklet. */
-export async function generateAllRewardChartsPdf(
+/** Downloads a single printable chart as a branded A4 PDF. */
+export async function generateRewardChartPdf(
+  chart: RewardChart,
+  brand?: RewardChartBrand,
+  teacherName?: string,
+): Promise<void> {
+  const { blob, filename } = await buildRewardChartPdf(chart, brand, teacherName);
+  downloadPdfBlob(blob, filename);
+}
+
+/** Builds all charts as one branded PDF booklet blob. */
+export async function buildAllRewardChartsPdf(
   brand?: RewardChartBrand,
   charts: RewardChart[] = REWARD_CHARTS,
   teacherName?: string,
-): Promise<void> {
+): Promise<PdfResult> {
   const prev = getPdfBrand();
   await applyBrand(brand);
   try {
@@ -166,8 +181,18 @@ export async function generateAllRewardChartsPdf(
       drawChart(hd, chart, teacherName);
     });
     drawFooter(hd, `ערכת לוחות מבצעים — ${getPdfBrand().schoolName || "הכיתה שלי"}`);
-    downloadPdfBlob(hd.doc.output("blob"), "reward-charts-kit.pdf");
+    return { blob: hd.doc.output("blob"), filename: "reward-charts-kit.pdf" };
   } finally {
     setPdfBrand(prev);
   }
+}
+
+/** Downloads all charts as one branded PDF booklet. */
+export async function generateAllRewardChartsPdf(
+  brand?: RewardChartBrand,
+  charts: RewardChart[] = REWARD_CHARTS,
+  teacherName?: string,
+): Promise<void> {
+  const { blob, filename } = await buildAllRewardChartsPdf(brand, charts, teacherName);
+  downloadPdfBlob(blob, filename);
 }
