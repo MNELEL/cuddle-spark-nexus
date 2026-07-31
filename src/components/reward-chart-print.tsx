@@ -75,12 +75,15 @@ export function RewardChartPrintView() {
   const [custom, setCustom] = useState<RewardChartCustomization>(DEFAULT_REWARD_CHART_CUSTOMIZATION);
   const [previewChartId, setPreviewChartId] = useState<string | null>(null);
   const base = selected === "all" ? REWARD_CHARTS : REWARD_CHARTS.filter((c) => c.id === selected);
-  const previewChart = previewChartId && previewChartId !== "all"
-    ? charts.find((c) => c.id === previewChartId)
-    : null;
-
   const charts = base.map((c) => applyRewardChartCustomization(c, custom));
   const landscape = charts.some((c) => c.orientation === "landscape");
+  const previewChart =
+    previewChartId && previewChartId !== "all"
+      ? charts.find((c) => c.id === previewChartId) ??
+        REWARD_CHARTS.filter((c) => c.id === previewChartId).map((c) =>
+          applyRewardChartCustomization(c, custom),
+        )[0]
+      : null;
 
   // Match the paper orientation to the widest chart being printed.
   useEffect(() => {
