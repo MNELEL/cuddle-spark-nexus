@@ -12,6 +12,12 @@ import { ArrowRight, Printer, Box, Square, Eye, EyeOff, Hash, Plane, User, Rotat
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export const Route = createFileRoute("/_authenticated/classes/$classId/display")({
+  head: () => ({
+    meta: [
+      { title: "תצוגת כיתה · הכיתה שלי" },
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
   component: DisplayMode,
 });
 

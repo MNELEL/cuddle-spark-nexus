@@ -12,62 +12,43 @@ interface SitemapEntry {
 }
 
 /**
- * Walk the generated route tree and return every static, indexable full path.
- * This is what makes the sitemap self-updating: adding, renaming, or removing a
- * file under src/routes/ regenerates src/routeTree.gen.ts, and the next request
- * to /sitemap.xml picks the change up automatically — no manual edits here.
+ * Every public, indexable static route in the app.
  *
- * Excluded:
+ * Deliberately explicit: walking src/routeTree.gen.ts from inside a route
+ * module of that same tree is circular and made /sitemap.xml return 500.
+ * Keep this list in sync when adding or removing a public route under
+ * src/routes/.
+ *
+ * Excluded on purpose:
+ *   - the /_authenticated subtree (session-only; each route sends noindex)
+ *   - /login, /reset-password, /theme-test (utility screens)
+ *   - /p/$token and /share/* (private share links)
  *   - the sitemap route itself
- *   - dynamic segments ($param, splat $)
- *   - authenticated subtree (blocked by robots.txt; not indexable)
- *   - API / hook routes
- *   - private share/token routes (/p/$token, /share/*)
  */
-async function collectStaticRoutes(): Promise<string[]> {
-  // Lazy import to avoid a circular dependency: routeTree.gen imports this
-  // file's Route export, so importing routeTree at module scope leaves
-  // SitemapDotxmlRouteImport undefined during eval.
-  const { routeTree } = await import("@/routeTree.gen");
-  const out = new Set<string>();
-  const visit = (route: unknown) => {
-    if (!route || typeof route !== "object") return;
-    const r = route as { id?: string; fullPath?: string; children?: unknown };
-    const id = r.id ?? "";
-    const fullPath = r.fullPath ?? "";
-
-    const isDynamic = fullPath.includes("$");
-    const isAuthenticated = id.startsWith("/_authenticated");
-    const isApi = fullPath.startsWith("/api");
-    const isPrivateShare = fullPath.startsWith("/p/") || fullPath.startsWith("/share/");
-    const isSitemap = fullPath === "/sitemap.xml";
-    const isRootPlaceholder = fullPath === "" || fullPath === "__root__";
-
-    if (
-      fullPath &&
-      !isDynamic &&
-      !isAuthenticated &&
-      !isApi &&
-      !isPrivateShare &&
-      !isSitemap &&
-      !isRootPlaceholder
-    ) {
-      // Normalize "/blog/" style entries produced by index children to "/blog".
-      const normalized =
-        fullPath.length > 1 && fullPath.endsWith("/") ? fullPath.slice(0, -1) : fullPath;
-      out.add(normalized);
-    }
-
-    const children = r.children;
-    if (Array.isArray(children)) {
-      for (const c of children) visit(c);
-    } else if (children && typeof children === "object") {
-      for (const c of Object.values(children)) visit(c);
-    }
-  };
-  visit(routeTree);
-  return Array.from(out).sort();
-}
+const STATIC_ROUTES: string[] = [
+  "/",
+  "/privacy",
+  "/support",
+  "/blog",
+  "/blog/ai-seating-arrangements-guide",
+  "/blog/classdojo-comparison",
+  "/blog/classroom-management-strategies",
+  "/blog/classroom-management-strategies/checklist",
+  "/blog/classroom-tools-teachers",
+  "/blog/digital-hall-pass-guide",
+  "/blog/free-tools-comparison",
+  "/blog/parasha-report-templates",
+  "/blog/progress-tracking-guide",
+  "/blog/torah-study-reward-charts",
+  "/blog/weekly-report-template",
+  "/help",
+  "/parents-guide",
+  "/partners",
+  "/partners/case-studies",
+  "/partners/districts",
+  "/partners/schools",
+  "/tools/group-maker",
+];
 
 /**
  * Priority / changefreq hints per path prefix. Anything not matched falls back
@@ -98,7 +79,7 @@ export const Route = createFileRoute("/sitemap.xml")({
     handlers: {
       GET: async () => {
         // 1. Static routes — derived automatically from the generated route tree.
-        const entries: SitemapEntry[] = (await collectStaticRoutes()).map((path) => ({
+        const entries: SitemapEntry[] = STATIC_ROUTES.map((path) => ({
           path,
           ...hintsFor(path),
         }));
