@@ -91,15 +91,43 @@ export const SOFT: [number, number, number] = [241, 245, 249];
 
 type BidiEngine = { doBidiReorder: (t: string) => string };
 
-const visualEngine: BidiEngine = new (jsPDF as unknown as {
-  __bidiEngine__: new (o: Record<string, unknown>) => BidiEngine;
-}).__bidiEngine__({
-  isInputVisual: false,
-  isInputRtl: true,
-  isOutputVisual: true,
-  isOutputRtl: false,
-  isSymmetricSwapping: true,
-});
+type BidiCtor = new (o: Record<string, unknown>) => BidiEngine;
+
+let visualEngine: BidiEngine | null = null;
+let engineResolved = false;
+
+/**
+ * jsPDF exposes its UAX#9 engine as an undocumented internal, whose location
+ * differs between builds (constructor static vs. API prototype) and can be
+ * absent entirely. Resolve it lazily so a missing internal degrades to
+ * pass-through text instead of throwing while the module is evaluated (which
+ * would break SSR for every route importing a PDF builder).
+ */
+function getVisualEngine(): BidiEngine | null {
+  if (engineResolved) return visualEngine;
+  engineResolved = true;
+  const candidates = [
+    (jsPDF as unknown as { __bidiEngine__?: BidiCtor }).__bidiEngine__,
+    (jsPDF as unknown as { API?: { __bidiEngine__?: BidiCtor } }).API?.__bidiEngine__,
+  ];
+  for (const Ctor of candidates) {
+    if (typeof Ctor !== "function") continue;
+    try {
+      visualEngine = new Ctor({
+        isInputVisual: false,
+        isInputRtl: true,
+        isOutputVisual: true,
+        isOutputRtl: false,
+        isSymmetricSwapping: true,
+      });
+      if (typeof visualEngine?.doBidiReorder === "function") return visualEngine;
+      visualEngine = null;
+    } catch {
+      visualEngine = null;
+    }
+  }
+  return visualEngine;
+}
 
 /**
  * Text options that make jsPDF treat the string as already-visual and skip
@@ -119,7 +147,8 @@ export const VISUAL_TEXT_OPTS = {
 export function bidi(text: string): string {
   if (!text) return text;
   try {
-    return visualEngine.doBidiReorder(text);
+    const engine = getVisualEngine();
+    return engine ? engine.doBidiReorder(text) : text;
   } catch {
     return text;
   }
