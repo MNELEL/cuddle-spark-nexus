@@ -170,6 +170,12 @@ export function patchTextForRtl(doc: jsPDF): void {
   const target = doc as unknown as Record<string | symbol, unknown>;
   if (target[PATCHED]) return;
   target[PATCHED] = true;
+  if (!getVisualEngine()) {
+    // No internal bidi engine available: fall back to jsPDF's own R2L mode so
+    // Hebrew still reads correctly (Latin runs may be less precise).
+    doc.setR2L(true);
+    return;
+  }
   const original = doc.text.bind(doc);
   (doc as unknown as { text: (...a: unknown[]) => unknown }).text = (
     ...args: unknown[]
