@@ -1816,6 +1816,30 @@ export type Database = {
           similarity: number
         }[]
       }
+      recalculate_pacing: {
+        Args: {
+          p_class_id: string
+          p_holiday_dates: string[]
+          p_year_end_date: string
+        }
+        Returns: {
+          ai_recommendation: string | null
+          buffer_percent: number
+          class_id: string
+          computed_at: string
+          days_elapsed: number | null
+          days_remaining: number | null
+          id: string
+          units_ahead_count: number | null
+          units_behind_count: number | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "pacing_recalc_log"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
       app_role: "admin" | "principal" | "teacher" | "secretary"
