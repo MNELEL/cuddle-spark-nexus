@@ -21,8 +21,8 @@ export function PinLockScreen({ onUnlock }: { onUnlock: () => void }) {
     router.preloadRoute({ to: "/classes" }).catch(() => {});
   }, [router]);
 
-  function finishUnlock() {
-    sessionStorage.setItem("ca_pin_unlocked", "1");
+  function finishUnlock(token: string) {
+    sessionStorage.setItem("ca_pin_unlocked", token);
     // Warm additional dashboard routes so the next click is instant.
     Promise.all([
       router.preloadRoute({ to: "/classes" }),
@@ -46,8 +46,8 @@ export function PinLockScreen({ onUnlock }: { onUnlock: () => void }) {
     setError(null);
     try {
       const r = await verify({ data: { pin } });
-      if (r.ok) {
-        finishUnlock();
+      if (r.ok && r.token) {
+        finishUnlock(r.token);
       } else {
         setError("PIN שגוי");
         setPin("");
