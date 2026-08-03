@@ -1,8 +1,12 @@
 import { SeatFillGrid } from "@/components/seat-fill-grid";
 import { TorahLogo } from "@/components/torah-logo";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Users, Sparkles, Layout, Brain, BarChart3, Presentation, ArrowLeft } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { useServerFn } from "@tanstack/react-start";
+import { getMyRoles } from "@/lib/user-roles.functions";
+import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -66,6 +70,44 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+  const fetchRoles = useServerFn(getMyRoles);
+  const [mounted, setMounted] = useState(false);
+  const [checkingRoles, setCheckingRoles] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    setCheckingRoles(true);
+    fetchRoles()
+      .then((roles) => {
+        if (cancelled) return;
+        const roleList = roles.map((r) => r.role);
+        // teacher / secretary go to /classes; admin / principal also go to /classes until a dedicated school dashboard exists.
+        const destination = roleList.some((r) => ["admin", "principal", "teacher", "secretary"].includes(r)) ? "/classes" : "/classes";
+        navigate({ to: destination, replace: true });
+      })
+      .catch(() => {
+        if (!cancelled) navigate({ to: "/classes", replace: true });
+      })
+      .finally(() => {
+        if (!cancelled) setCheckingRoles(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user, navigate, fetchRoles]);
+
+  // While the session is being determined on the client, show a lightweight loading state
+  // so authenticated users never see the marketing page flash.
+  if (mounted && (authLoading || checkingRoles)) {
+    return <div className="flex min-h-screen items-center justify-center text-muted-foreground">טוען...</div>;
+  }
+
+  if (user) return null;
   return (
     <div className="relative min-h-screen overflow-hidden bg-background" dir="rtl">
       {/* mesh background */}

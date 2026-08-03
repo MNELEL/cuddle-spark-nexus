@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      academic_calendar_overrides: {
+        Row: {
+          class_id: string
+          created_at: string
+          end_date: string
+          id: string
+          label: string | null
+          start_date: string
+          type: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          end_date: string
+          id?: string
+          label?: string | null
+          start_date: string
+          type: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          end_date?: string
+          id?: string
+          label?: string | null
+          start_date?: string
+          type?: string
+        }
+        Relationships: []
+      }
       app_logs: {
         Row: {
           context: Json | null
@@ -398,6 +428,24 @@ export type Database = {
           },
         ]
       }
+      class_pacing_settings: {
+        Row: {
+          buffer_percent: number
+          class_id: string
+          updated_at: string
+        }
+        Insert: {
+          buffer_percent?: number
+          class_id: string
+          updated_at?: string
+        }
+        Update: {
+          buffer_percent?: number
+          class_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       class_resource_usage: {
         Row: {
           class_id: string
@@ -477,6 +525,105 @@ export type Database = {
           public_slug?: string | null
           room_objects?: Json
           status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      curriculum_history_snapshots: {
+        Row: {
+          class_id: string
+          confidence: number | null
+          confirmed: boolean
+          created_at: string
+          estimated_end_date: string | null
+          estimated_start_date: string | null
+          id: string
+          lessons_count: number | null
+          raw_ai_notes: string | null
+          source_resource_ids: string[] | null
+          source_year: number
+          subject: string
+          unit_title: string
+        }
+        Insert: {
+          class_id: string
+          confidence?: number | null
+          confirmed?: boolean
+          created_at?: string
+          estimated_end_date?: string | null
+          estimated_start_date?: string | null
+          id?: string
+          lessons_count?: number | null
+          raw_ai_notes?: string | null
+          source_resource_ids?: string[] | null
+          source_year: number
+          subject: string
+          unit_title: string
+        }
+        Update: {
+          class_id?: string
+          confidence?: number | null
+          confirmed?: boolean
+          created_at?: string
+          estimated_end_date?: string | null
+          estimated_start_date?: string | null
+          id?: string
+          lessons_count?: number | null
+          raw_ai_notes?: string | null
+          source_resource_ids?: string[] | null
+          source_year?: number
+          subject?: string
+          unit_title?: string
+        }
+        Relationships: []
+      }
+      curriculum_units: {
+        Row: {
+          actual_lessons_used: number | null
+          class_id: string
+          completed_at: string | null
+          created_at: string
+          estimated_lessons: number | null
+          id: string
+          linked_resource_ids: string[] | null
+          notes: string | null
+          order_index: number | null
+          priority: string
+          status: string
+          subject: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          actual_lessons_used?: number | null
+          class_id: string
+          completed_at?: string | null
+          created_at?: string
+          estimated_lessons?: number | null
+          id?: string
+          linked_resource_ids?: string[] | null
+          notes?: string | null
+          order_index?: number | null
+          priority?: string
+          status?: string
+          subject: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          actual_lessons_used?: number | null
+          class_id?: string
+          completed_at?: string | null
+          created_at?: string
+          estimated_lessons?: number | null
+          id?: string
+          linked_resource_ids?: string[] | null
+          notes?: string | null
+          order_index?: number | null
+          priority?: string
+          status?: string
+          subject?: string
+          title?: string
           updated_at?: string
         }
         Relationships: []
@@ -697,6 +844,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      pacing_recalc_log: {
+        Row: {
+          ai_recommendation: string | null
+          buffer_percent: number
+          class_id: string
+          computed_at: string
+          days_elapsed: number | null
+          days_remaining: number | null
+          id: string
+          units_ahead_count: number | null
+          units_behind_count: number | null
+        }
+        Insert: {
+          ai_recommendation?: string | null
+          buffer_percent?: number
+          class_id: string
+          computed_at?: string
+          days_elapsed?: number | null
+          days_remaining?: number | null
+          id?: string
+          units_ahead_count?: number | null
+          units_behind_count?: number | null
+        }
+        Update: {
+          ai_recommendation?: string | null
+          buffer_percent?: number
+          class_id?: string
+          computed_at?: string
+          days_elapsed?: number | null
+          days_remaining?: number | null
+          id?: string
+          units_ahead_count?: number | null
+          units_behind_count?: number | null
+        }
+        Relationships: []
       }
       parent_communications: {
         Row: {
