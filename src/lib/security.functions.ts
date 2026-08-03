@@ -9,6 +9,13 @@ function hashPin(pin: string, salt: string) {
   return createHash("sha256").update(`${salt}:${pin}`).digest("hex");
 }
 
+// Session unlock token derived server-side from the stored PIN hash.
+// A client cannot forge it without knowing the hash, so a hand-set
+// sessionStorage flag no longer unlocks the dashboard.
+function unlockToken(userId: string, pinHash: string, salt: string) {
+  return createHash("sha256").update(`unlock:${userId}:${salt}:${pinHash}`).digest("hex");
+}
+
 export const getSecurity = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -63,5 +70,22 @@ export const verifyPin = createServerFn({ method: "POST" })
     const expected = Buffer.from(row.pin_hash);
     const actual = Buffer.from(hashPin(data.pin, row.pin_salt));
     const ok = expected.length === actual.length && timingSafeEqual(expected, actual);
-    return { ok };
+    if (!ok) return { ok: false as const };
+    return { ok: true as const, token: unlockToken(userId, row.pin_hash, row.pin_salt) };
+  });
+
+export const verifyUnlockToken = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ token: z.string().max(256) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: row } = await supabase
+      .from("app_security")
+      .select("pin_hash, pin_salt")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (!row?.pin_hash || !row?.pin_salt) return { ok: false };
+    const expected = Buffer.from(unlockToken(userId, row.pin_hash, row.pin_salt));
+    const actual = Buffer.from(data.token);
+    return { ok: expected.length === actual.length && timingSafeEqual(expected, actual) };
   });
