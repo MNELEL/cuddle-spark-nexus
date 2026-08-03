@@ -185,22 +185,42 @@ function Index() {
         </div>
 
         <section id="features" className="mx-auto mt-28 max-w-6xl">
-          <h2 className="mb-8 text-center font-display text-3xl font-bold tracking-tight md:text-4xl">תכונות מרכזיות</h2>
+          <div className="mb-10 text-center">
+            <div className="mx-auto mb-4 flex items-center justify-center gap-3 text-amber/70" aria-hidden="true">
+              <span className="h-px w-12 bg-gradient-to-l from-transparent to-amber/50" />
+              <TorahLogo size={18} />
+              <span className="h-px w-12 bg-gradient-to-r from-transparent to-amber/50" />
+            </div>
+            <h2 className="font-display text-3xl font-bold tracking-tight md:text-4xl">כלים לניהול החדר</h2>
+            <p className="mt-3 text-sm text-muted-foreground">כל מה שהמלמד צריך — בסדר, בכתב ובזמן.</p>
+          </div>
           <div className="grid gap-5 md:grid-cols-3">
           {[
-            { icon: Brain, title: "AI Sort חכם", desc: "Gemini בוחן יחסים, ציונים והעדפות ומציע סידור מיטבי — עם הסבר לכל החלטה." },
-            { icon: BarChart3, title: "ציון ביצועים", desc: "מטריקה חיה לכל תלמיד שמשקללת ציונים, נוכחות והתנהגות — מציגה מי דורש תשומת לב." },
-            { icon: Presentation, title: "מצב מצגת 3D", desc: "תצוגה תלת-ממדית עוצרת נשימה עם 4 מצלמות, אנונימיזציה ומצב הצגה למפקחים." },
-            { icon: Users, title: "CRM פדגוגי", desc: "תזכורות, נקודות התנהגות, ולוח מובילים — לשמר את הקצב הפדגוגי לאורך השנה." },
-            { icon: Layout, title: "גריד חכם", desc: "גרירה חופשית, נעילת מושבים, חיבור שולחנות בזוגות, ושמירת תצורות מרובות." },
-            { icon: Sparkles, title: "דוחות PDF", desc: "סיכום כיתתי או אישי בעיצוב A4 מקצועי, מוכן להדפסה או לשליחה להורים." },
+            { icon: Brain, letter: "א", title: "סידור הושבה חכם", desc: "המערכת בוחנת יחסים בין תלמידים, ידיעות והעדפות ומציעה סידור מיטבי — עם הסבר לכל החלטה." },
+            { icon: BarChart3, letter: "ב", title: "מדד התמדה", desc: "תמונת מצב חיה לכל תלמיד — ידיעות, נוכחות ומידות — כדי לדעת מי זקוק לתשומת לב." },
+            { icon: Presentation, letter: "ג", title: "תצוגת חדר", desc: "תצוגה תלת-ממדית של סדר החדר, עם אנונימיזציה ומצב הצגה למפקחים ולהנהלה." },
+            { icon: Users, letter: "ד", title: "מעקב פדגוגי", desc: "תזכורות, נקודות מידות טובות ולוח מבצעים — לשמר את הקצב הפדגוגי לאורך כל הזמן." },
+            { icon: Layout, letter: "ה", title: "מפת מושבים", desc: "גרירה חופשית, נעילת מקומות, חיבור שולחנות בזוגות ושמירת תצורות לכל סדר." },
+            { icon: Sparkles, letter: "ו", title: "דוחות ותעודות", desc: "סיכום כיתתי או אישי בעיצוב A4 מהודר, מוכן להדפסה או לשליחה להורים." },
           ].map((f) => (
-            <div key={f.title} className="group relative rounded-2xl border border-border/70 bg-card/60 p-6 backdrop-blur transition hover:border-amber/40 hover:shadow-glow-amber">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-amber group-hover:text-amber-foreground transition">
+            <div
+              key={f.title}
+              className="group relative overflow-hidden rounded-2xl border border-border/70 bg-card/60 p-6 backdrop-blur transition hover:border-amber/50 hover:shadow-glow-amber"
+            >
+              {/* decorative top rule, like a page header line */}
+              <span className="absolute inset-x-0 top-0 h-px bg-gradient-to-l from-transparent via-amber/50 to-transparent opacity-60" aria-hidden="true" />
+              {/* Hebrew ordinal letter watermark */}
+              <span
+                className="pointer-events-none absolute -top-3 left-4 select-none font-display text-6xl font-bold text-amber/10 transition group-hover:text-amber/20"
+                aria-hidden="true"
+              >
+                {f.letter}׳
+              </span>
+              <div className="relative flex h-11 w-11 items-center justify-center rounded-lg border border-amber/30 bg-amber/10 text-amber transition group-hover:bg-amber group-hover:text-amber-foreground">
                 <f.icon className="h-5 w-5" />
               </div>
-              <h3 className="mt-5 font-display text-lg font-bold">{f.title}</h3>
-              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
+              <h3 className="relative mt-5 font-display text-lg font-bold">{f.title}</h3>
+              <p className="relative mt-2 text-sm leading-relaxed text-muted-foreground">{f.desc}</p>
             </div>
           ))}
           </div>
