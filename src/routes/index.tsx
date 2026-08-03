@@ -1,8 +1,12 @@
 import { SeatFillGrid } from "@/components/seat-fill-grid";
 import { TorahLogo } from "@/components/torah-logo";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Users, Sparkles, Layout, Brain, BarChart3, Presentation, ArrowLeft } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { useServerFn } from "@tanstack/react-start";
+import { getMyRoles } from "@/lib/user-roles.functions";
+import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/")({
   component: Index,
