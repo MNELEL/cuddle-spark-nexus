@@ -212,11 +212,45 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const isServiceRoleCall = authHeader === `Bearer ${serviceRoleKey}`;
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      isServiceRoleCall ? serviceRoleKey : Deno.env.get("SUPABASE_ANON_KEY")!,
-      isServiceRoleCall ? undefined : { global: { headers: { Authorization: authHeader } } }
-    );
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+
+    // The RPC is no longer executable by anon/authenticated, so it always runs
+    // through the service-role client. When the call comes from a signed-in
+    // user we must therefore verify class ownership here, under that user's
+    // own RLS context, before escalating.
+    if (!isServiceRoleCall) {
+      if (!authHeader.startsWith("Bearer ")) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      const userClient = createClient(
+        supabaseUrl,
+        Deno.env.get("SUPABASE_ANON_KEY")!,
+        { global: { headers: { Authorization: authHeader } } }
+      );
+      const { data: userData } = await userClient.auth.getUser();
+      if (!userData?.user) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      const { data: owned, error: ownErr } = await userClient
+        .from("classes")
+        .select("id")
+        .eq("id", classId)
+        .maybeSingle();
+      if (ownErr || !owned) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), {
+          status: 403,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+    }
+
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     const { data, error } = await supabase.rpc("recalculate_pacing", {
       p_class_id: classId,
