@@ -46,12 +46,14 @@
 - **היכן מוצג**: `analytics` (כרטיסי "ממוצע משוקלל" ו-"משקל מקצועות"), `certificates` (badge לכל תלמיד — רק כשהוגדרו משקלים), `ai-pedagogical` + `pedagogical-pdf` (ממוצע משוקלל בנוסף לניתוח האיכותני הקיים).
 - **בכוונה לא שונו**: `reports.functions.ts`, `performance-score.ts`, `seating-wizard.functions.ts`, `public-class.functions.ts`, `p.$token.tsx` — ממוצע פשוט, כדי לא לשנות דוחות היסטוריים ונתונים שהורים כבר ראו.
 
-### 1.2 Circuit breaker ל-AI Gateway
-- **המצב היום**: `src/lib/ai-gateway.server.ts` מטפל בשגיאות 429/402 נקודתית בלבד, בלי state בין קריאות.
-- **מה נדרש**: state tracking ברמת המודול שמסמן `exhausted`/`invalid_key` ומחזיר שגיאה מיידית עד timeout/restart.
-- **עדיפות**: שיפור טכני-פנימי, לא דורש UI.
+### 1.2 Circuit breaker ל-AI Gateway — ✅ מיושם (אוגוסט 2026)
+- **מבנה**: state in-memory ברמת המודול ב-`src/lib/ai-gateway.server.ts`, **משותף** ל-`callLovableAI` ול-`callLovableAIEmbeddings` — שתיהן פוגעות באותה מכסת Lovable AI Gateway, ולכן כשל שאחת רואה חוסם מיידית גם את השנייה.
+- **חלונות**: 429 ⇒ 60 שניות (מתאושש לבד). 402 ומפתח חסר ⇒ חלון probe של 5 דקות: ניסיון בודד בסוף החלון, כדי שהוספת קרדיטים/מפתח תיתפס בלי restart.
+- **בתוך החלון**: אין fetch כלל. `callLovableAI` זורק את אותה הודעה בעברית (חוזה throwing), `callLovableAIEmbeddings` מחזיר `null` (חוזה non-throwing) — שני החוזים נשמרו במדויק, ואף אחד מ-16 הקוראים לא שונה.
+- **איפוס**: תגובה 200 סוגרת את ה-breaker. שגיאות אחרות (5xx / 400 / שגיאת רשת) **אינן** פותחות אותו — הן נקודתיות ולא מעידות על מכסה.
+- **לוגים**: `[AI Breaker] open <reason>` בפתיחה, `[AI Breaker] closed` באיפוס.
 
-**אלו שני הפערים היחידים שנותרו לעבודה בפועל.**
+**כל הפערים שתועדו בסעיף 1 הושלמו.**
 
 ---
 
