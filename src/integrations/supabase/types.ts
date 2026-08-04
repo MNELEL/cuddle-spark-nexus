@@ -480,13 +480,16 @@ export type Database = {
       }
       classes: {
         Row: {
+          academic_year: string | null
           created_at: string
           grid_cols: number
           grid_rows: number
           hidden_seats: Json
           id: string
+          institution_id: string | null
           name: string
           owner_id: string
+          parent_class_id: string | null
           public_description: string | null
           public_enabled: boolean
           public_headline: string | null
@@ -496,13 +499,16 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          academic_year?: string | null
           created_at?: string
           grid_cols?: number
           grid_rows?: number
           hidden_seats?: Json
           id?: string
+          institution_id?: string | null
           name: string
           owner_id: string
+          parent_class_id?: string | null
           public_description?: string | null
           public_enabled?: boolean
           public_headline?: string | null
@@ -512,13 +518,16 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          academic_year?: string | null
           created_at?: string
           grid_cols?: number
           grid_rows?: number
           hidden_seats?: Json
           id?: string
+          institution_id?: string | null
           name?: string
           owner_id?: string
+          parent_class_id?: string | null
           public_description?: string | null
           public_enabled?: boolean
           public_headline?: string | null
@@ -527,7 +536,22 @@ export type Database = {
           status?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "classes_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classes_parent_class_id_fkey"
+            columns: ["parent_class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       curriculum_history_snapshots: {
         Row: {
@@ -820,6 +844,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      institutions: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       lesson_transcripts: {
         Row: {
