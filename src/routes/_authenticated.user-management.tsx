@@ -188,6 +188,9 @@ function UserManagementPage() {
       u.displayName?.toLowerCase().includes(search.toLowerCase())
   );
 
+  const institutionRequired = selectedRole !== "" && selectedRole !== "admin";
+  const institutionMissing = institutionRequired && selectedInstitution === NO_INSTITUTION;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -199,6 +202,47 @@ function UserManagementPage() {
           <Button variant="outline"><ArrowLeft className="me-2 h-4 w-4" /> חזרה</Button>
         </Link>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Building2 className="h-5 w-5 text-primary" /> מוסדות
+          </CardTitle>
+          <CardDescription>רשימת המוסדות במערכת ויצירת מוסד חדש.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {institutionsLoading ? (
+            <div className="py-4 text-center text-sm text-muted-foreground">טוען מוסדות...</div>
+          ) : (institutions ?? []).length === 0 ? (
+            <div className="py-4 text-center text-sm text-muted-foreground">אין מוסדות עדיין.</div>
+          ) : (
+            <div className="flex flex-wrap gap-1.5">
+              {(institutions ?? []).map((inst) => (
+                <Badge key={inst.id} variant="secondary">{inst.name}</Badge>
+              ))}
+            </div>
+          )}
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+            <div className="flex-1">
+              <Label htmlFor="new-institution">שם מוסד חדש</Label>
+              <Input
+                id="new-institution"
+                className="mt-1.5"
+                placeholder="לדוגמה: תלמוד תורה אור החיים"
+                value={newInstitutionName}
+                onChange={(e) => setNewInstitutionName(e.target.value)}
+              />
+            </div>
+            <Button
+              disabled={newInstitutionName.trim().length < 2 || createInstitutionMutation.isPending}
+              onClick={() => createInstitutionMutation.mutate(newInstitutionName.trim())}
+            >
+              {createInstitutionMutation.isPending && <Loader2 className="ms-2 h-4 w-4 animate-spin" />}
+              <Plus className="me-2 h-4 w-4" /> צור מוסד
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
