@@ -2,8 +2,9 @@
 //
 // CRUD for academic_calendar_overrides, plus an optional onMutated callback
 // so the pacing screen can call refetch() from usePacingRecalculation right
-// after a mutation — giving an immediate UI update in addition to the
-// server-side trigger (trg_recalc_pacing_on_override) that also fires.
+// after a mutation. This client-side refetch is now the ONLY recalculation
+// path — the old DB trigger (trg_recalc_pacing_on_override) was removed
+// because it required a hardcoded service-role key to call the function.
 
 import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
