@@ -230,6 +230,63 @@ function Index() {
           </div>
         </section>
 
+        <section id="resources" className="mx-auto mt-28 max-w-6xl">
+          <div className="mb-10 text-center">
+            <h2 className="font-display text-3xl font-bold tracking-tight md:text-4xl">בלוג וכלים חינמיים</h2>
+            <p className="mt-3 text-sm text-muted-foreground">
+              מדריכים מקצועיים למלמדים ורבנים, וכלי עזר מוכנים לשימוש — עם רישום במייל וחודש ניסיון חינם.
+            </p>
+          </div>
+          <div className="grid gap-5 md:grid-cols-2">
+            <div className="group relative overflow-hidden rounded-2xl border border-border/70 bg-card/60 p-6 backdrop-blur transition hover:border-amber/50 hover:shadow-glow-amber">
+              <span className="absolute inset-x-0 top-0 h-px bg-gradient-to-l from-transparent via-amber/50 to-transparent opacity-60" aria-hidden="true" />
+              <div className="flex h-11 w-11 items-center justify-center rounded-lg border border-amber/30 bg-amber/10 text-amber transition group-hover:bg-amber group-hover:text-amber-foreground">
+                <BookOpen className="h-5 w-5" aria-hidden="true" />
+              </div>
+              <h3 className="mt-5 font-display text-lg font-bold">הבלוג · מדריכים ותבניות</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                אסטרטגיות ניהול חדר, מעקב התקדמות, לוחות מבצעים, תבניות דו״ח שבועי ודפי קשר לפרשת השבוע.
+              </p>
+              <div className="mt-5 flex flex-wrap items-center gap-2">
+                <Link to="/blog">
+                  <Button className="gap-2 shadow-glow-primary">
+                    לכניסה לבלוג <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                  </Button>
+                </Link>
+                <Link to="/login">
+                  <Button variant="outline" className="gap-2">
+                    <Mail className="h-4 w-4" aria-hidden="true" /> רישום במייל
+                  </Button>
+                </Link>
+              </div>
+            </div>
+
+            <div className="group relative overflow-hidden rounded-2xl border border-border/70 bg-card/60 p-6 backdrop-blur transition hover:border-primary/50 hover:shadow-glow-primary">
+              <span className="absolute inset-x-0 top-0 h-px bg-gradient-to-l from-transparent via-primary/50 to-transparent opacity-60" aria-hidden="true" />
+              <div className="flex h-11 w-11 items-center justify-center rounded-lg border border-primary/30 bg-primary/10 text-primary transition group-hover:bg-primary group-hover:text-primary-foreground">
+                <Wrench className="h-5 w-5" aria-hidden="true" />
+              </div>
+              <h3 className="mt-5 font-display text-lg font-bold">כלים חינמיים למלמד</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                מחולל קבוצות והגרלת תלמיד לשימוש מיידי. עם רישום במייל נפתחים גם הכלים המלאים —
+                הגרלות, לוח צלצולים, מבצעים ודוחות — חודש ניסיון חינם.
+              </p>
+              <div className="mt-5 flex flex-wrap items-center gap-2">
+                <Link to="/tools/group-maker">
+                  <Button className="gap-2 shadow-glow-primary">
+                    לכניסה לכלים החינמיים <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                  </Button>
+                </Link>
+                <Link to="/login">
+                  <Button variant="outline" className="gap-2">
+                    <Gift className="h-4 w-4" aria-hidden="true" /> חודש ניסיון חינם
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <footer className="mt-28 text-center text-xs text-muted-foreground">
           נבנה עם אהבה למלמדים ולרבנים · הכיתה שלי © {new Date().getFullYear()}
         </footer>
