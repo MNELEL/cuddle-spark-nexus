@@ -229,6 +229,30 @@ function UserManagementPage() {
   const institutionRequired = selectedRole !== "" && selectedRole !== "admin";
   const institutionMissing = institutionRequired && selectedInstitution === NO_INSTITUTION;
 
+  const allInstitutions = institutions ?? [];
+  const matchedInstitutions = allInstitutions.filter((inst) =>
+    inst.name.toLowerCase().includes(institutionSearch.trim().toLowerCase())
+  );
+  const institutionPages = Math.max(1, Math.ceil(matchedInstitutions.length / INSTITUTIONS_PAGE_SIZE));
+  const safePage = Math.min(institutionPage, institutionPages);
+  const pagedInstitutions = matchedInstitutions.slice(
+    (safePage - 1) * INSTITUTIONS_PAGE_SIZE,
+    safePage * INSTITUTIONS_PAGE_SIZE
+  );
+
+  const handleAssign = () => {
+    if (!selectedUser || !selectedRole) return;
+    if (institutionMissing) {
+      toast.error(`לתפקיד ${ROLE_LABELS[selectedRole as Role]} חובה לבחור מוסד`);
+      return;
+    }
+    assignMutation.mutate({
+      user_id: selectedUser,
+      role: selectedRole as Role,
+      institution_id: selectedInstitution === NO_INSTITUTION ? undefined : selectedInstitution,
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -249,16 +273,60 @@ function UserManagementPage() {
           <CardDescription>רשימת המוסדות במערכת ויצירת מוסד חדש.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="relative">
+            <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="חיפוש מוסד לפי שם..."
+              value={institutionSearch}
+              onChange={(e) => {
+                setInstitutionSearch(e.target.value);
+                setInstitutionPage(1);
+              }}
+              className="pe-4 ps-10"
+              aria-label="חיפוש מוסד"
+            />
+          </div>
           {institutionsLoading ? (
             <div className="py-4 text-center text-sm text-muted-foreground">טוען מוסדות...</div>
-          ) : (institutions ?? []).length === 0 ? (
-            <div className="py-4 text-center text-sm text-muted-foreground">אין מוסדות עדיין.</div>
-          ) : (
-            <div className="flex flex-wrap gap-1.5">
-              {(institutions ?? []).map((inst) => (
-                <Badge key={inst.id} variant="secondary">{inst.name}</Badge>
-              ))}
+          ) : matchedInstitutions.length === 0 ? (
+            <div className="py-4 text-center text-sm text-muted-foreground">
+              {allInstitutions.length === 0 ? "אין מוסדות עדיין." : "לא נמצאו מוסדות מתאימים."}
             </div>
+          ) : (
+            <>
+              <div className="flex flex-wrap gap-1.5">
+                {pagedInstitutions.map((inst) => (
+                  <Badge key={inst.id} variant="secondary">{inst.name}</Badge>
+                ))}
+              </div>
+              {institutionPages > 1 && (
+                <div className="flex items-center justify-between gap-2 border-t pt-3">
+                  <span className="text-xs text-muted-foreground">
+                    עמוד {safePage} מתוך {institutionPages} · {matchedInstitutions.length} מוסדות
+                  </span>
+                  <div className="flex gap-1.5">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      aria-label="העמוד הקודם"
+                      disabled={safePage <= 1}
+                      onClick={() => setInstitutionPage(safePage - 1)}
+                    >
+                      <ChevronRight className="h-4 w-4" /> הקודם
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      aria-label="העמוד הבא"
+                      disabled={safePage >= institutionPages}
+                      onClick={() => setInstitutionPage(safePage + 1)}
+                    >
+                      הבא <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
             <div className="flex-1">
@@ -279,6 +347,58 @@ function UserManagementPage() {
               <Plus className="me-2 h-4 w-4" /> צור מוסד
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <GraduationCap className="h-5 w-5 text-primary" /> כיתות
+          </CardTitle>
+          <CardDescription>בחר מוסד כדי לראות את הכיתות המשויכות אליו.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="classes-institution-select">מוסד</Label>
+            <Select value={classesInstitution} onValueChange={setClassesInstitution}>
+              <SelectTrigger id="classes-institution-select" className="mt-1.5">
+                <SelectValue placeholder="בחר מוסד" />
+              </SelectTrigger>
+              <SelectContent>
+                {allInstitutions.map((inst) => (
+                  <SelectItem key={inst.id} value={inst.id}>
+                    {inst.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {classesInstitution === "" ? (
+            <div className="py-4 text-center text-sm text-muted-foreground">לא נבחר מוסד.</div>
+          ) : classesLoading ? (
+            <div className="py-4 text-center text-sm text-muted-foreground">טוען כיתות...</div>
+          ) : classesError ? (
+            <div className="py-4 text-center text-sm text-destructive">שליפת הכיתות נכשלה.</div>
+          ) : (institutionClasses ?? []).length === 0 ? (
+            <div className="py-4 text-center text-sm text-muted-foreground">
+              אין כיתות משויכות למוסד זה.
+            </div>
+          ) : (
+            <div className="divide-y">
+              {(institutionClasses ?? []).map((cls) => (
+                <div key={cls.id} className="flex flex-wrap items-center justify-between gap-2 py-3 first:pt-0 last:pb-0">
+                  <div>
+                    <p className="font-medium">{cls.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {cls.academicYear ? `שנת ${cls.academicYear} · ` : ""}
+                      {cls.studentCount} תלמידים
+                    </p>
+                  </div>
+                  <Badge variant="secondary">{cls.status === "active" ? "פעילה" : cls.status}</Badge>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -324,7 +444,12 @@ function UserManagementPage() {
                 מוסד {institutionRequired ? <span className="text-destructive">*</span> : "(אופציונלי)"}
               </Label>
               <Select value={selectedInstitution} onValueChange={setSelectedInstitution}>
-                <SelectTrigger id="institution-select" className="mt-1.5">
+                <SelectTrigger
+                  id="institution-select"
+                  className="mt-1.5"
+                  aria-invalid={institutionMissing}
+                  aria-describedby={institutionMissing ? "institution-select-error" : undefined}
+                >
                   <SelectValue placeholder="בחר מוסד" />
                 </SelectTrigger>
                 <SelectContent>
@@ -337,21 +462,15 @@ function UserManagementPage() {
                 </SelectContent>
               </Select>
               {institutionMissing && (
-                <p className="mt-1.5 text-xs text-destructive">
-                  לתפקיד זה נדרש לבחור מוסד.
+                <p id="institution-select-error" className="mt-1.5 text-xs text-destructive">
+                  לתפקיד {ROLE_LABELS[selectedRole as Role]} חובה לבחור מוסד.
                 </p>
               )}
             </div>
           </div>
           <Button
             disabled={!selectedUser || !selectedRole || institutionMissing || assignMutation.isPending}
-            onClick={() =>
-              assignMutation.mutate({
-                user_id: selectedUser,
-                role: selectedRole as Role,
-                institution_id: selectedInstitution === NO_INSTITUTION ? undefined : selectedInstitution,
-              })
-            }
+            onClick={handleAssign}
           >
             {assignMutation.isPending && <Loader2 className="ms-2 h-4 w-4 animate-spin" />}
             <Plus className="me-2 h-4 w-4" /> הוסף תפקיד
