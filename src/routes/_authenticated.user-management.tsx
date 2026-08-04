@@ -14,7 +14,19 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ShieldCheck, Loader2, ArrowLeft, Trash2, Plus, Search, Building2 } from "lucide-react";
+import {
+  ShieldCheck,
+  Loader2,
+  ArrowLeft,
+  Trash2,
+  Plus,
+  Search,
+  Building2,
+  GraduationCap,
+  ScrollText,
+  ChevronRight,
+  ChevronLeft,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   isAdmin,
@@ -24,9 +36,15 @@ import {
   bootstrapFirstAdmin,
   type Role,
 } from "@/lib/user-roles.functions";
-import { listInstitutions, createInstitution } from "@/lib/institutions.functions";
+import {
+  listInstitutions,
+  createInstitution,
+  listInstitutionClasses,
+  listRoleAuditLog,
+} from "@/lib/institutions.functions";
 
 const NO_INSTITUTION = "__none__";
+const INSTITUTIONS_PAGE_SIZE = 10;
 
 const ROLE_LABELS: Record<Role, string> = {
   admin: "מנהל מערכת",
@@ -56,6 +74,8 @@ function UserManagementPage() {
   const bootstrapFn = useServerFn(bootstrapFirstAdmin);
   const listInstitutionsFn = useServerFn(listInstitutions);
   const createInstitutionFn = useServerFn(createInstitution);
+  const listInstitutionClassesFn = useServerFn(listInstitutionClasses);
+  const listAuditLogFn = useServerFn(listRoleAuditLog);
   const queryClient = useQueryClient();
 
   const { data: isAdminUser, isLoading: isAdminLoading } = useQuery({
@@ -74,6 +94,9 @@ function UserManagementPage() {
   const [selectedRole, setSelectedRole] = useState<Role | "">("");
   const [selectedInstitution, setSelectedInstitution] = useState<string>(NO_INSTITUTION);
   const [newInstitutionName, setNewInstitutionName] = useState("");
+  const [institutionSearch, setInstitutionSearch] = useState("");
+  const [institutionPage, setInstitutionPage] = useState(1);
+  const [classesInstitution, setClassesInstitution] = useState<string>("");
 
   const { data: institutions, isLoading: institutionsLoading } = useQuery({
     queryKey: ["institutions"],
@@ -81,10 +104,23 @@ function UserManagementPage() {
     enabled: isAdminUser === true,
   });
 
+  const { data: institutionClasses, isLoading: classesLoading, isError: classesError } = useQuery({
+    queryKey: ["institution-classes", classesInstitution],
+    queryFn: () => listInstitutionClassesFn({ data: { institution_id: classesInstitution } }),
+    enabled: isAdminUser === true && classesInstitution !== "",
+  });
+
+  const { data: auditLog, isLoading: auditLoading } = useQuery({
+    queryKey: ["role-audit-log"],
+    queryFn: () => listAuditLogFn(),
+    enabled: isAdminUser === true,
+  });
+
   const createInstitutionMutation = useMutation({
     mutationFn: async (name: string) => await createInstitutionFn({ data: { name } }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["institutions"] });
+      queryClient.invalidateQueries({ queryKey: ["role-audit-log"] });
       setNewInstitutionName("");
       toast.success("המוסד נוצר בהצלחה");
     },
@@ -103,6 +139,7 @@ function UserManagementPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users-with-roles"] });
+      queryClient.invalidateQueries({ queryKey: ["role-audit-log"] });
       setSelectedRole("");
       setSelectedInstitution(NO_INSTITUTION);
       toast.success("תפקיד הוקצה בהצלחה");
@@ -118,6 +155,7 @@ function UserManagementPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users-with-roles"] });
+      queryClient.invalidateQueries({ queryKey: ["role-audit-log"] });
       toast.success("תפקיד הוסר");
     },
     onError: (err) => {
