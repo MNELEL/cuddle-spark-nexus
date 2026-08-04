@@ -90,7 +90,7 @@ class_events, polls+poll_votes, curriculum_units+pacing_recalc_log, lesson_trans
 
 ## 3. docs/lms-gap-analysis.md — תיעוד עצמי של האפליקציה
 
-עודכן בהצלחה ב-2/8/2026 (RBAC ✅, שקלול ציונים ❌, circuit breaker ❌ — תואם לסעיף 1 כאן). פערים נוספים לא בעדיפות נוכחית: אינטגרציות LMS חיצוניות, push notifications, צ'אט צוות, דוחות מוסדיים, iOS+offline, שיתוף משאבים בין מוסדות.
+עודכן בהצלחה ב-2/8/2026 (RBAC ✅, שקלול ציונים ✅ מיושם (אוגוסט 2026), circuit breaker ❌ — תואם לסעיף 1 כאן). פערים נוספים לא בעדיפות נוכחית: אינטגרציות LMS חיצוניות, push notifications, צ'אט צוות, דוחות מוסדיים, iOS+offline, שיתוף משאבים בין מוסדות.
 
 ---
 
