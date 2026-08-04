@@ -281,10 +281,39 @@ function UserManagementPage() {
                 </SelectContent>
               </Select>
             </div>
+            <div>
+              <Label htmlFor="institution-select">
+                מוסד {institutionRequired ? <span className="text-destructive">*</span> : "(אופציונלי)"}
+              </Label>
+              <Select value={selectedInstitution} onValueChange={setSelectedInstitution}>
+                <SelectTrigger id="institution-select" className="mt-1.5">
+                  <SelectValue placeholder="בחר מוסד" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_INSTITUTION}>ללא מוסד (מנהל מערכת)</SelectItem>
+                  {(institutions ?? []).map((inst) => (
+                    <SelectItem key={inst.id} value={inst.id}>
+                      {inst.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {institutionMissing && (
+                <p className="mt-1.5 text-xs text-destructive">
+                  לתפקיד זה נדרש לבחור מוסד.
+                </p>
+              )}
+            </div>
           </div>
           <Button
-            disabled={!selectedUser || !selectedRole || assignMutation.isPending}
-            onClick={() => assignMutation.mutate({ user_id: selectedUser, role: selectedRole as Role })}
+            disabled={!selectedUser || !selectedRole || institutionMissing || assignMutation.isPending}
+            onClick={() =>
+              assignMutation.mutate({
+                user_id: selectedUser,
+                role: selectedRole as Role,
+                institution_id: selectedInstitution === NO_INSTITUTION ? undefined : selectedInstitution,
+              })
+            }
           >
             {assignMutation.isPending && <Loader2 className="ms-2 h-4 w-4 animate-spin" />}
             <Plus className="me-2 h-4 w-4" /> הוסף תפקיד
