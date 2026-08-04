@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ShieldCheck, Loader2, ArrowLeft, Trash2, Plus, Search } from "lucide-react";
+import { ShieldCheck, Loader2, ArrowLeft, Trash2, Plus, Search, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   isAdmin,
@@ -24,6 +24,9 @@ import {
   bootstrapFirstAdmin,
   type Role,
 } from "@/lib/user-roles.functions";
+import { listInstitutions, createInstitution } from "@/lib/institutions.functions";
+
+const NO_INSTITUTION = "__none__";
 
 const ROLE_LABELS: Record<Role, string> = {
   admin: "מנהל מערכת",
@@ -51,6 +54,8 @@ function UserManagementPage() {
   const assignRoleFn = useServerFn(assignRole);
   const removeRoleFn = useServerFn(removeRole);
   const bootstrapFn = useServerFn(bootstrapFirstAdmin);
+  const listInstitutionsFn = useServerFn(listInstitutions);
+  const createInstitutionFn = useServerFn(createInstitution);
   const queryClient = useQueryClient();
 
   const { data: isAdminUser, isLoading: isAdminLoading } = useQuery({
@@ -67,14 +72,39 @@ function UserManagementPage() {
   const [search, setSearch] = useState("");
   const [selectedUser, setSelectedUser] = useState<string | "">("");
   const [selectedRole, setSelectedRole] = useState<Role | "">("");
+  const [selectedInstitution, setSelectedInstitution] = useState<string>(NO_INSTITUTION);
+  const [newInstitutionName, setNewInstitutionName] = useState("");
+
+  const { data: institutions, isLoading: institutionsLoading } = useQuery({
+    queryKey: ["institutions"],
+    queryFn: () => listInstitutionsFn(),
+    enabled: isAdminUser === true,
+  });
+
+  const createInstitutionMutation = useMutation({
+    mutationFn: async (name: string) => await createInstitutionFn({ data: { name } }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["institutions"] });
+      setNewInstitutionName("");
+      toast.success("המוסד נוצר בהצלחה");
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "יצירת המוסד נכשלה");
+    },
+  });
 
   const assignMutation = useMutation({
-    mutationFn: async ({ user_id, role }: { user_id: string; role: Role }) => {
-      return await assignRoleFn({ data: { user_id, role } });
+    mutationFn: async ({
+      user_id,
+      role,
+      institution_id,
+    }: { user_id: string; role: Role; institution_id?: string }) => {
+      return await assignRoleFn({ data: { user_id, role, institution_id } });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users-with-roles"] });
       setSelectedRole("");
+      setSelectedInstitution(NO_INSTITUTION);
       toast.success("תפקיד הוקצה בהצלחה");
     },
     onError: (err) => {
