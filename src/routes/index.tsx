@@ -244,6 +244,7 @@ function Index() {
                 <BookOpen className="h-5 w-5" aria-hidden="true" />
               </div>
               <h3 className="mt-5 font-display text-lg font-bold">הבלוג · מדריכים ותבניות</h3>
+              <p className="mt-1 text-xs font-medium text-amber">נדרש רישום במייל · חינם</p>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                 אסטרטגיות ניהול חדר, מעקב התקדמות, לוחות מבצעים, תבניות דו״ח שבועי ודפי קשר לפרשת השבוע.
               </p>
@@ -267,6 +268,7 @@ function Index() {
                 <Wrench className="h-5 w-5" aria-hidden="true" />
               </div>
               <h3 className="mt-5 font-display text-lg font-bold">כלים חינמיים למלמד</h3>
+              <p className="mt-1 text-xs font-medium text-primary">נדרש רישום במייל · חודש ניסיון חינם</p>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                 מחולל קבוצות והגרלת תלמיד לשימוש מיידי. עם רישום במייל נפתחים גם הכלים המלאים —
                 הגרלות, לוח צלצולים, מבצעים ודוחות — חודש ניסיון חינם.

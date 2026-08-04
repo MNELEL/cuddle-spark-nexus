@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Shuffle, Users, UserRound, Copy, Sparkles, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import { RegistrationGate } from "@/components/registration-gate";
 
 const URL_SELF = "https://cuddle-spark-nexus.lovable.app/tools/group-maker";
 
@@ -96,6 +97,17 @@ function parseNames(raw: string): string[] {
 }
 
 function GroupMakerPage() {
+  return (
+    <RegistrationGate
+      title="הכלים החינמיים פתוחים לרשומים"
+      description="הירשם במייל (בחינם) כדי להשתמש במחולל הקבוצות, בהגרלות ובשאר כלי העזר למלמד."
+    >
+      <GroupMakerContent />
+    </RegistrationGate>
+  );
+}
+
+function GroupMakerContent() {
   const [raw, setRaw] = useState("");
   const [numGroups, setNumGroups] = useState(4);
   const [groups, setGroups] = useState<string[][]>([]);
