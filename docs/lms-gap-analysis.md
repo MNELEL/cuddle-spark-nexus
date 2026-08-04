@@ -196,8 +196,8 @@
 2. מצב offline בסיסי.
 3. אפליקציית iOS (Capacitor).
 
-### שלב 6: אמינות AI (קצר, ניתן לשלב במקביל לכל שלב אחר)
-1. Circuit breaker ל-`ai-gateway.server.ts`.
+### שלב 6: אמינות AI — ✅ הושלם
+1. ~~Circuit breaker ל-`ai-gateway.server.ts`.~~ ✅ הושלם (אוגוסט 2026) — state משותף, 429=60 שניות, 402/מפתח חסר=חלון probe של 5 דקות, שגיאות אחרות אינן פותחות את ה-breaker.
 
 ---
 
