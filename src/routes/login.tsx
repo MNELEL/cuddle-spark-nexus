@@ -35,9 +35,10 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
   const navigate = useNavigate();
-  const search = useSearch({ from: "/login" }) as { reset?: string };
+  const search = useSearch({ from: "/login" });
   const resetExpired = search.reset === "expired";
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const nextPath = search.next ?? "/classes";
+  const [mode, setMode] = useState<"signin" | "signup">(search.mode === "signup" ? "signup" : "signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -46,6 +47,7 @@ function LoginPage() {
   const [resetBusy, setResetBusy] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [signedUp, setSignedUp] = useState(false);
 
   const busy = submitting || googleBusy || resetBusy;
 
@@ -86,34 +88,66 @@ function LoginPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) navigate({ to: "/classes" });
+      if (session) navigate({ to: nextPath });
     });
-  }, [navigate]);
+  }, [navigate, nextPath]);
+
+  /** Client-side validation with explicit Hebrew messages. */
+  const validate = () => {
+    const mail = email.trim();
+    if (mode === "signup" && name.trim().length > 0 && name.trim().length < 2) {
+      return "השם קצר מדי — הזן שם מלא או השאר ריק";
+    }
+    if (!mail) return "יש להזין כתובת אימייל";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(mail)) return "כתובת האימייל אינה תקינה";
+    if (mail.length > 200) return "כתובת האימייל ארוכה מדי";
+    if (!password) return "יש להזין סיסמה";
+    if (password.length < 6) return "הסיסמה חייבת להכיל 6 תווים לפחות";
+    if (password.length > 72) return "הסיסמה ארוכה מדי (עד 72 תווים)";
+    return null;
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (busy) return; // form-level lock: no double submits while a request is in flight
+    const invalid = validate();
+    if (invalid) {
+      setSuccessMsg(null);
+      setErrorMsg(invalid);
+      firstFieldRef.current?.focus();
+      return;
+    }
     setSubmitting(true);
     setErrorMsg(null);
     setSuccessMsg(null);
     try {
       if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
-          email, password,
+          email: email.trim(),
+          password,
           options: {
             emailRedirectTo: window.location.origin,
-            data: { display_name: name || email.split("@")[0] },
+            data: { display_name: name.trim() || email.trim().split("@")[0] },
           },
         });
         if (error) throw error;
+        setSignedUp(true);
         toast.success("נרשמת בהצלחה! בדוק את האימייל לאישור.");
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
         if (error) throw error;
-        navigate({ to: "/classes" });
+        navigate({ to: nextPath });
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "שגיאה בהתחברות";
+      const raw = err instanceof Error ? err.message : "";
+      const msg =
+        /Invalid login credentials/i.test(raw)
+          ? "האימייל או הסיסמה שגויים"
+          : /already registered|already exists/i.test(raw)
+            ? "כתובת האימייל הזו כבר רשומה — עבור ללשונית ״התחברות״"
+            : /Email not confirmed/i.test(raw)
+              ? "החשבון עדיין לא אושר — לחץ על קישור האישור שנשלח לאימייל"
+              : raw || (mode === "signin" ? "שגיאה בהתחברות" : "ההרשמה נכשלה");
       setErrorMsg(msg);
       toast.error(msg);
     } finally {
@@ -134,7 +168,7 @@ function LoginPage() {
       return;
     }
     if (result.redirected) return;
-    navigate({ to: "/classes" });
+    navigate({ to: nextPath });
   };
 
   const forgotPassword = async () => {
