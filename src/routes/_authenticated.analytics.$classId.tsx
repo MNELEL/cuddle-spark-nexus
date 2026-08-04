@@ -1,10 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, TrendingUp, ArrowUp, ArrowDown } from "lucide-react";
+import { ArrowRight, TrendingUp, ArrowUp, ArrowDown, Scale, RotateCcw } from "lucide-react";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -12,9 +14,10 @@ import {
   LineChart, Line, BarChart, Bar, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, Legend,
 } from "recharts";
-import { listGrades } from "@/lib/tracking.functions";
+import { listGrades, listGradeWeights, upsertGradeWeight, deleteGradeWeight } from "@/lib/tracking.functions";
 import { listStudents } from "@/lib/students.functions";
 import { getClass } from "@/lib/classes.functions";
+import { weightedAverage, weightFor, MIN_WEIGHT, MAX_WEIGHT, DEFAULT_WEIGHT } from "@/lib/grade-weighting";
 
 export const Route = createFileRoute("/_authenticated/analytics/$classId")({
   component: AnalyticsPage,
@@ -28,18 +31,40 @@ export const Route = createFileRoute("/_authenticated/analytics/$classId")({
 });
 
 type GradeRow = { id: string; student_id: string; subject: string | null; value: number; max_value: number; date: string };
+type WeightRow = { id: string; class_id: string; subject: string; weight: number };
 
 const priorityKey = (cid: string) => `ca_subject_priority_${cid}`;
 
 function AnalyticsPage() {
   const { classId } = Route.useParams();
+  const qc = useQueryClient();
   const getCls = useServerFn(getClass);
   const gradesFn = useServerFn(listGrades);
   const studentsFn = useServerFn(listStudents);
+  const weightsFn = useServerFn(listGradeWeights);
+  const upsertWeightFn = useServerFn(upsertGradeWeight);
+  const deleteWeightFn = useServerFn(deleteGradeWeight);
 
   const { data: cls } = useQuery({ queryKey: ["class", classId], queryFn: () => getCls({ data: { id: classId } }) });
   const { data: grades = [] } = useQuery<GradeRow[]>({ queryKey: ["grades", classId], queryFn: () => gradesFn({ data: { classId } }) as unknown as Promise<GradeRow[]> });
   const { data: students = [] } = useQuery({ queryKey: ["students", classId], queryFn: () => studentsFn({ data: { classId } }) });
+  const { data: weights = [] } = useQuery<WeightRow[]>({
+    queryKey: ["gradeWeights", classId],
+    queryFn: () => weightsFn({ data: { classId } }) as unknown as Promise<WeightRow[]>,
+  });
+
+  const saveWeight = useMutation({
+    mutationFn: (v: { subject: string; weight: number }) =>
+      upsertWeightFn({ data: { classId, subject: v.subject, weight: v.weight } }),
+    onSuccess: () => { void qc.invalidateQueries({ queryKey: ["gradeWeights", classId] }); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "השמירה נכשלה"),
+  });
+
+  const resetWeight = useMutation({
+    mutationFn: (id: string) => deleteWeightFn({ data: { id } }),
+    onSuccess: () => { void qc.invalidateQueries({ queryKey: ["gradeWeights", classId] }); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "האיפוס נכשל"),
+  });
 
   const [studentId, setStudentId] = useState<string>("all");
   const [chart, setChart] = useState<"line" | "bar" | "radar">("line");
@@ -74,6 +99,9 @@ function AnalyticsPage() {
   const filtered = useMemo(() => {
     return studentId === "all" ? grades : grades.filter((g) => g.student_id === studentId);
   }, [grades, studentId]);
+
+  const weighted = useMemo(() => weightedAverage(filtered, weights), [filtered, weights]);
+  const hasWeightRows = weights.length > 0;
 
   // Line chart: percent over time, one series per subject (top 5 by priority)
   const lineData = useMemo(() => {
@@ -121,6 +149,8 @@ function AnalyticsPage() {
     savePriority(arr);
   };
 
+  const weightRowFor = (subject: string) => weights.find((w) => w.subject === subject);
+
   return (
     <div className="mx-auto max-w-6xl space-y-5">
       <div className="flex items-center justify-between">
@@ -156,6 +186,48 @@ function AnalyticsPage() {
       </Card>
 
       <Card>
+        <CardHeader><CardTitle className="flex items-center gap-2 text-base">
+          <Scale className="h-4 w-4 text-primary" /> ממוצע משוקלל
+        </CardTitle></CardHeader>
+        <CardContent>
+          {weighted.value === null ? (
+            <p className="text-sm text-muted-foreground">אין ציונים לחישוב ממוצע.</p>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-end gap-6">
+                <div>
+                  <div className="text-3xl font-bold font-mono-tabular">{weighted.value}%</div>
+                  <div className="text-xs text-muted-foreground">
+                    {studentId === "all" ? "כל הכיתה" : students.find((s) => s.id === studentId)?.name ?? ""}
+                  </div>
+                </div>
+                {weighted.unweighted !== null && weighted.unweighted !== weighted.value ? (
+                  <div>
+                    <div className="text-lg font-semibold font-mono-tabular text-muted-foreground">{weighted.unweighted}%</div>
+                    <div className="text-xs text-muted-foreground">ללא שקלול</div>
+                  </div>
+                ) : null}
+              </div>
+              <ul className="flex flex-wrap gap-2 text-xs">
+                {weighted.contributions.map((c) => (
+                  <li key={c.subject} className="rounded-md border bg-muted/40 px-2 py-1">
+                    <span className="font-medium">{c.subject}</span>{" "}
+                    <span className="font-mono-tabular">{c.pct}%</span>{" "}
+                    <span className="text-muted-foreground">
+                      ×{c.weight} · {Math.round(c.share * 100)}% מהממוצע
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              {!hasWeightRows ? (
+                <p className="text-xs text-muted-foreground">כל המקצועות בשקלול שווה. אפשר לשנות בכרטיס "משקל מקצועות" למטה.</p>
+              ) : null}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
         <CardHeader><CardTitle className="text-base">
           {chart === "line" ? "מגמות לאורך זמן" : chart === "bar" ? "ממוצע לפי מקצוע" : "פרופיל מקצועות"}
         </CardTitle></CardHeader>
@@ -181,7 +253,13 @@ function AnalyticsPage() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="subject" />
                 <YAxis domain={[0, 100]} />
-                <Tooltip />
+                <Tooltip
+                  formatter={(v: number | string) => [`${v}%`, "ממוצע המקצוע"]}
+                  labelFormatter={(label: string) => {
+                    const w = weightFor(label, weights);
+                    return w === DEFAULT_WEIGHT ? label : `${label} · משקל ×${w}`;
+                  }}
+                />
                 <Bar dataKey="average" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -217,6 +295,61 @@ function AnalyticsPage() {
             </ul>
           )}
           <p className="mt-2 text-xs text-muted-foreground">הסדר נשמר בדפדפן ומשפיע על הצגת הגרפים.</p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle className="text-base">משקל מקצועות</CardTitle></CardHeader>
+        <CardContent>
+          {subjects.length === 0 ? (
+            <p className="text-sm text-muted-foreground">אין מקצועות עם נתונים.</p>
+          ) : (
+            <ul className="space-y-1">
+              {subjects.map((s) => {
+                const row = weightRowFor(s);
+                return (
+                  <li key={s} className="flex items-center justify-between gap-2 rounded-md border bg-card px-3 py-2 text-sm">
+                    <span>{s}</span>
+                    <span className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        step="0.1"
+                        min={MIN_WEIGHT}
+                        max={MAX_WEIGHT}
+                        aria-label={`משקל למקצוע ${s}`}
+                        defaultValue={row ? Number(row.weight) : DEFAULT_WEIGHT}
+                        key={`${s}-${row ? Number(row.weight) : DEFAULT_WEIGHT}`}
+                        className="h-8 w-20 font-mono-tabular"
+                        onBlur={(e) => {
+                          const next = Number(e.target.value);
+                          if (!Number.isFinite(next) || next < MIN_WEIGHT || next > MAX_WEIGHT) {
+                            toast.error(`המשקל חייב להיות בין ${MIN_WEIGHT} ל-${MAX_WEIGHT}`);
+                            e.target.value = String(row ? Number(row.weight) : DEFAULT_WEIGHT);
+                            return;
+                          }
+                          const current = row ? Number(row.weight) : DEFAULT_WEIGHT;
+                          if (next === current) return;
+                          saveWeight.mutate({ subject: s, weight: next });
+                        }}
+                      />
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        aria-label={`אפס משקל למקצוע ${s}`}
+                        disabled={!row}
+                        onClick={() => { if (row) resetWeight.mutate(row.id); }}
+                      >
+                        <RotateCcw className="h-4 w-4" />
+                      </Button>
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          <p className="mt-2 text-xs text-muted-foreground">
+            משקל 2 = המקצוע נספר כפליים בממוצע הכללי. ללא הגדרה — כל המקצועות שווים (משקל 1).
+          </p>
         </CardContent>
       </Card>
     </div>

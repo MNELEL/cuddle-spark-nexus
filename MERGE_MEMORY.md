@@ -40,9 +40,11 @@
 ## 1. פערים אמיתיים שנותרו פתוחים — מאושרים ע"י 3 בדיקות עצמאיות (23/7, 2/8, 4/8)
 
 ### 1.1 שקלול ציונים (grade_weights)
-- **המצב היום**: קיים רק "סדר עדיפות למקצועות" שמשפיע על סדר התצוגה בגרפים בלבד (`localStorage`). הממוצע הוא ממוצע פשוט לא-משוקלל.
-- **מה נדרש**: טבלת `grade_weights` חדשה ב-Supabase + server function לחישוב ממוצע משוקלל + UI להגדרת משקלים + עדכון כל מקום שמציג ציון סופי.
-- **עדיפות**: הפער הגדול/החשוב מבין השניים בכל שלוש הבדיקות.
+- **סטטוס: מיושם** (אוגוסט 2026).
+- **מה נבנה**: טבלת `grade_weights` (`class_id`, `subject`, `weight` 0.1–10, RLS בדפוס `grades_owner_all`); server functions `listGradeWeights` / `upsertGradeWeight` / `deleteGradeWeight` ב-`src/lib/tracking.functions.ts`; לוגיקה טהורה משותפת ב-`src/lib/grade-weighting.ts`.
+- **הנוסחה**: שקלול בין-מקצועי — קודם ממוצע פנימי לכל מקצוע (`sum(value)/sum(max)*100`), ואז `sum(subjAvg_i * w_i) / sum(w_i)`. מקצוע ללא שורת משקל = 1, כך שכשאין משקלים התוצאה מתלכדת עם ממוצע שווה-משקל.
+- **היכן מוצג**: `analytics` (כרטיסי "ממוצע משוקלל" ו-"משקל מקצועות"), `certificates` (badge לכל תלמיד — רק כשהוגדרו משקלים), `ai-pedagogical` + `pedagogical-pdf` (ממוצע משוקלל בנוסף לניתוח האיכותני הקיים).
+- **בכוונה לא שונו**: `reports.functions.ts`, `performance-score.ts`, `seating-wizard.functions.ts`, `public-class.functions.ts`, `p.$token.tsx` — ממוצע פשוט, כדי לא לשנות דוחות היסטוריים ונתונים שהורים כבר ראו.
 
 ### 1.2 Circuit breaker ל-AI Gateway
 - **המצב היום**: `src/lib/ai-gateway.server.ts` מטפל בשגיאות 429/402 נקודתית בלבד, בלי state בין קריאות.

@@ -13,6 +13,10 @@ export async function buildPedagogicalPdfBlob(r: PedagogicalReport): Promise<Blo
     subtitle: `כיתה ${r.className}`,
     meta: `${r.range.from} — ${r.range.to} · ${r.studentCount} תלמידים${
       r.overallAvgPercent !== null ? ` · ממוצע ${r.overallAvgPercent}%` : ""
+    }${
+      r.hasCustomWeights && r.weightedAvgPercent !== null
+        ? ` · ממוצע משוקלל ${r.weightedAvgPercent}%`
+        : ""
     }`,
   });
 

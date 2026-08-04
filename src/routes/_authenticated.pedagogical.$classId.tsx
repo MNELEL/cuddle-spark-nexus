@@ -79,6 +79,9 @@ function PedagogicalPage() {
                 {data.overallAvgPercent !== null && (
                   <Badge variant="secondary">ממוצע {data.overallAvgPercent}%</Badge>
                 )}
+                {data.weightedAvgPercent !== null && data.hasCustomWeights && (
+                  <Badge variant="secondary">ממוצע משוקלל {data.weightedAvgPercent}%</Badge>
+                )}
               </>
             )}
             <Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
