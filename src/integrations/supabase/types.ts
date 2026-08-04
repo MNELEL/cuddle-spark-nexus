@@ -1115,16 +1115,22 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          trial_ends_at: string | null
+          trial_started_at: string | null
         }
         Insert: {
           created_at?: string
           display_name?: string | null
           id: string
+          trial_ends_at?: string | null
+          trial_started_at?: string | null
         }
         Update: {
           created_at?: string
           display_name?: string | null
           id?: string
+          trial_ends_at?: string | null
+          trial_started_at?: string | null
         }
         Relationships: []
       }
