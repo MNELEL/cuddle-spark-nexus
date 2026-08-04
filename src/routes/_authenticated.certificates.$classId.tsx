@@ -7,6 +7,8 @@ import { toast } from "sonner";
 
 import { getClass } from "@/lib/classes.functions";
 import { getCertificateData } from "@/lib/certificates.functions";
+import { listGradeWeights } from "@/lib/tracking.functions";
+import { weightedAverage, hasCustomWeights, type WeightLike } from "@/lib/grade-weighting";
 import { analyzeCertificatePhoto, suggestCertificateNotes } from "@/lib/ai-certificate.functions";
 import {
   listCertificateNotes,
@@ -97,6 +99,8 @@ type StudentRow = {
   attendance: { present: number; absent: number; late: number };
   teacherNote: string;
   principalNote: string;
+  /** ממוצע משוקלל לפי משקלי המקצועות — null כשאין ציונים */
+  weightedAvg: number | null;
 };
 
 function computeStudentRow(
@@ -104,6 +108,7 @@ function computeStudentRow(
   grades: { student_id: string; subject: string; value: number; max_value: number }[],
   behavior: { student_id: string; points: number }[],
   attendance: { student_id: string; status: string }[],
+  weights: WeightLike[] = [],
 ): StudentRow {
   const mine = grades.filter((g) => g.student_id === student.id);
   const bySubject = new Map<string, { sum: number; max: number }>();
@@ -140,6 +145,7 @@ function computeStudentRow(
     attendance: { present, absent, late },
     teacherNote: "",
     principalNote: "",
+    weightedAvg: weightedAverage(mine, weights).value,
   };
 }
 
@@ -147,6 +153,7 @@ function CertificatesPage() {
   const { classId } = Route.useParams();
   const getC = useServerFn(getClass);
   const getData = useServerFn(getCertificateData);
+  const weightsFn = useServerFn(listGradeWeights);
   const ocrCert = useServerFn(analyzeCertificatePhoto);
   const listNotes = useServerFn(listCertificateNotes);
   const saveNote = useServerFn(upsertCertificateNote);
@@ -189,6 +196,11 @@ function CertificatesPage() {
     queryKey: ["cert-notes", classId, periodKey],
     queryFn: () => listNotes({ data: { classId, periodKey } }),
   });
+  const { data: gradeWeights = [] } = useQuery<WeightLike[]>({
+    queryKey: ["gradeWeights", classId],
+    queryFn: () => weightsFn({ data: { classId } }) as unknown as Promise<WeightLike[]>,
+  });
+  const showWeighted = hasCustomWeights(gradeWeights);
 
   const [rows, setRows] = useState<Record<string, StudentRow>>({});
 
@@ -199,7 +211,7 @@ function CertificatesPage() {
     for (const n of savedNotes ?? []) notesById.set(n.student_id, n);
     const next: Record<string, StudentRow> = {};
     for (const s of data.students) {
-      const base = computeStudentRow(s, data.grades, data.behavior, data.attendance);
+      const base = computeStudentRow(s, data.grades, data.behavior, data.attendance, gradeWeights);
       const saved = notesById.get(s.id);
       if (!saved) { next[s.id] = base; continue; }
       const savedSubjects = Array.isArray(saved.subjects) && saved.subjects.length
@@ -217,7 +229,7 @@ function CertificatesPage() {
       };
     }
     setRows(next);
-  }, [data, savedNotes]);
+  }, [data, savedNotes, gradeWeights]);
 
   const persistRow = async (
     id: string,
@@ -577,6 +589,7 @@ function CertificatesPage() {
                 onExport={() => buildForStudent(row, isCorrection ? "correction" : "regular")}
                 onSaveNotes={() => persistNote(row.id)}
                 onSuggestNotes={() => openSuggest(row.id)}
+                showWeighted={showWeighted}
               />
             ))
           )}
@@ -643,9 +656,10 @@ function CertificatesPage() {
 }
 
 function StudentCertCard({
-  row, onPatch, onPatchSubject, onAddSubject, onRemoveSubject, onPatchConduct, onAddConduct, onRemoveConduct, onPersistConducts, onOcrPhoto, onExport, onSaveNotes, onSuggestNotes,
+  row, onPatch, onPatchSubject, onAddSubject, onRemoveSubject, onPatchConduct, onAddConduct, onRemoveConduct, onPersistConducts, onOcrPhoto, onExport, onSaveNotes, onSuggestNotes, showWeighted,
 }: {
   row: StudentRow;
+  showWeighted?: boolean;
   onPatch: (p: Partial<StudentRow>) => void;
   onPatchSubject: (idx: number, p: Partial<CertificateSubject>) => void;
   onAddSubject: () => void;
@@ -664,7 +678,12 @@ function StudentCertCard({
     <Card>
       <CardContent className="space-y-3 py-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="font-semibold text-lg">{row.name}</div>
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-lg">{row.name}</span>
+            {showWeighted && row.weightedAvg !== null ? (
+              <Badge variant="secondary" className="font-mono-tabular">ממוצע משוקלל {row.weightedAvg}%</Badge>
+            ) : null}
+          </div>
           <div className="flex items-center gap-2">
             <Button size="sm" variant="outline" onClick={() => fileRef.current?.click()}>
               <Camera className="ms-1 h-4 w-4" /> העלה צילום תעודה

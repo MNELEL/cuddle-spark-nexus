@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { callLovableAI } from "./ai-gateway.server";
+import { weightedAverage, hasCustomWeights, DEFAULT_WEIGHT } from "./grade-weighting";
 
 export type SubjectStat = {
   subject: string;
@@ -27,7 +28,12 @@ export type PedagogicalReport = {
   range: { from: string; to: string };
   studentCount: number;
   overallAvgPercent: number | null;
+  /** ממוצע משוקלל לפי משקלי המקצועות של הכיתה (null כשאין ציונים) */
+  weightedAvgPercent: number | null;
+  /** האם הוגדרו משקלים שאינם ברירת מחדל */
+  hasCustomWeights: boolean;
   subjects: SubjectStat[];
+  subjectWeights: Array<{ subject: string; weight: number }>;
   strongSubjects: string[];
   weakSubjects: string[];
   highlightSubjects: string[]; // הלכה / דקדוק / חשבון if present
@@ -63,7 +69,7 @@ export const buildPedagogicalReport = createServerFn({ method: "POST" })
     const { classId, from, to } = data;
     const { supabase } = context;
 
-    const [cls, students, grades, behavior, discipline, attendance] = await Promise.all([
+    const [cls, students, grades, behavior, discipline, attendance, weights] = await Promise.all([
       supabase.from("classes").select("id,name").eq("id", classId).single(),
       supabase.from("students").select("id").eq("class_id", classId),
       supabase.from("grades").select("subject,value,max_value,date")
@@ -74,6 +80,7 @@ export const buildPedagogicalReport = createServerFn({ method: "POST" })
         .eq("class_id", classId).gte("date", from).lte("date", to),
       supabase.from("attendance").select("status,date")
         .eq("class_id", classId).gte("date", from).lte("date", to),
+      supabase.from("grade_weights").select("subject,weight").eq("class_id", classId),
     ]);
 
     if (cls.error || !cls.data) throw new Error("שגיאה בטעינת הכיתה.");
@@ -102,6 +109,16 @@ export const buildPedagogicalReport = createServerFn({ method: "POST" })
     const strongSubjects = subjects.filter((s) => s.avgPercent >= 85).map((s) => s.subject);
     const weakSubjects = subjects.filter((s) => s.avgPercent > 0 && s.avgPercent < 70).map((s) => s.subject);
     const highlightSubjects = subjects.filter((s) => HIGHLIGHT.includes(s.subject)).map((s) => s.subject);
+
+    // ממוצע משוקלל — תוספת בלבד, אינו מחליף את overallAvgPercent או את הניתוח האיכותני.
+    const weightRows = (weights.data ?? []).map((w) => ({ subject: w.subject, weight: Number(w.weight) }));
+    const weightedResult = weightedAverage(grades.data ?? [], weightRows);
+    const weightedAvgPercent = weightedResult.value;
+    const customWeights = hasCustomWeights(weightRows);
+    const subjectWeights = subjects.map((s) => ({
+      subject: s.subject,
+      weight: weightRows.find((w) => w.subject === s.subject)?.weight ?? DEFAULT_WEIGHT,
+    }));
 
     // Behavior categories
     const behMap = new Map<string, { positive: number; negative: number; total: number }>();
@@ -168,6 +185,9 @@ export const buildPedagogicalReport = createServerFn({ method: "POST" })
       studentCount: (students.data ?? []).length,
       range: { from, to },
       overallAvgPercent,
+      weightedAvgPercent,
+      weightsApplied: customWeights,
+      subjectWeights: customWeights ? subjectWeights : undefined,
       subjects: subjects.map((s) => ({ subject: s.subject, avg: s.avgPercent, n: s.count })),
       strongSubjects,
       weakSubjects,
@@ -182,6 +202,7 @@ export const buildPedagogicalReport = createServerFn({ method: "POST" })
 נתוני הכיתה מסוכמים (לא גולמיים). נתח בקצרה ובמדויק:
 1) אקלים כיתתי — מה עולה מההתנהגות והמשמעת (קטגוריות מובילות, מגמות).
 2) הישגים לימודיים — מקצועות חזקים וחלשים, דגש מיוחד אם מופיעים "הלכה" / "דקדוק" / "חשבון".
+אם קיים weightedAvgPercent ו-weightsApplied=true — התייחס אליו כממוצע הכיתה הקובע (המלמד הגדיר משקל שונה למקצועות), אך אל תשנה את הניתוח האיכותני בגללו.
 3) תובנות פדגוגיות קונקרטיות (3-5 סעיפים) לשיפור אקלים ולחיזוק המקצועות החלשים.
 טון: "הרב", "המלמד", "התלמידים". ללא סופרלטיבים, ללא המצאת נתונים.
 החזר טקסט עברי (Markdown קל: כותרות ורשימות), 220-350 מילים. אל תחזיר JSON.`;
@@ -204,7 +225,10 @@ export const buildPedagogicalReport = createServerFn({ method: "POST" })
       range: { from, to },
       studentCount: (students.data ?? []).length,
       overallAvgPercent,
+      weightedAvgPercent,
+      hasCustomWeights: customWeights,
       subjects,
+      subjectWeights,
       strongSubjects,
       weakSubjects,
       highlightSubjects,

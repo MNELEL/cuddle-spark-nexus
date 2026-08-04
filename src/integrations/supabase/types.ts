@@ -667,6 +667,41 @@ export type Database = {
         }
         Relationships: []
       }
+      grade_weights: {
+        Row: {
+          class_id: string
+          created_at: string
+          id: string
+          subject: string
+          updated_at: string
+          weight: number
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          id?: string
+          subject: string
+          updated_at?: string
+          weight?: number
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          id?: string
+          subject?: string
+          updated_at?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grade_weights_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       grades: {
         Row: {
           class_id: string

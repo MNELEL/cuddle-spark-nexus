@@ -114,3 +114,43 @@ export const deleteGrade = createServerFn({ method: "POST" })
     if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return { ok: true };
   });
+
+/* -------- grade weights -------- */
+
+export const listGradeWeights = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ classId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase
+      .from("grade_weights").select("id,class_id,subject,weight")
+      .eq("class_id", data.classId).order("subject", { ascending: true });
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    return rows ?? [];
+  });
+
+export const upsertGradeWeight = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({
+    classId: z.string().uuid(),
+    subject: z.string().min(1).max(60),
+    weight: z.number().min(0.1).max(10),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("grade_weights")
+      .upsert(
+        { class_id: data.classId, subject: data.subject.trim(), weight: data.weight },
+        { onConflict: "class_id,subject" },
+      );
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    return { ok: true };
+  });
+
+export const deleteGradeWeight = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.from("grade_weights").delete().eq("id", data.id);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    return { ok: true };
+  });
