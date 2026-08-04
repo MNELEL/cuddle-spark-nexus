@@ -2,7 +2,7 @@ import { SeatFillGrid } from "@/components/seat-fill-grid";
 import { TorahLogo } from "@/components/torah-logo";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { Users, Sparkles, Layout, Brain, BarChart3, Presentation, ArrowLeft } from "lucide-react";
+import { Users, Sparkles, Layout, Brain, BarChart3, Presentation, ArrowLeft, BookOpen, Wrench, Mail, Gift } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useServerFn } from "@tanstack/react-start";
 import { getMyRoles } from "@/lib/user-roles.functions";
@@ -152,6 +152,10 @@ function Index() {
               <Button size="lg" variant="outline" className="text-base">גלה תכונות</Button>
             </a>
           </div>
+          <p className="mt-4 inline-flex items-center justify-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-medium text-foreground">
+            <Gift className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+            חודש ניסיון חינם · רישום במייל בלבד, ללא כרטיס אשראי
+          </p>
 
           <div className="mt-14 mx-auto max-w-2xl" aria-hidden="true">
             <SeatFillGrid />
