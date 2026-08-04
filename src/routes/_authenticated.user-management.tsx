@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ShieldCheck, Loader2, ArrowLeft, Trash2, Plus, Search } from "lucide-react";
+import { ShieldCheck, Loader2, ArrowLeft, Trash2, Plus, Search, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   isAdmin,
@@ -24,6 +24,9 @@ import {
   bootstrapFirstAdmin,
   type Role,
 } from "@/lib/user-roles.functions";
+import { listInstitutions, createInstitution } from "@/lib/institutions.functions";
+
+const NO_INSTITUTION = "__none__";
 
 const ROLE_LABELS: Record<Role, string> = {
   admin: "מנהל מערכת",
@@ -51,6 +54,8 @@ function UserManagementPage() {
   const assignRoleFn = useServerFn(assignRole);
   const removeRoleFn = useServerFn(removeRole);
   const bootstrapFn = useServerFn(bootstrapFirstAdmin);
+  const listInstitutionsFn = useServerFn(listInstitutions);
+  const createInstitutionFn = useServerFn(createInstitution);
   const queryClient = useQueryClient();
 
   const { data: isAdminUser, isLoading: isAdminLoading } = useQuery({
@@ -67,14 +72,39 @@ function UserManagementPage() {
   const [search, setSearch] = useState("");
   const [selectedUser, setSelectedUser] = useState<string | "">("");
   const [selectedRole, setSelectedRole] = useState<Role | "">("");
+  const [selectedInstitution, setSelectedInstitution] = useState<string>(NO_INSTITUTION);
+  const [newInstitutionName, setNewInstitutionName] = useState("");
+
+  const { data: institutions, isLoading: institutionsLoading } = useQuery({
+    queryKey: ["institutions"],
+    queryFn: () => listInstitutionsFn(),
+    enabled: isAdminUser === true,
+  });
+
+  const createInstitutionMutation = useMutation({
+    mutationFn: async (name: string) => await createInstitutionFn({ data: { name } }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["institutions"] });
+      setNewInstitutionName("");
+      toast.success("המוסד נוצר בהצלחה");
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "יצירת המוסד נכשלה");
+    },
+  });
 
   const assignMutation = useMutation({
-    mutationFn: async ({ user_id, role }: { user_id: string; role: Role }) => {
-      return await assignRoleFn({ data: { user_id, role } });
+    mutationFn: async ({
+      user_id,
+      role,
+      institution_id,
+    }: { user_id: string; role: Role; institution_id?: string }) => {
+      return await assignRoleFn({ data: { user_id, role, institution_id } });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users-with-roles"] });
       setSelectedRole("");
+      setSelectedInstitution(NO_INSTITUTION);
       toast.success("תפקיד הוקצה בהצלחה");
     },
     onError: (err) => {
@@ -158,6 +188,9 @@ function UserManagementPage() {
       u.displayName?.toLowerCase().includes(search.toLowerCase())
   );
 
+  const institutionRequired = selectedRole !== "" && selectedRole !== "admin";
+  const institutionMissing = institutionRequired && selectedInstitution === NO_INSTITUTION;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -169,6 +202,47 @@ function UserManagementPage() {
           <Button variant="outline"><ArrowLeft className="me-2 h-4 w-4" /> חזרה</Button>
         </Link>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Building2 className="h-5 w-5 text-primary" /> מוסדות
+          </CardTitle>
+          <CardDescription>רשימת המוסדות במערכת ויצירת מוסד חדש.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {institutionsLoading ? (
+            <div className="py-4 text-center text-sm text-muted-foreground">טוען מוסדות...</div>
+          ) : (institutions ?? []).length === 0 ? (
+            <div className="py-4 text-center text-sm text-muted-foreground">אין מוסדות עדיין.</div>
+          ) : (
+            <div className="flex flex-wrap gap-1.5">
+              {(institutions ?? []).map((inst) => (
+                <Badge key={inst.id} variant="secondary">{inst.name}</Badge>
+              ))}
+            </div>
+          )}
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+            <div className="flex-1">
+              <Label htmlFor="new-institution">שם מוסד חדש</Label>
+              <Input
+                id="new-institution"
+                className="mt-1.5"
+                placeholder="לדוגמה: תלמוד תורה אור החיים"
+                value={newInstitutionName}
+                onChange={(e) => setNewInstitutionName(e.target.value)}
+              />
+            </div>
+            <Button
+              disabled={newInstitutionName.trim().length < 2 || createInstitutionMutation.isPending}
+              onClick={() => createInstitutionMutation.mutate(newInstitutionName.trim())}
+            >
+              {createInstitutionMutation.isPending && <Loader2 className="ms-2 h-4 w-4 animate-spin" />}
+              <Plus className="me-2 h-4 w-4" /> צור מוסד
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -207,10 +281,39 @@ function UserManagementPage() {
                 </SelectContent>
               </Select>
             </div>
+            <div>
+              <Label htmlFor="institution-select">
+                מוסד {institutionRequired ? <span className="text-destructive">*</span> : "(אופציונלי)"}
+              </Label>
+              <Select value={selectedInstitution} onValueChange={setSelectedInstitution}>
+                <SelectTrigger id="institution-select" className="mt-1.5">
+                  <SelectValue placeholder="בחר מוסד" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_INSTITUTION}>ללא מוסד (מנהל מערכת)</SelectItem>
+                  {(institutions ?? []).map((inst) => (
+                    <SelectItem key={inst.id} value={inst.id}>
+                      {inst.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {institutionMissing && (
+                <p className="mt-1.5 text-xs text-destructive">
+                  לתפקיד זה נדרש לבחור מוסד.
+                </p>
+              )}
+            </div>
           </div>
           <Button
-            disabled={!selectedUser || !selectedRole || assignMutation.isPending}
-            onClick={() => assignMutation.mutate({ user_id: selectedUser, role: selectedRole as Role })}
+            disabled={!selectedUser || !selectedRole || institutionMissing || assignMutation.isPending}
+            onClick={() =>
+              assignMutation.mutate({
+                user_id: selectedUser,
+                role: selectedRole as Role,
+                institution_id: selectedInstitution === NO_INSTITUTION ? undefined : selectedInstitution,
+              })
+            }
           >
             {assignMutation.isPending && <Loader2 className="ms-2 h-4 w-4 animate-spin" />}
             <Plus className="me-2 h-4 w-4" /> הוסף תפקיד
