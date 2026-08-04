@@ -5,13 +5,22 @@ import { lovable } from "@/integrations/lovable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, AlertTriangle } from "lucide-react";
+import { Loader2, AlertTriangle, Gift, CheckCircle2, Home } from "lucide-react";
 import { SeatFillGrid } from "@/components/seat-fill-grid";
 import { TorahLogo } from "@/components/torah-logo";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
+  validateSearch: (search: Record<string, unknown>) => ({
+    reset: typeof search.reset === "string" ? search.reset : undefined,
+    mode: search.mode === "signup" ? ("signup" as const) : undefined,
+    // only same-origin internal paths are honoured as a post-auth destination
+    next:
+      typeof search.next === "string" && search.next.startsWith("/") && !search.next.startsWith("//")
+        ? search.next
+        : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "כניסה למערכת · הכיתה שלי" },
