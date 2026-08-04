@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { AUDIT_SOURCE_ROLES } from "@/lib/audit-sources";
 
 export const roleSchema = z.enum(["admin", "principal", "teacher", "secretary"]);
 export type Role = z.infer<typeof roleSchema>;
@@ -98,6 +99,19 @@ export const assignRole = createServerFn({ method: "POST" })
       .select()
       .single();
     if (error) throw new Error(error.message);
+
+    const { logInfo } = await import("@/lib/logger.server");
+    await logInfo(`הוקצה תפקיד ${data.role} למשתמש ${data.user_id}`, {
+      source: AUDIT_SOURCE_ROLES,
+      userId,
+      context: {
+        action: "role.assign",
+        target_user_id: data.user_id,
+        role: data.role,
+        institution_id: data.institution_id ?? null,
+      },
+    });
+
     return { ok: true };
   });
 
@@ -117,6 +131,14 @@ export const removeRole = createServerFn({ method: "POST" })
       .delete()
       .eq("id", data.role_id);
     if (error) throw new Error(error.message);
+
+    const { logInfo } = await import("@/lib/logger.server");
+    await logInfo(`הוסר תפקיד (${data.role_id})`, {
+      source: AUDIT_SOURCE_ROLES,
+      userId,
+      context: { action: "role.remove", role_id: data.role_id },
+    });
+
     return { ok: true };
   });
 

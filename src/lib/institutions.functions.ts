@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { AUDIT_SOURCE_INSTITUTIONS, AUDIT_SOURCE_ROLES } from "@/lib/audit-sources";
 
 async function verifyAdmin(supabase: SupabaseClient<Database>, userId: string) {
   const { data, error } = await supabase
