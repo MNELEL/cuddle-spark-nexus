@@ -326,7 +326,51 @@ function LoginPage() {
             )}
           </div>
 
-          <div className="space-y-4">
+          {mode === "signup" && !signedUp && (
+            <div className="mb-4 rounded-xl border border-primary/30 bg-primary/5 p-4 text-sm">
+              <p className="flex items-center gap-2 font-medium">
+                <Gift className="h-4 w-4 text-primary" aria-hidden="true" />
+                איך מפעילים את חודש הניסיון החינמי
+              </p>
+              <ol className="mt-2 list-decimal space-y-1 pe-5 text-muted-foreground">
+                <li>ממלאים אימייל וסיסמה (6 תווים לפחות) ולוחצים ״הרשם״.</li>
+                <li>פותחים את המייל שקיבלתם ולוחצים על קישור האישור.</li>
+                <li>הניסיון של 30 יום נפתח אוטומטית — ללא כרטיס אשראי.</li>
+              </ol>
+            </div>
+          )}
+
+          {signedUp && (
+            <div className="rounded-xl border border-primary/40 bg-primary/5 p-5 text-sm">
+              <p className="flex items-center gap-2 font-display text-base font-bold">
+                <CheckCircle2 className="h-5 w-5 text-primary" aria-hidden="true" />
+                ההרשמה נשלחה בהצלחה
+              </p>
+              <p className="mt-2 text-muted-foreground">
+                שלחנו קישור אישור ל־<span dir="ltr" className="font-medium text-foreground">{email.trim()}</span>.
+                לאחר האישור חודש הניסיון החינמי נפתח אוטומטית, וכל הבלוג והכלים החינמיים ייפתחו לפניך.
+              </p>
+              <p className="mt-2 text-muted-foreground">לא מצאת את המייל? בדוק בתיבת הספאם או הירשם שוב.</p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Link to="/">
+                  <Button className="gap-2">
+                    <Home className="h-4 w-4" aria-hidden="true" /> חזרה למסך הבית
+                  </Button>
+                </Link>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSignedUp(false);
+                    setMode("signin");
+                  }}
+                >
+                  אישרתי — להתחברות
+                </Button>
+              </div>
+            </div>
+          )}
+
+          <div className={`space-y-4 ${signedUp ? "hidden" : ""}`}>
             <Button variant="outline" className="w-full" onClick={google} disabled={busy}>
               {googleBusy && <Loader2 className="ms-2 h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />}
               {googleBusy ? "מתחבר ל-Google..." : "המשך עם Google"}
