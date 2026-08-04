@@ -1,51 +1,28 @@
-# Circuit Breaker ל-AI Gateway
+# מוסדות: כיתות, ולידציה, חיפוש ו-Audit Log
 
-מטרה: למנוע round-trip מיותר ל-Lovable AI Gateway כשידוע שהמכסה אזלה או שאין קרדיטים/מפתח. סוגר את הפער האחרון ב-MERGE_MEMORY.md 1.2 ו-docs/lms-gap-analysis.md 9.
+הרחבה של דף `ניהול משתמשים ותפקידים` (admin בלבד) בארבעה שיפורים.
 
-## היקף
+## 1. כרטיס "כיתות" לפי מוסד
+- כרטיס חדש מתחת לכרטיס "מוסדות": בחירת מוסד (Select) והצגת הכיתות שמשויכות אליו — שם הכיתה, שנת לימוד, סטטוס, ומספר תלמידים.
+- ריק/טוען/שגיאה מטופלים באותו סגנון shadcn RTL הקיים.
+- מכיוון שכללי הגישה של טבלת הכיתות מתירים צפייה רק לבעל הכיתה או למנהל מוסד, שליפת הכיתות לאדמין פלטפורמה תתבצע בצד השרת אחרי אימות הרשאת admin.
 
-קובץ אחד בלבד: `src/lib/ai-gateway.server.ts`. אף אחד מ-16 הקוראים (ai-grades, ai-certificate, ai-assistant, ai-exam, ai-exam-generator, ai-pedagogical, ai-poll, ai-weekly-summary, bulletin-sync, bulletins, ingest, lessons, parent-emails, seating-wizard, teacher-style, teaching-resources, embeddings.server) לא משתנה — החתימות והחוזים נשארים זהים בדיוק.
+## 2. ולידציה בצד הלקוח לבחירת מוסד
+- כל תפקיד שאינו admin (מלמד / מזכירה / מנהל מוסד) מחייב בחירת מוסד.
+- הודעת שגיאה ברורה מתחת ל-Select ("לתפקיד מלמד חובה לבחור מוסד"), הדגשת השדה, `aria-invalid` + `aria-describedby`, וכפתור ההוספה חסום.
+- אם המשתמש בחר תפקיד לא-admin בלי מוסד ולחץ — toast שגיאה במקום קריאת שרת.
 
-## מבנה ה-state (משותף, ברמת המודול)
+## 3. חיפוש ופג׳ינציה למוסדות
+- שדה חיפוש (סינון לפי שם, case-insensitive) + פג׳ינציה של 10 מוסדות לעמוד עם ניווט "הקודם/הבא" ומחוון "עמוד X מתוך Y".
+- החיפוש מאפס לעמוד 1; רשימת המוסדות ב-Select של הקצאת תפקיד נשארת מלאה (ללא פג׳ינציה).
 
-state יחיד שמשמש את שתי הפונקציות, כי שתיהן פוגעות באותה מכסה:
+## 4. Audit logging
+- כתיבה ל-log השרתי הקיים בכל יצירת מוסד, הקצאת תפקיד והסרת תפקיד: מי ביצע, מה נוצר/הוקצה, ולמי.
+- הרישום fail-safe: כשל ברישום לא מפיל את הפעולה עצמה.
+- כרטיס נוסף בתחתית הדף: "יומן שינויים" — 20 הרשומות האחרונות מסוג ניהול מוסדות/תפקידים, עם זמן, סוג פעולה ותיאור. נגיש לאדמין בלבד.
 
-```text
-type BreakerState =
-  | { kind: "closed" }                          // פעיל, מותר לקרוא
-  | { kind: "open"; reason: "rate_limited" | "no_credits" | "no_key";
-      message: string; until: number }          // חלון זמן לניסיון הבא
-```
-
-- משתנה מודול `let breaker: BreakerState = { kind: "closed" }`.
-- `message` נשמר כדי לזרוק בדיוק את אותה הודעה בעברית שהמשתמש רואה היום.
-- in-memory, per-instance, מתאפס ב-restart — כמוסכם, בלי DB.
-
-## ערכי timeout
-
-| סיבה | מקור | חלון | התאוששות |
-|---|---|---|---|
-| `rate_limited` | 429 | 60 שניות | אוטומטית בסוף החלון |
-| `no_credits` | 402 | 5 דקות | probe יחיד בסוף החלון |
-| `no_key` | LOVABLE_API_KEY חסר | 5 דקות | probe יחיד בסוף החלון |
-
-402 ומפתח חסר אינם מתאוששים לבד, אך חלון של 5 דקות מונע היתקעות לנצח אחרי שהמשתמש מוסיף קרדיטים — בסוף החלון מותרת קריאה אחת; אם היא נכשלת שוב באותה סיבה, החלון מתחדש.
-
-## התנהגות
-
-1. תחילת כל קריאה: אם ה-breaker פתוח והחלון עוד בתוקף —
-   - `callLovableAI`: `throw new Error(message)` מיידית, בלי fetch (חוזה throwing נשמר).
-   - `callLovableAIEmbeddings`: `console.error` קצר ו-`return null` מיידית (חוזה non-throwing נשמר).
-2. תגובה 200: `breaker = { kind: "closed" }` — איפוס מלא, לשתי הפונקציות.
-3. 429 → פתיחת breaker עם `rate_limited` + 60 שניות, ואז אותה זריקה / `null` כמו היום.
-4. 402 → פתיחת breaker עם `no_credits`, ואז אותה זריקה / `null` כמו היום.
-5. מפתח חסר → רישום `no_key`; `callLovableAI` זורק "חסר LOVABLE_API_KEY" כמו היום, `callLovableAIEmbeddings` מחזיר `null` כמו היום.
-6. שגיאות אחרות (5xx, 400, שגיאת רשת) אינן פותחות את ה-breaker — הן נקודתיות ולא מעידות על מכסה. התנהגות זהה להיום.
-
-## לוגים
-
-`console.warn("[AI Breaker] open", reason)` בפתיחה ו-`console.info("[AI Breaker] closed")` באיפוס — לאיתור מהיר בלוגי השרת, בלי לחשוף מפתחות.
-
-## בסיום
-
-עדכון `MERGE_MEMORY.md` 1.2 ו-`docs/lms-gap-analysis.md` 9 לסטטוס מיושם.
+## פרטים טכניים
+- `src/lib/institutions.functions.ts`: הוספת `listInstitutionClasses` (מאמת admin ואז קורא דרך client מורשה בתוך ה-handler, `import` דינמי בלבד), ו-`listRoleAuditLog` שקורא את `app_logs` לפי `source` מוגדר.
+- שימוש ב-`logInfo` מ-`src/lib/logger.server.ts` עם `source: "admin.institutions"` / `"admin.roles"`, `userId` של המבצע ו-`context` מובנה.
+- ללא migration: הסכמה הקיימת (`institutions`, `classes.institution_id`, `app_logs`) מספיקה.
+- כל השינויים ב-UI בתוך `src/routes/_authenticated.user-management.tsx`, באותו סגנון RTL/shadcn.
