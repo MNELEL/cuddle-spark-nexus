@@ -534,6 +534,36 @@ function UserManagementPage() {
           )}
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <ScrollText className="h-5 w-5 text-primary" /> יומן שינויים
+          </CardTitle>
+          <CardDescription>20 הפעולות האחרונות בניהול מוסדות ותפקידים.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {auditLoading ? (
+            <div className="py-6 text-center text-sm text-muted-foreground">טוען יומן...</div>
+          ) : (auditLog ?? []).length === 0 ? (
+            <div className="py-6 text-center text-sm text-muted-foreground">אין רשומות ביומן.</div>
+          ) : (
+            <div className="divide-y">
+              {(auditLog ?? []).map((entry) => (
+                <div key={entry.id} className="flex flex-wrap items-center justify-between gap-2 py-3 first:pt-0 last:pb-0">
+                  <div>
+                    <p className="text-sm font-medium">{entry.message}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(entry.createdAt).toLocaleString("he-IL")}
+                    </p>
+                  </div>
+                  {entry.action && <Badge variant="secondary">{entry.action}</Badge>}
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
