@@ -140,7 +140,7 @@ function Index() {
             שיבוץ, לוחות זמנים ויעדים, הושבה, מעקב פדגוגי ודוחות, חומרי לימוד, מבצעים ופגישות הורים — הכל במקום אחד.
           </p>
           <p className="mt-3 font-sans text-sm text-muted-foreground/80">
-            נבנה עבור מלמדים ורבנים
+            {"\n"}
           </p>
           <div className="mt-10 flex flex-wrap justify-center gap-3">
             <Link to="/login">
