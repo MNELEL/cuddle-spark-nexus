@@ -116,7 +116,26 @@ Supabase נפרד (8 טבלאות, RLS), Edge Function analyze-document, Hebrew 
 
 ---
 
-## 7. איך להשתמש במסמך הזה מכאן ואילך
+## 7. מעבר שנה וארכיון כיתות — מומש (אוגוסט 2026)
+
+פיצ'ר מלא ב"הכיתה שלי", לא פער פתוח.
+
+1. **שיוך מוסדי אוטומטי** — ביצירת כיתה נשלף `institution_id` מ-`user_roles` של המלמד ונשמר על הכיתה.
+2. **`academic_year`** — טקסט חופשי בפורמט עברי (תשפ"ז). ברירת המחדל מחושבת מהתאריך ב-`src/lib/year-rollover.ts` (`hebrewYearNumber` + `formatHebrewYear`), והמלמד יכול לערוך בחופשיות.
+3. **אשף מעבר שנה** — `src/components/new-class-wizard.tsx`. `suggestParentClass` מציע כיתת אב לפי רצף אותיות עבריות (א→ב→ג…), עם אפשרות לבחור כיתה אחרת או ליצור כיתה עצמאית.
+4. **העתקת תלמידים** — בחירה פרטנית של התלמידים שעולים; מועתקים פרטי תלמיד/הורים/התאמות בלבד (בלי מושב, ציונים, נוכחות או היסטוריה). `student_relations` מועתקים וממופים למזהי התלמידים החדשים.
+5. **ארכוב הכיתה הישנה** — דרך `setClassStatus` הקיים, כחלק מהאשף (ניתן לבטל).
+6. **שלוש שכבות הגנה על ארכיון**
+   - **DB triggers**: `trg_classes_archived_readonly` על `classes` (חוסם כל עדכון פרט לשינוי `status`/`updated_at`) + `trg_*_not_archived` על `students`, `grades`, `attendance`, `behavior_points`, `discipline_events`, `class_events`, `weekly_lessons`, `student_relations`, `groups`. הפונקציות `private.class_is_archived` וה-guards הן SECURITY DEFINER בלי הרשאת EXECUTE ציבורית.
+   - **Server guard**: `assertClassEditable` ב-`src/lib/classes.functions.ts` מחזיר שגיאה בעברית ("הכיתה בארכיון — החזר אותה לפעילות כדי לערוך") לפני `updateClass`/`deleteClass`.
+   - **UI read-only**: באנר ארכיון עם כפתור "החזר לפעילות" בדף הכיתה, הסתרת סרגל הפעולות והמחיקה, ותג "בארכיון · לצפייה בלבד".
+7. **שרשרת שנים** — `getClassChain` + רכיב `YearChain` מציגים קישורי "שנה קודמת"/"שנה הבאה" בדף הכיתה, ותג שנת לימוד בכרטיסי הכיתות.
+
+לא נגענו ב-`curriculum_history_snapshots` ו-`pacing_recalc_log` — הם נשארים ניתנים לכתיבה גם לכיתה בארכיון (חישובי קצב והיסטוריה).
+
+---
+
+## 8. איך להשתמש במסמך הזה מכאן ואילך
 
 1. תמיד לקרוא קוד חי מ-Lovable לפני שמניחים הנחות.
 2. קובץ זה הוא כעת המקור היחיד — docs/MERGE_MEMORY.md נמחק ב-4/8.

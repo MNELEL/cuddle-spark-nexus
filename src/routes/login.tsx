@@ -12,7 +12,11 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): {
+    reset?: string;
+    mode?: "signup";
+    next?: string;
+  } => ({
     reset: typeof search.reset === "string" ? search.reset : undefined,
     mode: search.mode === "signup" ? ("signup" as const) : undefined,
     // only same-origin internal paths are honoured as a post-auth destination
