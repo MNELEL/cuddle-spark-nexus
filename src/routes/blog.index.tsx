@@ -1,4 +1,8 @@
+import { Rss } from "lucide-react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { BLOG_INDEX_IMAGE, blogPostsNewestFirst } from "@/lib/blog-posts";
+import { RSS_PATH } from "@/lib/blog-seo";
+import { SITE_NAME, SITE_URL } from "@/lib/site-meta";
 
 export const Route = createFileRoute("/blog/")({
   component: BlogIndex,
@@ -17,9 +21,42 @@ export const Route = createFileRoute("/blog/")({
           "מדריכים מקצועיים לרבנים, מלמדים ומנהלי תלמודי תורה — ניהול כיתה, מעקב פדגוגי וכלים דיגיטליים.",
       },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://cuddle-spark-nexus.lovable.app/blog" },
+      { property: "og:url", content: `${SITE_URL}/blog` },
+      { property: "og:image", content: BLOG_INDEX_IMAGE },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: BLOG_INDEX_IMAGE },
     ],
-    links: [{ rel: "canonical", href: "https://cuddle-spark-nexus.lovable.app/blog" }],
+    links: [
+      { rel: "canonical", href: `${SITE_URL}/blog` },
+      {
+        rel: "alternate",
+        type: "application/rss+xml",
+        title: `בלוג ${SITE_NAME} — RSS`,
+        href: `${SITE_URL}${RSS_PATH}`,
+      },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Blog",
+          name: `בלוג ${SITE_NAME}`,
+          inLanguage: "he",
+          url: `${SITE_URL}/blog`,
+          blogPost: blogPostsNewestFirst().map((post) => ({
+            "@type": "BlogPosting",
+            headline: post.title,
+            description: post.description,
+            url: `${SITE_URL}${post.path}`,
+            image: [post.image],
+            datePublished: post.published,
+          })),
+        }),
+      },
+    ],
   }),
 });
 
@@ -39,6 +76,13 @@ function BlogIndex() {
         <p className="mt-3 text-muted-foreground">
           תוכן מקצועי לרבנים, מלמדים ומנהלי תלמודי תורה — בגובה העיניים.
         </p>
+        <a
+          href={RSS_PATH}
+          className="mt-4 inline-flex items-center gap-2 rounded-full border border-border/60 px-4 py-2 text-sm font-medium text-primary hover:bg-card/60"
+        >
+          <Rss className="h-4 w-4" aria-hidden="true" />
+          הרשמה לעדכונים (RSS)
+        </a>
         <ul className="mt-10 space-y-6">
           <li className="rounded-2xl border border-border/60 bg-card/40 p-6">
             <Link to="/blog/classroom-management-strategies" className="block">
