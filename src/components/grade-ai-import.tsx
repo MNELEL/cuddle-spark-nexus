@@ -79,19 +79,11 @@ function Inner({ classId, students, onClose }: { classId: string; students: Stud
   const [rows, setRows] = useState<ParsedGradeRow[] | null>(null);
   const [listening, setListening] = useState(false);
   const recRef = useRef<SpeechRec | null>(null);
-  const fileRef = useRef<HTMLInputElement | null>(null);
   const [ocrLoading, setOcrLoading] = useState(false);
 
   useEffect(() => () => { recRef.current?.stop(); }, []);
 
-  const onPickImage = () => fileRef.current?.click();
-
-  const onImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    if (!file.type.startsWith("image/")) { toast.error("יש לבחור קובץ תמונה"); return; }
-    if (file.size > 10 * 1024 * 1024) { toast.error("התמונה גדולה מדי (מקסימום 10MB)"); return; }
+  const onImageChange = async (file: File) => {
     setOcrLoading(true);
     try {
       const b64 = await new Promise<string>((resolve, reject) => {
