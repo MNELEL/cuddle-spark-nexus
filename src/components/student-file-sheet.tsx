@@ -64,6 +64,132 @@ const channelIcon: Record<string, typeof Phone> = {
 };
 
 export function StudentFileSheet(props: Props) {
+  return <StudentFileSheetInner {...props} />;
+}
+
+function StudentProfilePanel({ classId, studentId }: Props) {
+  const qc = useQueryClient();
+  const getFn = useServerFn(getStudentProfile);
+  const saveFn = useServerFn(upsertStudentProfile);
+
+  const { data: profile, isLoading } = useQuery({
+    queryKey: ["student-profile", studentId],
+    queryFn: () => getFn({ data: { studentId } }),
+  });
+
+  const [flags, setFlags] = useState<SensitiveFlag[] | null>(null);
+  const [sensitive, setSensitive] = useState<string | null>(null);
+  const [style, setStyle] = useState<string | null>(null);
+  const [handoff, setHandoff] = useState<string | null>(null);
+
+  const flagsValue = flags ?? ((profile?.sensitive_flags ?? []) as SensitiveFlag[]);
+  const sensitiveValue = sensitive ?? profile?.sensitive_notes ?? "";
+  const styleValue = style ?? profile?.teaching_style_notes ?? "";
+  const handoffValue = handoff ?? profile?.handoff_notes ?? "";
+
+  const save = useMutation({
+    mutationFn: () =>
+      saveFn({
+        data: {
+          student_id: studentId,
+          class_id: classId,
+          sensitive_flags: flagsValue,
+          sensitive_notes: sensitiveValue,
+          teaching_style_notes: styleValue,
+          handoff_notes: handoffValue,
+        },
+      }),
+    onSuccess: () => {
+      toast.success("הפרופיל נשמר");
+      qc.invalidateQueries({ queryKey: ["student-profile", studentId] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
+  });
+
+  const toggleFlag = (f: SensitiveFlag) =>
+    setFlags(flagsValue.includes(f) ? flagsValue.filter((x) => x !== f) : [...flagsValue, f]);
+
+  if (isLoading) return <p className="text-sm text-muted-foreground">טוען…</p>;
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardContent className="space-y-3 pt-4">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="font-display text-lg">מידע רגיש</h3>
+            {profile?.updated_at && (
+              <Badge variant="secondary" className="font-mono-tabular">
+                עודכן: {new Date(profile.updated_at).toLocaleDateString("he-IL")}
+              </Badge>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            נראה למורה הכיתה ולמנהל המוסד בלבד. לא נחשף להורים ולא בעמודי הכיתה הציבוריים.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {SENSITIVE_FLAGS.map((f) => {
+              const active = flagsValue.includes(f);
+              return (
+                <Button
+                  key={f}
+                  type="button"
+                  size="sm"
+                  variant={active ? "default" : "outline"}
+                  className="rounded-full"
+                  aria-pressed={active}
+                  onClick={() => toggleFlag(f)}
+                >
+                  {sensitiveFlagLabel[f]}
+                </Button>
+              );
+            })}
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="sp-sensitive">פירוט</Label>
+            <Textarea
+              id="sp-sensitive"
+              rows={4}
+              value={sensitiveValue}
+              onChange={(e) => setSensitive(e.target.value)}
+              placeholder="אבחון, אלרגיה, סייע, מצב משפחתי, תקרית חריגה…"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="space-y-3 pt-4">
+          <h3 className="font-display text-lg">סגנון ויחס נדרש (הנחיות הוראה)</h3>
+          <div className="space-y-1.5">
+            <Label htmlFor="sp-style">איך לגשת, מה עובד, ממה להיזהר</Label>
+            <Textarea
+              id="sp-style"
+              rows={4}
+              value={styleValue}
+              onChange={(e) => setStyle(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="sp-handoff">הדגשים למורה היורש</Label>
+            <Textarea
+              id="sp-handoff"
+              rows={3}
+              value={handoffValue}
+              onChange={(e) => setHandoff(e.target.value)}
+              placeholder="מה חייב לדעת מיד בתחילת השנה"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Button className="rounded-xl" disabled={save.isPending} onClick={() => save.mutate()}>
+        {save.isPending ? "שומר…" : "שמור פרופיל"}
+      </Button>
+    </div>
+  );
+}
+
+function StudentFileSheetInner(props: Props) {
   const { open, onOpenChange, studentName, classId, studentId } = props;
   const [emailOpen, setEmailOpen] = useState(false);
   return (
