@@ -1102,54 +1102,17 @@ function SmartAutoCard({
           </div>
         )}
 
-        <input
-          ref={inputRef}
-          type="file"
+        <SmartUpload
           accept="image/*,application/pdf,.txt,.md,.csv,.xlsx,.xls,.docx"
-          className="hidden"
-          onChange={(e) => { const f = e.target.files?.[0]; if (f) void onFile(f); }}
+          multiple
+          allowFolder
+          busy={busy}
+          onFile={onFile}
+          title="גרור קבצים או לחץ להעלאה"
+          hint="תמונה, PDF, טקסט או Excel — עד 20MB לקובץ. אפשר לבחור כמה קבצים או תיקייה שלמה"
+          busyLabel="ה-AI מזהה ומסווג את הקבצים..."
+          buttonLabel="בחר קבצים להעלאה"
         />
-
-        <div
-          role="button"
-          tabIndex={0}
-          onClick={() => !busy && inputRef.current?.click()}
-          onKeyDown={(e) => { if ((e.key === "Enter" || e.key === " ") && !busy) inputRef.current?.click(); }}
-          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-          onDragLeave={() => setDragOver(false)}
-          onDrop={(e) => {
-            e.preventDefault(); setDragOver(false);
-            const f = e.dataTransfer.files?.[0]; if (f) void onFile(f);
-          }}
-          className={`flex min-h-32 sm:min-h-40 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed p-6 text-center transition ${
-            dragOver ? "border-primary bg-primary/10" : "border-primary/30 hover:border-primary/60 hover:bg-primary/5"
-          } ${busy ? "opacity-60 pointer-events-none" : "cursor-pointer active:scale-[0.99]"}`}
-        >
-          {busy ? (
-            <>
-              <Loader2 className="h-10 w-10 animate-spin text-primary" />
-              <span className="text-sm font-medium">ה-AI מזהה ומסווג את הקובץ...</span>
-              <span className="text-xs text-muted-foreground">זה יכול לקחת 10–30 שניות</span>
-            </>
-          ) : (
-            <>
-              <div className="grid h-14 w-14 place-items-center rounded-full bg-primary/15 text-primary">
-                <ScanLine className="h-7 w-7" />
-              </div>
-              <div className="text-base sm:text-lg font-semibold">גרור קובץ או לחץ להעלאה</div>
-              <div className="text-xs text-muted-foreground">תמונה, PDF, טקסט או Excel — עד 20MB</div>
-            </>
-          )}
-        </div>
-
-        <Button
-          size="lg"
-          className="w-full h-12 text-base font-semibold sm:hidden"
-          disabled={busy}
-          onClick={() => inputRef.current?.click()}
-        >
-          {busy ? <><Loader2 className="ms-1 h-5 w-5 animate-spin" /> מעלה ומנתח...</> : <><Upload className="ms-1 h-5 w-5" /> בחר קובץ להעלאה</>}
-        </Button>
       </CardContent>
     </Card>
   );
