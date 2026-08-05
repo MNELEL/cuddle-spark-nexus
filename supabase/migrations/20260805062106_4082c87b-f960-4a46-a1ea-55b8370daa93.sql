@@ -1,0 +1,1 @@
+REVOKE ALL ON public.student_profiles FROM anon;

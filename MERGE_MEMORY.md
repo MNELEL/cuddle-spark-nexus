@@ -147,6 +147,7 @@ Supabase נפרד (8 טבלאות, RLS), Edge Function analyze-document, Hebrew 
 4. **ממשק** — לשונית רביעית "פרופיל תלמיד" ב-`student-file-sheet.tsx` עם שני אזורים: מידע רגיש (צ'יפים + טקסט חופשי, כולל כיתוב מי רואה) וסגנון/יחס נדרש + הדגשים למורה היורש. תג "עודכן: תאריך". פיצ'ר שוטף — ניתן לעדכן כל השנה.
 5. **חיבור למעבר שנה** — `createClass` מעתיק את `student_profiles` **באותה זרימה** של העתקת התלמידים ו-`student_relations`, עם אותו mapping-לפי-שם, וכשל בהעתקה זורק שגיאה (לא נכשל בשקט). `listRolloverStudents` מחזיר `hasSensitive`/`hasGuidance` ל-badges בתצוגה המקדימה באשף.
 6. **מסמך מסירה PDF** — `src/lib/pdf/handoff-report-pdf.ts`, מסומן "מסמך פנימי חסוי". כפתור באשף מעבר השנה (על הכיתה הקודמת) וכפתור בלשונית התלמידים בדף הכיתה.
+7. **⚠️ הערה לתשומת לב עתידית — default privileges ברמת הסכימה** — בפרויקט קיימת הגדרת `ALTER DEFAULT PRIVILEGES` (בבעלות `postgres` ו-`supabase_admin`) שמעניקה אוטומטית `arwdDxtm` ל-`anon`, `authenticated` ו-`service_role` על **כל טבלה חדשה** ב-`public` — גם אם המיגרציה כתבה `GRANT ... TO authenticated` בלבד. בפועל RLS חוסם את `anon` (אין לו policy), אז זו לא פרצה, אבל זו סטייה מעקרון ה-least privilege. לכן ב-`student_profiles` הורץ במיגרציה נפרדת `REVOKE ALL ON public.student_profiles FROM anon;` (אומת: ה-ACL כולל כיום רק `postgres`/`authenticated`/`service_role`). **לכל טבלה חדשה עם מידע רגיש — להוסיף `REVOKE ALL ... FROM anon;` במיגרציה עצמה.** תיקון גלובלי של ה-default privileges לא בוצע במכוון (משפיע על כל הטבלאות הקיימות, כולל כאלה שכן צריכות קריאת anon כמו הצגת כיתה ציבורית).
 
 ---
 
