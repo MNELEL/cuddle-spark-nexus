@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/select";
 import {
   FileText, Phone, MessageCircle, Mail, Users, Plus, Trash2,
-  Download, Upload, ShieldAlert, ShieldCheck, Calendar,
+  Download, Upload, ShieldAlert, ShieldCheck, Calendar, Lock,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -26,6 +26,10 @@ import {
   listDisciplineEvents, upsertDisciplineEvent, deleteDisciplineEvent,
 } from "@/lib/student-files.functions";
 import { ParentEmailComposer } from "@/components/parent-email-composer";
+import {
+  getStudentProfile, upsertStudentProfile,
+  SENSITIVE_FLAGS, sensitiveFlagLabel, type SensitiveFlag,
+} from "@/lib/student-profiles.functions";
 
 type Props = {
   open: boolean;
@@ -87,6 +91,9 @@ export function StudentFileSheet(props: Props) {
             <TabsTrigger value="discipline" className="flex-1">
               <ShieldAlert className="ms-1 h-4 w-4" /> משמעת
             </TabsTrigger>
+            <TabsTrigger value="profile" className="flex-1">
+              <Lock className="ms-1 h-4 w-4" /> פרופיל תלמיד
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="documents" className="mt-4">
             <DocumentsPanel {...props} />
@@ -96,6 +103,9 @@ export function StudentFileSheet(props: Props) {
           </TabsContent>
           <TabsContent value="discipline" className="mt-4">
             <DisciplinePanel {...props} />
+          </TabsContent>
+          <TabsContent value="profile" className="mt-4">
+            <StudentProfilePanel {...props} />
           </TabsContent>
         </Tabs>
       </SheetContent>
