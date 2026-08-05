@@ -557,25 +557,42 @@ function ResourcesPage() {
 /* -------------------- card -------------------- */
 
 function ResourceCard({
-  resource, onView, onEdit, onVariant,
+  resource, onView, onEdit, onVariant, onToggleFavorite,
 }: {
   resource: ResourceRow;
   onView: () => void;
   onEdit: () => void;
   onVariant: (r: ResourceRow) => void;
+  onToggleFavorite: () => void;
 }) {
   return (
     <div className="group rounded-xl border bg-card p-4 text-right transition hover:border-amber/40 hover:shadow-md">
       <div className="flex items-start justify-between gap-2">
         <div className="line-clamp-2 font-semibold">{resource.title}</div>
-        {resource.ai_generated && (
-          <Sparkles className="h-4 w-4 shrink-0 text-amber" />
-        )}
+        <button
+          type="button"
+          onClick={onToggleFavorite}
+          aria-pressed={resource.is_favorite}
+          aria-label={resource.is_favorite ? `הסר את "${resource.title}" מהמועדפים` : `הוסף את "${resource.title}" למועדפים`}
+          className="shrink-0 rounded-md p-1 transition hover:bg-accent"
+        >
+          <Star className={`h-4 w-4 ${resource.is_favorite ? "fill-amber text-amber" : "text-muted-foreground"}`} />
+        </button>
       </div>
       <div className="mt-2 flex flex-wrap gap-1">
         <Badge variant="outline" className="text-[10px]">
           {RESOURCE_TYPE_LABELS[resource.resource_type] ?? resource.resource_type}
         </Badge>
+        {resource.difficulty && (
+          <Badge variant="outline" className={`text-[10px] ${DIFFICULTY_BADGE[resource.difficulty]}`}>
+            {DIFFICULTY_LABELS[resource.difficulty]}
+          </Badge>
+        )}
+        {resource.ai_generated && (
+          <Badge variant="outline" className="gap-0.5 border-amber/40 bg-amber/10 text-[10px] text-amber-700 dark:text-amber-300">
+            <Sparkles className="h-2.5 w-2.5" /> נוצר ב-AI
+          </Badge>
+        )}
         {resource.subject && <Badge variant="secondary" className="text-[10px]">{resource.subject}</Badge>}
         {resource.grade_level && <Badge variant="secondary" className="text-[10px]">כיתה {resource.grade_level}</Badge>}
       </div>
@@ -592,15 +609,91 @@ function ResourceCard({
         </div>
       )}
       <div className="mt-3 flex gap-2">
-        <Button size="sm" variant="outline" className="flex-1" onClick={onView}>
+        <Button size="sm" variant="outline" className="flex-1" onClick={onView} aria-label={`פתח את "${resource.title}"`}>
           <Eye className="ms-1 h-4 w-4" /> פתח
         </Button>
-        <Button size="sm" variant="ghost" onClick={onEdit}>ערוך</Button>
-        <Button size="sm" variant="ghost" onClick={() => onVariant(resource)} title="צור וריאציה עם AI מפריט זה">
+        <Button size="sm" variant="ghost" onClick={onEdit} aria-label={`ערוך את "${resource.title}"`}>
+          <Pencil className="ms-1 h-4 w-4" /> ערוך
+        </Button>
+        <Button size="sm" variant="ghost" onClick={() => onVariant(resource)}
+          title="צור וריאציה עם AI מפריט זה" aria-label={`צור וריאציה עם AI מ-"${resource.title}"`}>
           <Sparkles className="h-4 w-4 text-amber" />
         </Button>
       </div>
     </div>
+  );
+}
+
+/* -------------------- שאל AI על הספרייה -------------------- */
+
+function AskLibraryPanel() {
+  const ask = useServerFn(askLibrary);
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState<string | null>(null);
+  const [sources, setSources] = useState<{ id: string; title: string }[]>([]);
+
+  const askMut = useMutation({
+    mutationFn: (q: string) => ask({ data: { question: q } }),
+    onSuccess: (res) => {
+      setAnswer(res.answer);
+      setSources(res.sources ?? []);
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "השאילתה נכשלה"),
+  });
+
+  const submit = () => {
+    const q = question.trim();
+    if (q.length < 3) { toast.error("כתוב שאלה מפורטת יותר"); return; }
+    askMut.mutate(q);
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-sm">
+          <MessageCircleQuestion className="h-4 w-4 text-amber" /> שאל AI על הספרייה שלך
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <p className="text-xs text-muted-foreground">
+          ה-AI מחפש בין החומרים שלך ומשיב על בסיסם — למשל: "אילו חידות יש לי על פרשת ויצא?"
+        </p>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Input
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
+            placeholder="מה תרצה לדעת על החומרים שלך?"
+            aria-label="שאלה על הספרייה"
+          />
+          <Button onClick={submit} disabled={askMut.isPending}>
+            {askMut.isPending
+              ? <><Loader2 className="ms-1 h-4 w-4 animate-spin" /> חושב…</>
+              : <><Send className="ms-1 h-4 w-4" /> שאל</>}
+          </Button>
+        </div>
+        <div aria-live="polite">
+          {answer && (
+            <div className="rounded-lg border bg-muted/40 p-3">
+              <div className="whitespace-pre-wrap text-sm">{answer}</div>
+              {sources.length > 0 && (
+                <div className="mt-3 border-t pt-2">
+                  <div className="mb-1 text-xs text-muted-foreground">מבוסס על:</div>
+                  <div className="flex flex-wrap gap-2">
+                    {sources.map((s) => (
+                      <Link key={s.id} to="/resources/$resourceId" params={{ resourceId: s.id }}
+                        className="rounded-full border px-2 py-0.5 text-xs hover:bg-accent">
+                        {s.title}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
