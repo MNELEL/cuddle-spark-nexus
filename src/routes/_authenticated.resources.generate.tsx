@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ChevronRight, Loader2, Sparkles, Save, Copy, FileText, ListChecks } from "lucide-react";
+import { ChevronRight, Loader2, Sparkles, Save, Copy, FileText, ListChecks, GitBranch } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,10 @@ import {
   listResources, upsertResource, DIFFICULTY_LABELS, DIFFICULTIES, type Difficulty,
 } from "@/lib/teaching-resources.functions";
 import { generateResourceSummary, generateResourceTasks } from "@/lib/resource-generators.functions";
+import {
+  saveGeneratorVersion, updateGeneratorVersion, type GeneratorVersion,
+} from "@/lib/generator-versions.functions";
+import { GeneratorHistory } from "@/components/generator-history";
 import {
   STUDENT_LEVELS, STUDENT_LEVEL_LABELS, SUMMARY_SCOPES, SUMMARY_SCOPE_LABELS,
   TASK_KINDS, TASK_KIND_LABELS,
@@ -78,14 +82,24 @@ function useResourceOptions() {
 }
 
 function OutputPanel({
-  text, saving, onSave, saveLabel,
-}: { text: string; saving: boolean; onSave: () => void; saveLabel: string }) {
+  text, onTextChange, saving, onSave, saveLabel,
+  onSaveVersion, savingVersion, versionButtonLabel,
+}: {
+  text: string;
+  onTextChange: (v: string) => void;
+  saving: boolean;
+  onSave: () => void;
+  saveLabel: string;
+  onSaveVersion: () => void;
+  savingVersion: boolean;
+  versionButtonLabel: string;
+}) {
   if (!text) return null;
   return (
     <Card className="mt-4">
       <CardHeader className="flex-row items-center justify-between gap-2 pb-2">
-        <CardTitle className="text-base">התוצר</CardTitle>
-        <div className="flex items-center gap-2">
+        <CardTitle className="text-base">התוצר (ניתן לעריכה)</CardTitle>
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline" size="sm"
             onClick={() => {
@@ -98,6 +112,13 @@ function OutputPanel({
           >
             <Copy className="ms-1 h-4 w-4" aria-hidden /> העתק
           </Button>
+          <Button
+            variant="outline" size="sm" onClick={onSaveVersion} disabled={savingVersion}
+            aria-label={versionButtonLabel}
+          >
+            {savingVersion ? <Loader2 className="ms-1 h-4 w-4 animate-spin" aria-hidden /> : <GitBranch className="ms-1 h-4 w-4" aria-hidden />}
+            {versionButtonLabel}
+          </Button>
           <Button size="sm" onClick={onSave} disabled={saving} aria-label={saveLabel}>
             {saving ? <Loader2 className="ms-1 h-4 w-4 animate-spin" aria-hidden /> : <Save className="ms-1 h-4 w-4" aria-hidden />}
             {saving ? "שומר…" : "שמור בספרייה"}
@@ -105,9 +126,14 @@ function OutputPanel({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="whitespace-pre-wrap rounded-md bg-muted p-4 text-sm leading-relaxed" dir="rtl">
-          {text}
-        </div>
+        <Textarea
+          value={text}
+          onChange={(e) => onTextChange(e.target.value)}
+          dir="rtl"
+          rows={16}
+          className="min-h-64 bg-muted text-sm leading-relaxed"
+          aria-label="עריכת התוצר שהופק"
+        />
       </CardContent>
     </Card>
   );
@@ -117,6 +143,8 @@ function SummaryGenerator() {
   const resources = useResourceOptions();
   const generate = useServerFn(generateResourceSummary);
   const save = useServerFn(upsertResource);
+  const saveVersion = useServerFn(saveGeneratorVersion);
+  const updateVersion = useServerFn(updateGeneratorVersion);
   const qc = useQueryClient();
 
   const [resourceId, setResourceId] = useState("");
@@ -124,12 +152,42 @@ function SummaryGenerator() {
   const [scope, setScope] = useState<SummaryScope>("medium");
   const [notes, setNotes] = useState("");
   const [text, setText] = useState("");
+  const [versionId, setVersionId] = useState<string | null>(null);
 
   const source = resources.find((r) => r.id === resourceId);
 
+  const versionTitle = () =>
+    `סיכום — ${source?.title ?? "חומר"} (${STUDENT_LEVEL_LABELS[level]}, ${SUMMARY_SCOPE_LABELS[scope]})`;
+
+  const storeVersion = useMutation({
+    mutationFn: (body: string) => saveVersion({
+      data: {
+        kind: "summary",
+        title: versionTitle(),
+        body,
+        params: { level, scope, notes, resourceId },
+        resourceId: resourceId || null,
+      },
+    }),
+    onSuccess: (v) => {
+      setVersionId(v.id);
+      qc.invalidateQueries({ queryKey: ["generator-versions", "summary"] });
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "שמירת הגרסה נכשלה"),
+  });
+
+  const updateMut = useMutation({
+    mutationFn: () => updateVersion({ data: { id: versionId!, title: versionTitle(), body: text } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["generator-versions", "summary"] });
+      toast.success("הגרסה עודכנה");
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "עדכון הגרסה נכשל"),
+  });
+
   const genMut = useMutation({
     mutationFn: () => generate({ data: { resourceId, level, scope, notes } }),
-    onSuccess: (r) => setText(r.text),
+    onSuccess: (r) => { setText(r.text); setVersionId(null); storeVersion.mutate(r.text); },
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "ההפקה נכשלה"),
   });
 
@@ -211,8 +269,23 @@ function SummaryGenerator() {
         </CardContent>
       </Card>
       <OutputPanel
-        text={text} saving={saveMut.isPending}
+        text={text} onTextChange={setText} saving={saveMut.isPending}
         onSave={() => saveMut.mutate()} saveLabel="שמור את הסיכום כחומר חדש בספרייה"
+        savingVersion={storeVersion.isPending || updateMut.isPending}
+        versionButtonLabel={versionId ? "עדכן גרסה" : "שמור גרסה"}
+        onSaveVersion={() => (versionId ? updateMut.mutate() : storeVersion.mutate(text))}
+      />
+      <GeneratorHistory
+        kind="summary"
+        activeVersionId={versionId}
+        onRestore={(v: GeneratorVersion) => {
+          setText(v.body);
+          setVersionId(v.id);
+          if (typeof v.params["resourceId"] === "string") setResourceId(v.params["resourceId"]);
+          if (typeof v.params["level"] === "string") setLevel(v.params["level"] as StudentLevel);
+          if (typeof v.params["scope"] === "string") setScope(v.params["scope"] as SummaryScope);
+          if (typeof v.params["notes"] === "string") setNotes(v.params["notes"]);
+        }}
       />
     </>
   );
@@ -222,6 +295,8 @@ function TaskGenerator() {
   const resources = useResourceOptions();
   const generate = useServerFn(generateResourceTasks);
   const save = useServerFn(upsertResource);
+  const saveVersion = useServerFn(saveGeneratorVersion);
+  const updateVersion = useServerFn(updateGeneratorVersion);
   const qc = useQueryClient();
 
   const [mode, setMode] = useState<"library" | "topic">("library");
@@ -233,8 +308,38 @@ function TaskGenerator() {
   const [count, setCount] = useState(8);
   const [notes, setNotes] = useState("");
   const [text, setText] = useState("");
+  const [versionId, setVersionId] = useState<string | null>(null);
 
   const source = resources.find((r) => r.id === resourceId);
+
+  const versionTitle = () =>
+    `${TASK_KIND_LABELS[kind]} — ${mode === "library" ? source?.title ?? "חומר" : topic || "נושא חופשי"}`;
+
+  const storeVersion = useMutation({
+    mutationFn: (body: string) => saveVersion({
+      data: {
+        kind: "tasks",
+        title: versionTitle(),
+        body,
+        params: { mode, resourceId, topic, level, difficulty, kind, count, notes },
+        resourceId: mode === "library" && resourceId ? resourceId : null,
+      },
+    }),
+    onSuccess: (v) => {
+      setVersionId(v.id);
+      qc.invalidateQueries({ queryKey: ["generator-versions", "tasks"] });
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "שמירת הגרסה נכשלה"),
+  });
+
+  const updateMut = useMutation({
+    mutationFn: () => updateVersion({ data: { id: versionId!, title: versionTitle(), body: text } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["generator-versions", "tasks"] });
+      toast.success("הגרסה עודכנה");
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "עדכון הגרסה נכשל"),
+  });
 
   const genMut = useMutation({
     mutationFn: () => generate({
@@ -244,7 +349,7 @@ function TaskGenerator() {
         level, difficulty, kind, count, notes,
       },
     }),
-    onSuccess: (r) => setText(r.text),
+    onSuccess: (r) => { setText(r.text); setVersionId(null); storeVersion.mutate(r.text); },
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "ההפקה נכשלה"),
   });
 
@@ -374,8 +479,27 @@ function TaskGenerator() {
         </CardContent>
       </Card>
       <OutputPanel
-        text={text} saving={saveMut.isPending}
+        text={text} onTextChange={setText} saving={saveMut.isPending}
         onSave={() => saveMut.mutate()} saveLabel="שמור את המשימות כחומר חדש בספרייה"
+        savingVersion={storeVersion.isPending || updateMut.isPending}
+        versionButtonLabel={versionId ? "עדכן גרסה" : "שמור גרסה"}
+        onSaveVersion={() => (versionId ? updateMut.mutate() : storeVersion.mutate(text))}
+      />
+      <GeneratorHistory
+        kind="tasks"
+        activeVersionId={versionId}
+        onRestore={(v: GeneratorVersion) => {
+          setText(v.body);
+          setVersionId(v.id);
+          if (v.params["mode"] === "library" || v.params["mode"] === "topic") setMode(v.params["mode"]);
+          if (typeof v.params["resourceId"] === "string") setResourceId(v.params["resourceId"]);
+          if (typeof v.params["topic"] === "string") setTopic(v.params["topic"]);
+          if (typeof v.params["level"] === "string") setLevel(v.params["level"] as StudentLevel);
+          if (typeof v.params["difficulty"] === "string") setDifficulty(v.params["difficulty"] as Difficulty);
+          if (typeof v.params["kind"] === "string") setKind(v.params["kind"] as TaskKind);
+          if (typeof v.params["count"] === "number") setCount(v.params["count"]);
+          if (typeof v.params["notes"] === "string") setNotes(v.params["notes"]);
+        }}
       />
     </>
   );

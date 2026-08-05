@@ -741,6 +741,50 @@ export type Database = {
         }
         Relationships: []
       }
+      generator_versions: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          kind: string
+          owner_id: string
+          params: Json
+          resource_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body?: string
+          created_at?: string
+          id?: string
+          kind: string
+          owner_id: string
+          params?: Json
+          resource_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          owner_id?: string
+          params?: Json
+          resource_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generator_versions_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "teaching_resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       grade_weights: {
         Row: {
           class_id: string
