@@ -71,9 +71,66 @@ function ClassActionGrid({ classId, onSeating }: { classId: string; onSeating: (
   );
 }
 
-export const Route = createFileRoute("/_authenticated/classes/$classId")({
-
 /* ---------------- Archive / year chain ---------------- */
+
+function ArchivedBanner({ classId }: { classId: string }) {
+  const setStatus = useServerFn(setClassStatus);
+  const qc = useQueryClient();
+  const restoreM = useMutation({
+    mutationFn: () => setStatus({ data: { id: classId, status: "active" as const } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["class", classId] });
+      qc.invalidateQueries({ queryKey: ["classes"] });
+      toast.success("הכיתה הוחזרה לפעילות");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
+  });
+  return (
+    <div className="flex flex-col gap-2 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-sm">
+        כיתה זו בארכיון — הנתונים נשמרים לצפייה בלבד ולא ניתן לערוך אותם.
+      </p>
+      <Button size="sm" variant="outline" className="rounded-xl" disabled={restoreM.isPending} onClick={() => restoreM.mutate()}>
+        החזר לפעילות
+      </Button>
+    </div>
+  );
+}
+
+function YearChain({ classId }: { classId: string }) {
+  const chainFn = useServerFn(getClassChain);
+  const { data } = useQuery({
+    queryKey: ["class-chain", classId],
+    queryFn: () => chainFn({ data: { id: classId } }),
+  });
+  const prev = data?.previous ?? null;
+  const next = data?.next ?? null;
+  if (!prev && !next) return null;
+  return (
+    <div className="flex flex-wrap items-center gap-2 text-sm">
+      {prev && (
+        <Link
+          to="/classes/$classId"
+          params={{ classId: prev.id }}
+          className="rounded-xl border px-3 py-1.5 text-muted-foreground transition-colors hover:text-primary"
+        >
+          שנה קודמת: {prev.name}{prev.academicYear ? ` · ${prev.academicYear}` : ""}
+        </Link>
+      )}
+      {next && (
+        <Link
+          to="/classes/$classId"
+          params={{ classId: next.id }}
+          className="rounded-xl border px-3 py-1.5 text-muted-foreground transition-colors hover:text-primary"
+        >
+          שנה הבאה: {next.name}{next.academicYear ? ` · ${next.academicYear}` : ""}
+        </Link>
+      )}
+    </div>
+  );
+}
+
+export const Route = createFileRoute("/_authenticated/classes/$classId")({
   component: ClassDetail,
   loader: async ({ params }) => {
     const { getClass } = await import("@/lib/classes.functions");
