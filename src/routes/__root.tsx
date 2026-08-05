@@ -13,6 +13,7 @@ import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/hooks/use-theme";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_TITLE } from "@/lib/site-meta";
 
 function NotFoundComponent() {
   return (
@@ -76,21 +77,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "הכיתה שלי · ניהול כיתה חכם לתלמודי תורה וחיידרים" },
-      {
-        name: "description",
-        content:
-          "כלי ניהול כיתה מותאם לתלמודי תורה, חיידרים ובתי ספר — סידור הושבה AI, מעקב פדגוגי, דוחות חכמים, וחוויית 3D עוצרת נשימה.",
-      },
+      { title: SITE_TITLE },
+      { name: "description", content: SITE_DESCRIPTION },
       { name: "google-site-verification", content: "w_7aZfmmsb4xs5uYzAFOwVBFEM3g30NYEkNKX9GrGdo" },
       { property: "og:type", content: "website" },
-      { property: "og:site_name", content: "הכיתה שלי" },
-      { property: "og:title", content: "הכיתה שלי · ניהול כיתה חכם לתלמודי תורה וחיידרים" },
-      {
-        property: "og:description",
-        content:
-          "כלי ניהול כיתה מותאם לתלמודי תורה, חיידרים ובתי ספר — סידור הושבה AI, מעקב פדגוגי, דוחות חכמים, וחוויית 3D עוצרת נשימה.",
-      },
+      { property: "og:site_name", content: SITE_NAME },
+      { property: "og:title", content: SITE_TITLE },
+      { property: "og:description", content: SITE_DESCRIPTION },
       { name: "twitter:card", content: "summary" },
     ],
     links: [
