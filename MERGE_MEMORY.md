@@ -135,6 +135,21 @@ Supabase נפרד (8 טבלאות, RLS), Edge Function analyze-document, Hebrew 
 
 ---
 
+## 7ב. מידע רגיש לתלמיד + דוחות מסירה בין מורים (מומש, אוגוסט 2026)
+
+1. **טבלה** — `public.student_profiles`, extension 1:1 ל-`students` (`student_id` PK), מכילה `class_id`, `sensitive_flags` (אבחון/אלרגיה/לקות למידה/סייע/מצב משפחתי/תקרית חריגה/אחר), `sensitive_notes`, `teaching_style_notes`, `handoff_notes`, `updated_by`, `updated_at`. נבחרה טבלת extension ולא עמודות על `students` כדי לשלוט בהרשאות בנפרד ולא לנפח את הטבלה שנקראת בעשרות מקומות.
+2. **מודל הרשאות (חשוב)** — **מורה בעל הכיתה + מנהל מוסד בלבד. אין ולא תהיה גישה להורים או לציבור.**
+   - `student_profiles_owner_all` — ALL ל-owner הכיתה.
+   - `student_profiles_institution_admin_select` — SELECT בלבד דרך `private.is_institution_admin(auth.uid(), c.institution_id)`. מנהל צופה, לא כותב.
+   - GRANTs ל-`authenticated` ו-`service_role` בלבד — **בלי `anon`**. אין חשיפה בעמודי הכיתה הציבוריים (`/c/$slug`) ולא בטוקני שיתוף להורים.
+   - `trg_student_profiles_not_archived` — כיתה בארכיון לקריאה בלבד, כמו שאר טבלאות הכיתה.
+3. **שרת** — `src/lib/student-profiles.functions.ts`: `getStudentProfile`, `upsertStudentProfile` (upsert יחיד, בלי היסטוריית גרסאות), `listClassProfiles`.
+4. **ממשק** — לשונית רביעית "פרופיל תלמיד" ב-`student-file-sheet.tsx` עם שני אזורים: מידע רגיש (צ'יפים + טקסט חופשי, כולל כיתוב מי רואה) וסגנון/יחס נדרש + הדגשים למורה היורש. תג "עודכן: תאריך". פיצ'ר שוטף — ניתן לעדכן כל השנה.
+5. **חיבור למעבר שנה** — `createClass` מעתיק את `student_profiles` **באותה זרימה** של העתקת התלמידים ו-`student_relations`, עם אותו mapping-לפי-שם, וכשל בהעתקה זורק שגיאה (לא נכשל בשקט). `listRolloverStudents` מחזיר `hasSensitive`/`hasGuidance` ל-badges בתצוגה המקדימה באשף.
+6. **מסמך מסירה PDF** — `src/lib/pdf/handoff-report-pdf.ts`, מסומן "מסמך פנימי חסוי". כפתור באשף מעבר השנה (על הכיתה הקודמת) וכפתור בלשונית התלמידים בדף הכיתה.
+
+---
+
 ## 8. איך להשתמש במסמך הזה מכאן ואילך
 
 1. תמיד לקרוא קוד חי מ-Lovable לפני שמניחים הנחות.

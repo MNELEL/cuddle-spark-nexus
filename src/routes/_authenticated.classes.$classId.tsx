@@ -25,6 +25,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowRight, Heart, Ban, MoveHorizontal, Pencil, Plus, Trash2, FolderOpen, FileText, Sparkles, Trophy, Users, Library, Monitor, Upload, Printer, Copy, Dices, Globe2, Award, ScanText, TrendingUp, CalendarDays, Wand2, MessageSquare, MoreHorizontal, LayoutGrid } from "lucide-react";
 import { toast } from "sonner";
 import { copyList, printList } from "@/lib/print-list";
+import { listClassProfiles } from "@/lib/student-profiles.functions";
+import { buildHandoffPdfBlob, handoffPdfFilename } from "@/lib/pdf/handoff-report-pdf";
+import { downloadPdfBlob } from "@/lib/pdf/pdf-builder";
 import { SeatingGrid } from "@/components/seating-grid";
 import { GroupsTab } from "@/components/groups-tab";
 import { ImportExportBar } from "@/components/import-export";
@@ -280,6 +283,16 @@ function StudentsTab({
   const [editing, setEditing] = useState<Student | null>(null);
   const [fileFor, setFileFor] = useState<Student | null>(null);
   const className = "רשימת תלמידים";
+  const profilesFn = useServerFn(listClassProfiles);
+  const handoffM = useMutation({
+    mutationFn: async () => {
+      const rows = await profilesFn({ data: { classId } });
+      if (rows.length === 0) throw new Error("אין פרופילי תלמידים מתועדים");
+      const blob = await buildHandoffPdfBlob("הכיתה", rows);
+      downloadPdfBlob(blob, handoffPdfFilename("class"));
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
+  });
 
   const doPrint = () => {
     if (!students.length) return toast.error("אין תלמידים");
@@ -296,6 +309,9 @@ function StudentsTab({
       <div className="flex flex-wrap justify-end gap-2">
         <Button variant="outline" size="sm" onClick={doPrint}><Printer className="ms-1 h-4 w-4" /> הדפסה</Button>
         <Button variant="outline" size="sm" onClick={doCopy}><Copy className="ms-1 h-4 w-4" /> העתק שמות</Button>
+        <Button variant="outline" size="sm" disabled={handoffM.isPending} onClick={() => handoffM.mutate()}>
+          <FileText className="ms-1 h-4 w-4" /> {handoffM.isPending ? "מכין…" : "מסמך מסירה PDF"}
+        </Button>
         <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
           <DialogTrigger asChild>
             <Button><Plus className="ms-1 h-4 w-4" /> הוסף תלמיד</Button>

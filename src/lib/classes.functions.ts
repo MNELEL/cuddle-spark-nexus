@@ -152,6 +152,30 @@ export const createClass = createServerFn({ method: "POST" })
           const { error: re } = await supabase.from("student_relations").insert(relRows);
           if (re) console.error("[DB Error]", re);
         }
+
+        // Sensitive info + teaching guidance must travel with the student to the
+        // new class — part of the same rollover flow, failures are surfaced.
+        const { data: profiles, error: pe } = await supabase
+          .from("student_profiles")
+          .select("student_id, sensitive_flags, sensitive_notes, teaching_style_notes, handoff_notes")
+          .eq("class_id", parent.id);
+        if (pe) { console.error("[DB Error]", pe); throw new Error("העברת פרופילי התלמידים נכשלה. נסה שוב."); }
+        const profileRows = (profiles ?? [])
+          .filter((p) => idMap.has(p.student_id))
+          .map((p) => ({
+            student_id: idMap.get(p.student_id)!,
+            class_id: row.id,
+            sensitive_flags: p.sensitive_flags ?? [],
+            sensitive_notes: p.sensitive_notes ?? "",
+            teaching_style_notes: p.teaching_style_notes ?? "",
+            handoff_notes: p.handoff_notes ?? "",
+          }));
+        if (profileRows.length > 0) {
+          const { error: pie } = await supabase
+            .from("student_profiles")
+            .upsert(profileRows, { onConflict: "student_id" });
+          if (pie) { console.error("[DB Error]", pie); throw new Error("העברת פרופילי התלמידים נכשלה. נסה שוב."); }
+        }
       }
     }
 
@@ -205,7 +229,22 @@ export const listRolloverStudents = createServerFn({ method: "POST" })
       .eq("class_id", data.classId)
       .order("name");
     if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
-    return rows ?? [];
+
+    const { data: profiles } = await context.supabase
+      .from("student_profiles")
+      .select("student_id, sensitive_flags, sensitive_notes, teaching_style_notes, handoff_notes")
+      .eq("class_id", data.classId);
+    const byStudent = new Map((profiles ?? []).map((p) => [p.student_id, p]));
+
+    return (rows ?? []).map((s) => {
+      const p = byStudent.get(s.id);
+      return {
+        id: s.id,
+        name: s.name,
+        hasSensitive: !!p && ((p.sensitive_flags?.length ?? 0) > 0 || !!p.sensitive_notes),
+        hasGuidance: !!p && (!!p.teaching_style_notes || !!p.handoff_notes),
+      };
+    });
   });
 
 /** Previous / next classes in the same year-rollover chain. */
