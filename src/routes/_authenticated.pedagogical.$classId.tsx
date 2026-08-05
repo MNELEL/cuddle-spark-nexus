@@ -21,7 +21,7 @@ export const Route = createFileRoute("/_authenticated/pedagogical/$classId")({
   head: () => ({
     meta: [
       { title: "דוח פדגוגי כיתתי · הכיתה שלי" },
-      { name: "description", content: "ניתוח AI של הישגי הכיתה, אקלים ומגמות התנהגות." },
+      { name: "description", content: "ניתוח AI של הישגי הכיתה, אקלים הלימודים ומגמות התנהגות, עם המלצות מעשיות להרב." },
       { name: "robots", content: "noindex" },
     ],
   }),

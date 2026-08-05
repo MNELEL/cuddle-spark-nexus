@@ -17,7 +17,7 @@ export const Route = createFileRoute("/_authenticated/bell-schedule")({
   head: () => ({
     meta: [
       { title: "לוח פעמונים · הכיתה שלי" },
-      { name: "description", content: "מתזמן פעמוני שיעורים אוטומטי עם צלילים מותאמים." },
+      { name: "description", content: "מתזמן פעמוני שיעורים אוטומטי לתלמוד תורה, עם צלילים מותאמים לכל הפסקה ושיעור." },
       { name: "robots", content: "noindex" },
     ],
   }),

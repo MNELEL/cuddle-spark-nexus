@@ -26,7 +26,7 @@ export const Route = createFileRoute("/_authenticated/weekly-schedule/$classId")
   head: () => ({
     meta: [
       { title: "לוח שבועי · הכיתה שלי" },
-      { name: "description", content: "לוח שיעורים שבועי לכיתה, ניתן לעריכה בגרירה." },
+      { name: "description", content: "לוח שיעורים שבועי לכיתה בתלמוד תורה, ניתן לעריכה בגרירה ולשיתוף עם ההורים." },
       { name: "robots", content: "noindex" },
     ],
   }),

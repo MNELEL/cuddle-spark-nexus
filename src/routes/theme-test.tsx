@@ -13,7 +13,7 @@ export const Route = createFileRoute("/theme-test")({
   head: () => ({
     meta: [
       { title: "בדיקת ערכות נושא · הכיתה שלי" },
-      { name: "description", content: "תצוגת בדיקה מהירה של כל ערכות הנושא במערכת." },
+      { name: "description", content: "תצוגת בדיקה מהירה של כל ערכות הנושא והצבעים במערכת הכיתה שלי, למפתחים בלבד." },
       { name: "robots", content: "noindex" },
     ],
   }),
