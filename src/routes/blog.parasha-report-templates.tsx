@@ -1,3 +1,4 @@
+import { blogPostHead } from "@/lib/blog-seo";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { FaqSection, faqJsonLd, type FaqItem } from "@/components/faq-section";
 
@@ -74,32 +75,7 @@ const FAQ: FaqItem[] = [
 
 export const Route = createFileRoute("/blog/parasha-report-templates")({
   component: Article,
-  head: () => ({
-    meta: [
-      { title: TITLE },
-      { name: "description", content: DESCRIPTION },
-      { property: "og:title", content: TITLE },
-      { property: "og:description", content: DESCRIPTION },
-      { property: "og:type", content: "article" },
-      { property: "og:url", content: URL },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-    links: [{ rel: "canonical", href: URL }],
-    scripts: [
-      {
-        type: "application/ld+json",
-        children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "Article",
-          headline: TITLE,
-          description: DESCRIPTION,
-          inLanguage: "he",
-          mainEntityOfPage: URL,
-        }),
-      },
-      faqJsonLd(FAQ),
-    ],
-  }),
+  head: () => blogPostHead("/blog/parasha-report-templates"),
 });
 
 function Article() {
