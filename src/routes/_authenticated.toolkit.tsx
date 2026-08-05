@@ -13,7 +13,7 @@ import {
 import {
   Play, Pause, RotateCcw, Shuffle, ChevronRight, ChevronLeft, Mic, MicOff, Wrench, Settings, BellRing,
   Music, Trophy, Dices, ClipboardList, ScanText, Wand2, Award, TrendingUp, FileText, Palette, Mail,
-  Globe2, CalendarDays, LineChart, BookOpen, Library, MessageSquare,
+  Globe2, CalendarDays, LineChart, BookOpen, Library, MessageSquare, Sparkles,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
