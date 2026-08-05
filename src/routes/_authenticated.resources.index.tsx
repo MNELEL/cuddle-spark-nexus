@@ -825,6 +825,8 @@ function ResourceEditorDialog({
   const [resourceType, setResourceType] = useState<ResourceType>(initial.resource_type ?? "worksheet");
   const [tagsText, setTagsText] = useState((initial.tags ?? []).join(", "));
   const [content, setContent] = useState<ResourceContent>(initial.content ?? {});
+  const [difficulty, setDifficulty] = useState<Difficulty>(initial.difficulty ?? "medium");
+  const [isFavorite, setIsFavorite] = useState<boolean>(initial.is_favorite ?? false);
 
   const saveMut = useMutation({
     mutationFn: () => save({
@@ -833,6 +835,8 @@ function ResourceEditorDialog({
         resource_type: resourceType,
         tags: tagsText.split(",").map((t) => t.trim()).filter(Boolean),
         content,
+        difficulty,
+        is_favorite: isFavorite,
         ai_generated: initial.ai_generated ?? false,
         source_prompt: initial.source_prompt ?? "",
       },
@@ -898,6 +902,26 @@ function ResourceEditorDialog({
                   {GRADE_LEVELS.map((g) => <SelectItem key={g} value={g}>כיתה {g}</SelectItem>)}
                 </SelectContent>
               </Select>
+            </div>
+            <div>
+              <Label>רמת קושי</Label>
+              <Select value={difficulty} onValueChange={(v) => setDifficulty(v as Difficulty)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {DIFFICULTIES.map((d) => <SelectItem key={d} value={d}>{DIFFICULTY_LABELS[d]}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-end">
+              <button
+                type="button"
+                aria-pressed={isFavorite}
+                onClick={() => setIsFavorite((v) => !v)}
+                className={`flex h-9 w-full items-center justify-center gap-2 rounded-md border text-sm transition ${isFavorite ? "border-amber bg-amber/15 font-medium" : "hover:bg-accent"}`}
+              >
+                <Star className={`h-4 w-4 ${isFavorite ? "fill-amber text-amber" : "text-muted-foreground"}`} />
+                {isFavorite ? "במועדפים" : "סמן כמועדף"}
+              </button>
             </div>
           </div>
           <div>
