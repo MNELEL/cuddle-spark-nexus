@@ -76,20 +76,20 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "הכיתה שלי — ניהול כיתה חכם למלמדים" },
+      { title: "הכיתה שלי · ניהול כיתה חכם לתלמודי תורה וחיידרים" },
       {
         name: "description",
         content:
-          "הכיתה שלי — מערכת ניהול כיתה לישיבות, חיידרים ותלמודי תורה: מעקב התקדמות, סידור מושבים, תעודות, מיבצעים ודוחות להורים.",
+          "כלי ניהול כיתה מותאם לתלמודי תורה, חיידרים ובתי ספר — סידור הושבה AI, מעקב פדגוגי, דוחות חכמים, וחוויית 3D עוצרת נשימה.",
       },
       { name: "google-site-verification", content: "w_7aZfmmsb4xs5uYzAFOwVBFEM3g30NYEkNKX9GrGdo" },
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: "הכיתה שלי" },
-      { property: "og:title", content: "הכיתה שלי — ניהול כיתה חכם למלמדים" },
+      { property: "og:title", content: "הכיתה שלי · ניהול כיתה חכם לתלמודי תורה וחיידרים" },
       {
         property: "og:description",
         content:
-          "מערכת ניהול כיתה לישיבות, חיידרים ותלמודי תורה: מעקב התקדמות, סידור מושבים, תעודות ודוחות להורים.",
+          "כלי ניהול כיתה מותאם לתלמודי תורה, חיידרים ובתי ספר — סידור הושבה AI, מעקב פדגוגי, דוחות חכמים, וחוויית 3D עוצרת נשימה.",
       },
       { name: "twitter:card", content: "summary" },
     ],
