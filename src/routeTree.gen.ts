@@ -28,6 +28,7 @@ import { Route as AuthenticatedInstitutionRouteImport } from './routes/_authenti
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated.onboarding'
 import { Route as AuthenticatedQuestionsRouteImport } from './routes/_authenticated.questions'
 import { Route as AuthenticatedSoundBoardRouteImport } from './routes/_authenticated.sound-board'
+import { Route as AuthenticatedSoundTestRouteImport } from './routes/_authenticated.sound-test'
 import { Route as AuthenticatedToolkitRouteImport } from './routes/_authenticated.toolkit'
 import { Route as AuthenticatedUserManagementRouteImport } from './routes/_authenticated.user-management'
 import { Route as BlogIndexRouteImport } from './routes/blog.index'
@@ -171,6 +172,11 @@ const AuthenticatedQuestionsRoute = AuthenticatedQuestionsRouteImport.update({
 const AuthenticatedSoundBoardRoute = AuthenticatedSoundBoardRouteImport.update({
   id: '/sound-board',
   path: '/sound-board',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedSoundTestRoute = AuthenticatedSoundTestRouteImport.update({
+  id: '/sound-test',
+  path: '/sound-test',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedToolkitRoute = AuthenticatedToolkitRouteImport.update({
@@ -467,6 +473,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/questions': typeof AuthenticatedQuestionsRoute
   '/sound-board': typeof AuthenticatedSoundBoardRoute
+  '/sound-test': typeof AuthenticatedSoundTestRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
   '/user-management': typeof AuthenticatedUserManagementRoute
   '/blog/ai-seating-arrangements-guide': typeof BlogAiSeatingArrangementsGuideRoute
@@ -532,6 +539,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/questions': typeof AuthenticatedQuestionsRoute
   '/sound-board': typeof AuthenticatedSoundBoardRoute
+  '/sound-test': typeof AuthenticatedSoundTestRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
   '/user-management': typeof AuthenticatedUserManagementRoute
   '/blog/ai-seating-arrangements-guide': typeof BlogAiSeatingArrangementsGuideRoute
@@ -602,6 +610,7 @@ export interface FileRoutesById {
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/questions': typeof AuthenticatedQuestionsRoute
   '/_authenticated/sound-board': typeof AuthenticatedSoundBoardRoute
+  '/_authenticated/sound-test': typeof AuthenticatedSoundTestRoute
   '/_authenticated/toolkit': typeof AuthenticatedToolkitRoute
   '/_authenticated/user-management': typeof AuthenticatedUserManagementRoute
   '/blog/ai-seating-arrangements-guide': typeof BlogAiSeatingArrangementsGuideRoute
@@ -672,6 +681,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/questions'
     | '/sound-board'
+    | '/sound-test'
     | '/toolkit'
     | '/user-management'
     | '/blog/ai-seating-arrangements-guide'
@@ -737,6 +747,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/questions'
     | '/sound-board'
+    | '/sound-test'
     | '/toolkit'
     | '/user-management'
     | '/blog/ai-seating-arrangements-guide'
@@ -806,6 +817,7 @@ export interface FileRouteTypes {
     | '/_authenticated/onboarding'
     | '/_authenticated/questions'
     | '/_authenticated/sound-board'
+    | '/_authenticated/sound-test'
     | '/_authenticated/toolkit'
     | '/_authenticated/user-management'
     | '/blog/ai-seating-arrangements-guide'
@@ -1007,6 +1019,13 @@ declare module '@tanstack/react-router' {
       path: '/sound-board'
       fullPath: '/sound-board'
       preLoaderRoute: typeof AuthenticatedSoundBoardRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/sound-test': {
+      id: '/_authenticated/sound-test'
+      path: '/sound-test'
+      fullPath: '/sound-test'
+      preLoaderRoute: typeof AuthenticatedSoundTestRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/toolkit': {
@@ -1371,6 +1390,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedQuestionsRoute: typeof AuthenticatedQuestionsRoute
   AuthenticatedSoundBoardRoute: typeof AuthenticatedSoundBoardRoute
+  AuthenticatedSoundTestRoute: typeof AuthenticatedSoundTestRoute
   AuthenticatedToolkitRoute: typeof AuthenticatedToolkitRoute
   AuthenticatedUserManagementRoute: typeof AuthenticatedUserManagementRoute
   AuthenticatedAnalyticsClassIdRoute: typeof AuthenticatedAnalyticsClassIdRoute
@@ -1406,6 +1426,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedQuestionsRoute: AuthenticatedQuestionsRoute,
   AuthenticatedSoundBoardRoute: AuthenticatedSoundBoardRoute,
+  AuthenticatedSoundTestRoute: AuthenticatedSoundTestRoute,
   AuthenticatedToolkitRoute: AuthenticatedToolkitRoute,
   AuthenticatedUserManagementRoute: AuthenticatedUserManagementRoute,
   AuthenticatedAnalyticsClassIdRoute: AuthenticatedAnalyticsClassIdRoute,
@@ -1548,3 +1569,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
