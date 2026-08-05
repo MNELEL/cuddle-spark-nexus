@@ -72,7 +72,7 @@ function GamificationPage() {
 
       <div className="rounded-2xl border bg-card bg-mesh p-6 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="rounded-xl bg-amber/15 p-3"><Trophy className="h-6 w-6 text-amber" /></div>
+          <div className="rounded-xl bg-amber/15 p-3"><Trophy className="h-6 w-6 text-amber" aria-hidden /></div>
           <div>
             <h1 className="font-display text-3xl font-bold tracking-tight">גיימיפיקציה — {cls?.name ?? "..."}</h1>
             <p className="text-sm text-muted-foreground">קמפיינים, נקודות, פרסים ולוח הישגים לתלמידי הכיתה.</p>
@@ -240,21 +240,21 @@ function CampaignCard({
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-amber" />
+              <Sparkles className="h-4 w-4 text-amber" aria-hidden />
               <h3 className="font-display text-lg font-bold truncate">{c.name}</h3>
               {!c.active && <Badge variant="secondary">לא פעיל</Badge>}
             </div>
             {c.description && <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{c.description}</p>}
           </div>
           <div className="flex gap-1">
-            <Button aria-label="ערוך פריט" variant="ghost" size="icon" onClick={onEdit}><Pencil className="h-4 w-4" /></Button>
-            <Button aria-label="מחק פריט" variant="ghost" size="icon" className="text-destructive" onClick={onDelete}><Trash2 className="h-4 w-4" /></Button>
+            <Button aria-label={`ערוך את הקמפיין ${c.name}`} variant="ghost" size="icon" className="min-h-11 min-w-11" onClick={onEdit}><Pencil className="h-4 w-4" aria-hidden /></Button>
+            <Button aria-label={`מחק את הקמפיין ${c.name}`} variant="ghost" size="icon" className="min-h-11 min-w-11 text-destructive" onClick={onDelete}><Trash2 className="h-4 w-4" aria-hidden /></Button>
           </div>
         </div>
 
         {c.prize && (
           <div className="flex items-center gap-2 rounded-lg bg-amber/10 px-3 py-2 text-sm">
-            <Gift className="h-4 w-4 text-amber" />
+            <Gift className="h-4 w-4 text-amber" aria-hidden />
             <span className="font-medium">פרס:</span> <span className="truncate">{c.prize}</span>
           </div>
         )}
@@ -388,7 +388,7 @@ function RewardsTab({ classId }: { classId: string }) {
               <CardContent className="flex items-center justify-between py-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <Gift className="h-4 w-4 text-amber" />
+                    <Gift className="h-4 w-4 text-amber" aria-hidden />
                     <span className="font-semibold">{r.name}</span>
                     <Badge className="bg-amber text-amber-foreground">{r.points_cost} נק'</Badge>
                     {r.stock !== null && <Badge variant="secondary">מלאי: {r.stock}</Badge>}
@@ -396,8 +396,8 @@ function RewardsTab({ classId }: { classId: string }) {
                   {r.description && <p className="mt-1 text-xs text-muted-foreground line-clamp-1">{r.description}</p>}
                 </div>
                 <div className="flex gap-1">
-                  <Button aria-label="ערוך תגמול" variant="ghost" size="icon" onClick={() => { setEditing(r); setOpen(true); }}><Pencil className="h-4 w-4" /></Button>
-                  <Button aria-label="מחק תגמול" variant="ghost" size="icon" className="text-destructive" onClick={() => removeM.mutate(r.id)}><Trash2 className="h-4 w-4" /></Button>
+                  <Button aria-label={`ערוך את הפרס ${r.name}`} variant="ghost" size="icon" className="min-h-11 min-w-11" onClick={() => { setEditing(r); setOpen(true); }}><Pencil className="h-4 w-4" aria-hidden /></Button>
+                  <Button aria-label={`מחק את הפרס ${r.name}`} variant="ghost" size="icon" className="min-h-11 min-w-11 text-destructive" onClick={() => removeM.mutate(r.id)}><Trash2 className="h-4 w-4" aria-hidden /></Button>
                 </div>
               </CardContent>
             </Card>
@@ -561,8 +561,12 @@ function RedemptionsTab({ classId }: { classId: string }) {
                   <div className="font-medium">{nameOf(r.student_id)} · {r.prize_name}</div>
                   <div className="text-xs text-muted-foreground font-mono-tabular">{r.date} · {r.points_spent} נק'</div>
                 </div>
-                <Button aria-label="מחק רשומה" variant="ghost" size="icon" className="text-destructive" onClick={() => removeM.mutate(r.id)}>
-                  <Trash2 className="h-4 w-4" />
+                <Button
+                  aria-label={`מחק את המימוש של ${nameOf(r.student_id)} — ${r.prize_name}`}
+                  variant="ghost" size="icon" className="min-h-11 min-w-11 text-destructive"
+                  onClick={() => removeM.mutate(r.id)}
+                >
+                  <Trash2 className="h-4 w-4" aria-hidden />
                 </Button>
               </CardContent>
             </Card>
