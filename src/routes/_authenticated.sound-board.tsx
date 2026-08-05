@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -47,11 +47,18 @@ function SoundBoardPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">ניהול סאונד ואפקטים</h1>
-        <p className="text-sm text-muted-foreground">
-          ספריית צלילים לכיתה, ומיפוי אירועים באפליקציה לצליל — כך שכל הענקת נקודות, תג או סיום טיימר יישמעו כמו שהרב בחר.
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">ניהול סאונד ואפקטים</h1>
+          <p className="text-sm text-muted-foreground">
+            ספריית צלילים לכיתה, ומיפוי אירועים באפליקציה לצליל — כך שכל הענקת נקודות, תג או סיום טיימר יישמעו כמו שהרב בחר.
+          </p>
+        </div>
+        <Button asChild variant="outline">
+          <Link to="/sound-test">
+            <Play className="ms-1 h-4 w-4" aria-hidden /> מסך בדיקת אירועים
+          </Link>
+        </Button>
       </div>
 
       <Card>
