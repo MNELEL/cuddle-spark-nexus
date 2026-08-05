@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "check:tanstack": "node scripts/check-tanstack-versions.mjs"
+    "check:tanstack": "node scripts/check-tanstack-versions.mjs",
+    "check:seo": "node scripts/check-seo-meta.mjs"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.47.0",
