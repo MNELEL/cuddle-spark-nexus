@@ -3,8 +3,17 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { recomputeStyleProfileFor, buildStyleContextString } from "./teacher-style.functions";
 import { callLovableAI } from "./ai-gateway.server";
+import { embedText } from "./embeddings.server";
 
 const uuid = z.string().uuid();
+
+export const DIFFICULTIES = ["easy", "medium", "hard"] as const;
+export type Difficulty = (typeof DIFFICULTIES)[number];
+export const DIFFICULTY_LABELS: Record<Difficulty, string> = {
+  easy: "קל",
+  medium: "בינוני",
+  hard: "מאתגר",
+};
 
 export const RESOURCE_TYPES = [
   "worksheet", "question_bank", "riddle", "story", "song",
@@ -50,6 +59,8 @@ export type ResourceRow = {
   tags: string[];
   ai_generated: boolean;
   source_prompt: string;
+  is_favorite: boolean;
+  difficulty: Difficulty;
   created_at: string;
   updated_at: string;
 };
@@ -66,6 +77,8 @@ export const listResources = createServerFn({ method: "POST" })
       grade_level: z.string().max(40).optional(),
       tag: z.string().max(40).optional(),
       collection_id: uuid.optional(),
+      favorites_only: z.boolean().optional(),
+      difficulty: z.enum(DIFFICULTIES).optional(),
     }).parse(d),
   )
   .handler(async ({ data, context }): Promise<ResourceRow[]> => {
@@ -84,6 +97,8 @@ export const listResources = createServerFn({ method: "POST" })
     if (data.subject) q = q.eq("subject", data.subject);
     if (data.grade_level) q = q.eq("grade_level", data.grade_level);
     if (data.tag) q = q.contains("tags", [data.tag]);
+    if (data.favorites_only) q = q.eq("is_favorite", true);
+    if (data.difficulty) q = q.eq("difficulty", data.difficulty);
     if (ids) q = q.in("id", ids);
     if (data.search) {
       const s = data.search.replace(/[%,]/g, " ");
@@ -192,6 +207,8 @@ export const upsertResource = createServerFn({ method: "POST" })
     mime_type: z.string().max(120).nullable().optional(),
     ai_generated: z.boolean().default(false),
     source_prompt: z.string().max(4000).default(""),
+    is_favorite: z.boolean().optional(),
+    difficulty: z.enum(DIFFICULTIES).default("medium"),
   }).parse(d))
   .handler(async ({ data, context }) => {
     if (data.id) {
@@ -207,6 +224,18 @@ export const upsertResource = createServerFn({ method: "POST" })
     if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     void recomputeStyleProfileFor(context.supabase, context.userId).catch((e) => console.error("[Style trigger]", e));
     return { id: ins!.id };
+  });
+
+export const toggleResourceFavorite = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ id: uuid, is_favorite: z.boolean() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("teaching_resources")
+      .update({ is_favorite: data.is_favorite } as never)
+      .eq("id", data.id);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    return { ok: true };
   });
 
 export const deleteResource = createServerFn({ method: "POST" })
