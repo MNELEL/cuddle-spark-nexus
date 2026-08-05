@@ -94,6 +94,16 @@ const DIFFICULTY_BADGE: Record<Difficulty, string> = {
   hard: "border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-300",
 };
 
+/** מונע פוקוס אוטומטי בשדה הראשון, אך ממקד את מסגרת הדיאלוג כדי שהמקלדת תמשיך משם באופן עקבי */
+function focusDialogShell(e: Event) {
+  e.preventDefault();
+  const el = e.currentTarget as HTMLElement | null;
+  if (el) {
+    el.setAttribute("tabindex", "-1");
+    el.focus();
+  }
+}
+
 function ResourcesPage() {
   const qc = useQueryClient();
   const list = useServerFn(listResources);
@@ -469,7 +479,8 @@ function ResourcesPage() {
                         key={c.id}
                         type="button"
                         aria-pressed={on}
-                        className={`flex w-full items-center gap-2 rounded px-2 py-1 text-right text-sm hover:bg-accent ${on ? "bg-accent font-medium" : ""}`}
+                        aria-label={on ? `הסר את האוסף ${c.name} מהסינון` : `סנן לפי האוסף ${c.name}`}
+                        className={`flex w-full items-center gap-2 rounded px-2 py-1 text-right text-sm hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${on ? "bg-accent font-medium" : ""}`}
                         onClick={() =>
                           patch({
                             collectionIds: on
@@ -781,7 +792,7 @@ function ResourceViewerDialog({
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent
         className="max-w-3xl max-h-[90vh] overflow-y-auto"
-        onOpenAutoFocus={(e) => e.preventDefault()}
+        onOpenAutoFocus={focusDialogShell}
       >
         <DialogHeader>
           <DialogTitle className="text-right">{resource.title}</DialogTitle>
@@ -888,7 +899,7 @@ function ResourceEditorDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" onOpenAutoFocus={(e) => e.preventDefault()}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" onOpenAutoFocus={focusDialogShell}>
         <DialogHeader>
           <DialogTitle>{initial.id ? "עריכת חומר" : "חומר חדש"}</DialogTitle>
         </DialogHeader>
@@ -973,9 +984,11 @@ function ResourceEditorDialog({
                 {(content.questions ?? []).map((q, i) => (
                   <div key={i} className="rounded border bg-card p-2">
                     <Input className="!font-medium border-0 px-0 focus-visible:ring-0"
+                      aria-label={`שאלה ${i + 1}`}
                       placeholder="שאלה…" value={q.q}
                       onChange={(e) => updateQ(i, { q: e.target.value })} />
                     <Input className="!text-sm !text-muted-foreground border-0 px-0 focus-visible:ring-0"
+                      aria-label={`תשובה לשאלה ${i + 1}`}
                       placeholder="תשובה…" value={q.a ?? ""}
                       onChange={(e) => updateQ(i, { a: e.target.value })} />
                   </div>
@@ -1077,7 +1090,7 @@ function AIGeneratorDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-xl" onOpenAutoFocus={(e) => e.preventDefault()}>
+      <DialogContent className="max-w-xl" onOpenAutoFocus={focusDialogShell}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-amber" />
@@ -1172,13 +1185,13 @@ function CollectionsDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent onOpenAutoFocus={(e) => e.preventDefault()}>
+      <DialogContent onOpenAutoFocus={focusDialogShell}>
         <DialogHeader><DialogTitle>אוספים</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <p className="text-xs text-muted-foreground">בחר אוספים כדי לסנן את רשימת החומרים.</p>
           <div className="flex gap-2">
-            <Input autoFocus={false} value={name} onChange={(e) => setName(e.target.value)} placeholder="שם האוסף…" />
-            <Input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="w-16 p-1" />
+            <Input autoFocus={false} value={name} onChange={(e) => setName(e.target.value)} placeholder="שם האוסף…" aria-label="שם אוסף חדש" />
+            <Input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="w-16 p-1" aria-label="צבע האוסף החדש" />
             <Button disabled={!name.trim() || create.isPending} onClick={() => create.mutate()}>הוסף</Button>
           </div>
           {collections.length === 0 && (
@@ -1194,14 +1207,15 @@ function CollectionsDialog({
               <div className="h-6 w-6 rounded" style={{ background: c.color }} />
               <button
                 type="button"
-                className="flex-1 text-right font-medium"
+                className="flex-1 rounded px-1 py-1 text-right font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 aria-pressed={selectedIds.includes(c.id)}
+                aria-label={selectedIds.includes(c.id) ? `בטל סינון לפי האוסף ${c.name}` : `סנן לפי האוסף ${c.name}`}
                 onClick={() => onToggleSelected(c.id)}
               >
                 {c.name}
                 {selectedIds.includes(c.id) && <span className="ms-2 text-xs text-amber">מסונן</span>}
               </button>
-              <Button variant="ghost" size="icon" className="text-destructive" aria-label={`מחק את ${c.name}`}
+              <Button variant="ghost" size="icon" className="min-h-9 min-w-9 text-destructive" aria-label={`מחק את האוסף ${c.name}`}
                 onClick={() => remove.mutate(c.id)}>
                 <Trash2 className="h-4 w-4" />
               </Button>
