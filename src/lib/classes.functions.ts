@@ -41,15 +41,205 @@ export const listClasses = createServerFn({ method: "GET" })
 
 export const createClass = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ name: z.string().min(1).max(100) }).parse(d))
+  .inputValidator((d) =>
+    z.object({
+      name: z.string().min(1).max(100),
+      academic_year: z.string().trim().max(30).optional(),
+      parent_class_id: z.string().uuid().nullable().optional(),
+      copy_student_ids: z.array(z.string().uuid()).max(300).optional(),
+      archive_parent: z.boolean().optional(),
+    }).parse(d),
+  )
   .handler(async ({ data, context }) => {
-    const { data: row, error } = await context.supabase
+    const { supabase, userId } = context;
+    const institutionId = await resolveInstitutionId(supabase, userId);
+
+    let parent: {
+      id: string; grid_cols: number; grid_rows: number;
+      hidden_seats: unknown; room_objects: unknown;
+    } | null = null;
+    if (data.parent_class_id) {
+      const { data: p, error: pe } = await supabase
+        .from("classes")
+        .select("id, grid_cols, grid_rows, hidden_seats, room_objects")
+        .eq("id", data.parent_class_id)
+        .maybeSingle();
+      if (pe) { console.error("[DB Error]", pe); throw new Error("הפעולה נכשלה. נסה שוב."); }
+      if (!p) throw new Error("הכיתה הקודמת לא נמצאה");
+      parent = p as typeof parent;
+    }
+
+    const { data: row, error } = await supabase
       .from("classes")
-      .insert({ name: data.name, owner_id: context.userId })
+      .insert({
+        name: data.name,
+        owner_id: userId,
+        academic_year: data.academic_year?.trim() || defaultAcademicYear(),
+        institution_id: institutionId,
+        parent_class_id: data.parent_class_id ?? null,
+        ...(parent
+          ? {
+              grid_cols: parent.grid_cols,
+              grid_rows: parent.grid_rows,
+              hidden_seats: parent.hidden_seats as never,
+              room_objects: parent.room_objects as never,
+            }
+          : {}),
+      })
       .select()
       .single();
     if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
-    return row;
+
+    let copiedStudents = 0;
+    if (parent && data.copy_student_ids && data.copy_student_ids.length > 0) {
+      const { data: src, error: se } = await supabase
+        .from("students")
+        .select("*")
+        .eq("class_id", parent.id)
+        .in("id", data.copy_student_ids);
+      if (se) { console.error("[DB Error]", se); throw new Error("הפעולה נכשלה. נסה שוב."); }
+
+      const rows = (src ?? []).map((s) => ({
+        class_id: row.id,
+        name: s.name,
+        gender: s.gender,
+        height: s.height,
+        row_pref: s.row_pref,
+        corner_pref: s.corner_pref,
+        national_id: s.national_id,
+        birth_date: s.birth_date,
+        address: s.address,
+        father_name: s.father_name,
+        father_id: s.father_id,
+        father_phone: s.father_phone,
+        mother_name: s.mother_name,
+        mother_id: s.mother_id,
+        mother_phone: s.mother_phone,
+        has_special_accommodation: s.has_special_accommodation,
+        accommodation_note: s.accommodation_note,
+      }));
+
+      if (rows.length > 0) {
+        const { data: inserted, error: ie } = await supabase
+          .from("students")
+          .insert(rows)
+          .select("id, name");
+        if (ie) { console.error("[DB Error]", ie); throw new Error("העברת התלמידים נכשלה. נסה שוב."); }
+        copiedStudents = inserted?.length ?? 0;
+
+        const byName = new Map<string, string>();
+        for (const r of inserted ?? []) if (!byName.has(r.name)) byName.set(r.name, r.id);
+        const idMap = new Map<string, string>();
+        for (const s of src ?? []) {
+          const nid = byName.get(s.name);
+          if (nid) idMap.set(s.id, nid);
+        }
+
+        const { data: rels } = await supabase
+          .from("student_relations")
+          .select("student_a, student_b, kind")
+          .eq("class_id", parent.id);
+        const relRows = (rels ?? [])
+          .filter((r) => idMap.has(r.student_a) && idMap.has(r.student_b))
+          .map((r) => ({
+            class_id: row.id,
+            student_a: idMap.get(r.student_a)!,
+            student_b: idMap.get(r.student_b)!,
+            kind: r.kind,
+          }));
+        if (relRows.length > 0) {
+          const { error: re } = await supabase.from("student_relations").insert(relRows);
+          if (re) console.error("[DB Error]", re);
+        }
+      }
+    }
+
+    if (parent && data.archive_parent) {
+      const { error: ae } = await supabase
+        .from("classes")
+        .update({ status: "archived", updated_at: new Date().toISOString() })
+        .eq("id", parent.id);
+      if (ae) console.error("[DB Error]", ae);
+    }
+
+    return { ...row, copiedStudents };
+  });
+
+/** Suggests a previous-year class to link to, by consecutive Hebrew grade letters. */
+export const suggestParentClass = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ name: z.string().min(1).max(100) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase
+      .from("classes")
+      .select("id, name, academic_year, status, created_at")
+      .eq("owner_id", context.userId)
+      .order("created_at", { ascending: false });
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+
+    const candidates = (rows ?? []).map((c) => ({
+      id: c.id,
+      name: c.name,
+      academicYear: c.academic_year,
+      status: c.status,
+    }));
+
+    const prevName = previousGradeName(data.name.trim());
+    const norm = (s: string) => s.replace(/\s+/g, " ").trim().toLowerCase();
+    const suggested = prevName
+      ? candidates.find((c) => norm(c.name) === norm(prevName)) ?? null
+      : null;
+
+    return { suggested, suggestedName: prevName, candidates };
+  });
+
+/** Students of a source class, for the rollover copy step. */
+export const listRolloverStudents = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ classId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase
+      .from("students")
+      .select("id, name")
+      .eq("class_id", data.classId)
+      .order("name");
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    return rows ?? [];
+  });
+
+/** Previous / next classes in the same year-rollover chain. */
+export const getClassChain = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ classId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: cls, error } = await supabase
+      .from("classes")
+      .select("id, parent_class_id")
+      .eq("id", data.classId)
+      .maybeSingle();
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+
+    let previous: { id: string; name: string; academicYear: string | null } | null = null;
+    if (cls?.parent_class_id) {
+      const { data: p } = await supabase
+        .from("classes")
+        .select("id, name, academic_year")
+        .eq("id", cls.parent_class_id)
+        .maybeSingle();
+      if (p) previous = { id: p.id, name: p.name, academicYear: p.academic_year };
+    }
+
+    const { data: kids } = await supabase
+      .from("classes")
+      .select("id, name, academic_year")
+      .eq("parent_class_id", data.classId)
+      .order("created_at", { ascending: false });
+
+    return {
+      previous,
+      next: (kids ?? []).map((k) => ({ id: k.id, name: k.name, academicYear: k.academic_year })),
+    };
   });
 
 export const getClass = createServerFn({ method: "POST" })
