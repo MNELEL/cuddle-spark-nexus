@@ -11,13 +11,11 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  Play, Pause, RotateCcw, Shuffle, ChevronRight, ChevronLeft, Mic, MicOff, Wrench, ShieldCheck, BellRing,
+  Play, Pause, RotateCcw, Shuffle, ChevronRight, ChevronLeft, Mic, MicOff, Wrench, Settings, BellRing,
   Music, Trophy, Dices, ClipboardList, ScanText, Wand2, Award, TrendingUp, FileText, Palette, Mail,
   Globe2, CalendarDays, LineChart, BookOpen, Library, MessageSquare,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { SecuritySettings } from "@/components/security-settings";
-import { ReminderPreferencesCard } from "@/components/reminder-preferences-card";
 
 export const Route = createFileRoute("/_authenticated/toolkit")({
   component: ToolkitPage,
@@ -47,8 +45,7 @@ function ToolkitPage() {
           <TabsTrigger value="motivation"><Trophy className="ms-1 h-4 w-4" /> מוטיבציה ופרסים</TabsTrigger>
           <TabsTrigger value="assess"><ClipboardList className="ms-1 h-4 w-4" /> הערכה ומבחנים</TabsTrigger>
           <TabsTrigger value="docs"><FileText className="ms-1 h-4 w-4" /> מסמכים ותבניות</TabsTrigger>
-          <TabsTrigger value="reminders"><BellRing className="ms-1 h-4 w-4" /> תזכורות</TabsTrigger>
-          <TabsTrigger value="security"><ShieldCheck className="ms-1 h-4 w-4" /> אבטחה</TabsTrigger>
+          <TabsTrigger value="settings"><Settings className="ms-1 h-4 w-4" /> הגדרות</TabsTrigger>
         </TabsList>
         <TabsContent value="tools" className="mt-4">
           <div className="grid gap-4 md:grid-cols-2">
@@ -124,13 +121,12 @@ function ToolkitPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="reminders" className="mt-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <ReminderPreferencesCard />
-          </div>
-        </TabsContent>
-        <TabsContent value="security" className="mt-4">
-          <SecuritySettings />
+        <TabsContent value="settings" className="mt-4">
+          <ToolLinkGrid
+            items={[
+              { to: "/settings", icon: Settings, label: "מרכז ההגדרות", desc: "אבטחה וקוד PIN, העדפות תזכורות, מיתוג המוסד ומצב המנוי" },
+            ]}
+          />
         </TabsContent>
       </Tabs>
     </div>
