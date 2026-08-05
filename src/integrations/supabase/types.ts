@@ -128,6 +128,56 @@ export type Database = {
         }
         Relationships: []
       }
+      badges: {
+        Row: {
+          active: boolean
+          class_id: string
+          color: string
+          created_at: string
+          criteria: string
+          description: string
+          icon: string
+          id: string
+          name: string
+          points_reward: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          class_id: string
+          color?: string
+          created_at?: string
+          criteria?: string
+          description?: string
+          icon?: string
+          id?: string
+          name: string
+          points_reward?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          class_id?: string
+          color?: string
+          created_at?: string
+          criteria?: string
+          description?: string
+          icon?: string
+          id?: string
+          name?: string
+          points_reward?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "badges_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       behavior_points: {
         Row: {
           category: string
@@ -1115,6 +1165,7 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          onboarding_state: Json
           trial_ends_at: string | null
           trial_started_at: string | null
         }
@@ -1122,6 +1173,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id: string
+          onboarding_state?: Json
           trial_ends_at?: string | null
           trial_started_at?: string | null
         }
@@ -1129,6 +1181,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          onboarding_state?: Json
           trial_ends_at?: string | null
           trial_started_at?: string | null
         }
@@ -1396,6 +1449,91 @@ export type Database = {
             columns: ["reminder_id"]
             isOneToOne: true
             referencedRelation: "reminders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sound_preferences: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          event_key: string
+          id: string
+          owner_id: string
+          sound_id: string
+          updated_at: string
+          volume: number
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          event_key: string
+          id?: string
+          owner_id: string
+          sound_id: string
+          updated_at?: string
+          volume?: number
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          event_key?: string
+          id?: string
+          owner_id?: string
+          sound_id?: string
+          updated_at?: string
+          volume?: number
+        }
+        Relationships: []
+      }
+      student_badges: {
+        Row: {
+          awarded_at: string
+          badge_id: string
+          class_id: string
+          created_at: string
+          id: string
+          note: string
+          student_id: string
+        }
+        Insert: {
+          awarded_at?: string
+          badge_id: string
+          class_id: string
+          created_at?: string
+          id?: string
+          note?: string
+          student_id: string
+        }
+        Update: {
+          awarded_at?: string
+          badge_id?: string
+          class_id?: string
+          created_at?: string
+          id?: string
+          note?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_badges_badge_id_fkey"
+            columns: ["badge_id"]
+            isOneToOne: false
+            referencedRelation: "badges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_badges_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_badges_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
             referencedColumns: ["id"]
           },
         ]
