@@ -252,12 +252,21 @@ function GroupMakerPage() {
         </section>
 
         <div className="mt-16 text-center">
-          <p className="text-muted-foreground mb-4">מחפשים ניהול כיתה מלא עם AI?</p>
-          <Link to="/">
-            <Button size="lg" className="gap-2">
-              גלו את הכיתה שלי <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
+          <p className="text-muted-foreground mb-4">
+            מחפשים ניהול כיתה מלא עם AI? הרשמה במייל פותחת חודש ניסיון בחינם.
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <Link to="/login">
+              <Button size="lg" className="gap-2">
+                הרשמה חינמית · חודש ניסיון <ArrowLeft className="h-4 w-4" />
+              </Button>
+            </Link>
+            <Link to="/">
+              <Button size="lg" variant="outline" className="gap-2">
+                גלו את הכיתה שלי
+              </Button>
+            </Link>
+          </div>
         </div>
       </main>
     </div>
