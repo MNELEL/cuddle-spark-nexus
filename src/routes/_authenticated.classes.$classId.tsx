@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { getClass } from "@/lib/classes.functions";
+import { getClass, getClassChain, setClassStatus } from "@/lib/classes.functions";
 import {
   listStudents, upsertStudent, deleteStudent,
   listRelations, createRelation, deleteRelation,
@@ -117,6 +117,8 @@ function ClassDetail() {
   const { data: students = [] } = useQuery({ queryKey: ["students", classId], queryFn: () => listS({ data: { classId } }) });
   const { data: relations = [] } = useQuery({ queryKey: ["relations", classId], queryFn: () => listR({ data: { classId } }) });
   const { data: scoreInputs } = useQuery({ queryKey: ["score-inputs", classId], queryFn: () => listInputs({ data: { classId } }) });
+  const isArchived = (cls as { status?: string } | undefined)?.status === "archived";
+  const academicYear = (cls as { academic_year?: string | null } | undefined)?.academic_year ?? null;
 
   return (
     <div className="mx-auto max-w-6xl space-y-5">
@@ -125,7 +127,7 @@ function ClassDetail() {
           <ArrowRight className="h-4 w-4" /> חזרה לכיתות
         </Link>
       </div>
-      <ClassActionGrid classId={classId} onSeating={() => setTab("seating")} />
+      {isArchived ? <ArchivedBanner classId={classId} /> : <ClassActionGrid classId={classId} onSeating={() => setTab("seating")} />}
       <div className="relative overflow-hidden rounded-2xl border bg-primary p-6 text-primary-foreground shadow-sm">
         <div className="pointer-events-none absolute inset-0 opacity-20">
           <SeatFillGrid rows={4} cols={12} className="h-full" />
@@ -140,7 +142,13 @@ function ClassDetail() {
             </div>
           ) : (
             <>
-              <h1 className="font-display text-3xl font-bold tracking-tight">{cls?.name ?? "כיתה"}</h1>
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="font-display text-3xl font-bold tracking-tight">{cls?.name ?? "כיתה"}</h1>
+                {academicYear && (
+                  <Badge variant="secondary" className="font-mono-tabular">{academicYear}</Badge>
+                )}
+                {isArchived && <Badge variant="secondary">בארכיון · לצפייה בלבד</Badge>}
+              </div>
               <p className="mt-1 text-sm text-primary-foreground/85 font-mono-tabular">
                 {students.length} תלמידים · {relations.length} אילוצים
               </p>
@@ -148,6 +156,8 @@ function ClassDetail() {
           )}
         </div>
       </div>
+
+      <YearChain classId={classId} />
 
       <Tabs value={tab} onValueChange={setTab} dir="rtl">
         <TabsList className="flex-wrap h-auto">
