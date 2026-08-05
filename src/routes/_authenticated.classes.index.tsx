@@ -1,15 +1,16 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
-import { listClasses, createClass, deleteClass, setClassStatus } from "@/lib/classes.functions";
+import { listClasses, deleteClass, setClassStatus } from "@/lib/classes.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Trash2, ChevronLeft, Search, Archive, ArchiveRestore, X } from "lucide-react";
+import { Trash2, ChevronLeft, Search, Archive, ArchiveRestore, X } from "lucide-react";
 import { SeatFillGrid } from "@/components/seat-fill-grid";
+import { NewClassWizard } from "@/components/new-class-wizard";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import {
@@ -35,12 +36,9 @@ export const Route = createFileRoute("/_authenticated/classes/")({
 
 function ClassesPage() {
   const list = useServerFn(listClasses);
-  const create = useServerFn(createClass);
   const remove = useServerFn(deleteClass);
   const setStatus = useServerFn(setClassStatus);
   const qc = useQueryClient();
-  const navigate = useNavigate();
-  const [name, setName] = useState("");
   const [q, setQ] = useState("");
   const [statusFilter, setStatusFilter] = useState<"active" | "archived" | "all">("active");
 
@@ -49,23 +47,13 @@ function ClassesPage() {
     queryFn: () => list(),
   });
 
-  const createM = useMutation({
-    mutationFn: (n: string) => create({ data: { name: n } }),
-    onSuccess: (row) => {
-      qc.invalidateQueries({ queryKey: ["classes"] });
-      setName("");
-      toast.success("הכיתה נוצרה");
-      if (row?.id) navigate({ to: "/classes/$classId", params: { classId: row.id } });
-    },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
-  });
-
   const removeM = useMutation({
     mutationFn: (id: string) => remove({ data: { id } }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["classes"] });
       toast.success("הכיתה נמחקה");
     },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
   });
 
   const statusM = useMutation({
@@ -98,16 +86,11 @@ function ClassesPage() {
       </div>
 
       <Card className="rounded-2xl">
-        <CardContent className="pt-6">
-          <form
-            onSubmit={(e) => { e.preventDefault(); if (name.trim()) createM.mutate(name.trim()); }}
-            className="flex flex-col gap-2 sm:flex-row"
-          >
-            <Input className="rounded-xl" placeholder="שם הכיתה (למשל: ז'1)" value={name} onChange={(e) => setName(e.target.value)} />
-            <Button type="submit" className="rounded-xl shrink-0" disabled={createM.isPending || !name.trim()}>
-              <Plus className="ms-1 h-4 w-4" /> הוסף כיתה
-            </Button>
-          </form>
+        <CardContent className="flex flex-col gap-2 pt-6 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-muted-foreground">
+            פתיחת כיתה לשנה חדשה? האשף יציע לקשר לכיתה של השנה הקודמת ולהעביר את התלמידים.
+          </p>
+          <NewClassWizard />
         </CardContent>
       </Card>
 
