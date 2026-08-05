@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Mic, MicOff, Sparkles, Loader2, Check, X, Image as ImageIcon } from "lucide-react";
+import { Mic, MicOff, Sparkles, Loader2, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { SmartUpload } from "@/components/smart-upload";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
