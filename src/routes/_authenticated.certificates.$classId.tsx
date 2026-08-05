@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useRef, useState } from "react";
-import { ArrowRight, Award, Camera, Download, Plus, Settings, Sparkles, Trash2, Users } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ArrowRight, Award, Download, Plus, Settings, Sparkles, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { getClass } from "@/lib/classes.functions";
@@ -22,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { SmartUpload } from "@/components/smart-upload";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -673,7 +674,6 @@ function StudentCertCard({
   onSaveNotes: () => void;
   onSuggestNotes: () => void;
 }) {
-  const fileRef = useRef<HTMLInputElement | null>(null);
   return (
     <Card>
       <CardContent className="space-y-3 py-4">
@@ -685,18 +685,11 @@ function StudentCertCard({
             ) : null}
           </div>
           <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" onClick={() => fileRef.current?.click()}>
-              <Camera className="ms-1 h-4 w-4" /> העלה צילום תעודה
-            </Button>
-            <input
-              ref={fileRef}
-              type="file"
+            <SmartUpload
+              compact
               accept="image/*"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0]; e.target.value = "";
-                if (f) onOcrPhoto(f);
-              }}
+              buttonLabel="העלה צילום תעודה"
+              onFile={(f: File) => onOcrPhoto(f)}
             />
             <Button size="sm" onClick={onExport}>
               <Download className="ms-1 h-4 w-4" /> הפק תעודה

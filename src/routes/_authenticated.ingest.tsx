@@ -28,6 +28,7 @@ import { RosterReviewTable } from "@/components/ingest/roster-review-table";
 import { ColumnMapper } from "@/components/ingest/column-mapper";
 import { exportLessonSummaryPdf } from "@/lib/pdf/lesson-summary-pdf";
 import { PdfPreviewDialog } from "@/components/ingest/pdf-preview-dialog";
+import { SmartUpload } from "@/components/smart-upload";
 
 type SearchParams = { classId?: string };
 
@@ -1030,14 +1031,11 @@ function SmartAutoCard({
   onCreated: (jobId: string) => void;
 }) {
   const [busy, setBusy] = useState(false);
-  const [dragOver, setDragOver] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
   const getUrl = useServerFn(getIngestUploadUrl);
   const create = useServerFn(createIngestJob);
   const analyze = useServerFn(analyzeIngestJob);
 
   async function onFile(file: File) {
-    if (file.size > 20 * 1024 * 1024) { toast.error("הקובץ גדול מ-20MB"); return; }
     setBusy(true);
     try {
       const safeName = file.name.replace(/[^a-zA-Z0-9._\- ]/g, "_");
@@ -1055,7 +1053,6 @@ function SmartAutoCard({
       toast.error(e instanceof Error ? e.message : "שגיאה בהעלאה");
     } finally {
       setBusy(false);
-      if (inputRef.current) inputRef.current.value = "";
     }
   }
 
@@ -1105,54 +1102,17 @@ function SmartAutoCard({
           </div>
         )}
 
-        <input
-          ref={inputRef}
-          type="file"
+        <SmartUpload
           accept="image/*,application/pdf,.txt,.md,.csv,.xlsx,.xls,.docx"
-          className="hidden"
-          onChange={(e) => { const f = e.target.files?.[0]; if (f) void onFile(f); }}
+          multiple
+          allowFolder
+          busy={busy}
+          onFile={onFile}
+          title="גרור קבצים או לחץ להעלאה"
+          hint="תמונה, PDF, טקסט או Excel — עד 20MB לקובץ. אפשר לבחור כמה קבצים או תיקייה שלמה"
+          busyLabel="ה-AI מזהה ומסווג את הקבצים..."
+          buttonLabel="בחר קבצים להעלאה"
         />
-
-        <div
-          role="button"
-          tabIndex={0}
-          onClick={() => !busy && inputRef.current?.click()}
-          onKeyDown={(e) => { if ((e.key === "Enter" || e.key === " ") && !busy) inputRef.current?.click(); }}
-          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-          onDragLeave={() => setDragOver(false)}
-          onDrop={(e) => {
-            e.preventDefault(); setDragOver(false);
-            const f = e.dataTransfer.files?.[0]; if (f) void onFile(f);
-          }}
-          className={`flex min-h-32 sm:min-h-40 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed p-6 text-center transition ${
-            dragOver ? "border-primary bg-primary/10" : "border-primary/30 hover:border-primary/60 hover:bg-primary/5"
-          } ${busy ? "opacity-60 pointer-events-none" : "cursor-pointer active:scale-[0.99]"}`}
-        >
-          {busy ? (
-            <>
-              <Loader2 className="h-10 w-10 animate-spin text-primary" />
-              <span className="text-sm font-medium">ה-AI מזהה ומסווג את הקובץ...</span>
-              <span className="text-xs text-muted-foreground">זה יכול לקחת 10–30 שניות</span>
-            </>
-          ) : (
-            <>
-              <div className="grid h-14 w-14 place-items-center rounded-full bg-primary/15 text-primary">
-                <ScanLine className="h-7 w-7" />
-              </div>
-              <div className="text-base sm:text-lg font-semibold">גרור קובץ או לחץ להעלאה</div>
-              <div className="text-xs text-muted-foreground">תמונה, PDF, טקסט או Excel — עד 20MB</div>
-            </>
-          )}
-        </div>
-
-        <Button
-          size="lg"
-          className="w-full h-12 text-base font-semibold sm:hidden"
-          disabled={busy}
-          onClick={() => inputRef.current?.click()}
-        >
-          {busy ? <><Loader2 className="ms-1 h-5 w-5 animate-spin" /> מעלה ומנתח...</> : <><Upload className="ms-1 h-5 w-5" /> בחר קובץ להעלאה</>}
-        </Button>
       </CardContent>
     </Card>
   );

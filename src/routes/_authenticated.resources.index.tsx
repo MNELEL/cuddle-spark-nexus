@@ -6,6 +6,7 @@ import {
   Sparkles, Loader2, Save, Trash2, Printer, Plus, Search,
   BookOpen, FileText, FolderPlus, X, ArrowRight, Tag, Library,
   ChevronDown, ChevronUp, Download, Eye,
+  Star, Pencil, MessageCircleQuestion, Send,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,9 +25,11 @@ import { KODESH_SUBJECTS } from "@/lib/kodesh-subjects";
 import {
   listResources, upsertResource, deleteResource, generateResourceWithAI,
   listCollections, upsertCollection, deleteCollection, toggleCollectionItem,
-  listCollectionItems,
+  listCollectionItems, toggleResourceFavorite, askLibrary,
   RESOURCE_TYPES, RESOURCE_TYPE_LABELS,
+  DIFFICULTIES, DIFFICULTY_LABELS,
   type ResourceRow, type ResourceContent, type ResourceType,
+  type Difficulty,
 } from "@/lib/teaching-resources.functions";
 import { getPersonalRecommendations, recomputeStyleProfile } from "@/lib/teacher-style.functions";
 import { Wand2 } from "lucide-react";
@@ -68,13 +71,22 @@ type FilterState = {
   subject: string;
   grade_level: string;
   tag: string;
+  difficulty: Difficulty | "";
+  favoritesOnly: boolean;
   topicIds: string[];
   collectionIds: string[];
 };
 
 const emptyFilters: FilterState = {
   search: "", resource_type: "", subject: "", grade_level: "", tag: "",
+  difficulty: "", favoritesOnly: false,
   topicIds: [], collectionIds: [],
+};
+
+const DIFFICULTY_BADGE: Record<Difficulty, string> = {
+  easy: "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+  medium: "border-amber/40 bg-amber/10 text-amber-700 dark:text-amber-300",
+  hard: "border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-300",
 };
 
 function ResourcesPage() {
@@ -83,6 +95,7 @@ function ResourcesPage() {
   const del = useServerFn(deleteResource);
   const listColls = useServerFn(listCollections);
   const listCollItems = useServerFn(listCollectionItems);
+  const toggleFav = useServerFn(toggleResourceFavorite);
 
   const [filters, setFilters] = useState<FilterState>(emptyFilters);
   const patch = (p: Partial<FilterState>) => setFilters((f) => ({ ...f, ...p }));
@@ -93,6 +106,7 @@ function ResourcesPage() {
   const [collOpen, setCollOpen] = useState(false);
   const [topOpen, setTopOpen] = useState(false);
   const [category, setCategory] = useState("all");
+  const [view, setView] = useState<"items" | "ask">("items");
 
   // Server query holds only server-side filters; collection/topic filtering runs
   // client-side on the same dataset so no control overwrites another.
@@ -102,6 +116,8 @@ function ResourcesPage() {
     subject: filters.subject || undefined,
     grade_level: filters.grade_level || undefined,
     tag: filters.tag || undefined,
+    difficulty: filters.difficulty || undefined,
+    favorites_only: filters.favoritesOnly || undefined,
   };
 
   const { data: resources = [], isLoading } = useQuery({
@@ -138,8 +154,15 @@ function ResourcesPage() {
         return tid !== null && filters.topicIds.includes(tid);
       });
     }
-    return out;
+    // favorites first, then by recency (server already ordered by updated_at)
+    return [...out].sort((a, b) => Number(b.is_favorite) - Number(a.is_favorite));
   }, [resources, collectionItems, filters.collectionIds, filters.topicIds, category]);
+
+  const favMut = useMutation({
+    mutationFn: (v: { id: string; is_favorite: boolean }) => toggleFav({ data: v }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["teaching-resources"] }),
+    onError: () => toast.error("לא הצלחנו לעדכן את המועדפים"),
+  });
 
   const recs = useServerFn(getPersonalRecommendations);
   const recompute = useServerFn(recomputeStyleProfile);
@@ -195,6 +218,32 @@ function ResourcesPage() {
         </div>
       </div>
 
+      {/* מצב תצוגה: חומרים / שאל AI */}
+      <div className="flex gap-2" role="tablist" aria-label="מצב תצוגה בספרייה">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={view === "items"}
+          onClick={() => setView("items")}
+          className={`rounded-full border px-4 py-1.5 text-sm transition ${view === "items" ? "border-primary bg-primary text-primary-foreground" : "hover:bg-accent"}`}
+        >
+          <Library className="ms-1 inline h-4 w-4" /> החומרים שלי
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={view === "ask"}
+          onClick={() => setView("ask")}
+          className={`rounded-full border px-4 py-1.5 text-sm transition ${view === "ask" ? "border-primary bg-primary text-primary-foreground" : "hover:bg-accent"}`}
+        >
+          <MessageCircleQuestion className="ms-1 inline h-4 w-4" /> שאל AI על הספרייה
+        </button>
+      </div>
+
+      {view === "ask" && <AskLibraryPanel />}
+
+      {view === "items" && (
+      <>
       {/* קטגוריות ראשיות */}
       <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="קטגוריות ספרייה">
         {LIBRARY_CATEGORIES.map((c) => {
@@ -365,6 +414,28 @@ function ResourcesPage() {
               <Input placeholder="פרשת ויצא…" value={filters.tag}
                 onChange={(e) => patch({ tag: e.target.value })} />
             </div>
+            <div>
+              <Label className="text-xs">רמת קושי</Label>
+              <Select value={filters.difficulty || "all"}
+                onValueChange={(v) => patch({ difficulty: v === "all" ? "" : (v as Difficulty) })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">הכל</SelectItem>
+                  {DIFFICULTIES.map((d) => (
+                    <SelectItem key={d} value={d}>{DIFFICULTY_LABELS[d]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <button
+              type="button"
+              aria-pressed={filters.favoritesOnly}
+              onClick={() => patch({ favoritesOnly: !filters.favoritesOnly })}
+              className={`flex w-full items-center gap-2 rounded-md border px-2 py-1.5 text-sm transition ${filters.favoritesOnly ? "border-amber bg-amber/15 font-medium" : "hover:bg-accent"}`}
+            >
+              <Star className={`h-4 w-4 ${filters.favoritesOnly ? "fill-amber text-amber" : "text-muted-foreground"}`} />
+              מועדפים בלבד
+            </button>
             {collections.length > 0 && (
               <div>
                 <Label className="text-xs">אוספים</Label>
@@ -430,11 +501,14 @@ function ResourcesPage() {
                 onView={() => setViewing(r)}
                 onEdit={() => setEditing(r)}
                 onVariant={(src) => { setAiSource(src); setAiOpen(true); }}
+                onToggleFavorite={() => favMut.mutate({ id: r.id, is_favorite: !r.is_favorite })}
               />
             ))}
           </div>
         </div>
       </div>
+      </>
+      )}
 
       {/* Document viewer */}
       {viewing && (
@@ -483,25 +557,42 @@ function ResourcesPage() {
 /* -------------------- card -------------------- */
 
 function ResourceCard({
-  resource, onView, onEdit, onVariant,
+  resource, onView, onEdit, onVariant, onToggleFavorite,
 }: {
   resource: ResourceRow;
   onView: () => void;
   onEdit: () => void;
   onVariant: (r: ResourceRow) => void;
+  onToggleFavorite: () => void;
 }) {
   return (
     <div className="group rounded-xl border bg-card p-4 text-right transition hover:border-amber/40 hover:shadow-md">
       <div className="flex items-start justify-between gap-2">
         <div className="line-clamp-2 font-semibold">{resource.title}</div>
-        {resource.ai_generated && (
-          <Sparkles className="h-4 w-4 shrink-0 text-amber" />
-        )}
+        <button
+          type="button"
+          onClick={onToggleFavorite}
+          aria-pressed={resource.is_favorite}
+          aria-label={resource.is_favorite ? `הסר את "${resource.title}" מהמועדפים` : `הוסף את "${resource.title}" למועדפים`}
+          className="shrink-0 rounded-md p-1 transition hover:bg-accent"
+        >
+          <Star className={`h-4 w-4 ${resource.is_favorite ? "fill-amber text-amber" : "text-muted-foreground"}`} />
+        </button>
       </div>
       <div className="mt-2 flex flex-wrap gap-1">
         <Badge variant="outline" className="text-[10px]">
           {RESOURCE_TYPE_LABELS[resource.resource_type] ?? resource.resource_type}
         </Badge>
+        {resource.difficulty && (
+          <Badge variant="outline" className={`text-[10px] ${DIFFICULTY_BADGE[resource.difficulty]}`}>
+            {DIFFICULTY_LABELS[resource.difficulty]}
+          </Badge>
+        )}
+        {resource.ai_generated && (
+          <Badge variant="outline" className="gap-0.5 border-amber/40 bg-amber/10 text-[10px] text-amber-700 dark:text-amber-300">
+            <Sparkles className="h-2.5 w-2.5" /> נוצר ב-AI
+          </Badge>
+        )}
         {resource.subject && <Badge variant="secondary" className="text-[10px]">{resource.subject}</Badge>}
         {resource.grade_level && <Badge variant="secondary" className="text-[10px]">כיתה {resource.grade_level}</Badge>}
       </div>
@@ -518,15 +609,91 @@ function ResourceCard({
         </div>
       )}
       <div className="mt-3 flex gap-2">
-        <Button size="sm" variant="outline" className="flex-1" onClick={onView}>
+        <Button size="sm" variant="outline" className="flex-1" onClick={onView} aria-label={`פתח את "${resource.title}"`}>
           <Eye className="ms-1 h-4 w-4" /> פתח
         </Button>
-        <Button size="sm" variant="ghost" onClick={onEdit}>ערוך</Button>
-        <Button size="sm" variant="ghost" onClick={() => onVariant(resource)} title="צור וריאציה עם AI מפריט זה">
+        <Button size="sm" variant="ghost" onClick={onEdit} aria-label={`ערוך את "${resource.title}"`}>
+          <Pencil className="ms-1 h-4 w-4" /> ערוך
+        </Button>
+        <Button size="sm" variant="ghost" onClick={() => onVariant(resource)}
+          title="צור וריאציה עם AI מפריט זה" aria-label={`צור וריאציה עם AI מ-"${resource.title}"`}>
           <Sparkles className="h-4 w-4 text-amber" />
         </Button>
       </div>
     </div>
+  );
+}
+
+/* -------------------- שאל AI על הספרייה -------------------- */
+
+function AskLibraryPanel() {
+  const ask = useServerFn(askLibrary);
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState<string | null>(null);
+  const [sources, setSources] = useState<{ id: string; title: string }[]>([]);
+
+  const askMut = useMutation({
+    mutationFn: (q: string) => ask({ data: { question: q } }),
+    onSuccess: (res) => {
+      setAnswer(res.answer);
+      setSources(res.sources ?? []);
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "השאילתה נכשלה"),
+  });
+
+  const submit = () => {
+    const q = question.trim();
+    if (q.length < 3) { toast.error("כתוב שאלה מפורטת יותר"); return; }
+    askMut.mutate(q);
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-sm">
+          <MessageCircleQuestion className="h-4 w-4 text-amber" /> שאל AI על הספרייה שלך
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <p className="text-xs text-muted-foreground">
+          ה-AI מחפש בין החומרים שלך ומשיב על בסיסם — למשל: "אילו חידות יש לי על פרשת ויצא?"
+        </p>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Input
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
+            placeholder="מה תרצה לדעת על החומרים שלך?"
+            aria-label="שאלה על הספרייה"
+          />
+          <Button onClick={submit} disabled={askMut.isPending}>
+            {askMut.isPending
+              ? <><Loader2 className="ms-1 h-4 w-4 animate-spin" /> חושב…</>
+              : <><Send className="ms-1 h-4 w-4" /> שאל</>}
+          </Button>
+        </div>
+        <div aria-live="polite">
+          {answer && (
+            <div className="rounded-lg border bg-muted/40 p-3">
+              <div className="whitespace-pre-wrap text-sm">{answer}</div>
+              {sources.length > 0 && (
+                <div className="mt-3 border-t pt-2">
+                  <div className="mb-1 text-xs text-muted-foreground">מבוסס על:</div>
+                  <div className="flex flex-wrap gap-2">
+                    {sources.map((s) => (
+                      <Link key={s.id} to="/resources/$resourceId" params={{ resourceId: s.id }}
+                        className="rounded-full border px-2 py-0.5 text-xs hover:bg-accent">
+                        {s.title}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -658,6 +825,8 @@ function ResourceEditorDialog({
   const [resourceType, setResourceType] = useState<ResourceType>(initial.resource_type ?? "worksheet");
   const [tagsText, setTagsText] = useState((initial.tags ?? []).join(", "));
   const [content, setContent] = useState<ResourceContent>(initial.content ?? {});
+  const [difficulty, setDifficulty] = useState<Difficulty>(initial.difficulty ?? "medium");
+  const [isFavorite, setIsFavorite] = useState<boolean>(initial.is_favorite ?? false);
 
   const saveMut = useMutation({
     mutationFn: () => save({
@@ -666,6 +835,8 @@ function ResourceEditorDialog({
         resource_type: resourceType,
         tags: tagsText.split(",").map((t) => t.trim()).filter(Boolean),
         content,
+        difficulty,
+        is_favorite: isFavorite,
         ai_generated: initial.ai_generated ?? false,
         source_prompt: initial.source_prompt ?? "",
       },
@@ -731,6 +902,26 @@ function ResourceEditorDialog({
                   {GRADE_LEVELS.map((g) => <SelectItem key={g} value={g}>כיתה {g}</SelectItem>)}
                 </SelectContent>
               </Select>
+            </div>
+            <div>
+              <Label>רמת קושי</Label>
+              <Select value={difficulty} onValueChange={(v) => setDifficulty(v as Difficulty)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {DIFFICULTIES.map((d) => <SelectItem key={d} value={d}>{DIFFICULTY_LABELS[d]}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-end">
+              <button
+                type="button"
+                aria-pressed={isFavorite}
+                onClick={() => setIsFavorite((v) => !v)}
+                className={`flex h-9 w-full items-center justify-center gap-2 rounded-md border text-sm transition ${isFavorite ? "border-amber bg-amber/15 font-medium" : "hover:bg-accent"}`}
+              >
+                <Star className={`h-4 w-4 ${isFavorite ? "fill-amber text-amber" : "text-muted-foreground"}`} />
+                {isFavorite ? "במועדפים" : "סמן כמועדף"}
+              </button>
             </div>
           </div>
           <div>
@@ -842,6 +1033,7 @@ function AIGeneratorDialog({
         tags: draft.tags,
         content: draft.content,
         resource_type: resourceType,
+        difficulty: draft.difficulty,
         subject, grade_level: gradeLevel,
         ai_generated: true,
         source_prompt: prompt,

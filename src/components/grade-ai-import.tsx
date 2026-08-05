@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Mic, MicOff, Sparkles, Loader2, Check, X, Image as ImageIcon } from "lucide-react";
+import { Mic, MicOff, Sparkles, Loader2, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { SmartUpload } from "@/components/smart-upload";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -79,19 +80,11 @@ function Inner({ classId, students, onClose }: { classId: string; students: Stud
   const [rows, setRows] = useState<ParsedGradeRow[] | null>(null);
   const [listening, setListening] = useState(false);
   const recRef = useRef<SpeechRec | null>(null);
-  const fileRef = useRef<HTMLInputElement | null>(null);
   const [ocrLoading, setOcrLoading] = useState(false);
 
   useEffect(() => () => { recRef.current?.stop(); }, []);
 
-  const onPickImage = () => fileRef.current?.click();
-
-  const onImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    if (!file.type.startsWith("image/")) { toast.error("יש לבחור קובץ תמונה"); return; }
-    if (file.size > 10 * 1024 * 1024) { toast.error("התמונה גדולה מדי (מקסימום 10MB)"); return; }
+  const onImageChange = async (file: File) => {
     setOcrLoading(true);
     try {
       const b64 = await new Promise<string>((resolve, reject) => {
@@ -205,23 +198,14 @@ function Inner({ classId, students, onClose }: { classId: string; students: Stud
             <div className="mb-1 flex items-center justify-between">
               <Label>טקסט חופשי</Label>
               <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={onPickImage}
-                  disabled={ocrLoading}
-                >
-                  {ocrLoading
-                    ? <><Loader2 className="ms-1 h-4 w-4 animate-spin" /> מזהה תמונה...</>
-                    : <><ImageIcon className="ms-1 h-4 w-4" /> העלה תמונה</>}
-                </Button>
-                <input
-                  ref={fileRef}
-                  type="file"
+                <SmartUpload
+                  compact
                   accept="image/*"
-                  className="hidden"
-                  onChange={onImageChange}
+                  maxSizeMb={10}
+                  busy={ocrLoading}
+                  busyLabel="מזהה תמונה..."
+                  buttonLabel="העלה תמונה"
+                  onFile={(f: File) => onImageChange(f)}
                 />
                 <Button
                   type="button"
