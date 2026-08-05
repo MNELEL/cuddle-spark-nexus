@@ -16,12 +16,12 @@ import {
 import {
   listResources, upsertResource, DIFFICULTY_LABELS, DIFFICULTIES, type Difficulty,
 } from "@/lib/teaching-resources.functions";
+import { generateResourceSummary, generateResourceTasks } from "@/lib/resource-generators.functions";
 import {
-  generateResourceSummary, generateResourceTasks,
   STUDENT_LEVELS, STUDENT_LEVEL_LABELS, SUMMARY_SCOPES, SUMMARY_SCOPE_LABELS,
   TASK_KINDS, TASK_KIND_LABELS,
   type StudentLevel, type SummaryScope, type TaskKind,
-} from "@/lib/resource-generators.functions";
+} from "@/lib/generator-options";
 
 export const Route = createFileRoute("/_authenticated/resources/generate")({
   component: GeneratePage,
