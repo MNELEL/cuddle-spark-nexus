@@ -286,11 +286,13 @@ export const updateClass = createServerFn({ method: "POST" })
       name: z.string().min(1).max(100).optional(),
       grid_cols: z.number().int().min(1).max(20).optional(),
       grid_rows: z.number().int().min(1).max(20).optional(),
+      academic_year: z.string().trim().max(30).optional(),
       room_objects: z.array(roomObjectSchema).max(60).optional(),
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
     const { id, ...rest } = data;
+    await assertClassEditable(context.supabase, id);
     const { error } = await context.supabase
       .from("classes")
       .update({ ...rest, updated_at: new Date().toISOString() })
@@ -303,6 +305,7 @@ export const deleteClass = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
+    await assertClassEditable(context.supabase, data.id);
     const { error } = await context.supabase.from("classes").delete().eq("id", data.id);
     if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return { ok: true };
