@@ -3,12 +3,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { listClasses, deleteClass, setClassStatus } from "@/lib/classes.functions";
+import { getMyInstitution } from "@/lib/institution-dashboard.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Trash2, ChevronLeft, Search, Archive, ArchiveRestore, X } from "lucide-react";
+import { Trash2, ChevronLeft, Search, Archive, ArchiveRestore, X, Building2 } from "lucide-react";
 import { SeatFillGrid } from "@/components/seat-fill-grid";
 import { NewClassWizard } from "@/components/new-class-wizard";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -38,6 +39,7 @@ function ClassesPage() {
   const list = useServerFn(listClasses);
   const remove = useServerFn(deleteClass);
   const setStatus = useServerFn(setClassStatus);
+  const fetchInstitution = useServerFn(getMyInstitution);
   const qc = useQueryClient();
   const [q, setQ] = useState("");
   const [statusFilter, setStatusFilter] = useState<"active" | "archived" | "all">("active");
@@ -45,6 +47,12 @@ function ClassesPage() {
   const { data: classes = [], isLoading } = useQuery({
     queryKey: ["classes"],
     queryFn: () => list(),
+  });
+
+  const { data: institution } = useQuery({
+    queryKey: ["my-institution"],
+    queryFn: () => fetchInstitution(),
+    retry: false,
   });
 
   const removeM = useMutation({
@@ -84,6 +92,22 @@ function ClassesPage() {
         <h1 className="text-2xl font-bold">הכיתות שלי</h1>
         <p className="text-sm text-muted-foreground">בחר כיתה כדי להתחיל לנהל תלמידים ואילוצים</p>
       </div>
+
+      {institution && (
+        <Card className="rounded-2xl border-primary/30 bg-primary/5">
+          <CardContent className="flex flex-col gap-2 pt-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2 text-sm">
+              <Building2 className="h-4 w-4 text-primary" aria-hidden="true" />
+              <span>דשבורד המוסד שלי — {institution.name}</span>
+            </div>
+            <Button asChild variant="outline" size="sm" className="rounded-xl">
+              <Link to="/institution">
+                פתח דשבורד <ChevronLeft className="ms-1 h-4 w-4" aria-hidden="true" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="rounded-2xl">
         <CardContent className="flex flex-col gap-2 pt-6 sm:flex-row sm:items-center sm:justify-between">
