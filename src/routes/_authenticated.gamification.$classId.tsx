@@ -47,6 +47,11 @@ function GamificationPage() {
     queryKey: ["leaderboard", classId],
     queryFn: () => lb({ data: { classId } }),
   });
+  const listS = useServerFn(listStudents);
+  const { data: badgeStudents = [] } = useQuery({
+    queryKey: ["students", classId],
+    queryFn: () => listS({ data: { classId } }),
+  });
   const [kiosk, setKiosk] = useState(false);
 
   if (kiosk) return <KioskBoard classId={classId} onExit={() => setKiosk(false)} title={cls?.name ?? ""} />;
@@ -80,6 +85,7 @@ function GamificationPage() {
           <TabsTrigger value="campaigns">קמפיינים</TabsTrigger>
           <TabsTrigger value="rewards">קטלוג פרסים</TabsTrigger>
           <TabsTrigger value="redemptions">מימושים</TabsTrigger>
+          <TabsTrigger value="badges">תגי הישג</TabsTrigger>
         </TabsList>
 
         <TabsContent value="leaderboard" className="mt-4">
@@ -96,6 +102,14 @@ function GamificationPage() {
 
         <TabsContent value="redemptions" className="mt-4">
           <RedemptionsTab classId={classId} />
+        </TabsContent>
+
+        <TabsContent value="badges" className="mt-4">
+          <BadgesPanel
+            classId={classId}
+            students={(badgeStudents as { id: string; name: string }[]).map((s) => ({ id: s.id, name: s.name }))}
+            readOnly={cls?.status === "archived"}
+          />
         </TabsContent>
       </Tabs>
     </div>
