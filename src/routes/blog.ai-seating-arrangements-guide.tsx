@@ -36,7 +36,7 @@ const FAQ: FaqItem[] = [
 
 export const Route = createFileRoute("/blog/ai-seating-arrangements-guide")({
   component: Article,
-  head: () => blogPostHead("/blog/ai-seating-arrangements-guide"),
+  head: () => blogPostHead("/blog/ai-seating-arrangements-guide", [faqJsonLd(FAQ)]),
 });
 
 function Article() {

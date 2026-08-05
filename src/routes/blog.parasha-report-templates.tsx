@@ -75,7 +75,7 @@ const FAQ: FaqItem[] = [
 
 export const Route = createFileRoute("/blog/parasha-report-templates")({
   component: Article,
-  head: () => blogPostHead("/blog/parasha-report-templates"),
+  head: () => blogPostHead("/blog/parasha-report-templates", [faqJsonLd(FAQ)]),
 });
 
 function Article() {

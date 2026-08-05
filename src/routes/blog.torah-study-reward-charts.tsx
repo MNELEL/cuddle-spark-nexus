@@ -43,7 +43,7 @@ const FAQ: FaqItem[] = [
 
 export const Route = createFileRoute("/blog/torah-study-reward-charts")({
   component: Article,
-  head: () => blogPostHead("/blog/torah-study-reward-charts"),
+  head: () => blogPostHead("/blog/torah-study-reward-charts", [faqJsonLd(FAQ)]),
 });
 
 function Article() {
