@@ -153,8 +153,15 @@ function ResourcesPage() {
         return tid !== null && filters.topicIds.includes(tid);
       });
     }
-    return out;
+    // favorites first, then by recency (server already ordered by updated_at)
+    return [...out].sort((a, b) => Number(b.is_favorite) - Number(a.is_favorite));
   }, [resources, collectionItems, filters.collectionIds, filters.topicIds, category]);
+
+  const favMut = useMutation({
+    mutationFn: (v: { id: string; is_favorite: boolean }) => toggleFav({ data: v }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["teaching-resources"] }),
+    onError: () => toast.error("לא הצלחנו לעדכן את המועדפים"),
+  });
 
   const recs = useServerFn(getPersonalRecommendations);
   const recompute = useServerFn(recomputeStyleProfile);
