@@ -28,7 +28,7 @@ export function GeneratorHistory({
   const [term, setTerm] = useState("");
   const [search, setSearch] = useState("");
 
-  const { data: versions = [], isLoading } = useQuery({
+  const { data: versions = [], isLoading } = useQuery<GeneratorVersion[]>({
     queryKey: ["generator-versions", kind, search],
     queryFn: () => listFn({ data: { kind, search } }),
   });
