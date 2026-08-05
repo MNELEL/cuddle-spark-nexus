@@ -21,9 +21,9 @@ export const Route = createFileRoute("/_authenticated/institution")({
   head: () => ({
     meta: [
       { title: "דשבורד המוסד שלי · הכיתה שלי" },
-      { name: "description", content: "תמונת מצב על הכיתות והמלמדים במוסד — לצפייה בלבד." },
+      { name: "description", content: "תמונת מצב לניהול המוסד: הכיתות, המלמדים ויומן הפעילות — תצוגה לצפייה בלבד." },
       { property: "og:title", content: "דשבורד המוסד שלי · הכיתה שלי" },
-      { property: "og:description", content: "תמונת מצב על הכיתות והמלמדים במוסד — לצפייה בלבד." },
+      { property: "og:description", content: "תמונת מצב לניהול המוסד: הכיתות, המלמדים ויומן הפעילות — תצוגה לצפייה בלבד." },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
