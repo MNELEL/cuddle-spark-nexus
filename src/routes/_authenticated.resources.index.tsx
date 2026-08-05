@@ -414,6 +414,28 @@ function ResourcesPage() {
               <Input placeholder="פרשת ויצא…" value={filters.tag}
                 onChange={(e) => patch({ tag: e.target.value })} />
             </div>
+            <div>
+              <Label className="text-xs">רמת קושי</Label>
+              <Select value={filters.difficulty || "all"}
+                onValueChange={(v) => patch({ difficulty: v === "all" ? "" : (v as Difficulty) })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">הכל</SelectItem>
+                  {DIFFICULTIES.map((d) => (
+                    <SelectItem key={d} value={d}>{DIFFICULTY_LABELS[d]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <button
+              type="button"
+              aria-pressed={filters.favoritesOnly}
+              onClick={() => patch({ favoritesOnly: !filters.favoritesOnly })}
+              className={`flex w-full items-center gap-2 rounded-md border px-2 py-1.5 text-sm transition ${filters.favoritesOnly ? "border-amber bg-amber/15 font-medium" : "hover:bg-accent"}`}
+            >
+              <Star className={`h-4 w-4 ${filters.favoritesOnly ? "fill-amber text-amber" : "text-muted-foreground"}`} />
+              מועדפים בלבד
+            </button>
             {collections.length > 0 && (
               <div>
                 <Label className="text-xs">אוספים</Label>
