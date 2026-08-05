@@ -35,6 +35,9 @@ import { getPersonalRecommendations, recomputeStyleProfile } from "@/lib/teacher
 import { Wand2 } from "lucide-react";
 import { WeeklyPaceCard } from "@/components/weekly-pace-card";
 import { TopicTreeFilter } from "@/components/topic-tree-filter";
+import { useTablistKeys } from "@/hooks/use-tablist-keys";
+
+const VIEW_TABS = ["items", "ask"] as const;
 
 export const Route = createFileRoute("/_authenticated/resources/")({
   component: ResourcesPage,
