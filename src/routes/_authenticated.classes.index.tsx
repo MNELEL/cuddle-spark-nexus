@@ -172,6 +172,11 @@ function ClassesPage() {
                     <div className="flex items-center gap-2">
                       <span className="truncate font-display text-lg font-bold">{c.name}</span>
                       {status === "archived" && <Badge variant="secondary">בארכיון</Badge>}
+                      {(c as { academic_year?: string | null }).academic_year && (
+                        <Badge variant="outline" className="font-mono-tabular">
+                          {(c as { academic_year?: string | null }).academic_year}
+                        </Badge>
+                      )}
                     </div>
                     <div className="text-xs text-muted-foreground font-mono-tabular">גריד {c.grid_cols}×{c.grid_rows}</div>
                   </div>
@@ -188,6 +193,9 @@ function ClassesPage() {
                 >
                   {status === "archived" ? <ArchiveRestore className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
                 </Button>
+                {status === "archived" ? (
+                  <span className="text-xs text-muted-foreground">לצפייה בלבד</span>
+                ) : (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="ghost" size="icon" aria-label={`מחק את הכיתה ${c.name}`} className="text-destructive transition-colors hover:bg-destructive/10 motion-reduce:transition-none">
@@ -205,6 +213,7 @@ function ClassesPage() {
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
+                )}
                 </div>
               </CardContent>
             </Card>
