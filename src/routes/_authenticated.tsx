@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { LogOut, Wrench, Sparkles, LineChart, Library, ShieldCheck } from "lucide-react";
+import { LogOut, Wrench, Sparkles, LineChart, Library, ShieldCheck, Settings } from "lucide-react";
 import { TorahLogo } from "@/components/torah-logo";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -103,6 +103,9 @@ function AuthLayout() {
             </Link>
             <Link to="/ingest" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
               <Sparkles className="me-1 inline h-4 w-4" />העלאה חכמה
+            </Link>
+            <Link to="/settings" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
+              <Settings className="me-1 inline h-4 w-4" />הגדרות
             </Link>
             {adminFlag && (
               <Link to="/user-management" className="rounded-md px-3 py-1.5 text-sm font-medium text-primary hover:bg-accent hover:text-foreground">
