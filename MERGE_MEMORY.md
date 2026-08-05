@@ -158,3 +158,13 @@ Supabase נפרד (8 טבלאות, RLS), Edge Function analyze-document, Hebrew 
 3. docs/lms-gap-analysis.md הוא מסמך נפרד — לוודא סנכרון לגבי הפערים הפתוחים.
 4. שינויים בקוד נעשים דרך send_message. אם נתקע על "No approval received" — להכין קובץ מקומי, המשתמש מעלה ידנית ל-GitHub main, הסנכרון הדו-כיווני מושך אוטומטית.
 5. שני הפערים שתועדו הושלמו: (א) grade_weights ✅ (ב) circuit breaker ל-AI gateway ✅ (אוגוסט 2026).
+
+## 9. Harmony Hub (תוכנית עבודה ישנה) — נבדק מול קוד חי, 5/8/2026
+
+מסמך תכנון ישן "Harmony Hub" (השם הקודם ל"הכיתה שלי") הכיל טבלת פערים A1–A9 ו-23 סעיפי פיתוח. נבדק שורה-שורה מול קוד חי (Lovable ref `5808b731...`) ומול `docs/lms-gap-analysis.md`.
+
+**תמצית:** רוב הפערים הישנים כבר נסגרו — מעבר שנה/ארכיון, Exams, Events, Insights, RBAC, שקלול ציונים, circuit breaker, פרופיל תלמיד. `academic_year` מומש **אחרת** ממה שהוכרע (עברי בלבד, לא עברי+לועזי). Classroom 3D מומש ב-**CSS transforms**, לא Three.js — יש מצלמה/presets/presentation mode, **אין** resize/rotate שולחנות ותבניות שמורות. Rewards Campaigns/Leaderboard לא אומת.
+
+**פערים שנותרו פתוחים (מאושר מול gap-analysis 2/8):** בדיקות RLS אוטומטיות (A1), Google Drive תיקייה שלמה, דוחות מוסדיים, שיתוף משאבים בין מוסדות, push/SMS, צ'אט צוות, Google Classroom, iOS+offline, 3D שולחנות מתקדם, Campaigns/Leaderboard.
+
+**מסקנה:** תוכנית Harmony Hub לא תעודכן יותר — `MERGE_MEMORY.md` הוא המקור היחיד להיום והלאה. פירוט מלא לפי סעיף: `MERGE_MEMORY_addendum.md` (בהיסטוריית השיחה, 5/8/2026).
