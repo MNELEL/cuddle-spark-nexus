@@ -8,7 +8,7 @@ import {
 import {
   Wrench, Music, Sparkles, BellRing, LineChart, Palette, BookOpen, School,
   ScanText, TrendingUp, ClipboardList, Library, User, Users, Calendar,
-  Award, FileText, Wand2, Trophy, Dices, Globe2, MessageSquare,
+  Award, FileText, Wand2, Trophy, Dices, Globe2, MessageSquare, Settings,
 } from "lucide-react";
 import { listClasses } from "@/lib/classes.functions";
 import { listStudents } from "@/lib/students.functions";
@@ -32,6 +32,7 @@ const GLOBAL_ITEMS: NavItem[] = [
   { label: "העלאה חכמה", to: "/ingest", icon: Sparkles, keywords: "ingest ai" },
   { label: "לוח פעמונים", to: "/bell-schedule", icon: BellRing, keywords: "bell" },
   { label: "מיתוג מוסד", to: "/settings/brand", icon: Palette, keywords: "brand settings" },
+  { label: "הגדרות", to: "/settings", icon: Settings, keywords: "settings security reminders pin" },
   { label: "מדריכים", to: "/blog", icon: BookOpen, keywords: "blog guides" },
 ];
 
