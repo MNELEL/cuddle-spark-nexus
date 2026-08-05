@@ -72,6 +72,8 @@ function ClassActionGrid({ classId, onSeating }: { classId: string; onSeating: (
 }
 
 export const Route = createFileRoute("/_authenticated/classes/$classId")({
+
+/* ---------------- Archive / year chain ---------------- */
   component: ClassDetail,
   loader: async ({ params }) => {
     const { getClass } = await import("@/lib/classes.functions");
