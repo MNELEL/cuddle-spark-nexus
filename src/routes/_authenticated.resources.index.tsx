@@ -67,6 +67,8 @@ const LIBRARY_CATEGORIES: { id: string; label: string; types: ResourceType[] }[]
   { id: "other", label: "אחר", types: ["other"] },
 ];
 
+const CATEGORY_IDS = LIBRARY_CATEGORIES.map((c) => c.id);
+
 /** Single, centralized filter state for the whole library screen. */
 type FilterState = {
   search: string;
