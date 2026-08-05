@@ -218,6 +218,32 @@ function ResourcesPage() {
         </div>
       </div>
 
+      {/* מצב תצוגה: חומרים / שאל AI */}
+      <div className="flex gap-2" role="tablist" aria-label="מצב תצוגה בספרייה">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={view === "items"}
+          onClick={() => setView("items")}
+          className={`rounded-full border px-4 py-1.5 text-sm transition ${view === "items" ? "border-primary bg-primary text-primary-foreground" : "hover:bg-accent"}`}
+        >
+          <Library className="ms-1 inline h-4 w-4" /> החומרים שלי
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={view === "ask"}
+          onClick={() => setView("ask")}
+          className={`rounded-full border px-4 py-1.5 text-sm transition ${view === "ask" ? "border-primary bg-primary text-primary-foreground" : "hover:bg-accent"}`}
+        >
+          <MessageCircleQuestion className="ms-1 inline h-4 w-4" /> שאל AI על הספרייה
+        </button>
+      </div>
+
+      {view === "ask" && <AskLibraryPanel />}
+
+      {view === "items" && (
+      <>
       {/* קטגוריות ראשיות */}
       <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="קטגוריות ספרייה">
         {LIBRARY_CATEGORIES.map((c) => {
@@ -453,11 +479,14 @@ function ResourcesPage() {
                 onView={() => setViewing(r)}
                 onEdit={() => setEditing(r)}
                 onVariant={(src) => { setAiSource(src); setAiOpen(true); }}
+                onToggleFavorite={() => favMut.mutate({ id: r.id, is_favorite: !r.is_favorite })}
               />
             ))}
           </div>
         </div>
       </div>
+      </>
+      )}
 
       {/* Document viewer */}
       {viewing && (
