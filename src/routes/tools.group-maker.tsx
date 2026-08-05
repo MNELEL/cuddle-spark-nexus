@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Shuffle, Users, UserRound, Copy, Sparkles, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
-import { RegistrationGate } from "@/components/registration-gate";
 
 const URL_SELF = "https://cuddle-spark-nexus.lovable.app/tools/group-maker";
 
@@ -97,17 +96,6 @@ function parseNames(raw: string): string[] {
 }
 
 function GroupMakerPage() {
-  return (
-    <RegistrationGate
-      title="הכלים החינמיים פתוחים לרשומים"
-      description="הירשם במייל (בחינם) כדי להשתמש במחולל הקבוצות, בהגרלות ובשאר כלי העזר למלמד."
-    >
-      <GroupMakerContent />
-    </RegistrationGate>
-  );
-}
-
-function GroupMakerContent() {
   const [raw, setRaw] = useState("");
   const [numGroups, setNumGroups] = useState(4);
   const [groups, setGroups] = useState<string[][]>([]);
@@ -264,12 +252,21 @@ function GroupMakerContent() {
         </section>
 
         <div className="mt-16 text-center">
-          <p className="text-muted-foreground mb-4">מחפשים ניהול כיתה מלא עם AI?</p>
-          <Link to="/">
-            <Button size="lg" className="gap-2">
-              גלו את הכיתה שלי <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
+          <p className="text-muted-foreground mb-4">
+            מחפשים ניהול כיתה מלא עם AI? הרשמה במייל פותחת חודש ניסיון בחינם.
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <Link to="/login">
+              <Button size="lg" className="gap-2">
+                הרשמה חינמית · חודש ניסיון <ArrowLeft className="h-4 w-4" />
+              </Button>
+            </Link>
+            <Link to="/">
+              <Button size="lg" variant="outline" className="gap-2">
+                גלו את הכיתה שלי
+              </Button>
+            </Link>
+          </div>
         </div>
       </main>
     </div>
