@@ -104,10 +104,13 @@ function InsightsPage() {
             ברגע שיהיו לך מספיק חומרים במערכת — כאן יופיעו המקצועות המועדפים, סגנון הכתיבה, קצב היצירה ומילות המפתח שלך.
           </p>
         </div>
-        <Button onClick={() => recomputeMut.mutate()} disabled={recomputeMut.isPending}>
-          <RefreshCw className={`ms-2 h-4 w-4 ${recomputeMut.isPending ? "animate-spin" : ""}`} />
+        <Button onClick={() => recomputeMut.mutate()} disabled={recomputeMut.isPending} aria-busy={recomputeMut.isPending}>
+          <RefreshCw className={`ms-2 h-4 w-4 ${recomputeMut.isPending ? "animate-spin" : ""}`} aria-hidden />
           רענן ניתוח עכשיו
         </Button>
+        <p className="sr-only" role="status" aria-live="polite">
+          {recomputeMut.isPending ? "מרענן את הניתוח…" : ""}
+        </p>
       </div>
     );
   }
@@ -124,10 +127,15 @@ function InsightsPage() {
             {updatedAt && <> עודכן לאחרונה: {updatedAt}.</>}
           </p>
         </div>
-        <Button variant="outline" onClick={() => recomputeMut.mutate()} disabled={recomputeMut.isPending}>
-          <RefreshCw className={`ms-2 h-4 w-4 ${recomputeMut.isPending ? "animate-spin" : ""}`} />
-          רענן ניתוח
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => recomputeMut.mutate()} disabled={recomputeMut.isPending} aria-busy={recomputeMut.isPending}>
+            <RefreshCw className={`ms-2 h-4 w-4 ${recomputeMut.isPending ? "animate-spin" : ""}`} aria-hidden />
+            רענן ניתוח
+          </Button>
+          <p className="sr-only" role="status" aria-live="polite">
+            {recomputeMut.isPending ? "מרענן את הניתוח…" : ""}
+          </p>
+        </div>
       </div>
 
       {profile.last_ai_summary && (
@@ -266,14 +274,16 @@ function InsightsPage() {
             <button
               type="button"
               onClick={() => setSampleOpen((v) => !v)}
-              className="flex w-full items-center justify-between text-right"
+              aria-expanded={sampleOpen}
+              aria-controls="writing-style-sample"
+              className="flex w-full items-center justify-between rounded-md text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
               <CardTitle className="text-sm">דוגמה מסגנון הכתיבה שלך</CardTitle>
-              {sampleOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              {sampleOpen ? <ChevronUp className="h-4 w-4" aria-hidden /> : <ChevronDown className="h-4 w-4" aria-hidden />}
             </button>
           </CardHeader>
           {sampleOpen && (
-            <CardContent>
+            <CardContent id="writing-style-sample">
               <pre className="whitespace-pre-wrap rounded-md bg-muted p-3 text-sm leading-relaxed" style={{ fontFamily: "inherit" }}>
                 {profile.writing_style_sample}
               </pre>

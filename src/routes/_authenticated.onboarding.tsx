@@ -139,7 +139,7 @@ function OnboardingPage() {
             שישה שלבים קצרים מהקמת הכיתה ועד שליחת הדוח הראשון להורים. כל שלב מסומן אוטומטית כשהנתונים קיימים במערכת.
           </p>
         </div>
-        <Badge variant="secondary" className="text-sm">
+        <Badge variant="secondary" className="text-sm" role="status" aria-live="polite">
           {completed.size} מתוך {ONBOARDING_STEPS.length} הושלמו
         </Badge>
       </div>
@@ -147,19 +147,20 @@ function OnboardingPage() {
       {isLoading ? (
         <Skeleton className="h-3 w-full" />
       ) : (
-        <div className="space-y-1">
+        <div className="space-y-1" role="status" aria-live="polite">
           <Progress value={percent} aria-label={`התקדמות במדריך: ${percent} אחוז`} />
           <p className="text-xs text-muted-foreground">{percent}% הושלמו</p>
         </div>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <ul className="grid list-none gap-4 p-0 md:grid-cols-2" aria-label="שלבי המדריך החכם">
         {ONBOARDING_STEP_DEFS.map((step) => {
           const isDone = completed.has(step.id);
           const isAuto = (state?.auto ?? []).includes(step.id);
           const Icon = step.icon;
           return (
-            <Card key={step.id} className={`border ${step.surface}`}>
+            <li key={step.id}>
+            <Card className={`h-full border ${step.surface}`}>
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-base">
                   <Icon className={`h-5 w-5 ${step.iconClass}`} aria-hidden />
@@ -195,6 +196,7 @@ function OnboardingPage() {
                     variant="outline"
                     size="sm"
                     disabled={isAuto || mut.isPending}
+                    aria-busy={mut.isPending}
                     onClick={() => mut.mutate({ step: step.id, done: !(state?.done ?? []).includes(step.id) })}
                     aria-label={
                       isAuto
@@ -212,9 +214,10 @@ function OnboardingPage() {
                 </div>
               </CardContent>
             </Card>
+            </li>
           );
         })}
-      </div>
+      </ul>
     </div>
   );
 }
