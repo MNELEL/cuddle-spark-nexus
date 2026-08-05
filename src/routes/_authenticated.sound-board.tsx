@@ -138,6 +138,7 @@ function EventMapping() {
   const savePref = useServerFn(saveSoundPreference);
   const qc = useQueryClient();
   const [savingKey, setSavingKey] = useState<string | null>(null);
+  const [statusMsg, setStatusMsg] = useState("");
 
   const { data: prefs = [], isLoading } = useQuery({
     queryKey: ["sound-preferences"],
@@ -150,18 +151,23 @@ function EventMapping() {
     onMutate: (v) => setSavingKey(v.event_key),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["sound-preferences"] });
+      setStatusMsg("ההעדפה נשמרה");
       toast.success("ההעדפה נשמרה");
     },
-    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "השמירה נכשלה"),
+    onError: (e: unknown) => {
+      setStatusMsg("השמירה נכשלה");
+      toast.error(e instanceof Error ? e.message : "השמירה נכשלה");
+    },
     onSettled: () => setSavingKey(null),
   });
 
   if (isLoading) {
-    return <p className="text-sm text-muted-foreground">טוען העדפות…</p>;
+    return <p className="text-sm text-muted-foreground" role="status" aria-live="polite">טוען העדפות…</p>;
   }
 
   return (
-    <div className="space-y-3" aria-live="polite">
+    <div className="space-y-3">
+      <p className="sr-only" role="status" aria-live="polite">{statusMsg}</p>
       {SOUND_EVENTS.map((ev) => {
         const pref = prefs.find((p) => p.event_key === ev.key);
         const soundId = pref?.sound_id ?? defaultSoundFor(ev.key);
@@ -213,8 +219,9 @@ function EventMapping() {
                 <Button
                   variant="outline"
                   size="icon"
-                  className="min-h-9 min-w-9"
+                  className="min-h-11 min-w-11"
                   onClick={() => playSound(soundId, vol)}
+                  aria-busy={saving}
                   aria-label={`השמעה לדוגמה של הצליל עבור ${ev.label}`}
                 >
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Play className="h-4 w-4" aria-hidden />}
