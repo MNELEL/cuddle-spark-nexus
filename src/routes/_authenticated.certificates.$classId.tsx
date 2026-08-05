@@ -673,7 +673,6 @@ function StudentCertCard({
   onSaveNotes: () => void;
   onSuggestNotes: () => void;
 }) {
-  const fileRef = useRef<HTMLInputElement | null>(null);
   return (
     <Card>
       <CardContent className="space-y-3 py-4">
@@ -685,18 +684,11 @@ function StudentCertCard({
             ) : null}
           </div>
           <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" onClick={() => fileRef.current?.click()}>
-              <Camera className="ms-1 h-4 w-4" /> העלה צילום תעודה
-            </Button>
-            <input
-              ref={fileRef}
-              type="file"
+            <SmartUpload
+              compact
               accept="image/*"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0]; e.target.value = "";
-                if (f) onOcrPhoto(f);
-              }}
+              buttonLabel="העלה צילום תעודה"
+              onFile={(f) => onOcrPhoto(f)}
             />
             <Button size="sm" onClick={onExport}>
               <Download className="ms-1 h-4 w-4" /> הפק תעודה
