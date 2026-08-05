@@ -104,8 +104,8 @@ function YearChain({ classId }: { classId: string }) {
     queryFn: () => chainFn({ data: { id: classId } }),
   });
   const prev = data?.previous ?? null;
-  const next = data?.next ?? null;
-  if (!prev && !next) return null;
+  const nextList = data?.next ?? [];
+  if (!prev && nextList.length === 0) return null;
   return (
     <div className="flex flex-wrap items-center gap-2 text-sm">
       {prev && (
@@ -117,15 +117,16 @@ function YearChain({ classId }: { classId: string }) {
           שנה קודמת: {prev.name}{prev.academicYear ? ` · ${prev.academicYear}` : ""}
         </Link>
       )}
-      {next && (
+      {nextList.map((n) => (
         <Link
+          key={n.id}
           to="/classes/$classId"
-          params={{ classId: next.id }}
+          params={{ classId: n.id }}
           className="rounded-xl border px-3 py-1.5 text-muted-foreground transition-colors hover:text-primary"
         >
-          שנה הבאה: {next.name}{next.academicYear ? ` · ${next.academicYear}` : ""}
+          שנה הבאה: {n.name}{n.academicYear ? ` · ${n.academicYear}` : ""}
         </Link>
-      )}
+      ))}
     </div>
   );
 }
