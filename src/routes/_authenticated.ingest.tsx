@@ -1031,14 +1031,11 @@ function SmartAutoCard({
   onCreated: (jobId: string) => void;
 }) {
   const [busy, setBusy] = useState(false);
-  const [dragOver, setDragOver] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
   const getUrl = useServerFn(getIngestUploadUrl);
   const create = useServerFn(createIngestJob);
   const analyze = useServerFn(analyzeIngestJob);
 
   async function onFile(file: File) {
-    if (file.size > 20 * 1024 * 1024) { toast.error("הקובץ גדול מ-20MB"); return; }
     setBusy(true);
     try {
       const safeName = file.name.replace(/[^a-zA-Z0-9._\- ]/g, "_");
@@ -1056,7 +1053,6 @@ function SmartAutoCard({
       toast.error(e instanceof Error ? e.message : "שגיאה בהעלאה");
     } finally {
       setBusy(false);
-      if (inputRef.current) inputRef.current.value = "";
     }
   }
 
