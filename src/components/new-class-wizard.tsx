@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, Lock, Sparkles, FileDown } from "lucide-react";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader,
   DialogTitle, DialogTrigger,
@@ -22,6 +22,9 @@ import {
   createClass, suggestParentClass, listRolloverStudents,
 } from "@/lib/classes.functions";
 import { defaultAcademicYear } from "@/lib/year-rollover";
+import { listClassProfiles } from "@/lib/student-profiles.functions";
+import { buildHandoffPdfBlob, handoffPdfFilename } from "@/lib/pdf/handoff-report-pdf";
+import { downloadPdfBlob } from "@/lib/pdf/pdf-builder";
 
 type LinkMode = "suggested" | "other" | "none";
 
@@ -37,6 +40,7 @@ export function NewClassWizard() {
   const suggestFn = useServerFn(suggestParentClass);
   const studentsFn = useServerFn(listRolloverStudents);
   const createFn = useServerFn(createClass);
+  const profilesFn = useServerFn(listClassProfiles);
   const qc = useQueryClient();
   const navigate = useNavigate();
 
@@ -71,6 +75,20 @@ export function NewClassWizard() {
     () => srcStudents.filter((s) => !excluded.has(s.id)).map((s) => s.id),
     [srcStudents, excluded],
   );
+
+  const selected = srcStudents.filter((s) => !excluded.has(s.id));
+  const handoffCount = selected.filter((s) => s.hasSensitive || s.hasGuidance).length;
+  const parentName =
+    mode === "suggested" ? suggestion?.suggested?.name ?? "" : candidatesName(suggestion, otherId);
+
+  const handoffPdf = useMutation({
+    mutationFn: async () => {
+      const rows = await profilesFn({ data: { classId: parentId } });
+      const blob = await buildHandoffPdfBlob(parentName || "כיתה", rows);
+      downloadPdfBlob(blob, handoffPdfFilename(parentName || "class"));
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
+  });
 
   const reset = () => {
     setName(""); setDebounced(""); setYear(defaultAcademicYear());
@@ -212,10 +230,40 @@ export function NewClassWizard() {
                           }
                         />
                         <span>{s.name}</span>
+                        {s.hasSensitive && (
+                          <Badge variant="secondary" className="gap-1">
+                            <Lock className="h-3 w-3" aria-hidden="true" /> מידע רגיש
+                          </Badge>
+                        )}
+                        {s.hasGuidance && (
+                          <Badge variant="outline" className="gap-1">
+                            <Sparkles className="h-3 w-3" aria-hidden="true" /> הנחיות
+                          </Badge>
+                        )}
                       </label>
                     ))}
                   </div>
                 </ScrollArea>
+              )}
+              {srcStudents.length > 0 && (
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-muted/50 p-2 text-xs">
+                  <span className="text-muted-foreground">
+                    {handoffCount > 0
+                      ? `${handoffCount} מסמכי מסירה (מידע רגיש / הנחיות הוראה) יועברו לכיתה החדשה`
+                      : "אין מידע רגיש או הנחיות הוראה מתועדים"}
+                  </span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="rounded-xl"
+                    disabled={handoffPdf.isPending}
+                    onClick={() => handoffPdf.mutate()}
+                  >
+                    <FileDown className="ms-1 h-3.5 w-3.5" />
+                    {handoffPdf.isPending ? "מכין…" : "מסמך מסירה PDF"}
+                  </Button>
+                </div>
               )}
               <label className="flex items-center gap-2 pt-1 text-sm">
                 <Checkbox checked={archiveParent} onCheckedChange={(v) => setArchiveParent(!!v)} />
