@@ -689,7 +689,7 @@ function StudentCertCard({
               compact
               accept="image/*"
               buttonLabel="העלה צילום תעודה"
-              onFile={(f) => onOcrPhoto(f)}
+              onFile={(f: File) => onOcrPhoto(f)}
             />
             <Button size="sm" onClick={onExport}>
               <Download className="ms-1 h-4 w-4" /> הפק תעודה
