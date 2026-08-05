@@ -21,6 +21,7 @@ import {
   listBadges, upsertBadge, deleteBadge, awardBadge, listBadgeAwards,
   removeBadgeAward, suggestBadgeIdeas,
 } from "@/lib/badges.functions";
+import { useAppSounds } from "@/hooks/use-app-sounds";
 import {
   BADGE_CATEGORIES, BADGE_CATEGORY_LABELS, type BadgeCategory, type BadgeRow,
 } from "@/lib/badge-options";
@@ -34,6 +35,7 @@ export function BadgesPanel({ classId, students, readOnly = false }: {
   readOnly?: boolean;
 }) {
   const qc = useQueryClient();
+  const { playEvent } = useAppSounds();
   const fetchBadges = useServerFn(listBadges);
   const fetchAwards = useServerFn(listBadgeAwards);
   const save = useServerFn(upsertBadge);
@@ -257,7 +259,12 @@ export function BadgesPanel({ classId, students, readOnly = false }: {
         onClose={() => setAwarding(null)}
         onAward={(payload) =>
           award({ data: { classId, badgeId: awarding!.id, ...payload } })
-            .then(() => { invalidate(); setAwarding(null); toast.success("התג הוענק"); })
+            .then(() => {
+              invalidate();
+              setAwarding(null);
+              playEvent("badge_awarded");
+              toast.success("התג הוענק");
+            })
             .catch((e: unknown) => toast.error(e instanceof Error ? e.message : "ההענקה נכשלה"))
         }
       />
