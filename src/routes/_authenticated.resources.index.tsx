@@ -116,6 +116,13 @@ function ResourcesPage() {
   const viewKeys = useTablistKeys(VIEW_TABS, view, setView);
   const categoryKeys = useTablistKeys(CATEGORY_IDS, category, setCategory);
 
+  const hasActiveFilters =
+    category !== "all" ||
+    Boolean(filters.search || filters.resource_type || filters.subject || filters.grade_level || filters.difficulty) ||
+    filters.favoritesOnly ||
+    filters.collectionIds.length > 0 ||
+    filters.topicIds.length > 0;
+
   // Server query holds only server-side filters; collection/topic filtering runs
   // client-side on the same dataset so no control overwrites another.
   const serverArgs = {
