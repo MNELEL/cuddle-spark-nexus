@@ -94,6 +94,16 @@ const DIFFICULTY_BADGE: Record<Difficulty, string> = {
   hard: "border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-300",
 };
 
+/** מונע פוקוס אוטומטי בשדה הראשון, אך ממקד את מסגרת הדיאלוג כדי שהמקלדת תמשיך משם באופן עקבי */
+function focusDialogShell(e: Event) {
+  e.preventDefault();
+  const el = e.currentTarget as HTMLElement | null;
+  if (el) {
+    el.setAttribute("tabindex", "-1");
+    el.focus();
+  }
+}
+
 function ResourcesPage() {
   const qc = useQueryClient();
   const list = useServerFn(listResources);
@@ -782,7 +792,7 @@ function ResourceViewerDialog({
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent
         className="max-w-3xl max-h-[90vh] overflow-y-auto"
-        onOpenAutoFocus={(e) => e.preventDefault()}
+        onOpenAutoFocus={focusDialogShell}
       >
         <DialogHeader>
           <DialogTitle className="text-right">{resource.title}</DialogTitle>
@@ -889,7 +899,7 @@ function ResourceEditorDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" onOpenAutoFocus={(e) => e.preventDefault()}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" onOpenAutoFocus={focusDialogShell}>
         <DialogHeader>
           <DialogTitle>{initial.id ? "עריכת חומר" : "חומר חדש"}</DialogTitle>
         </DialogHeader>
@@ -1080,7 +1090,7 @@ function AIGeneratorDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-xl" onOpenAutoFocus={(e) => e.preventDefault()}>
+      <DialogContent className="max-w-xl" onOpenAutoFocus={focusDialogShell}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-amber" />
@@ -1175,7 +1185,7 @@ function CollectionsDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent onOpenAutoFocus={(e) => e.preventDefault()}>
+      <DialogContent onOpenAutoFocus={focusDialogShell}>
         <DialogHeader><DialogTitle>אוספים</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <p className="text-xs text-muted-foreground">בחר אוספים כדי לסנן את רשימת החומרים.</p>
