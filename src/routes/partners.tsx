@@ -247,13 +247,13 @@ function PartnerContactForm() {
         <CardContent>
           <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
-              <Label>שם המוסד *</Label>
-              <Input value={f.institutionName} onChange={(e) => set("institutionName", e.target.value)} placeholder="ת״ת / ישיבה / רשת" />
+              <Label htmlFor="partner-institution-name">שם המוסד *</Label>
+              <Input id="partner-institution-name" name="institutionName" value={f.institutionName} onChange={(e) => set("institutionName", e.target.value)} placeholder="ת״ת / ישיבה / רשת" />
             </div>
             <div>
-              <Label>סוג המוסד</Label>
+              <Label htmlFor="partner-institution-type">סוג המוסד</Label>
               <Select value={f.institutionType} onValueChange={(v) => set("institutionType", v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger id="partner-institution-type" aria-label="סוג המוסד"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="school">בית ספר</SelectItem>
                   <SelectItem value="cheder">חיידר / תלמוד תורה</SelectItem>
@@ -263,36 +263,36 @@ function PartnerContactForm() {
               </Select>
             </div>
             <div>
-              <Label>תפקיד</Label>
-              <Input value={f.role} onChange={(e) => set("role", e.target.value)} placeholder="מנהל / מזכיר / רכז" />
+              <Label htmlFor="partner-role">תפקיד</Label>
+              <Input id="partner-role" name="role" value={f.role} onChange={(e) => set("role", e.target.value)} placeholder="מנהל / מזכיר / רכז" />
             </div>
             <div>
-              <Label>שם איש הקשר *</Label>
-              <Input value={f.contactName} onChange={(e) => set("contactName", e.target.value)} />
+              <Label htmlFor="partner-contact-name">שם איש הקשר *</Label>
+              <Input id="partner-contact-name" name="contactName" autoComplete="name" value={f.contactName} onChange={(e) => set("contactName", e.target.value)} />
             </div>
             <div>
-              <Label>אימייל *</Label>
-              <Input type="email" value={f.email} onChange={(e) => set("email", e.target.value)} />
+              <Label htmlFor="partner-email">אימייל *</Label>
+              <Input id="partner-email" name="email" autoComplete="email" type="email" value={f.email} onChange={(e) => set("email", e.target.value)} />
             </div>
             <div>
-              <Label>טלפון</Label>
-              <Input value={f.phone} onChange={(e) => set("phone", e.target.value)} inputMode="tel" />
+              <Label htmlFor="partner-phone">טלפון</Label>
+              <Input id="partner-phone" name="phone" autoComplete="tel" value={f.phone} onChange={(e) => set("phone", e.target.value)} inputMode="tel" />
             </div>
             <div>
-              <Label>מועד מועדף לדמו</Label>
-              <Input type="date" value={f.demoDate} onChange={(e) => set("demoDate", e.target.value)} />
+              <Label htmlFor="partner-demo-date">מועד מועדף לדמו</Label>
+              <Input id="partner-demo-date" name="demoDate" type="date" value={f.demoDate} onChange={(e) => set("demoDate", e.target.value)} />
             </div>
             <div>
-              <Label>מספר תלמידים</Label>
-              <Input value={f.studentCount} onChange={(e) => set("studentCount", e.target.value)} inputMode="numeric" />
+              <Label htmlFor="partner-student-count">מספר תלמידים</Label>
+              <Input id="partner-student-count" name="studentCount" value={f.studentCount} onChange={(e) => set("studentCount", e.target.value)} inputMode="numeric" />
             </div>
             <div>
-              <Label>מספר מלמדים</Label>
-              <Input value={f.teacherCount} onChange={(e) => set("teacherCount", e.target.value)} inputMode="numeric" />
+              <Label htmlFor="partner-teacher-count">מספר מלמדים</Label>
+              <Input id="partner-teacher-count" name="teacherCount" value={f.teacherCount} onChange={(e) => set("teacherCount", e.target.value)} inputMode="numeric" />
             </div>
             <div className="sm:col-span-2">
-              <Label>הודעה חופשית</Label>
-              <Textarea rows={4} value={f.message} onChange={(e) => set("message", e.target.value)} placeholder="ספרו לנו על צרכי המוסד — מה הכי חשוב שתראו בדמו?" />
+              <Label htmlFor="partner-message">הודעה חופשית</Label>
+              <Textarea id="partner-message" name="message" rows={4} value={f.message} onChange={(e) => set("message", e.target.value)} placeholder="ספרו לנו על צרכי המוסד — מה הכי חשוב שתראו בדמו?" />
             </div>
             <div className="sm:col-span-2 flex flex-wrap gap-2 pt-1">
               <Button type="submit" size="lg" className="gap-2">
