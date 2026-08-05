@@ -79,7 +79,9 @@ export function NewClassWizard() {
   const selected = srcStudents.filter((s) => !excluded.has(s.id));
   const handoffCount = selected.filter((s) => s.hasSensitive || s.hasGuidance).length;
   const parentName =
-    mode === "suggested" ? suggestion?.suggested?.name ?? "" : candidatesName(suggestion, otherId);
+    mode === "suggested"
+      ? suggestion?.suggested?.name ?? ""
+      : (suggestion?.candidates ?? []).find((c) => c.id === otherId)?.name ?? "";
 
   const handoffPdf = useMutation({
     mutationFn: async () => {
