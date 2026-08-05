@@ -1033,6 +1033,7 @@ function AIGeneratorDialog({
         tags: draft.tags,
         content: draft.content,
         resource_type: resourceType,
+        difficulty: draft.difficulty,
         subject, grade_level: gradeLevel,
         ai_generated: true,
         source_prompt: prompt,
