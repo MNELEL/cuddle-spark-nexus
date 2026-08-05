@@ -54,10 +54,11 @@ export const createClass = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const institutionId = await resolveInstitutionId(supabase, userId);
 
-    let parent: {
+    type ParentInfo = {
       id: string; grid_cols: number; grid_rows: number;
       hidden_seats: unknown; room_objects: unknown;
-    } | null = null;
+    };
+    let parent: ParentInfo | null = null;
     if (data.parent_class_id) {
       const { data: p, error: pe } = await supabase
         .from("classes")
@@ -66,7 +67,7 @@ export const createClass = createServerFn({ method: "POST" })
         .maybeSingle();
       if (pe) { console.error("[DB Error]", pe); throw new Error("הפעולה נכשלה. נסה שוב."); }
       if (!p) throw new Error("הכיתה הקודמת לא נמצאה");
-      parent = p as typeof parent;
+      parent = p as ParentInfo;
     }
 
     const { data: row, error } = await supabase
