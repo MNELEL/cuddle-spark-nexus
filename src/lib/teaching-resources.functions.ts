@@ -357,7 +357,7 @@ export const generateResourceWithAI = createServerFn({ method: "POST" })
     source_resource_id: uuid.optional(),
   }).parse(d))
   .handler(async ({ data, context }): Promise<{
-    title: string; description: string; tags: string[]; content: ResourceContent;
+    title: string; description: string; tags: string[]; content: ResourceContent; difficulty: Difficulty;
   }> => {
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("חסר LOVABLE_API_KEY");
@@ -390,6 +390,7 @@ export const generateResourceWithAI = createServerFn({ method: "POST" })
   "title": "כותרת קצרה ומכובדת",
   "description": "1-2 משפטים שמסבירים מה החומר כולל",
   "tags": ["תגית1", "תגית2"],
+  "difficulty": "easy | medium | hard",
   "content": {
     "body": "טקסט פתיחה / הוראות / הסבר (אופציונלי)",
     "questions": [{"q": "שאלה", "a": "תשובה (אופציונלי)"}],
@@ -415,7 +416,7 @@ export const generateResourceWithAI = createServerFn({ method: "POST" })
       ],
       jsonResponse: true,
     })) || "{}";
-    let parsed: { title?: string; description?: string; tags?: unknown; content?: ResourceContent } = {};
+    let parsed: { title?: string; description?: string; tags?: unknown; content?: ResourceContent; difficulty?: string } = {};
     try { parsed = JSON.parse(raw); } catch { /* ignore */ }
 
     return {
@@ -423,5 +424,94 @@ export const generateResourceWithAI = createServerFn({ method: "POST" })
       description: String(parsed.description ?? "").slice(0, 2000),
       tags: Array.isArray(parsed.tags) ? parsed.tags.map((t) => String(t).slice(0, 40)).slice(0, 20) : [],
       content: parsed.content ?? {},
+      difficulty: (DIFFICULTIES as readonly string[]).includes(String(parsed.difficulty))
+        ? (parsed.difficulty as Difficulty)
+        : "medium",
+    };
+  });
+
+/* ----------------------------- ask the library ----------------------------- */
+
+export type LibraryAnswer = {
+  answer: string;
+  sources: { id: string; title: string; resource_type: ResourceType }[];
+};
+
+type CtxRow = {
+  id: string; title: string; description: string | null; subject: string | null;
+  grade_level: string | null; resource_type: ResourceType; tags: string[] | null;
+  content: ResourceContent | null; difficulty: string | null;
+};
+
+const CTX_COLS = "id,title,description,subject,grade_level,resource_type,tags,content,difficulty";
+
+export const askLibrary = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ question: z.string().min(3).max(500) }).parse(d))
+  .handler(async ({ data, context }): Promise<LibraryAnswer> => {
+    let rows: CtxRow[] = [];
+
+    // Semantic retrieval first (falls back to recent/text search).
+    const vec = await embedText(data.question);
+    if (vec) {
+      const { data: matches } = await context.supabase.rpc("match_resources", {
+        query_embedding: vec as unknown as never,
+        owner: context.userId,
+        match_count: 8,
+      });
+      const ids = ((matches ?? []) as { id: string }[]).map((m) => m.id);
+      if (ids.length > 0) {
+        const { data: r } = await context.supabase
+          .from("teaching_resources").select(CTX_COLS).in("id", ids);
+        rows = (r ?? []) as unknown as CtxRow[];
+      }
+    }
+    if (rows.length === 0) {
+      const { data: r } = await context.supabase
+        .from("teaching_resources").select(CTX_COLS)
+        .order("updated_at", { ascending: false }).limit(8);
+      rows = (r ?? []) as unknown as CtxRow[];
+    }
+
+    if (rows.length === 0) {
+      return { answer: "הספרייה שלך עדיין ריקה — צור או העלה חומר ראשון ואוכל לענות על שאלות עליו.", sources: [] };
+    }
+
+    const ctx = rows
+      .map((r, i) => {
+        const body = (r.content?.body ?? "").slice(0, 600);
+        const qs = (r.content?.questions ?? []).slice(0, 5).map((q) => q.q).join(" | ");
+        return [
+          `[${i + 1}] ${r.title}`,
+          `סוג: ${RESOURCE_TYPE_LABELS[r.resource_type] ?? r.resource_type}`,
+          r.subject ? `מקצוע: ${r.subject}` : "",
+          r.grade_level ? `כיתה: ${r.grade_level}` : "",
+          r.difficulty ? `רמת קושי: ${DIFFICULTY_LABELS[(r.difficulty as Difficulty)] ?? r.difficulty}` : "",
+          (r.tags ?? []).length ? `תגיות: ${(r.tags ?? []).join(", ")}` : "",
+          r.description ? `תיאור: ${r.description.slice(0, 300)}` : "",
+          body ? `תוכן: ${body}` : "",
+          qs ? `שאלות: ${qs}` : "",
+        ].filter(Boolean).join("\n");
+      })
+      .join("\n---\n");
+
+    const answer = await callLovableAI({
+      messages: [
+        {
+          role: "system",
+          content: `אתה עוזר של רב/מלמד בתלמוד תורה. ענה בעברית מכובדת, בקצרה ולעניין, על בסיס החומרים שבספרייה של הרב בלבד.
+אם התשובה אינה נמצאת בחומרים — אמור זאת בפירוש והצע איזה חומר כדאי ליצור.
+כשאתה מסתמך על חומר, ציין את שמו במפורש. אל תמציא חומרים שאינם ברשימה.
+
+חומרי הספרייה:
+${ctx}`,
+        },
+        { role: "user", content: data.question },
+      ],
+    });
+
+    return {
+      answer: answer.trim() || "לא הצלחתי לנסח תשובה. נסה לנסח את השאלה מחדש.",
+      sources: rows.map((r) => ({ id: r.id, title: r.title, resource_type: r.resource_type })),
     };
   });
