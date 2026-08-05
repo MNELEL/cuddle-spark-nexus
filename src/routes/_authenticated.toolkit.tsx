@@ -410,14 +410,15 @@ function RandomPicker() {
           rows={3} value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="שמות תלמידים או פריטים, כל אחד בשורה או מופרד בפסיק"
+          aria-label="רשימת שמות או פריטים להגרלה"
         />
-        <div className="rounded-lg border-2 border-dashed bg-muted/40 p-4 text-center">
+        <div className="rounded-lg border-2 border-dashed bg-muted/40 p-4 text-center" role="status" aria-live="polite">
           <div className={`text-2xl font-bold ${spinning ? "animate-pulse" : ""}`}>
             {picked ?? <span className="text-sm font-normal text-muted-foreground">לחץ "בחר" כדי להגריל</span>}
           </div>
         </div>
-        <Button onClick={pick} disabled={items.length === 0 || spinning} className="w-full">
-          <Shuffle className="ms-1 h-4 w-4" /> בחר אקראי ({items.length})
+        <Button onClick={pick} disabled={items.length === 0 || spinning} aria-busy={spinning} className="w-full">
+          <Shuffle className="ms-1 h-4 w-4" aria-hidden /> בחר אקראי ({items.length})
         </Button>
       </CardContent>
     </Card>
@@ -469,12 +470,20 @@ function NoiseMeter() {
     <Card>
       <CardHeader><CardTitle>מד רעש</CardTitle></CardHeader>
       <CardContent className="space-y-3">
-        <div className="text-center font-mono-tabular text-5xl font-bold">{level}%</div>
-        <div className="h-4 overflow-hidden rounded-full bg-muted">
+        <div className="text-center font-mono-tabular text-5xl font-bold" aria-hidden>{level}%</div>
+        <div
+          className="h-4 overflow-hidden rounded-full bg-muted"
+          role="progressbar"
+          aria-label="עוצמת הרעש בכיתה"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={level}
+          aria-valuetext={`${level} אחוז`}
+        >
           <div className={`h-full transition-all ${color}`} style={{ width: `${level}%` }} />
         </div>
-        <Button onClick={active ? stop : start} className="w-full" variant={active ? "secondary" : "default"}>
-          {active ? <><MicOff className="ms-1 h-4 w-4" /> עצור</> : <><Mic className="ms-1 h-4 w-4" /> התחל מדידה</>}
+        <Button onClick={active ? stop : start} className="w-full" variant={active ? "secondary" : "default"} aria-pressed={active}>
+          {active ? <><MicOff className="ms-1 h-4 w-4" aria-hidden /> עצור</> : <><Mic className="ms-1 h-4 w-4" aria-hidden /> התחל מדידה</>}
         </Button>
       </CardContent>
     </Card>
@@ -508,18 +517,29 @@ function FlashCards() {
         {current ? (
           <>
             <button
+              type="button"
               onClick={() => setFlipped((f) => !f)}
-              className="flex min-h-[140px] w-full items-center justify-center rounded-xl border-2 bg-gradient-to-br from-primary/10 to-accent/30 p-4 text-center text-xl font-semibold transition-all hover:scale-[1.01]"
+              aria-pressed={flipped}
+              aria-label={flipped ? "הצג את השאלה" : "הצג את התשובה"}
+              className="flex min-h-[140px] w-full items-center justify-center rounded-xl border-2 bg-gradient-to-br from-primary/10 to-accent/30 p-4 text-center text-xl font-semibold transition-all hover:scale-[1.01] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none"
             >
-              {flipped ? current.a : current.q}
+              <span role="status" aria-live="polite">{flipped ? current.a : current.q}</span>
             </button>
             <div className="flex items-center justify-between">
-              <Button size="sm" variant="ghost" onClick={() => { setIdx((i) => (i - 1 + cards.length) % cards.length); setFlipped(false); }}>
-                <ChevronRight className="h-4 w-4" />
+              <Button
+                size="icon" variant="ghost" className="min-h-11 min-w-11"
+                aria-label="לכרטיס הקודם"
+                onClick={() => { setIdx((i) => (i - 1 + cards.length) % cards.length); setFlipped(false); }}
+              >
+                <ChevronRight className="h-4 w-4" aria-hidden />
               </Button>
-              <span className="text-sm text-muted-foreground">{idx + 1} / {cards.length}</span>
-              <Button size="sm" variant="ghost" onClick={() => { setIdx((i) => (i + 1) % cards.length); setFlipped(false); }}>
-                <ChevronLeft className="h-4 w-4" />
+              <span className="text-sm text-muted-foreground">כרטיס {idx + 1} מתוך {cards.length}</span>
+              <Button
+                size="icon" variant="ghost" className="min-h-11 min-w-11"
+                aria-label="לכרטיס הבא"
+                onClick={() => { setIdx((i) => (i + 1) % cards.length); setFlipped(false); }}
+              >
+                <ChevronLeft className="h-4 w-4" aria-hidden />
               </Button>
             </div>
             <Button size="sm" variant="outline" className="w-full" onClick={() => {
@@ -531,8 +551,8 @@ function FlashCards() {
           <p className="py-6 text-center text-sm text-muted-foreground">אין כרטיסים עדיין — הוסף למטה</p>
         )}
         <div className="space-y-2 border-t pt-3">
-          <Input placeholder="שאלה" value={q} onChange={(e) => setQ(e.target.value)} />
-          <Input placeholder="תשובה" value={a} onChange={(e) => setA(e.target.value)} />
+          <Input placeholder="שאלה" aria-label="שאלה לכרטיס חדש" value={q} onChange={(e) => setQ(e.target.value)} />
+          <Input placeholder="תשובה" aria-label="תשובה לכרטיס חדש" value={a} onChange={(e) => setA(e.target.value)} />
           <Button size="sm" onClick={add} disabled={!q.trim() || !a.trim()} className="w-full">הוסף כרטיס</Button>
         </div>
       </CardContent>
