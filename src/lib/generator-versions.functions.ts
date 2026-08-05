@@ -4,12 +4,14 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export type GeneratorKind = "summary" | "tasks";
 
+export type GeneratorParams = Record<string, string | number | boolean | null>;
+
 export type GeneratorVersion = {
   id: string;
   kind: GeneratorKind;
   title: string;
   body: string;
-  params: Record<string, unknown>;
+  params: GeneratorParams;
   resource_id: string | null;
   created_at: string;
 };
@@ -19,7 +21,7 @@ const rowToVersion = (r: Record<string, unknown>): GeneratorVersion => ({
   kind: (r["kind"] as GeneratorKind) ?? "summary",
   title: (r["title"] as string) ?? "",
   body: (r["body"] as string) ?? "",
-  params: (r["params"] as Record<string, unknown>) ?? {},
+  params: (r["params"] as GeneratorParams) ?? {},
   resource_id: (r["resource_id"] as string | null) ?? null,
   created_at: String(r["created_at"]),
 });
@@ -59,7 +61,7 @@ export const saveGeneratorVersion = createServerFn({ method: "POST" })
     kind: z.enum(["summary", "tasks"]),
     title: z.string().max(200).default(""),
     body: z.string().max(60_000).default(""),
-    params: z.record(z.string(), z.unknown()).default({}),
+    params: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])).default({}),
     resourceId: z.string().uuid().nullish(),
   }).parse(d))
   .handler(async ({ data, context }): Promise<GeneratorVersion> => {
