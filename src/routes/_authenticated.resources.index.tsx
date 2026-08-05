@@ -108,6 +108,9 @@ function ResourcesPage() {
   const [category, setCategory] = useState("all");
   const [view, setView] = useState<"items" | "ask">("items");
 
+  const viewKeys = useTablistKeys(VIEW_TABS, view, setView);
+  const categoryKeys = useTablistKeys(CATEGORY_IDS, category, setCategory);
+
   // Server query holds only server-side filters; collection/topic filtering runs
   // client-side on the same dataset so no control overwrites another.
   const serverArgs = {
