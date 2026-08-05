@@ -28,6 +28,7 @@ import { RosterReviewTable } from "@/components/ingest/roster-review-table";
 import { ColumnMapper } from "@/components/ingest/column-mapper";
 import { exportLessonSummaryPdf } from "@/lib/pdf/lesson-summary-pdf";
 import { PdfPreviewDialog } from "@/components/ingest/pdf-preview-dialog";
+import { SmartUpload } from "@/components/smart-upload";
 
 type SearchParams = { classId?: string };
 
