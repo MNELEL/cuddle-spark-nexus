@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Lock, ShieldCheck, KeyRound, AlertCircle } from "lucide-react";
+import { Lock, ShieldCheck, KeyRound, AlertCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export function SecuritySettings() {
@@ -38,32 +38,41 @@ export function SecuritySettings() {
     if (!/^\d{4}$/.test(newPin)) { setErr("PIN חייב 4 ספרות"); return; }
     if (newPin !== confirmPin) { setErr("האימות לא תואם"); return; }
     setBusy(true);
+    toast.loading(enabled ? "מעדכן PIN…" : "מפעיל נעילה…", { id: "pin_save" });
     try {
       await setPinFn({ data: { pin: newPin } });
-      toast.success("ה-PIN נשמר ונעילת הלוח הופעלה");
+      toast.success(enabled ? "ה-PIN עודכן בהצלחה" : "ה-PIN נשמר ונעילת הלוח הופעלה", { id: "pin_save" });
       sessionStorage.setItem("ca_pin_unlocked", "1");
       qc.invalidateQueries({ queryKey: ["app_security"] });
       setSetOpen(false);
       setNewPin(""); setConfirmPin("");
     } catch (e: any) {
       setErr(e?.message ?? "שגיאה");
+      toast.error(e?.message ?? "שמירת ה-PIN נכשלה", { id: "pin_save" });
     } finally { setBusy(false); }
   }
 
   async function handleDisable() {
     setErr(null);
     setBusy(true);
+    toast.loading("מכבה נעילה…", { id: "pin_disable" });
     try {
       const r = await verifyFn({ data: { pin: verifyInput } });
-      if (!r.ok) { setErr("PIN שגוי"); setBusy(false); return; }
+      if (!r.ok) {
+        setErr("PIN שגוי");
+        toast.error("PIN שגוי — הנעילה לא כובתה", { id: "pin_disable" });
+        setBusy(false);
+        return;
+      }
       await disableFn();
       sessionStorage.removeItem("ca_pin_unlocked");
       qc.invalidateQueries({ queryKey: ["app_security"] });
-      toast.success("נעילת הלוח כובתה");
+      toast.success("נעילת הלוח כובתה בהצלחה", { id: "pin_disable" });
       setDisableOpen(false);
       setVerifyInput("");
     } catch (e: any) {
       setErr(e?.message ?? "שגיאה");
+      toast.error(e?.message ?? "כיבוי הנעילה נכשל", { id: "pin_disable" });
     } finally { setBusy(false); }
   }
 
@@ -95,10 +104,17 @@ export function SecuritySettings() {
             <Switch
               className="shrink-0"
               checked={enabled}
-              disabled={isLoading}
+              disabled={isLoading || busy}
               onCheckedChange={onToggle}
             />
           </div>
+
+          {(isLoading || busy) && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground" role="status" aria-live="polite">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              {isLoading ? "טוען מצב אבטחה…" : "מעדכן…"}
+            </div>
+          )}
 
           {enabled && (
             <div className="flex flex-wrap gap-2">
@@ -146,7 +162,7 @@ export function SecuritySettings() {
           <DialogFooter>
             <Button variant="ghost" onClick={() => setSetOpen(false)}>בטל</Button>
             <Button onClick={handleSave} disabled={busy || newPin.length !== 4 || confirmPin.length !== 4}>
-              שמור
+              {busy ? (<><Loader2 className="ms-1 h-4 w-4 animate-spin" /> שומר…</>) : "שמור"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -169,7 +185,7 @@ export function SecuritySettings() {
           <DialogFooter>
             <Button variant="ghost" onClick={() => setDisableOpen(false)}>בטל</Button>
             <Button variant="destructive" onClick={handleDisable} disabled={busy || verifyInput.length !== 4}>
-              כבה נעילה
+              {busy ? (<><Loader2 className="ms-1 h-4 w-4 animate-spin" /> מכבה…</>) : "כבה נעילה"}
             </Button>
           </DialogFooter>
         </DialogContent>
