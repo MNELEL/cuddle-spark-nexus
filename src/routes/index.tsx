@@ -290,7 +290,7 @@ function Index() {
         </section>
 
         <footer className="mt-28 text-center text-xs text-muted-foreground">
-          נבנה עם אהבה למלמדים ולרבנים · הכיתה שלי © {new Date().getFullYear()}
+          נבנה במיוחד עבור חדרים וישיבות, מלמדים ולרבנים · הכיתה שלי © {new Date().getFullYear()}
         </footer>
       </main>
     </div>
