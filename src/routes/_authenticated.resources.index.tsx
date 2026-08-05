@@ -500,12 +500,21 @@ function ResourcesPage() {
             </CardContent></Card>
           )}
           {!isLoading && visibleResources.length === 0 && (
-            <Card><CardContent className="py-16 text-center">
+            <Card><CardContent className="py-16 text-center" aria-live="polite">
               <BookOpen className="mx-auto mb-3 h-10 w-10 text-muted-foreground/50" />
-              <div className="text-muted-foreground">אין עדיין חומרים — צור את הראשון עם AI ✨</div>
+              <div className="text-muted-foreground">
+                {hasActiveFilters ? "אין חומרים תואמים לסינון הנוכחי" : "אין עדיין חומרים — צור את הראשון עם AI ✨"}
+              </div>
+              {hasActiveFilters && (
+                <Button variant="outline" className="mt-4" onClick={() => { setFilters(emptyFilters); setCategory("all"); }}>
+                  <X className="ms-1 h-4 w-4" /> נקה סינון
+                </Button>
+              )}
+              {!hasActiveFilters && (
               <Button className="mt-4" onClick={() => setAiOpen(true)}>
                 <Sparkles className="ms-1 h-4 w-4" /> צור עם AI
               </Button>
+              )}
             </CardContent></Card>
           )}
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
