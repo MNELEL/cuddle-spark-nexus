@@ -224,8 +224,10 @@ function ResourcesPage() {
           type="button"
           role="tab"
           aria-selected={view === "items"}
+          tabIndex={view === "items" ? 0 : -1}
+          onKeyDown={viewKeys}
           onClick={() => setView("items")}
-          className={`rounded-full border px-4 py-1.5 text-sm transition ${view === "items" ? "border-primary bg-primary text-primary-foreground" : "hover:bg-accent"}`}
+          className={`min-h-9 rounded-full border px-4 py-1.5 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${view === "items" ? "border-primary bg-primary font-semibold text-primary-foreground" : "hover:bg-accent"}`}
         >
           <Library className="ms-1 inline h-4 w-4" /> החומרים שלי
         </button>
@@ -233,8 +235,10 @@ function ResourcesPage() {
           type="button"
           role="tab"
           aria-selected={view === "ask"}
+          tabIndex={view === "ask" ? 0 : -1}
+          onKeyDown={viewKeys}
           onClick={() => setView("ask")}
-          className={`rounded-full border px-4 py-1.5 text-sm transition ${view === "ask" ? "border-primary bg-primary text-primary-foreground" : "hover:bg-accent"}`}
+          className={`min-h-9 rounded-full border px-4 py-1.5 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${view === "ask" ? "border-primary bg-primary font-semibold text-primary-foreground" : "hover:bg-accent"}`}
         >
           <MessageCircleQuestion className="ms-1 inline h-4 w-4" /> שאל AI על הספרייה
         </button>
@@ -254,8 +258,10 @@ function ResourcesPage() {
               type="button"
               role="tab"
               aria-selected={on}
+              tabIndex={on ? 0 : -1}
+              onKeyDown={categoryKeys}
               onClick={() => setCategory(c.id)}
-              className={`shrink-0 rounded-full border px-3 py-1.5 text-sm transition ${on ? "border-primary bg-primary text-primary-foreground" : "hover:bg-accent"}`}
+              className={`min-h-9 shrink-0 rounded-full border px-3 py-1.5 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${on ? "border-primary bg-primary font-semibold text-primary-foreground" : "hover:bg-accent"}`}
             >
               {c.label}
             </button>
