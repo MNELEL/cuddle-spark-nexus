@@ -95,6 +95,7 @@ function ResourcesPage() {
   const del = useServerFn(deleteResource);
   const listColls = useServerFn(listCollections);
   const listCollItems = useServerFn(listCollectionItems);
+  const toggleFav = useServerFn(toggleResourceFavorite);
 
   const [filters, setFilters] = useState<FilterState>(emptyFilters);
   const patch = (p: Partial<FilterState>) => setFilters((f) => ({ ...f, ...p }));
