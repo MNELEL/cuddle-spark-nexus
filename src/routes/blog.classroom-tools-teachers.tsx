@@ -21,17 +21,21 @@ const TOOLS = [
 
 export const Route = createFileRoute("/blog/classroom-tools-teachers")({
   component: Article,
-  head: () => blogPostHead("/blog/classroom-tools-teachers", [{
-          "@context": "https://schema.org",
-          "@type": "ItemList",
-          name: TITLE,
-          inLanguage: "he",
-          itemListElement: TOOLS.map((t, i) => ({
-            "@type": "ListItem",
-            position: i + 1,
-            name: t.name,
-            description: t.desc,
-          })]),
+  head: () =>
+    blogPostHead("/blog/classroom-tools-teachers", [
+      {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        name: TITLE,
+        inLanguage: "he",
+        itemListElement: TOOLS.map((t, i) => ({
+          "@type": "ListItem",
+          position: i + 1,
+          name: t.name,
+          description: t.desc,
+        })),
+      },
+    ]),
 });
 
 function Article() {
