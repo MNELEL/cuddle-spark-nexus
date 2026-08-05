@@ -6,7 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { BellRing } from "lucide-react";
+import { BellRing, Loader2, Check } from "lucide-react";
 import {
   getReminderPreferences, saveReminderPreferences,
   type ReminderTypes,
@@ -18,7 +18,7 @@ export function ReminderPreferencesCard() {
   const qc = useQueryClient();
   const getP = useServerFn(getReminderPreferences);
   const saveP = useServerFn(saveReminderPreferences);
-  const { data } = useQuery({ queryKey: ["reminder_prefs"], queryFn: () => getP() });
+  const { data, isLoading } = useQuery({ queryKey: ["reminder_prefs"], queryFn: () => getP() });
 
   const [types, setTypes] = useState<ReminderTypes>({ lessons: true, assignments: true, messages: true });
   const [lead, setLead] = useState<number>(30);
@@ -32,11 +32,15 @@ export function ReminderPreferencesCard() {
 
   const save = useMutation({
     mutationFn: () => saveP({ data: { types_enabled: types, lead_time_minutes: lead } }),
+    onMutate: () => {
+      toast.loading("שומר העדפות…", { id: "reminder_prefs_save" });
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["reminder_prefs"] });
-      toast.success("ההעדפות נשמרו");
+      toast.success("ההעדפות נשמרו בהצלחה", { id: "reminder_prefs_save" });
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "שמירת ההעדפות נכשלה", { id: "reminder_prefs_save" }),
   });
 
   return (
@@ -45,6 +49,11 @@ export function ReminderPreferencesCard() {
         <CardTitle className="flex items-center gap-2"><BellRing className="h-5 w-5" /> העדפות תזכורות</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {isLoading && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground" aria-live="polite">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" /> טוען העדפות…
+          </div>
+        )}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Label htmlFor="t-lessons">תזכורות לשיעורים קרובים</Label>
@@ -75,9 +84,18 @@ export function ReminderPreferencesCard() {
             ))}
           </div>
         </div>
-        <div className="flex justify-end">
-          <Button onClick={() => save.mutate()} disabled={save.isPending}>
-            שמור העדפות
+        <div className="flex items-center justify-end gap-3">
+          <span className="text-xs text-muted-foreground" aria-live="polite" role="status">
+            {save.isPending ? "שומר…" : save.isSuccess ? "נשמר" : ""}
+          </span>
+          <Button onClick={() => save.mutate()} disabled={save.isPending || isLoading}>
+            {save.isPending ? (
+              <><Loader2 className="ms-1 h-4 w-4 animate-spin" /> שומר…</>
+            ) : save.isSuccess ? (
+              <><Check className="ms-1 h-4 w-4" /> נשמר</>
+            ) : (
+              "שמור העדפות"
+            )}
           </Button>
         </div>
       </CardContent>
