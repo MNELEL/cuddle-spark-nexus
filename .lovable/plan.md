@@ -1,42 +1,47 @@
-# תוספת ל"מעבר שנה": מידע רגיש לתלמיד + דוח מסירה בין מורים
+# דשבורד מנהל מוסד (principal) + תיקון הרשאות קריטי
 
-## המטרה
-מקום אחד שבו המורה מתעד מידע רגיש (אבחון, אלרגיה, לקות למידה, סייע, מצב משפחתי, תקרית חריגה) ודוח "סגנון ויחס נדרש", כך שהמידע לא נעלם כשהכיתה עוברת למורה חדש, ושמנהל מוסד יכול לעיין בו.
+## שלב 0 — תיקון `private.is_institution_admin` (migration, ראשון)
 
-## 1. איפה זה יושב — טבלת extension 1:1, לא עמודות על students
-טבלה חדשה `public.student_profiles` עם מפתח ראשי `student_id` (1:1 לתלמיד). זו הגישה הפשוטה שנשארת "שדה בודד בלי היסטוריית גרסאות", אבל שומרת את המידע הרגיש מחוץ ל-`students` — שנקראת בהמון מקומות (גריד ישיבה, ציונים, נוכחות, תעודות, ייצוא). כך אפשר לשלוט בהרשאות על המידע הרגיש בנפרד בלי לגעת ב-RLS של `students`, ובלי לסחוב שדות טקסט ארוכים בכל שליפת תלמידים.
+הפונקציה בודקת כיום `role = 'admin'` בלבד (אומת מול ה-DB), למרות שהיא ה-gate של:
+- `classes` — policy "institution admins view classes in their institution"
+- `student_profiles` — policy `student_profiles_institution_admin_select`
+- `institutions` — policy UPDATE "institution admins manage their institution"
+- `user_roles` — policy ALL "Admins can manage roles in their institution"
 
-שדות:
-- `class_id` — לצורך RLS ולהעתקה במעבר שנה
-- `sensitive_flags` — סימונים מובנים לתצוגה מהירה (אלרגיה / לקות למידה / סייע / מצב משפחתי / אבחון / תקרית חריגה / אחר)
-- `sensitive_notes` — טקסט חופשי אחד למידע הרגיש
-- `teaching_style_notes` — דוח "סגנון ויחס נדרש" (איך לגשת, מה עובד, ממה להיזהר)
-- `handoff_notes` — הדגשים למורה היורש
-- `updated_at`, `updated_by` — "עודכן לאחרונה" מוצג בממשק
+התיקון: `role IN ('admin','principal')` עם `institution_id IS NOT DISTINCT FROM _institution_id` (שאר הגוף נשאר זהה, כולל `SECURITY DEFINER` ו-`SET search_path`).
 
-## 2. ממשק — לשונית רביעית בכרטיס התלמיד
-ב-`student-file-sheet.tsx` נוספת לשונית "פרופיל תלמיד" ליד מסמכים / שיחות הורים / משמעת, עם שני אזורים באותה לשונית:
-- **מידע רגיש** — צ'יפים לבחירת סימונים + טקסט חופשי + כיתוב "נראה למורה הכיתה ולמנהל המוסד בלבד".
-- **סגנון ויחס נדרש (הנחיות הוראה)** — אזור טקסט נפרד, כי זו הנחיה פדגוגית ולא מידע רגיש באותו מובן. מתחתיו שדה "הדגשים למורה היורש".
+**תופעת לוואי שחשוב לדעת:** ה-policy על `user_roles` משתמשת באותה פונקציה, כך שאחרי התיקון principal יוכל לנהל תפקידים **בתוך המוסד שלו** ברמת ה-DB (לא בכל המערכת). זה מתיישב עם המשמעות של "מנהל מוסד", וה-UI של `user-management` נשאר חסום ל-admin בלבד בכל מקרה. אם לא רוצים את זה — אפצל את ה-policy הזו ל-`has_role(admin)` בלבד. ברירת המחדל בתוכנית: משאיר כפי שהוא.
 
-שמירה אחת (upsert) עם תג "עודכן: תאריך". אין גרסאות ואין רשימת רשומות. פיצ'ר שוטף — המורה מעדכן מתי שרוצה במהלך השנה.
+`user_roles` ריקה (0 שורות) — אין נזק קיים ואין צורך ב-backfill.
 
-## 3. הרשאות (RLS)
-- מורה בעל הכיתה — הרשאה מלאה, אותה תבנית כמו `student_documents_owner_all`.
-- מנהל מוסד — קריאה בלבד, דרך `private.is_institution_admin(auth.uid(), c.institution_id)` על הכיתה של התלמיד (אותה תבנית שמשמשת כבר ב-`classes`). צופה, לא כותב.
-- הורים/ציבור — אין גישה בכלל, ואין חשיפה בעמודי הכיתה הציבוריים.
-- הרשאות גישה לנתונים ל-`authenticated` ול-`service_role` בלבד, בלי `anon`.
-- טריגר "כיתה בארכיון = קריאה בלבד" יחול גם על הטבלה הזו, בהתאם לפיצ'ר מעבר השנה.
+## שלב 1 — endpoint-ים חדשים ל-principal
 
-## 4. חיבור לאשף מעבר השנה
-- **העתקה אוטומטית**: כשמעתיקים תלמיד לכיתה החדשה מועתק גם פרופיל התלמיד (מידע רגיש + הנחיות הוראה + הדגשי מסירה). זו בדיוק המטרה — שהמידע לא ייעלם במעבר.
-- **תצוגה מקדימה**: בשלב התצוגה המקדימה באשף, ליד כל תלמיד נבחר יופיע סימון "יש מידע רגיש / יש הנחיות הוראה", וכיתוב מסכם כמה מסמכי מסירה עוברים. אפשר לפתוח ולעיין לפני האישור.
-- **מסמך מסירה**: כפתור שמרכז את פרופילי כל תלמידי הכיתה לדוח אחד להדפסה/PDF למורה היורש, מסומן כמסמך פנימי חסוי.
+קובץ חדש `src/lib/institution-dashboard.functions.ts` (לא נוגע ב-`institutions.functions.ts` שנשאר admin-only). כולם `requireSupabaseAuth` + guard `verifyInstitutionAdmin(supabase, userId)` שקורא את `user_roles` של המשתמש עצמו (מותר לפי policy "Users can view their own roles") ומחזיר את `institution_id` של תפקיד `principal`/`admin` — **ה-institution נגזר מהטוקן ולא נשלח מהלקוח**.
+
+1. `getMyInstitution` — מזהה/שם המוסד של המשתמש + התפקיד שלו. מחזיר `null` אם אינו principal.
+2. `getInstitutionOverview` — מדדים: כיתות פעילות, כיתות בארכיון, סך תלמידים, מספר מלמדים ייחודיים (distinct `owner_id` של כיתות המוסד).
+3. `listMyInstitutionClasses` — רשימת כיתות המוסד: שם, שנת לימוד עברית, סטטוס, מספר תלמידים, שם המלמד (display_name מ-`profiles`) — קריאה בלבד.
+4. `listMyInstitutionAudit` — 20 רשומות אחרונות מ-`app_logs` במקורות ה-audit הקיימים, **מסונן ל-`context.institution_id` של המוסד שלו בלבד**.
+
+הרשאות: קריאות `classes`/`student_profiles` עוברות דרך `context.supabase` (RLS כמשתמש) ולכן נשענות על שלב 0. ל-`profiles`/`app_logs`/`students` שאין להם policy מתאים ל-principal — טעינה דינמית של `supabaseAdmin` **בתוך ה-handler ואחרי אימות התפקיד**, עם החזרת שדות מינימליים בלבד (שם תצוגה, ספירות), בלי אימיילים ובלי PII של תלמידים.
+
+לא נפתחות `listUsersWithRoles` / `assignRole` / `removeRole` / `listInstitutionClasses` / `listRoleAuditLog` ל-principal.
+
+## שלב 2 — route חדש
+
+`src/routes/_authenticated.institution.tsx` → `/institution`, כותרת "דשבורד המוסד שלי", RTL/shadcn באותו סגנון קיים, `noindex`.
+
+מבנה:
+- ארבעה כרטיסי מדדים (כיתות פעילות / בארכיון / תלמידים / מלמדים).
+- טבלת כיתות עם חיפוש וסינון סטטוס וכפתור "צפייה" לכיתה — בלי מחיקה/ארכוב/עריכה (principal אינו הבעלים; מוטציות ייחסמו גם ב-RLS).
+- כרטיס "יומן שינויים במוסד" (מסונן למוסד).
+- מצב ללא הרשאה: כרטיס "אין לך הרשאת מנהל מוסד" עם קישור ל-`/classes` (בלי redirect אוטומטי), וכן מצבי skeleton/ריק/שגיאה.
+
+## שלב 3 — שילוב ב-`/classes` בלי לשבור את זרימת המלמד
+
+ב-`_authenticated.classes.index.tsx`: `useQuery` נוסף ל-`getMyInstitution` (עצמאי, לא חוסם רינדור). אם מוחזר מוסד — מוצג כרטיס דק מעל גריד הכיתות: "דשבורד המוסד שלי — <שם המוסד>" עם `Link` ל-`/institution`. אם `null` או כשל — לא מוצג כלום. אין שינוי בגריד, בחיפוש, באשף או בהרשאות המלמד, ואין שינוי בניתוב לפי role (נושא נפרד).
 
 ## פרטים טכניים
-- מיגרציה: `CREATE TABLE public.student_profiles` (student_id PK → students, class_id → classes), GRANTs ל-authenticated/service_role, הפעלת RLS, שתי policies (owner ALL, institution admin SELECT), טריגר `touch_updated_at`, טריגר `enforce_class_not_archived`.
-- `src/lib/student-profiles.functions.ts`: `getStudentProfile`, `upsertStudentProfile`, `listClassProfiles` — כולן `requireSupabaseAuth` עם `context.supabase` כדי ש-RLS יאכוף.
-- `src/lib/classes.functions.ts` — פונקציית העתקת התלמידים במעבר שנה מעתיקה גם את `student_profiles` תוך מיפוי מזהי התלמידים החדשים.
-- `src/components/student-file-sheet.tsx` — לשונית רביעית + טופס יחיד.
-- `src/components/new-class-wizard.tsx` — סימוני "מידע רגיש/הנחיות" בשלב התצוגה המקדימה.
-- דוח PDF דרך `pdf-builder` ו-`brand-loader` הקיימים, בעברית RTL.
+- קבצים: migration אחת; חדש `src/lib/institution-dashboard.functions.ts`; חדש `src/routes/_authenticated.institution.tsx`; עריכה נקודתית ב-`src/routes/_authenticated.classes.index.tsx`.
+- `src/lib/audit-sources.ts` נשאר כפי שהוא ומשמש לסינון ה-audit.
+- ללא שינוי סכימה — אין טבלאות או GRANTs חדשים.
