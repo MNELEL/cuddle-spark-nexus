@@ -1691,10 +1691,12 @@ export type Database = {
           content: Json
           created_at: string
           description: string
+          difficulty: string
           embedding: string | null
           file_path: string | null
           grade_level: string
           id: string
+          is_favorite: boolean
           mime_type: string | null
           owner_id: string
           resource_type: string
@@ -1711,10 +1713,12 @@ export type Database = {
           content?: Json
           created_at?: string
           description?: string
+          difficulty?: string
           embedding?: string | null
           file_path?: string | null
           grade_level?: string
           id?: string
+          is_favorite?: boolean
           mime_type?: string | null
           owner_id: string
           resource_type?: string
@@ -1731,10 +1735,12 @@ export type Database = {
           content?: Json
           created_at?: string
           description?: string
+          difficulty?: string
           embedding?: string | null
           file_path?: string | null
           grade_level?: string
           id?: string
+          is_favorite?: boolean
           mime_type?: string | null
           owner_id?: string
           resource_type?: string
