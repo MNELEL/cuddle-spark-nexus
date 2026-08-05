@@ -60,7 +60,7 @@ function ToolkitPage() {
           <ToolLinkGrid
             items={[
               { to: "/bell-schedule", icon: BellRing, label: "לוח צלצולים", desc: "תזמון פעמוני שיעור והפסקות לאורך היום" },
-              { to: "/sound-board", icon: Music, label: "לוח צלילים", desc: "צלילי כיתה מהירים — שקט, מחיאות כפיים, טיימר" },
+              { to: "/sound-board", icon: Music, label: "ניהול סאונד ואפקטים", desc: "ספריית צלילים לפי קטגוריה ומיפוי אירועים באפליקציה לצליל" },
             ]}
           />
         </TabsContent>
@@ -83,6 +83,7 @@ function ToolkitPage() {
                 { to: "/questions", icon: ClipboardList, label: "מאגר שאלות", desc: "בנק שאלות לפי נושא ומקצוע" },
                 { to: "/insights", icon: LineChart, label: "תובנות", desc: "מגמות ציונים, נוכחות והתנהגות" },
                 { to: "/resources", icon: Library, label: "ספריית חומרי הוראה", desc: "מערכי שיעור, דפי עבודה ועזרים" },
+                { to: "/resources/generate", icon: Wand2, label: "מחולל סיכומים ומשימות", desc: "הפקת סיכום או מערך משימות מתוך חומר שבספרייה" },
               ]}
             />
             <ClassScopedTools
@@ -104,6 +105,7 @@ function ToolkitPage() {
                 { to: "/settings/brand", icon: Palette, label: "תבנית ומיתוג המוסד", desc: "לוגו, שם מוסד וכותרת קבועה — מוטמעים בכל מסמך שמופק" },
                 { to: "/ingest", icon: FileText, label: "העלאה חכמה", desc: "העלאת קבצים ושיבוץ אוטומטי של הנתונים" },
                 { to: "/blog", icon: BookOpen, label: "מדריכים", desc: "מדריכים ותבניות מוכנות" },
+                { to: "/onboarding", icon: Sparkles, label: "המדריך החכם", desc: "שישה שלבים מהקמת הכיתה ועד הדוח הראשון להורים" },
               ]}
             />
             <ClassScopedTools
