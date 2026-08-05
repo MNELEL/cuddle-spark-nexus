@@ -1,3 +1,4 @@
+import { blogPostHead } from "@/lib/blog-seo";
 import { createFileRoute, Link } from "@tanstack/react-router";
 
 const URL = "https://cuddle-spark-nexus.lovable.app/blog/classroom-management-strategies";
@@ -65,38 +66,7 @@ const STRATEGIES: { title: string; body: string; bullets: string[] }[] = [
 
 export const Route = createFileRoute("/blog/classroom-management-strategies")({
   component: Article,
-  head: () => ({
-    meta: [
-      { title: TITLE },
-      { name: "description", content: DESCRIPTION },
-      { property: "og:title", content: TITLE },
-      { property: "og:description", content: DESCRIPTION },
-      { property: "og:type", content: "article" },
-      { property: "og:url", content: URL },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-    links: [{ rel: "canonical", href: URL }],
-    scripts: [
-      {
-        type: "application/ld+json",
-        children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "Article",
-          headline: TITLE,
-          description: DESCRIPTION,
-          inLanguage: "he",
-          mainEntityOfPage: URL,
-          keywords: [
-            "אסטרטגיות ניהול כיתה",
-            "ניהול כיתה",
-            "תגבור התנהגות חיובית",
-            "מעקב פדגוגי",
-            "תלמוד תורה",
-          ],
-        }),
-      },
-    ],
-  }),
+  head: () => blogPostHead("/blog/classroom-management-strategies"),
 });
 
 function Article() {

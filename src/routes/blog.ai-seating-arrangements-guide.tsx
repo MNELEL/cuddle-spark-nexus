@@ -1,3 +1,4 @@
+import { blogPostHead } from "@/lib/blog-seo";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { FaqSection, faqJsonLd, type FaqItem } from "@/components/faq-section";
 
@@ -35,32 +36,7 @@ const FAQ: FaqItem[] = [
 
 export const Route = createFileRoute("/blog/ai-seating-arrangements-guide")({
   component: Article,
-  head: () => ({
-    meta: [
-      { title: TITLE },
-      { name: "description", content: DESCRIPTION },
-      { property: "og:title", content: TITLE },
-      { property: "og:description", content: DESCRIPTION },
-      { property: "og:type", content: "article" },
-      { property: "og:url", content: URL_ },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-    links: [{ rel: "canonical", href: URL_ }],
-    scripts: [
-      {
-        type: "application/ld+json",
-        children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "Article",
-          headline: TITLE,
-          description: DESCRIPTION,
-          inLanguage: "he",
-          mainEntityOfPage: URL_,
-        }),
-      },
-      faqJsonLd(FAQ),
-    ],
-  }),
+  head: () => blogPostHead("/blog/ai-seating-arrangements-guide", [faqJsonLd(FAQ)]),
 });
 
 function Article() {

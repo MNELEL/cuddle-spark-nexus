@@ -1,3 +1,4 @@
+import { blogPostHead } from "@/lib/blog-seo";
 import { createFileRoute, Link } from "@tanstack/react-router";
 
 const URL = "https://cuddle-spark-nexus.lovable.app/blog/digital-hall-pass-guide";
@@ -30,64 +31,7 @@ const FAQ = [
 
 export const Route = createFileRoute("/blog/digital-hall-pass-guide")({
   component: Article,
-  head: () => ({
-    meta: [
-      { title: TITLE },
-      { name: "description", content: DESCRIPTION },
-      { property: "og:title", content: TITLE },
-      { property: "og:description", content: DESCRIPTION },
-      { property: "og:type", content: "article" },
-      { property: "og:url", content: URL },
-      { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: TITLE },
-      { name: "twitter:description", content: DESCRIPTION },
-    ],
-    links: [{ rel: "canonical", href: URL }],
-    scripts: [
-      {
-        type: "application/ld+json",
-        children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "Article",
-          headline: TITLE,
-          description: DESCRIPTION,
-          inLanguage: "he",
-          mainEntityOfPage: URL,
-          author: { "@type": "Organization", name: "הכיתה שלי" },
-          publisher: {
-            "@type": "Organization",
-            name: "הכיתה שלי",
-            url: "https://cuddle-spark-nexus.lovable.app/",
-          },
-        }),
-      },
-      {
-        type: "application/ld+json",
-        children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "BreadcrumbList",
-          itemListElement: [
-            { "@type": "ListItem", position: 1, name: "בית", item: "https://cuddle-spark-nexus.lovable.app/" },
-            { "@type": "ListItem", position: 2, name: "בלוג", item: "https://cuddle-spark-nexus.lovable.app/blog" },
-            { "@type": "ListItem", position: 3, name: TITLE, item: URL },
-          ],
-        }),
-      },
-      {
-        type: "application/ld+json",
-        children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "FAQPage",
-          inLanguage: "he",
-          mainEntity: FAQ.map((item) => ({
-            "@type": "Question",
-            name: item.q,
-            acceptedAnswer: { "@type": "Answer", text: item.a },
-          })),
-        }),
-      },
-    ],
-  }),
+  head: () => blogPostHead("/blog/digital-hall-pass-guide"),
 });
 
 function Article() {

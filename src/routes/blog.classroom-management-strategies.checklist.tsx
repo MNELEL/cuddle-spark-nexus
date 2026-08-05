@@ -1,3 +1,4 @@
+import { blogPostHead } from "@/lib/blog-seo";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
@@ -12,19 +13,7 @@ const DESCRIPTION =
 
 export const Route = createFileRoute("/blog/classroom-management-strategies/checklist")({
   component: ChecklistPage,
-  head: () => ({
-    meta: [
-      { title: TITLE },
-      { name: "description", content: DESCRIPTION },
-      { property: "og:title", content: TITLE },
-      { property: "og:description", content: DESCRIPTION },
-      { property: "og:type", content: "article" },
-      { property: "og:url", content: URL },
-      { name: "twitter:card", content: "summary_large_image" },
-      { name: "robots", content: "index,follow" },
-    ],
-    links: [{ rel: "canonical", href: URL }],
-  }),
+  head: () => blogPostHead("/blog/classroom-management-strategies/checklist"),
 });
 
 type Role = "rabbi" | "melamed" | "principal" | "other";

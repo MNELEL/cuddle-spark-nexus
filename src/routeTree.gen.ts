@@ -18,6 +18,7 @@ import { Route as ParentsGuideRouteImport } from './routes/parents-guide'
 import { Route as PartnersRouteImport } from './routes/partners'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as RssDotxmlRouteImport } from './routes/rss[.]xml'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as ThemeTestRouteImport } from './routes/theme-test'
@@ -120,6 +121,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RssDotxmlRoute = RssDotxmlRouteImport.update({
+  id: '/rss.xml',
+  path: '/rss.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -463,6 +469,7 @@ export interface FileRoutesByFullPath {
   '/partners': typeof PartnersRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/rss.xml': typeof RssDotxmlRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
   '/theme-test': typeof ThemeTestRoute
@@ -529,6 +536,7 @@ export interface FileRoutesByTo {
   '/partners': typeof PartnersRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/rss.xml': typeof RssDotxmlRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
   '/theme-test': typeof ThemeTestRoute
@@ -600,6 +608,7 @@ export interface FileRoutesById {
   '/partners': typeof PartnersRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/rss.xml': typeof RssDotxmlRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
   '/theme-test': typeof ThemeTestRoute
@@ -671,6 +680,7 @@ export interface FileRouteTypes {
     | '/partners'
     | '/privacy'
     | '/reset-password'
+    | '/rss.xml'
     | '/sitemap.xml'
     | '/support'
     | '/theme-test'
@@ -737,6 +747,7 @@ export interface FileRouteTypes {
     | '/partners'
     | '/privacy'
     | '/reset-password'
+    | '/rss.xml'
     | '/sitemap.xml'
     | '/support'
     | '/theme-test'
@@ -807,6 +818,7 @@ export interface FileRouteTypes {
     | '/partners'
     | '/privacy'
     | '/reset-password'
+    | '/rss.xml'
     | '/sitemap.xml'
     | '/support'
     | '/theme-test'
@@ -878,6 +890,7 @@ export interface RootRouteChildren {
   PartnersRoute: typeof PartnersRouteWithChildren
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  RssDotxmlRoute: typeof RssDotxmlRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SupportRoute: typeof SupportRoute
   ThemeTestRoute: typeof ThemeTestRoute
@@ -949,6 +962,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rss.xml': {
+      id: '/rss.xml'
+      path: '/rss.xml'
+      fullPath: '/rss.xml'
+      preLoaderRoute: typeof RssDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -1559,6 +1579,7 @@ const rootRouteChildren: RootRouteChildren = {
   PartnersRoute: PartnersRouteWithChildren,
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  RssDotxmlRoute: RssDotxmlRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SupportRoute: SupportRoute,
   ThemeTestRoute: ThemeTestRoute,

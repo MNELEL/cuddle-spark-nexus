@@ -1,3 +1,4 @@
+import { blogPostHead } from "@/lib/blog-seo";
 import { createFileRoute, Link } from "@tanstack/react-router";
 
 const URL = "https://cuddle-spark-nexus.lovable.app/blog/classroom-tools-teachers";
@@ -20,35 +21,21 @@ const TOOLS = [
 
 export const Route = createFileRoute("/blog/classroom-tools-teachers")({
   component: Article,
-  head: () => ({
-    meta: [
-      { title: TITLE },
-      { name: "description", content: DESCRIPTION },
-      { property: "og:title", content: TITLE },
-      { property: "og:description", content: DESCRIPTION },
-      { property: "og:type", content: "article" },
-      { property: "og:url", content: URL },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-    links: [{ rel: "canonical", href: URL }],
-    scripts: [
+  head: () =>
+    blogPostHead("/blog/classroom-tools-teachers", [
       {
-        type: "application/ld+json",
-        children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "ItemList",
-          name: TITLE,
-          inLanguage: "he",
-          itemListElement: TOOLS.map((t, i) => ({
-            "@type": "ListItem",
-            position: i + 1,
-            name: t.name,
-            description: t.desc,
-          })),
-        }),
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        name: TITLE,
+        inLanguage: "he",
+        itemListElement: TOOLS.map((t, i) => ({
+          "@type": "ListItem",
+          position: i + 1,
+          name: t.name,
+          description: t.desc,
+        })),
       },
-    ],
-  }),
+    ]),
 });
 
 function Article() {
