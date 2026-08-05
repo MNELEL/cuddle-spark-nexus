@@ -35,6 +35,9 @@ import { getPersonalRecommendations, recomputeStyleProfile } from "@/lib/teacher
 import { Wand2 } from "lucide-react";
 import { WeeklyPaceCard } from "@/components/weekly-pace-card";
 import { TopicTreeFilter } from "@/components/topic-tree-filter";
+import { useTablistKeys } from "@/hooks/use-tablist-keys";
+
+const VIEW_TABS = ["items", "ask"] as const;
 
 export const Route = createFileRoute("/_authenticated/resources/")({
   component: ResourcesPage,
@@ -63,6 +66,8 @@ const LIBRARY_CATEGORIES: { id: string; label: string; types: ResourceType[] }[]
   { id: "visual", label: "עזרים חזותיים", types: ["visual_aid"] },
   { id: "other", label: "אחר", types: ["other"] },
 ];
+
+const CATEGORY_IDS = LIBRARY_CATEGORIES.map((c) => c.id);
 
 /** Single, centralized filter state for the whole library screen. */
 type FilterState = {
@@ -107,6 +112,16 @@ function ResourcesPage() {
   const [topOpen, setTopOpen] = useState(false);
   const [category, setCategory] = useState("all");
   const [view, setView] = useState<"items" | "ask">("items");
+
+  const viewKeys = useTablistKeys(VIEW_TABS, view, setView);
+  const categoryKeys = useTablistKeys(CATEGORY_IDS, category, setCategory);
+
+  const hasActiveFilters =
+    category !== "all" ||
+    Boolean(filters.search || filters.resource_type || filters.subject || filters.grade_level || filters.difficulty) ||
+    filters.favoritesOnly ||
+    filters.collectionIds.length > 0 ||
+    filters.topicIds.length > 0;
 
   // Server query holds only server-side filters; collection/topic filtering runs
   // client-side on the same dataset so no control overwrites another.
@@ -224,8 +239,10 @@ function ResourcesPage() {
           type="button"
           role="tab"
           aria-selected={view === "items"}
+          tabIndex={view === "items" ? 0 : -1}
+          onKeyDown={viewKeys}
           onClick={() => setView("items")}
-          className={`rounded-full border px-4 py-1.5 text-sm transition ${view === "items" ? "border-primary bg-primary text-primary-foreground" : "hover:bg-accent"}`}
+          className={`min-h-9 rounded-full border px-4 py-1.5 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${view === "items" ? "border-primary bg-primary font-semibold text-primary-foreground" : "hover:bg-accent"}`}
         >
           <Library className="ms-1 inline h-4 w-4" /> החומרים שלי
         </button>
@@ -233,8 +250,10 @@ function ResourcesPage() {
           type="button"
           role="tab"
           aria-selected={view === "ask"}
+          tabIndex={view === "ask" ? 0 : -1}
+          onKeyDown={viewKeys}
           onClick={() => setView("ask")}
-          className={`rounded-full border px-4 py-1.5 text-sm transition ${view === "ask" ? "border-primary bg-primary text-primary-foreground" : "hover:bg-accent"}`}
+          className={`min-h-9 rounded-full border px-4 py-1.5 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${view === "ask" ? "border-primary bg-primary font-semibold text-primary-foreground" : "hover:bg-accent"}`}
         >
           <MessageCircleQuestion className="ms-1 inline h-4 w-4" /> שאל AI על הספרייה
         </button>
@@ -254,8 +273,10 @@ function ResourcesPage() {
               type="button"
               role="tab"
               aria-selected={on}
+              tabIndex={on ? 0 : -1}
+              onKeyDown={categoryKeys}
               onClick={() => setCategory(c.id)}
-              className={`shrink-0 rounded-full border px-3 py-1.5 text-sm transition ${on ? "border-primary bg-primary text-primary-foreground" : "hover:bg-accent"}`}
+              className={`min-h-9 shrink-0 rounded-full border px-3 py-1.5 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${on ? "border-primary bg-primary font-semibold text-primary-foreground" : "hover:bg-accent"}`}
             >
               {c.label}
             </button>
@@ -295,6 +316,7 @@ function ResourcesPage() {
               <button
                 key={c.id}
                 type="button"
+                aria-label={`הסר את האוסף ${c.name} מהסינון`}
                 className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 hover:bg-accent"
                 onClick={() => patch({ collectionIds: filters.collectionIds.filter((id) => id !== c.id) })}
               >
@@ -485,12 +507,21 @@ function ResourcesPage() {
             </CardContent></Card>
           )}
           {!isLoading && visibleResources.length === 0 && (
-            <Card><CardContent className="py-16 text-center">
+            <Card><CardContent className="py-16 text-center" aria-live="polite">
               <BookOpen className="mx-auto mb-3 h-10 w-10 text-muted-foreground/50" />
-              <div className="text-muted-foreground">אין עדיין חומרים — צור את הראשון עם AI ✨</div>
+              <div className="text-muted-foreground">
+                {hasActiveFilters ? "אין חומרים תואמים לסינון הנוכחי" : "אין עדיין חומרים — צור את הראשון עם AI ✨"}
+              </div>
+              {hasActiveFilters && (
+                <Button variant="outline" className="mt-4" onClick={() => { setFilters(emptyFilters); setCategory("all"); }}>
+                  <X className="ms-1 h-4 w-4" /> נקה סינון
+                </Button>
+              )}
+              {!hasActiveFilters && (
               <Button className="mt-4" onClick={() => setAiOpen(true)}>
                 <Sparkles className="ms-1 h-4 w-4" /> צור עם AI
               </Button>
+              )}
             </CardContent></Card>
           )}
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -574,7 +605,7 @@ function ResourceCard({
           onClick={onToggleFavorite}
           aria-pressed={resource.is_favorite}
           aria-label={resource.is_favorite ? `הסר את "${resource.title}" מהמועדפים` : `הוסף את "${resource.title}" למועדפים`}
-          className="shrink-0 rounded-md p-1 transition hover:bg-accent"
+          className="flex min-h-9 min-w-9 shrink-0 items-center justify-center rounded-md transition hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Star className={`h-4 w-4 ${resource.is_favorite ? "fill-amber text-amber" : "text-muted-foreground"}`} />
         </button>
