@@ -32,6 +32,7 @@ const GLOBAL_ITEMS: NavItem[] = [
   { label: "העלאה חכמה", to: "/ingest", icon: Sparkles, keywords: "ingest ai" },
   { label: "לוח פעמונים", to: "/bell-schedule", icon: BellRing, keywords: "bell" },
   { label: "מיתוג מוסד", to: "/settings/brand", icon: Palette, keywords: "brand settings" },
+  { label: "הגדרות", to: "/settings", icon: Settings, keywords: "settings security reminders pin" },
   { label: "מדריכים", to: "/blog", icon: BookOpen, keywords: "blog guides" },
 ];
 
