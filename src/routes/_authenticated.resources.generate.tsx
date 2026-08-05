@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ChevronRight, Loader2, Sparkles, Save, Copy, FileText, ListChecks } from "lucide-react";
+import { ChevronRight, Loader2, Sparkles, Save, Copy, FileText, ListChecks, GitBranch } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,10 @@ import {
   listResources, upsertResource, DIFFICULTY_LABELS, DIFFICULTIES, type Difficulty,
 } from "@/lib/teaching-resources.functions";
 import { generateResourceSummary, generateResourceTasks } from "@/lib/resource-generators.functions";
+import {
+  saveGeneratorVersion, updateGeneratorVersion, type GeneratorVersion,
+} from "@/lib/generator-versions.functions";
+import { GeneratorHistory } from "@/components/generator-history";
 import {
   STUDENT_LEVELS, STUDENT_LEVEL_LABELS, SUMMARY_SCOPES, SUMMARY_SCOPE_LABELS,
   TASK_KINDS, TASK_KIND_LABELS,
@@ -78,14 +82,24 @@ function useResourceOptions() {
 }
 
 function OutputPanel({
-  text, saving, onSave, saveLabel,
-}: { text: string; saving: boolean; onSave: () => void; saveLabel: string }) {
+  text, onTextChange, saving, onSave, saveLabel,
+  onSaveVersion, savingVersion, versionButtonLabel,
+}: {
+  text: string;
+  onTextChange: (v: string) => void;
+  saving: boolean;
+  onSave: () => void;
+  saveLabel: string;
+  onSaveVersion: () => void;
+  savingVersion: boolean;
+  versionButtonLabel: string;
+}) {
   if (!text) return null;
   return (
     <Card className="mt-4">
       <CardHeader className="flex-row items-center justify-between gap-2 pb-2">
-        <CardTitle className="text-base">התוצר</CardTitle>
-        <div className="flex items-center gap-2">
+        <CardTitle className="text-base">התוצר (ניתן לעריכה)</CardTitle>
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline" size="sm"
             onClick={() => {
@@ -98,6 +112,13 @@ function OutputPanel({
           >
             <Copy className="ms-1 h-4 w-4" aria-hidden /> העתק
           </Button>
+          <Button
+            variant="outline" size="sm" onClick={onSaveVersion} disabled={savingVersion}
+            aria-label={versionButtonLabel}
+          >
+            {savingVersion ? <Loader2 className="ms-1 h-4 w-4 animate-spin" aria-hidden /> : <GitBranch className="ms-1 h-4 w-4" aria-hidden />}
+            {versionButtonLabel}
+          </Button>
           <Button size="sm" onClick={onSave} disabled={saving} aria-label={saveLabel}>
             {saving ? <Loader2 className="ms-1 h-4 w-4 animate-spin" aria-hidden /> : <Save className="ms-1 h-4 w-4" aria-hidden />}
             {saving ? "שומר…" : "שמור בספרייה"}
@@ -105,9 +126,14 @@ function OutputPanel({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="whitespace-pre-wrap rounded-md bg-muted p-4 text-sm leading-relaxed" dir="rtl">
-          {text}
-        </div>
+        <Textarea
+          value={text}
+          onChange={(e) => onTextChange(e.target.value)}
+          dir="rtl"
+          rows={16}
+          className="min-h-64 bg-muted text-sm leading-relaxed"
+          aria-label="עריכת התוצר שהופק"
+        />
       </CardContent>
     </Card>
   );
