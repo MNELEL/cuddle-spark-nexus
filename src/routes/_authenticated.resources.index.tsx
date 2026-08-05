@@ -309,6 +309,7 @@ function ResourcesPage() {
               <button
                 key={c.id}
                 type="button"
+                aria-label={`הסר את האוסף ${c.name} מהסינון`}
                 className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 hover:bg-accent"
                 onClick={() => patch({ collectionIds: filters.collectionIds.filter((id) => id !== c.id) })}
               >
@@ -588,7 +589,7 @@ function ResourceCard({
           onClick={onToggleFavorite}
           aria-pressed={resource.is_favorite}
           aria-label={resource.is_favorite ? `הסר את "${resource.title}" מהמועדפים` : `הוסף את "${resource.title}" למועדפים`}
-          className="shrink-0 rounded-md p-1 transition hover:bg-accent"
+          className="flex min-h-9 min-w-9 shrink-0 items-center justify-center rounded-md transition hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Star className={`h-4 w-4 ${resource.is_favorite ? "fill-amber text-amber" : "text-muted-foreground"}`} />
         </button>
