@@ -4,7 +4,7 @@ import { FaqSection, faqJsonLd, type FaqItem } from "@/components/faq-section";
 const URL = "https://cuddle-spark-nexus.lovable.app/blog/classdojo-comparison";
 const TITLE = "ClassDojo מול הכיתה שלי — השוואה למלמדים בתלמודי תורה";
 const DESCRIPTION =
-  "השוואה מלאה בין ClassDojo ל-״הכיתה שלי״: עברית ו-RTL, מקצועות קודש, מונחי חיידר (מלמד, רב, פרשת שבוע), פרטיות, ודו״חות פדגוגיים פרטיים מול פיצ׳רים חברתיים ציבוריים.";
+  "ClassDojo מול הכיתה שלי: השוואה למלמדים בתלמודי תורה וחיידרים — עברית, מקצועות קודש, פרטיות ודו״חות פדגוגיים.";
 
 type Row = { feature: string; classdojo: string; classalign: string };
 
