@@ -197,23 +197,14 @@ function Inner({ classId, students, onClose }: { classId: string; students: Stud
             <div className="mb-1 flex items-center justify-between">
               <Label>טקסט חופשי</Label>
               <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={onPickImage}
-                  disabled={ocrLoading}
-                >
-                  {ocrLoading
-                    ? <><Loader2 className="ms-1 h-4 w-4 animate-spin" /> מזהה תמונה...</>
-                    : <><ImageIcon className="ms-1 h-4 w-4" /> העלה תמונה</>}
-                </Button>
-                <input
-                  ref={fileRef}
-                  type="file"
+                <SmartUpload
+                  compact
                   accept="image/*"
-                  className="hidden"
-                  onChange={onImageChange}
+                  maxSizeMb={10}
+                  busy={ocrLoading}
+                  busyLabel="מזהה תמונה..."
+                  buttonLabel="העלה תמונה"
+                  onFile={(f: File) => onImageChange(f)}
                 />
                 <Button
                   type="button"
