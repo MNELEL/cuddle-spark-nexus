@@ -65,7 +65,7 @@ function SoundTestPage() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-3 sm:grid-cols-2" aria-live="polite">
+      <ul className="grid list-none gap-3 p-0 sm:grid-cols-2" aria-label="אירועי צליל במערכת">
         {SOUND_EVENTS.map((ev) => {
           const pref = preferences.find((p) => p.event_key === ev.key);
           const soundId = pref?.sound_id ?? defaultSoundFor(ev.key);
@@ -81,7 +81,8 @@ function SoundTestPage() {
                 ? "עוצמה 0%"
                 : "מוכן";
           return (
-            <Card key={ev.key}>
+            <li key={ev.key}>
+            <Card className="h-full">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center justify-between gap-2 text-base">
                   <span className="flex items-center gap-2">
@@ -112,11 +113,12 @@ function SoundTestPage() {
                 </Button>
               </CardContent>
             </Card>
+            </li>
           );
         })}
-      </div>
+      </ul>
 
-      <p className="text-sm text-muted-foreground" role="status">
+      <p className="text-sm text-muted-foreground" role="status" aria-live="polite">
         {lastPlayed ? `הושמעה דוגמה עבור: ${lastPlayed}` : "טרם הושמעה דוגמה."}
       </p>
     </div>
