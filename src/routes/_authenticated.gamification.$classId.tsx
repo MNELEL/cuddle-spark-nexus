@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { getClass } from "@/lib/classes.functions";
 import { listStudents } from "@/lib/students.functions";
+import { BadgesPanel } from "@/components/badges-panel";
 import {
   listCampaigns, upsertCampaign, deleteCampaign,
   listRewards, upsertReward, deleteReward,
