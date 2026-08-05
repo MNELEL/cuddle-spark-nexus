@@ -10,7 +10,15 @@ export const RSS_PATH = "/rss.xml";
 
 type Json = Record<string, unknown>;
 
-export function blogPostHead(path: string, extraJsonLd: Json[] = []) {
+type ScriptTag = { type: string; children: string };
+type ExtraLd = Json | ScriptTag;
+
+const toScript = (item: ExtraLd): ScriptTag =>
+  typeof (item as ScriptTag).children === "string"
+    ? (item as ScriptTag)
+    : { type: "application/ld+json", children: JSON.stringify(item) };
+
+export function blogPostHead(path: string, extraJsonLd: ExtraLd[] = []) {
   const post = findBlogPost(path);
   const url = `${SITE_URL}${path}`;
   const title = post?.title ?? SITE_NAME;
@@ -65,9 +73,6 @@ export function blogPostHead(path: string, extraJsonLd: Json[] = []) {
         href: `${SITE_URL}${RSS_PATH}`,
       },
     ],
-    scripts: [blogPosting, ...extraJsonLd].map((obj) => ({
-      type: "application/ld+json",
-      children: JSON.stringify(obj),
-    })),
+    scripts: [toScript(blogPosting), ...extraJsonLd.map(toScript)],
   };
 }
