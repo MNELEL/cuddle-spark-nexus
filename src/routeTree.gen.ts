@@ -25,6 +25,7 @@ import { Route as AuthenticatedBellScheduleRouteImport } from './routes/_authent
 import { Route as AuthenticatedIngestRouteImport } from './routes/_authenticated.ingest'
 import { Route as AuthenticatedInsightsRouteImport } from './routes/_authenticated.insights'
 import { Route as AuthenticatedInstitutionRouteImport } from './routes/_authenticated.institution'
+import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated.onboarding'
 import { Route as AuthenticatedQuestionsRouteImport } from './routes/_authenticated.questions'
 import { Route as AuthenticatedSoundBoardRouteImport } from './routes/_authenticated.sound-board'
 import { Route as AuthenticatedToolkitRouteImport } from './routes/_authenticated.toolkit'
@@ -67,6 +68,7 @@ import { Route as AuthenticatedRaffleClassIdRouteImport } from './routes/_authen
 import { Route as AuthenticatedReportsClassIdRouteImport } from './routes/_authenticated.reports.$classId'
 import { Route as AuthenticatedResourcesIndexRouteImport } from './routes/_authenticated.resources.index'
 import { Route as AuthenticatedResourcesResourceIdRouteImport } from './routes/_authenticated.resources.$resourceId'
+import { Route as AuthenticatedResourcesGenerateRouteImport } from './routes/_authenticated.resources.generate'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated.settings.index'
 import { Route as AuthenticatedSettingsBrandRouteImport } from './routes/_authenticated.settings.brand'
 import { Route as AuthenticatedShareClassIdRouteImport } from './routes/_authenticated.share.$classId'
@@ -156,6 +158,11 @@ const AuthenticatedInstitutionRoute =
     path: '/institution',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedQuestionsRoute = AuthenticatedQuestionsRouteImport.update({
   id: '/questions',
   path: '/questions',
@@ -392,6 +399,12 @@ const AuthenticatedResourcesResourceIdRoute =
     path: '/resources/$resourceId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedResourcesGenerateRoute =
+  AuthenticatedResourcesGenerateRouteImport.update({
+    id: '/resources/generate',
+    path: '/resources/generate',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedSettingsIndexRoute =
   AuthenticatedSettingsIndexRouteImport.update({
     id: '/settings/',
@@ -451,6 +464,7 @@ export interface FileRoutesByFullPath {
   '/ingest': typeof AuthenticatedIngestRoute
   '/insights': typeof AuthenticatedInsightsRoute
   '/institution': typeof AuthenticatedInstitutionRoute
+  '/onboarding': typeof AuthenticatedOnboardingRoute
   '/questions': typeof AuthenticatedQuestionsRoute
   '/sound-board': typeof AuthenticatedSoundBoardRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
@@ -491,6 +505,7 @@ export interface FileRoutesByFullPath {
   '/raffle/$classId': typeof AuthenticatedRaffleClassIdRoute
   '/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/resources/$resourceId': typeof AuthenticatedResourcesResourceIdRoute
+  '/resources/generate': typeof AuthenticatedResourcesGenerateRoute
   '/settings/brand': typeof AuthenticatedSettingsBrandRoute
   '/share/$classId': typeof AuthenticatedShareClassIdRoute
   '/student-view/$classId': typeof AuthenticatedStudentViewClassIdRoute
@@ -514,6 +529,7 @@ export interface FileRoutesByTo {
   '/ingest': typeof AuthenticatedIngestRoute
   '/insights': typeof AuthenticatedInsightsRoute
   '/institution': typeof AuthenticatedInstitutionRoute
+  '/onboarding': typeof AuthenticatedOnboardingRoute
   '/questions': typeof AuthenticatedQuestionsRoute
   '/sound-board': typeof AuthenticatedSoundBoardRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
@@ -554,6 +570,7 @@ export interface FileRoutesByTo {
   '/raffle/$classId': typeof AuthenticatedRaffleClassIdRoute
   '/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/resources/$resourceId': typeof AuthenticatedResourcesResourceIdRoute
+  '/resources/generate': typeof AuthenticatedResourcesGenerateRoute
   '/settings/brand': typeof AuthenticatedSettingsBrandRoute
   '/share/$classId': typeof AuthenticatedShareClassIdRoute
   '/student-view/$classId': typeof AuthenticatedStudentViewClassIdRoute
@@ -582,6 +599,7 @@ export interface FileRoutesById {
   '/_authenticated/ingest': typeof AuthenticatedIngestRoute
   '/_authenticated/insights': typeof AuthenticatedInsightsRoute
   '/_authenticated/institution': typeof AuthenticatedInstitutionRoute
+  '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/questions': typeof AuthenticatedQuestionsRoute
   '/_authenticated/sound-board': typeof AuthenticatedSoundBoardRoute
   '/_authenticated/toolkit': typeof AuthenticatedToolkitRoute
@@ -622,6 +640,7 @@ export interface FileRoutesById {
   '/_authenticated/raffle/$classId': typeof AuthenticatedRaffleClassIdRoute
   '/_authenticated/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/_authenticated/resources/$resourceId': typeof AuthenticatedResourcesResourceIdRoute
+  '/_authenticated/resources/generate': typeof AuthenticatedResourcesGenerateRoute
   '/_authenticated/settings/brand': typeof AuthenticatedSettingsBrandRoute
   '/_authenticated/share/$classId': typeof AuthenticatedShareClassIdRoute
   '/_authenticated/student-view/$classId': typeof AuthenticatedStudentViewClassIdRoute
@@ -650,6 +669,7 @@ export interface FileRouteTypes {
     | '/ingest'
     | '/insights'
     | '/institution'
+    | '/onboarding'
     | '/questions'
     | '/sound-board'
     | '/toolkit'
@@ -690,6 +710,7 @@ export interface FileRouteTypes {
     | '/raffle/$classId'
     | '/reports/$classId'
     | '/resources/$resourceId'
+    | '/resources/generate'
     | '/settings/brand'
     | '/share/$classId'
     | '/student-view/$classId'
@@ -713,6 +734,7 @@ export interface FileRouteTypes {
     | '/ingest'
     | '/insights'
     | '/institution'
+    | '/onboarding'
     | '/questions'
     | '/sound-board'
     | '/toolkit'
@@ -753,6 +775,7 @@ export interface FileRouteTypes {
     | '/raffle/$classId'
     | '/reports/$classId'
     | '/resources/$resourceId'
+    | '/resources/generate'
     | '/settings/brand'
     | '/share/$classId'
     | '/student-view/$classId'
@@ -780,6 +803,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ingest'
     | '/_authenticated/insights'
     | '/_authenticated/institution'
+    | '/_authenticated/onboarding'
     | '/_authenticated/questions'
     | '/_authenticated/sound-board'
     | '/_authenticated/toolkit'
@@ -820,6 +844,7 @@ export interface FileRouteTypes {
     | '/_authenticated/raffle/$classId'
     | '/_authenticated/reports/$classId'
     | '/_authenticated/resources/$resourceId'
+    | '/_authenticated/resources/generate'
     | '/_authenticated/settings/brand'
     | '/_authenticated/share/$classId'
     | '/_authenticated/student-view/$classId'
@@ -961,6 +986,13 @@ declare module '@tanstack/react-router' {
       path: '/institution'
       fullPath: '/institution'
       preLoaderRoute: typeof AuthenticatedInstitutionRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/onboarding': {
+      id: '/_authenticated/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/questions': {
@@ -1257,6 +1289,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedResourcesResourceIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/resources/generate': {
+      id: '/_authenticated/resources/generate'
+      path: '/resources/generate'
+      fullPath: '/resources/generate'
+      preLoaderRoute: typeof AuthenticatedResourcesGenerateRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/settings/': {
       id: '/_authenticated/settings/'
       path: '/settings'
@@ -1329,6 +1368,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedIngestRoute: typeof AuthenticatedIngestRoute
   AuthenticatedInsightsRoute: typeof AuthenticatedInsightsRoute
   AuthenticatedInstitutionRoute: typeof AuthenticatedInstitutionRoute
+  AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedQuestionsRoute: typeof AuthenticatedQuestionsRoute
   AuthenticatedSoundBoardRoute: typeof AuthenticatedSoundBoardRoute
   AuthenticatedToolkitRoute: typeof AuthenticatedToolkitRoute
@@ -1348,6 +1388,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedRaffleClassIdRoute: typeof AuthenticatedRaffleClassIdRoute
   AuthenticatedReportsClassIdRoute: typeof AuthenticatedReportsClassIdRoute
   AuthenticatedResourcesResourceIdRoute: typeof AuthenticatedResourcesResourceIdRoute
+  AuthenticatedResourcesGenerateRoute: typeof AuthenticatedResourcesGenerateRoute
   AuthenticatedSettingsBrandRoute: typeof AuthenticatedSettingsBrandRoute
   AuthenticatedShareClassIdRoute: typeof AuthenticatedShareClassIdRoute
   AuthenticatedStudentViewClassIdRoute: typeof AuthenticatedStudentViewClassIdRoute
@@ -1362,6 +1403,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedIngestRoute: AuthenticatedIngestRoute,
   AuthenticatedInsightsRoute: AuthenticatedInsightsRoute,
   AuthenticatedInstitutionRoute: AuthenticatedInstitutionRoute,
+  AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedQuestionsRoute: AuthenticatedQuestionsRoute,
   AuthenticatedSoundBoardRoute: AuthenticatedSoundBoardRoute,
   AuthenticatedToolkitRoute: AuthenticatedToolkitRoute,
@@ -1383,6 +1425,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedRaffleClassIdRoute: AuthenticatedRaffleClassIdRoute,
   AuthenticatedReportsClassIdRoute: AuthenticatedReportsClassIdRoute,
   AuthenticatedResourcesResourceIdRoute: AuthenticatedResourcesResourceIdRoute,
+  AuthenticatedResourcesGenerateRoute: AuthenticatedResourcesGenerateRoute,
   AuthenticatedSettingsBrandRoute: AuthenticatedSettingsBrandRoute,
   AuthenticatedShareClassIdRoute: AuthenticatedShareClassIdRoute,
   AuthenticatedStudentViewClassIdRoute: AuthenticatedStudentViewClassIdRoute,
@@ -1505,13 +1548,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { getClass } from "@/lib/classes.functions";
 import { listStudents } from "@/lib/students.functions";
+import { BadgesPanel } from "@/components/badges-panel";
 import {
   listCampaigns, upsertCampaign, deleteCampaign,
   listRewards, upsertReward, deleteReward,
@@ -46,6 +47,11 @@ function GamificationPage() {
   const { data: leaders = [] } = useQuery({
     queryKey: ["leaderboard", classId],
     queryFn: () => lb({ data: { classId } }),
+  });
+  const listS = useServerFn(listStudents);
+  const { data: badgeStudents = [] } = useQuery({
+    queryKey: ["students", classId],
+    queryFn: () => listS({ data: { classId } }),
   });
   const [kiosk, setKiosk] = useState(false);
 
@@ -80,6 +86,7 @@ function GamificationPage() {
           <TabsTrigger value="campaigns">קמפיינים</TabsTrigger>
           <TabsTrigger value="rewards">קטלוג פרסים</TabsTrigger>
           <TabsTrigger value="redemptions">מימושים</TabsTrigger>
+          <TabsTrigger value="badges">תגי הישג</TabsTrigger>
         </TabsList>
 
         <TabsContent value="leaderboard" className="mt-4">
@@ -96,6 +103,14 @@ function GamificationPage() {
 
         <TabsContent value="redemptions" className="mt-4">
           <RedemptionsTab classId={classId} />
+        </TabsContent>
+
+        <TabsContent value="badges" className="mt-4">
+          <BadgesPanel
+            classId={classId}
+            students={(badgeStudents as { id: string; name: string }[]).map((s) => ({ id: s.id, name: s.name }))}
+            readOnly={cls?.status === "archived"}
+          />
         </TabsContent>
       </Tabs>
     </div>

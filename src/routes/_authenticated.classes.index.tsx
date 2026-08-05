@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Trash2, ChevronLeft, Search, Archive, ArchiveRestore, X, Building2 } from "lucide-react";
 import { SeatFillGrid } from "@/components/seat-fill-grid";
 import { NewClassWizard } from "@/components/new-class-wizard";
+import { OnboardingProgressCard } from "@/components/onboarding-progress-card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import {
@@ -92,6 +93,8 @@ function ClassesPage() {
         <h1 className="text-2xl font-bold">הכיתות שלי</h1>
         <p className="text-sm text-muted-foreground">בחר כיתה כדי להתחיל לנהל תלמידים ואילוצים</p>
       </div>
+
+      <OnboardingProgressCard />
 
       {institution && (
         <Card className="rounded-2xl border-primary/30 bg-primary/5">

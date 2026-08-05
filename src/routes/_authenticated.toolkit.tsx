@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { listClasses } from "@/lib/classes.functions";
+import { useAppSounds } from "@/hooks/use-app-sounds";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +14,7 @@ import {
 import {
   Play, Pause, RotateCcw, Shuffle, ChevronRight, ChevronLeft, Mic, MicOff, Wrench, Settings, BellRing,
   Music, Trophy, Dices, ClipboardList, ScanText, Wand2, Award, TrendingUp, FileText, Palette, Mail,
-  Globe2, CalendarDays, LineChart, BookOpen, Library, MessageSquare,
+  Globe2, CalendarDays, LineChart, BookOpen, Library, MessageSquare, Sparkles,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -53,6 +54,8 @@ function ToolkitPage() {
             <RandomPicker />
             <NoiseMeter />
             <FlashCards />
+            <RandomGroups />
+            <QuickCheck />
           </div>
         </TabsContent>
 
@@ -60,7 +63,7 @@ function ToolkitPage() {
           <ToolLinkGrid
             items={[
               { to: "/bell-schedule", icon: BellRing, label: "לוח צלצולים", desc: "תזמון פעמוני שיעור והפסקות לאורך היום" },
-              { to: "/sound-board", icon: Music, label: "לוח צלילים", desc: "צלילי כיתה מהירים — שקט, מחיאות כפיים, טיימר" },
+              { to: "/sound-board", icon: Music, label: "ניהול סאונד ואפקטים", desc: "ספריית צלילים לפי קטגוריה ומיפוי אירועים באפליקציה לצליל" },
             ]}
           />
         </TabsContent>
@@ -83,6 +86,7 @@ function ToolkitPage() {
                 { to: "/questions", icon: ClipboardList, label: "מאגר שאלות", desc: "בנק שאלות לפי נושא ומקצוע" },
                 { to: "/insights", icon: LineChart, label: "תובנות", desc: "מגמות ציונים, נוכחות והתנהגות" },
                 { to: "/resources", icon: Library, label: "ספריית חומרי הוראה", desc: "מערכי שיעור, דפי עבודה ועזרים" },
+                { to: "/resources/generate", icon: Wand2, label: "מחולל סיכומים ומשימות", desc: "הפקת סיכום או מערך משימות מתוך חומר שבספרייה" },
               ]}
             />
             <ClassScopedTools
@@ -104,6 +108,7 @@ function ToolkitPage() {
                 { to: "/settings/brand", icon: Palette, label: "תבנית ומיתוג המוסד", desc: "לוגו, שם מוסד וכותרת קבועה — מוטמעים בכל מסמך שמופק" },
                 { to: "/ingest", icon: FileText, label: "העלאה חכמה", desc: "העלאת קבצים ושיבוץ אוטומטי של הנתונים" },
                 { to: "/blog", icon: BookOpen, label: "מדריכים", desc: "מדריכים ותבניות מוכנות" },
+                { to: "/onboarding", icon: Sparkles, label: "המדריך החכם", desc: "שישה שלבים מהקמת הכיתה ועד הדוח הראשון להורים" },
               ]}
             />
             <ClassScopedTools
@@ -202,6 +207,7 @@ function ClassScopedTools({ title, items }: { title: string; items: ToolLink[] }
 
 /* ---------- Lesson Timer ---------- */
 function LessonTimer() {
+  const { playEvent } = useAppSounds();
   const [minutes, setMinutes] = useState(10);
   const [secs, setSecs] = useState(600);
   const [running, setRunning] = useState(false);
@@ -214,13 +220,14 @@ function LessonTimer() {
         if (s <= 1) {
           setRunning(false);
           beep();
+          playEvent("timer_end");
           return 0;
         }
         return s - 1;
       });
     }, 1000);
     return () => { if (ref.current) window.clearInterval(ref.current); };
-  }, [running]);
+  }, [running, playEvent]);
 
   const mm = String(Math.floor(secs / 60)).padStart(2, "0");
   const ss = String(secs % 60).padStart(2, "0");
@@ -247,6 +254,111 @@ function LessonTimer() {
           </Button>
           <Button variant="ghost" onClick={() => { setRunning(false); setSecs(minutes * 60); }}>
             <RotateCcw className="ms-1 h-4 w-4" /> איפוס
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+/* ---------- Random Groups ---------- */
+function RandomGroups() {
+  const [text, setText] = useState(() => {
+    try { return localStorage.getItem("groups_list") || ""; } catch { return ""; }
+  });
+  const [size, setSize] = useState(3);
+  const [groups, setGroups] = useState<string[][]>([]);
+
+  useEffect(() => {
+    try { localStorage.setItem("groups_list", text); } catch { /* ignore */ }
+  }, [text]);
+
+  const names = text.split(/[\n,]+/).map((s) => s.trim()).filter(Boolean);
+
+  function shuffleIntoGroups() {
+    const pool = [...names];
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    const out: string[][] = [];
+    for (let i = 0; i < pool.length; i += size) out.push(pool.slice(i, i + size));
+    setGroups(out);
+  }
+
+  return (
+    <Card>
+      <CardHeader><CardTitle>קבוצות אקראיות</CardTitle></CardHeader>
+      <CardContent className="space-y-3">
+        <Textarea
+          rows={3} value={text} onChange={(e) => setText(e.target.value)}
+          placeholder="שמות התלמידים, כל אחד בשורה או מופרד בפסיק"
+          aria-label="רשימת תלמידים לחלוקה לקבוצות"
+        />
+        <div className="flex items-center gap-2">
+          <Input
+            type="number" min={2} max={12} value={size} className="w-24"
+            onChange={(e) => setSize(Math.max(2, Math.min(12, Number(e.target.value) || 2)))}
+            aria-label="מספר תלמידים בקבוצה"
+          />
+          <span className="text-sm text-muted-foreground">תלמידים בקבוצה</span>
+          <Button className="ms-auto" onClick={shuffleIntoGroups} disabled={names.length < 2}>
+            <Shuffle className="ms-1 h-4 w-4" aria-hidden /> חלק לקבוצות
+          </Button>
+        </div>
+        {groups.length > 0 && (
+          <ul className="grid gap-2 sm:grid-cols-2" aria-live="polite">
+            {groups.map((g, i) => (
+              <li key={i} className="rounded-lg border bg-muted/40 p-3 text-sm">
+                <p className="mb-1 font-medium">קבוצה {i + 1}</p>
+                <p className="text-muted-foreground">{g.join(", ")}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+/* ---------- Quick Comprehension Check ---------- */
+const QUICK_CHECK_LEVELS = [
+  { key: "got_it", label: "הבנתי היטב", tone: "bg-primary/15 text-primary" },
+  { key: "partly", label: "חלקית", tone: "bg-accent/40 text-accent-foreground" },
+  { key: "lost", label: "לא הבנתי", tone: "bg-destructive/10 text-destructive" },
+] as const;
+
+function QuickCheck() {
+  const [counts, setCounts] = useState<Record<string, number>>({ got_it: 0, partly: 0, lost: 0 });
+  const total = Object.values(counts).reduce((a, b) => a + b, 0);
+
+  return (
+    <Card>
+      <CardHeader><CardTitle>בדיקת הבנה מהירה</CardTitle></CardHeader>
+      <CardContent className="space-y-3">
+        <p className="text-sm text-muted-foreground">
+          שואלים את הכיתה ומקישים לפי הרמזור — תמונת מצב מיידית לפני שממשיכים.
+        </p>
+        <div className="grid gap-2 sm:grid-cols-3">
+          {QUICK_CHECK_LEVELS.map((l) => (
+            <Button
+              key={l.key} variant="outline" className="h-auto flex-col py-3"
+              onClick={() => setCounts((c) => ({ ...c, [l.key]: (c[l.key] ?? 0) + 1 }))}
+              aria-label={`הוסף תלמיד לרמה: ${l.label}`}
+            >
+              <span className={`rounded-md px-2 py-0.5 text-xs ${l.tone}`}>{l.label}</span>
+              <span className="mt-1 font-mono-tabular text-2xl font-bold">{counts[l.key] ?? 0}</span>
+            </Button>
+          ))}
+        </div>
+        <div className="flex items-center justify-between text-sm text-muted-foreground" aria-live="polite">
+          <span>סה״כ תשובות: {total}</span>
+          <Button
+            variant="ghost" size="sm"
+            onClick={() => setCounts({ got_it: 0, partly: 0, lost: 0 })}
+            aria-label="אפס את בדיקת ההבנה"
+          >
+            <RotateCcw className="ms-1 h-4 w-4" aria-hidden /> איפוס
           </Button>
         </div>
       </CardContent>
