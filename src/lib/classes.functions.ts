@@ -1,6 +1,32 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
+import { previousGradeName, defaultAcademicYear } from "@/lib/year-rollover";
+
+const ARCHIVED_MSG = "הכיתה בארכיון — החזר אותה לפעילות כדי לערוך";
+
+/** Throws a readable Hebrew error when the class is archived (read-only). */
+async function assertClassEditable(supabase: SupabaseClient<Database>, classId: string) {
+  const { data, error } = await supabase
+    .from("classes")
+    .select("status")
+    .eq("id", classId)
+    .maybeSingle();
+  if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+  if (data?.status === "archived") throw new Error(ARCHIVED_MSG);
+}
+
+async function resolveInstitutionId(supabase: SupabaseClient<Database>, userId: string) {
+  const { data } = await supabase
+    .from("user_roles")
+    .select("institution_id")
+    .eq("user_id", userId)
+    .not("institution_id", "is", null)
+    .limit(1);
+  return data?.[0]?.institution_id ?? null;
+}
 
 export const listClasses = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
