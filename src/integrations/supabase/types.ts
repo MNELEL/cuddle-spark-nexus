@@ -1457,6 +1457,57 @@ export type Database = {
         }
         Relationships: []
       }
+      student_profiles: {
+        Row: {
+          class_id: string
+          created_at: string
+          handoff_notes: string
+          sensitive_flags: string[]
+          sensitive_notes: string
+          student_id: string
+          teaching_style_notes: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          handoff_notes?: string
+          sensitive_flags?: string[]
+          sensitive_notes?: string
+          student_id: string
+          teaching_style_notes?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          handoff_notes?: string
+          sensitive_flags?: string[]
+          sensitive_notes?: string
+          student_id?: string
+          teaching_style_notes?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_profiles_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_profiles_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: true
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_relations: {
         Row: {
           class_id: string
