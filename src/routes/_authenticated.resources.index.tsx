@@ -105,6 +105,7 @@ function ResourcesPage() {
   const [collOpen, setCollOpen] = useState(false);
   const [topOpen, setTopOpen] = useState(false);
   const [category, setCategory] = useState("all");
+  const [view, setView] = useState<"items" | "ask">("items");
 
   // Server query holds only server-side filters; collection/topic filtering runs
   // client-side on the same dataset so no control overwrites another.
@@ -114,6 +115,8 @@ function ResourcesPage() {
     subject: filters.subject || undefined,
     grade_level: filters.grade_level || undefined,
     tag: filters.tag || undefined,
+    difficulty: filters.difficulty || undefined,
+    favorites_only: filters.favoritesOnly || undefined,
   };
 
   const { data: resources = [], isLoading } = useQuery({
