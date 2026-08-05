@@ -6,6 +6,7 @@ import {
   Sparkles, Loader2, Save, Trash2, Printer, Plus, Search,
   BookOpen, FileText, FolderPlus, X, ArrowRight, Tag, Library,
   ChevronDown, ChevronUp, Download, Eye,
+  Star, Pencil, MessageCircleQuestion, Send,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,9 +25,11 @@ import { KODESH_SUBJECTS } from "@/lib/kodesh-subjects";
 import {
   listResources, upsertResource, deleteResource, generateResourceWithAI,
   listCollections, upsertCollection, deleteCollection, toggleCollectionItem,
-  listCollectionItems,
+  listCollectionItems, toggleResourceFavorite, askLibrary,
   RESOURCE_TYPES, RESOURCE_TYPE_LABELS,
+  DIFFICULTIES, DIFFICULTY_LABELS,
   type ResourceRow, type ResourceContent, type ResourceType,
+  type Difficulty,
 } from "@/lib/teaching-resources.functions";
 import { getPersonalRecommendations, recomputeStyleProfile } from "@/lib/teacher-style.functions";
 import { Wand2 } from "lucide-react";
@@ -68,13 +71,22 @@ type FilterState = {
   subject: string;
   grade_level: string;
   tag: string;
+  difficulty: Difficulty | "";
+  favoritesOnly: boolean;
   topicIds: string[];
   collectionIds: string[];
 };
 
 const emptyFilters: FilterState = {
   search: "", resource_type: "", subject: "", grade_level: "", tag: "",
+  difficulty: "", favoritesOnly: false,
   topicIds: [], collectionIds: [],
+};
+
+const DIFFICULTY_BADGE: Record<Difficulty, string> = {
+  easy: "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+  medium: "border-amber/40 bg-amber/10 text-amber-700 dark:text-amber-300",
+  hard: "border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-300",
 };
 
 function ResourcesPage() {
