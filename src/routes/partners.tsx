@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,9 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Building2, School, Handshake, FileText, ShieldCheck, Users, Sparkles, ArrowLeft, Download, Mail, Send } from "lucide-react";
+import { Building2, School, Handshake, FileText, ShieldCheck, Users, Sparkles, ArrowLeft, Download, Mail, Send, Loader2 } from "lucide-react";
 import { FaqSection, faqJsonLd, type FaqItem } from "@/components/faq-section";
 import { toast } from "sonner";
+import { submitPartnerLead } from "@/lib/partner-leads.functions";
+import { useHcaptcha } from "@/hooks/use-hcaptcha";
 
 const URL_SELF = "https://cuddle-spark-nexus.lovable.app/partners";
 
