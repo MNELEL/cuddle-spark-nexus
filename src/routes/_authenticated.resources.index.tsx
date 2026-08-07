@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Sparkles, Loader2, Save, Trash2, Printer, Plus, Search,
   BookOpen, FileText, FolderPlus, X, ArrowRight, Tag, Library,
-  ChevronDown, ChevronUp, Download, Eye,
+  ChevronDown, ChevronUp, Download, Eye, ListChecks,
   Star, Pencil, MessageCircleQuestion, Send,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,8 @@ import { Wand2 } from "lucide-react";
 import { WeeklyPaceCard } from "@/components/weekly-pace-card";
 import { TopicTreeFilter } from "@/components/topic-tree-filter";
 import { useTablistKeys } from "@/hooks/use-tablist-keys";
+import { SummaryGenerator } from "@/components/summary-generator";
+import { TaskGenerator } from "@/components/task-generator";
 
 const VIEW_TABS = ["items", "ask"] as const;
 
@@ -62,6 +64,7 @@ const LIBRARY_CATEGORIES: { id: string; label: string; types: ResourceType[] }[]
   { id: "worksheet", label: "דפי עבודה", types: ["worksheet"] },
   { id: "exams", label: "מבחנים ושאלות", types: ["question_bank"] },
   { id: "activities", label: "פעילויות ומשחקים", types: ["activity", "game", "riddle"] },
+  { id: "summaries", label: "סיכומים", types: ["summary"] },
   { id: "stories", label: "סיפורים ושירים", types: ["story", "song"] },
   { id: "visual", label: "עזרים חזותיים", types: ["visual_aid"] },
   { id: "other", label: "אחר", types: ["other"] },
@@ -122,6 +125,8 @@ function ResourcesPage() {
   const [topOpen, setTopOpen] = useState(false);
   const [category, setCategory] = useState("all");
   const [view, setView] = useState<"items" | "ask">("items");
+  const [summaryOpen, setSummaryOpen] = useState(false);
+  const [tasksOpen, setTasksOpen] = useState(false);
 
   const viewKeys = useTablistKeys(VIEW_TABS, view, setView);
   const categoryKeys = useTablistKeys(CATEGORY_IDS, category, setCategory);
@@ -273,6 +278,34 @@ function ResourcesPage() {
 
       {view === "items" && (
       <>
+      {/* מחוללים פדגוגיים מתוך הספרייה */}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <button
+          type="button"
+          onClick={() => setSummaryOpen(true)}
+          className="rounded-xl border bg-card p-4 text-right transition hover:border-primary/50 hover:shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <div className="flex items-center gap-2 font-semibold">
+            <FileText className="h-4 w-4 text-amber" aria-hidden /> מחולל סיכום מותאם
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            בוחרים חומר מהספרייה, רמת תלמידים והיקף — ומקבלים סיכום בסגנון האישי שלך.
+          </p>
+        </button>
+        <button
+          type="button"
+          onClick={() => setTasksOpen(true)}
+          className="rounded-xl border bg-card p-4 text-right transition hover:border-primary/50 hover:shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <div className="flex items-center gap-2 font-semibold">
+            <ListChecks className="h-4 w-4 text-amber" aria-hidden /> מחולל משימות
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            שאלות ומשימות מחומר קיים או מנושא חופשי, לפי רמת קושי וכמות.
+          </p>
+        </button>
+      </div>
+
       {/* קטגוריות ראשיות */}
       <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="קטגוריות ספרייה">
         {LIBRARY_CATEGORIES.map((c) => {
@@ -592,6 +625,34 @@ function ResourcesPage() {
           })
         }
       />
+
+      {/* מחולל סיכום מותאם */}
+      <Dialog open={summaryOpen} onOpenChange={setSummaryOpen}>
+        <DialogContent
+          className="max-w-3xl max-h-[90vh] overflow-y-auto"
+          dir="rtl"
+          onOpenAutoFocus={focusDialogShell}
+        >
+          <DialogHeader>
+            <DialogTitle className="text-right">מחולל סיכום מותאם</DialogTitle>
+          </DialogHeader>
+          <SummaryGenerator />
+        </DialogContent>
+      </Dialog>
+
+      {/* מחולל משימות */}
+      <Dialog open={tasksOpen} onOpenChange={setTasksOpen}>
+        <DialogContent
+          className="max-w-3xl max-h-[90vh] overflow-y-auto"
+          dir="rtl"
+          onOpenAutoFocus={focusDialogShell}
+        >
+          <DialogHeader>
+            <DialogTitle className="text-right">מחולל משימות</DialogTitle>
+          </DialogHeader>
+          <TaskGenerator />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -804,6 +865,19 @@ function ResourceViewerDialog({
             {resource.grade_level && <Badge variant="secondary">כיתה {resource.grade_level}</Badge>}
           </div>
           {resource.description && <p className="text-sm text-muted-foreground">{resource.description}</p>}
+          {c.source_resource_id && (
+            <p className="text-xs text-muted-foreground">
+              נוצר מתוך:{" "}
+              <Link
+                to="/resources/$resourceId"
+                params={{ resourceId: c.source_resource_id }}
+                className="underline hover:text-foreground"
+                onClick={onClose}
+              >
+                חומר המקור בספרייה
+              </Link>
+            </p>
+          )}
           {c.body && (
             <div className="whitespace-pre-wrap rounded-lg border bg-muted/20 p-3 text-sm leading-relaxed">{c.body}</div>
           )}
