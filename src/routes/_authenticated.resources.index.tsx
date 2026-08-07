@@ -865,6 +865,19 @@ function ResourceViewerDialog({
             {resource.grade_level && <Badge variant="secondary">כיתה {resource.grade_level}</Badge>}
           </div>
           {resource.description && <p className="text-sm text-muted-foreground">{resource.description}</p>}
+          {c.source_resource_id && (
+            <p className="text-xs text-muted-foreground">
+              נוצר מתוך:{" "}
+              <Link
+                to="/resources/$resourceId"
+                params={{ resourceId: c.source_resource_id }}
+                className="underline hover:text-foreground"
+                onClick={onClose}
+              >
+                חומר המקור בספרייה
+              </Link>
+            </p>
+          )}
           {c.body && (
             <div className="whitespace-pre-wrap rounded-lg border bg-muted/20 p-3 text-sm leading-relaxed">{c.body}</div>
           )}
