@@ -625,6 +625,34 @@ function ResourcesPage() {
           })
         }
       />
+
+      {/* מחולל סיכום מותאם */}
+      <Dialog open={summaryOpen} onOpenChange={setSummaryOpen}>
+        <DialogContent
+          className="max-w-3xl max-h-[90vh] overflow-y-auto"
+          dir="rtl"
+          onOpenAutoFocus={focusDialogShell}
+        >
+          <DialogHeader>
+            <DialogTitle className="text-right">מחולל סיכום מותאם</DialogTitle>
+          </DialogHeader>
+          <SummaryGenerator />
+        </DialogContent>
+      </Dialog>
+
+      {/* מחולל משימות */}
+      <Dialog open={tasksOpen} onOpenChange={setTasksOpen}>
+        <DialogContent
+          className="max-w-3xl max-h-[90vh] overflow-y-auto"
+          dir="rtl"
+          onOpenAutoFocus={focusDialogShell}
+        >
+          <DialogHeader>
+            <DialogTitle className="text-right">מחולל משימות</DialogTitle>
+          </DialogHeader>
+          <TaskGenerator />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
