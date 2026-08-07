@@ -2,7 +2,7 @@ import { blogPostHead } from "@/lib/blog-seo";
 import { createFileRoute, Link } from "@tanstack/react-router";
 
 const URL = "https://cuddle-spark-nexus.lovable.app/blog/classroom-management-strategies";
-const TITLE = "אסטרטגיות ניהול כיתה — מדריך למלמד המקצועי בתלמוד תורה";
+const TITLE = "אסטרטגיות ניהול כיתה — מדריך למלמד ורב בתלמוד תורה";
 const DESCRIPTION =
   "מדריך מקצועי לניהול כיתה במגזר החרדי: תגבור התנהגות חיובית, עיצוב סביבת למידה, מעקב פדגוגי מבוסס נתונים ושגרות שמייצרות שקט אמיתי בכיתה.";
 
