@@ -17,7 +17,7 @@ export const DIFFICULTY_LABELS: Record<Difficulty, string> = {
 
 export const RESOURCE_TYPES = [
   "worksheet", "question_bank", "riddle", "story", "song",
-  "game", "visual_aid", "lesson_plan", "activity", "other",
+  "game", "visual_aid", "lesson_plan", "activity", "summary", "other",
 ] as const;
 export type ResourceType = (typeof RESOURCE_TYPES)[number];
 
@@ -31,6 +31,7 @@ export const RESOURCE_TYPE_LABELS: Record<ResourceType, string> = {
   visual_aid: "עזר חזותי",
   lesson_plan: "מערך שיעור",
   activity: "פעילות כיתתית",
+  summary: "סיכום",
   other: "אחר",
 };
 
@@ -43,6 +44,8 @@ export type ResourceContent = {
   steps?: string[];
   /** Optional materials needed (game / activity / visual_aid). */
   materials?: string[];
+  /** כשהחומר הופק מתוך חומר אחר בספרייה — מזהה חומר המקור. */
+  source_resource_id?: string;
 };
 
 export type ResourceRow = {

@@ -55,10 +55,11 @@ export async function buildSummary(input: {
   level: StudentLevel;
   scope: SummaryScope;
   notes: string;
+  styleContext?: string;
 }): Promise<string> {
   const text = await callLovableAI({
     messages: [
-      { role: "system", content: SYSTEM_PROMPT },
+      { role: "system", content: SYSTEM_PROMPT + (input.styleContext ?? "") },
       {
         role: "user",
         content:
@@ -80,12 +81,16 @@ export async function buildTasks(input: {
   kind: TaskKind;
   count: number;
   notes: string;
+  styleContext?: string;
 }): Promise<string> {
   const text = await callLovableAI({
     messages: [
       {
         role: "system",
-        content: SYSTEM_PROMPT + " החזר את המשימות ממוספרות, ואת התשובות בסוף תחת הכותרת 'תשובות'.",
+        content:
+          SYSTEM_PROMPT +
+          " החזר את המשימות ממוספרות, ואת התשובות בסוף תחת הכותרת 'תשובות'." +
+          (input.styleContext ?? ""),
       },
       {
         role: "user",
