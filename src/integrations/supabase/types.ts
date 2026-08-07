@@ -1124,6 +1124,54 @@ export type Database = {
         }
         Relationships: []
       }
+      partner_leads: {
+        Row: {
+          contact_name: string
+          created_at: string
+          demo_date: string | null
+          email: string
+          id: string
+          institution_name: string
+          institution_type: string
+          message: string | null
+          phone: string | null
+          role: string | null
+          student_count: string | null
+          teacher_count: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          contact_name: string
+          created_at?: string
+          demo_date?: string | null
+          email: string
+          id?: string
+          institution_name: string
+          institution_type?: string
+          message?: string | null
+          phone?: string | null
+          role?: string | null
+          student_count?: string | null
+          teacher_count?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          contact_name?: string
+          created_at?: string
+          demo_date?: string | null
+          email?: string
+          id?: string
+          institution_name?: string
+          institution_type?: string
+          message?: string | null
+          phone?: string | null
+          role?: string | null
+          student_count?: string | null
+          teacher_count?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       poll_votes: {
         Row: {
           created_at: string
