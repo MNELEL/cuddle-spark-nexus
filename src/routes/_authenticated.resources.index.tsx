@@ -122,6 +122,8 @@ function ResourcesPage() {
   const [topOpen, setTopOpen] = useState(false);
   const [category, setCategory] = useState("all");
   const [view, setView] = useState<"items" | "ask">("items");
+  const [summaryOpen, setSummaryOpen] = useState(false);
+  const [tasksOpen, setTasksOpen] = useState(false);
 
   const viewKeys = useTablistKeys(VIEW_TABS, view, setView);
   const categoryKeys = useTablistKeys(CATEGORY_IDS, category, setCategory);
@@ -273,6 +275,34 @@ function ResourcesPage() {
 
       {view === "items" && (
       <>
+      {/* מחוללים פדגוגיים מתוך הספרייה */}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <button
+          type="button"
+          onClick={() => setSummaryOpen(true)}
+          className="rounded-xl border bg-card p-4 text-right transition hover:border-primary/50 hover:shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <div className="flex items-center gap-2 font-semibold">
+            <FileText className="h-4 w-4 text-amber" aria-hidden /> מחולל סיכום מותאם
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            בוחרים חומר מהספרייה, רמת תלמידים והיקף — ומקבלים סיכום בסגנון האישי שלך.
+          </p>
+        </button>
+        <button
+          type="button"
+          onClick={() => setTasksOpen(true)}
+          className="rounded-xl border bg-card p-4 text-right transition hover:border-primary/50 hover:shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <div className="flex items-center gap-2 font-semibold">
+            <ListChecks className="h-4 w-4 text-amber" aria-hidden /> מחולל משימות
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            שאלות ומשימות מחומר קיים או מנושא חופשי, לפי רמת קושי וכמות.
+          </p>
+        </button>
+      </div>
+
       {/* קטגוריות ראשיות */}
       <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="קטגוריות ספרייה">
         {LIBRARY_CATEGORIES.map((c) => {
