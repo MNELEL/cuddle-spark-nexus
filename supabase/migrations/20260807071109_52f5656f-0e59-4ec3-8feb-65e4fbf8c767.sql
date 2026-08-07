@@ -1,0 +1,1 @@
+DELETE FROM public.partner_leads WHERE email = 'test@example.com';

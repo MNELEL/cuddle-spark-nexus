@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,9 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Building2, School, Handshake, FileText, ShieldCheck, Users, Sparkles, ArrowLeft, Download, Mail, Send } from "lucide-react";
+import { Building2, School, Handshake, FileText, ShieldCheck, Users, Sparkles, ArrowLeft, Download, Mail, Send, Loader2 } from "lucide-react";
 import { FaqSection, faqJsonLd, type FaqItem } from "@/components/faq-section";
 import { toast } from "sonner";
+import { submitPartnerLead } from "@/lib/partner-leads.functions";
+import { useHcaptcha } from "@/hooks/use-hcaptcha";
 
 const URL_SELF = "https://cuddle-spark-nexus.lovable.app/partners";
 
@@ -191,6 +194,10 @@ function PartnersPage() {
 }
 
 function PartnerContactForm() {
+  const submitLead = useServerFn(submitPartnerLead);
+  const captcha = useHcaptcha("partner-hcaptcha-slot");
+  const [status, setStatus] = useState<"idle" | "loading" | "done">("idle");
+  const [honeypot, setHoneypot] = useState("");
   const [f, setF] = useState({
     institutionName: "",
     institutionType: "school",
@@ -205,35 +212,65 @@ function PartnerContactForm() {
   });
   const set = (k: keyof typeof f, v: string) => setF((p) => ({ ...p, [k]: v }));
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!f.institutionName || !f.contactName || !f.email) {
       toast.error("נא למלא שם מוסד, שם איש קשר ואימייל");
       return;
     }
-    const typeLabel =
-      f.institutionType === "district" ? "מחוז/רשת" :
-      f.institutionType === "yeshiva" ? "ישיבה" :
-      f.institutionType === "cheder" ? "חיידר / ת״ת" : "בית ספר";
-    const body = [
-      `בקשת דמו / שיתוף פעולה`,
-      ``,
-      `מוסד: ${f.institutionName}`,
-      `סוג: ${typeLabel}`,
-      `איש קשר: ${f.contactName}${f.role ? ` (${f.role})` : ""}`,
-      `אימייל: ${f.email}`,
-      `טלפון: ${f.phone || "-"}`,
-      `מספר תלמידים: ${f.studentCount || "-"}`,
-      `מספר מלמדים: ${f.teacherCount || "-"}`,
-      `מועד מועדף לדמו: ${f.demoDate || "-"}`,
-      ``,
-      `הודעה:`,
-      f.message || "-",
-    ].join("\n");
-    const href = `mailto:nm0527603669@gmail.com?subject=${encodeURIComponent(`בקשת דמו: ${f.institutionName}`)}&body=${encodeURIComponent(body)}`;
-    window.location.href = href;
-    toast.success("נפתח לך חלון מייל — שלחו לסיום");
+    if (captcha.siteKey && !captcha.token) {
+      toast.error("אנא השלימו את אימות ה-CAPTCHA לפני השליחה");
+      return;
+    }
+    setStatus("loading");
+    try {
+      await submitLead({
+        data: {
+          institution_name: f.institutionName.trim(),
+          institution_type: f.institutionType as "school" | "cheder" | "yeshiva" | "district",
+          contact_name: f.contactName.trim(),
+          role: f.role.trim(),
+          email: f.email.trim(),
+          phone: f.phone.trim(),
+          student_count: f.studentCount.trim(),
+          teacher_count: f.teacherCount.trim(),
+          demo_date: f.demoDate,
+          message: f.message.trim(),
+          user_agent: typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 500) : "",
+          honeypot,
+          elapsed_ms: captcha.elapsedMs(),
+          hcaptcha_token: captcha.token,
+        },
+      });
+      setStatus("done");
+      toast.success("הבקשה נשלחה ונשמרה — נחזור אליכם בהקדם");
+    } catch (err) {
+      console.error(err);
+      setStatus("idle");
+      captcha.reset();
+      toast.error(err instanceof Error ? err.message : "שליחת הבקשה נכשלה. נסו שוב.");
+    }
   };
+
+  if (status === "done") {
+    return (
+      <section id="contact" className="max-w-3xl mx-auto">
+        <Card className="border-primary/30">
+          <CardHeader>
+            <CardTitle className="text-2xl">הבקשה נשלחה בהצלחה</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3" role="status" aria-live="polite">
+            <p className="text-sm text-muted-foreground">
+              קיבלנו את פרטי {f.institutionName} ונחזור אליכם לאימייל {f.email} עם ערכת הטמעה ומועד לדמו חי.
+            </p>
+            <Button type="button" variant="outline" onClick={() => setStatus("idle")}>
+              שליחת בקשה נוספת
+            </Button>
+          </CardContent>
+        </Card>
+      </section>
+    );
+  }
 
   return (
     <section id="contact" className="max-w-3xl mx-auto">
@@ -294,11 +331,29 @@ function PartnerContactForm() {
               <Label htmlFor="partner-message">הודעה חופשית</Label>
               <Textarea id="partner-message" name="message" rows={4} value={f.message} onChange={(e) => set("message", e.target.value)} placeholder="ספרו לנו על צרכי המוסד — מה הכי חשוב שתראו בדמו?" />
             </div>
+            {/* Honeypot — hidden from humans, bots tend to fill it */}
+            <div aria-hidden="true" className="absolute left-[-9999px] w-px h-px overflow-hidden">
+              <label htmlFor="partner-company-url">Company URL</label>
+              <input
+                id="partner-company-url"
+                name="company_url"
+                tabIndex={-1}
+                autoComplete="off"
+                value={honeypot}
+                onChange={(e) => setHoneypot(e.target.value)}
+              />
+            </div>
+            {captcha.siteKey ? <div id="partner-hcaptcha-slot" className="sm:col-span-2" /> : null}
             <div className="sm:col-span-2 flex flex-wrap gap-2 pt-1">
-              <Button type="submit" size="lg" className="gap-2">
-                <Send className="h-4 w-4" /> שליחת בקשה
+              <Button type="submit" size="lg" className="gap-2" disabled={status === "loading"}>
+                {status === "loading" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+                {status === "loading" ? "שולח…" : "שליחת בקשה"}
               </Button>
-              <a href="mailto:nm0527603669@gmail.com?subject=בקשת%20ערכת%20הטמעה">
+              <a href="mailto:nm0527603669@gmail.com?subject=בקשת%20ערכת%20הטמעה" aria-label="שליחת מייל ישיר לצוות">
                 <Button type="button" size="lg" variant="outline" className="gap-2">
                   <Mail className="h-4 w-4" /> שליחת מייל ישיר
                 </Button>
