@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Sparkles, Loader2, Save, Trash2, Printer, Plus, Search,
   BookOpen, FileText, FolderPlus, X, ArrowRight, Tag, Library,
-  ChevronDown, ChevronUp, Download, Eye,
+  ChevronDown, ChevronUp, Download, Eye, ListChecks,
   Star, Pencil, MessageCircleQuestion, Send,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,8 @@ import { Wand2 } from "lucide-react";
 import { WeeklyPaceCard } from "@/components/weekly-pace-card";
 import { TopicTreeFilter } from "@/components/topic-tree-filter";
 import { useTablistKeys } from "@/hooks/use-tablist-keys";
+import { SummaryGenerator } from "@/components/summary-generator";
+import { TaskGenerator } from "@/components/task-generator";
 
 const VIEW_TABS = ["items", "ask"] as const;
 
@@ -62,6 +64,7 @@ const LIBRARY_CATEGORIES: { id: string; label: string; types: ResourceType[] }[]
   { id: "worksheet", label: "דפי עבודה", types: ["worksheet"] },
   { id: "exams", label: "מבחנים ושאלות", types: ["question_bank"] },
   { id: "activities", label: "פעילויות ומשחקים", types: ["activity", "game", "riddle"] },
+  { id: "summaries", label: "סיכומים", types: ["summary"] },
   { id: "stories", label: "סיפורים ושירים", types: ["story", "song"] },
   { id: "visual", label: "עזרים חזותיים", types: ["visual_aid"] },
   { id: "other", label: "אחר", types: ["other"] },
