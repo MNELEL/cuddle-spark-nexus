@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Lock, ShieldCheck, KeyRound, AlertCircle, Loader2 } from "lucide-react";
+import { Lock, ShieldCheck, KeyRound, AlertCircle, Loader2, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 
 export function SecuritySettings() {
@@ -30,11 +30,14 @@ export function SecuritySettings() {
   const [verifyInput, setVerifyInput] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [saveFailed, setSaveFailed] = useState(false);
+  const [disableFailed, setDisableFailed] = useState(false);
 
   const enabled = Boolean(data?.pin_enabled && data?.has_pin);
 
   async function handleSave() {
     setErr(null);
+    setSaveFailed(false);
     if (!/^\d{4}$/.test(newPin)) { setErr("PIN חייב 4 ספרות"); return; }
     if (newPin !== confirmPin) { setErr("האימות לא תואם"); return; }
     setBusy(true);
@@ -48,18 +51,21 @@ export function SecuritySettings() {
       setNewPin(""); setConfirmPin("");
     } catch (e: any) {
       setErr(e?.message ?? "שגיאה");
-      toast.error(e?.message ?? "שמירת ה-PIN נכשלה", { id: "pin_save" });
+      setSaveFailed(true);
+      toast.error(enabled ? "עדכון ה-PIN נכשל — נסה שוב" : "שמירת ה-PIN נכשלה — נסה שוב", { id: "pin_save" });
     } finally { setBusy(false); }
   }
 
   async function handleDisable() {
     setErr(null);
+    setDisableFailed(false);
     setBusy(true);
     toast.loading("מכבה נעילה…", { id: "pin_disable" });
     try {
       const r = await verifyFn({ data: { pin: verifyInput } });
       if (!r.ok) {
         setErr("PIN שגוי");
+        setDisableFailed(true);
         toast.error("PIN שגוי — הנעילה לא כובתה", { id: "pin_disable" });
         setBusy(false);
         return;
@@ -72,7 +78,8 @@ export function SecuritySettings() {
       setVerifyInput("");
     } catch (e: any) {
       setErr(e?.message ?? "שגיאה");
-      toast.error(e?.message ?? "כיבוי הנעילה נכשל", { id: "pin_disable" });
+      setDisableFailed(true);
+      toast.error("כיבוי הנעילה נכשל — נסה שוב", { id: "pin_disable" });
     } finally { setBusy(false); }
   }
 
@@ -135,7 +142,7 @@ export function SecuritySettings() {
       </Card>
 
       {/* Set / change PIN dialog */}
-      <Dialog open={setOpen} onOpenChange={(o) => { setSetOpen(o); if (!o) { setErr(null); setNewPin(""); setConfirmPin(""); } }}>
+      <Dialog open={setOpen} onOpenChange={(o) => { setSetOpen(o); if (!o) { setErr(null); setSaveFailed(false); setNewPin(""); setConfirmPin(""); } }}>
         <DialogContent dir="rtl" className="sm:max-w-sm">
           <DialogHeader><DialogTitle>{enabled ? "שנה PIN" : "הגדר PIN חדש"}</DialogTitle></DialogHeader>
           <div className="space-y-3">
@@ -157,7 +164,16 @@ export function SecuritySettings() {
                 placeholder="••••"
               />
             </div>
-            {err && <p className="text-sm text-destructive">{err}</p>}
+            {err && (
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm text-destructive">{err}</p>
+                {saveFailed && (
+                  <Button type="button" variant="outline" size="sm" onClick={handleSave} disabled={busy}>
+                    <RotateCcw className="ms-1 h-4 w-4" /> נסה שוב
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setSetOpen(false)}>בטל</Button>
@@ -169,7 +185,7 @@ export function SecuritySettings() {
       </Dialog>
 
       {/* Disable dialog */}
-      <Dialog open={disableOpen} onOpenChange={(o) => { setDisableOpen(o); if (!o) { setErr(null); setVerifyInput(""); } }}>
+      <Dialog open={disableOpen} onOpenChange={(o) => { setDisableOpen(o); if (!o) { setErr(null); setDisableFailed(false); setVerifyInput(""); } }}>
         <DialogContent dir="rtl" className="sm:max-w-sm">
           <DialogHeader><DialogTitle>כיבוי נעילת הלוח</DialogTitle></DialogHeader>
           <div className="space-y-3">
@@ -180,7 +196,16 @@ export function SecuritySettings() {
               className="text-center text-2xl font-mono-tabular tracking-[0.4em]"
               placeholder="••••" autoFocus
             />
-            {err && <p className="text-sm text-destructive">{err}</p>}
+            {err && (
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm text-destructive">{err}</p>
+                {disableFailed && (
+                  <Button type="button" variant="outline" size="sm" onClick={handleDisable} disabled={busy}>
+                    <RotateCcw className="ms-1 h-4 w-4" /> נסה שוב
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setDisableOpen(false)}>בטל</Button>
