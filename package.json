@@ -11,7 +11,9 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "check:tanstack": "node scripts/check-tanstack-versions.mjs",
-    "check:seo": "node scripts/check-seo-meta.mjs"
+    "check:seo": "node scripts/check-seo-meta.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.47.0",
