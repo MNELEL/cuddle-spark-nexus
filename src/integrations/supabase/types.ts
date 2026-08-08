@@ -1019,6 +1019,63 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          actor_id: string | null
+          body: string
+          class_id: string | null
+          created_at: string
+          id: string
+          institution_id: string | null
+          read_at: string | null
+          recipient_id: string
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          actor_id?: string | null
+          body?: string
+          class_id?: string | null
+          created_at?: string
+          id?: string
+          institution_id?: string | null
+          read_at?: string | null
+          recipient_id: string
+          title: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          actor_id?: string | null
+          body?: string
+          class_id?: string | null
+          created_at?: string
+          id?: string
+          institution_id?: string | null
+          read_at?: string | null
+          recipient_id?: string
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pacing_recalc_log: {
         Row: {
           ai_recommendation: string | null
