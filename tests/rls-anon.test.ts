@@ -68,18 +68,6 @@ suite("RLS: anonymous writes are blocked", () => {
     expect(res.error, "anon was able to insert a notification").toBeTruthy();
   });
 
-  it("rejects anon INSERT into student_profiles (duplicate probe)", async () => {
-    const res = await supabase!
-      .from("student_profiles")
-      .insert({
-        student_id: crypto.randomUUID(),
-        class_id: crypto.randomUUID(),
-        sensitive_notes: "rls-probe",
-      } as never)
-      .select();
-    expect(res.error, "anon was able to insert a sensitive student profile").toBeTruthy();
-  });
-
   it("rejects anon UPDATE of classes status (archive bypass attempt)", async () => {
     const res = await supabase!.from("classes").update({ status: "archived" } as never).neq("id", crypto.randomUUID()).select();
     expect(isBlocked(res), "anon was able to archive classes").toBe(true);
