@@ -7,6 +7,7 @@ export type HandoffProfile = {
   sensitive_notes: string;
   teaching_style_notes: string;
   handoff_notes: string;
+  updated_at?: string | null;
 };
 
 export async function buildHandoffPdfBlob(
@@ -30,6 +31,9 @@ export async function buildHandoffPdfBlob(
 
   for (const p of profiles) {
     hd.section(p.student_name || "תלמיד");
+    if (p.updated_at) {
+      hd.paragraph(`עודכן לאחרונה: ${new Date(p.updated_at).toLocaleDateString("he-IL")}`);
+    }
     const labels = p.sensitive_flags
       .map((f) => sensitiveFlagLabel[f as SensitiveFlag] ?? f)
       .join(" · ");
