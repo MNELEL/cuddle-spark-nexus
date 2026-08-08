@@ -9,6 +9,7 @@ import { Loader2, AlertTriangle, Gift, CheckCircle2, Home } from "lucide-react";
 import { SeatFillGrid } from "@/components/seat-fill-grid";
 import { TorahLogo } from "@/components/torah-logo";
 import { toast } from "sonner";
+import { TrialStatusInline } from "@/components/trial-status-inline";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
@@ -329,6 +330,10 @@ function LoginPage() {
               </p>
             )}
           </div>
+
+          {mode === "signup" && !signedUp && (
+            <TrialStatusInline continueTo={nextPath} />
+          )}
 
           {mode === "signup" && !signedUp && (
             <div className="mb-4 rounded-xl border border-primary/30 bg-primary/5 p-4 text-sm">
