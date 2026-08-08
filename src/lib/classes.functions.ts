@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { logInfo } from "@/lib/logger.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { previousGradeName, defaultAcademicYear } from "@/lib/year-rollover";
@@ -187,6 +188,18 @@ export const createClass = createServerFn({ method: "POST" })
       if (ae) console.error("[DB Error]", ae);
     }
 
+    await logInfo(parent ? "מעבר שנה: נוצרה כיתה חדשה" : "כיתה חדשה נוצרה", {
+      source: "year_rollover",
+      userId,
+      context: {
+        newClassId: row.id,
+        newClassName: row.name,
+        parentClassId: data.parent_class_id ?? null,
+        copiedStudents,
+        archivedParent: !!(parent && data.archive_parent),
+      },
+    });
+
     return { ...row, copiedStudents };
   });
 
@@ -337,6 +350,13 @@ export const updateClass = createServerFn({ method: "POST" })
       .update({ ...rest, updated_at: new Date().toISOString() })
       .eq("id", id);
     if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    if (data.status === "archived") {
+      await logInfo("כיתה הועברה לארכיון", {
+        source: "year_rollover",
+        userId: context.userId,
+        context: { classId: data.id },
+      });
+    }
     return { ok: true };
   });
 
