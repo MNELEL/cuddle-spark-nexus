@@ -350,13 +350,6 @@ export const updateClass = createServerFn({ method: "POST" })
       .update({ ...rest, updated_at: new Date().toISOString() })
       .eq("id", id);
     if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
-    if (data.status === "archived") {
-      await logInfo("כיתה הועברה לארכיון", {
-        source: "year_rollover",
-        userId: context.userId,
-        context: { classId: data.id },
-      });
-    }
     return { ok: true };
   });
 
@@ -384,5 +377,12 @@ export const setClassStatus = createServerFn({ method: "POST" })
       .update({ status: data.status, updated_at: new Date().toISOString() })
       .eq("id", data.id);
     if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    if (data.status === "archived") {
+      await logInfo("כיתה הועברה לארכיון", {
+        source: "year_rollover",
+        userId: context.userId,
+        context: { classId: data.id },
+      });
+    }
     return { ok: true };
   });
