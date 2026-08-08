@@ -378,6 +378,8 @@ export const setClassStatus = createServerFn({ method: "POST" })
       .eq("id", data.id);
     if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     if (data.status === "archived") {
+      const { notifyClassArchived } = await import("@/lib/notifications.server");
+      await notifyClassArchived({ classId: data.id, actorId: context.userId });
       await logInfo("כיתה הועברה לארכיון", {
         source: "year_rollover",
         userId: context.userId,

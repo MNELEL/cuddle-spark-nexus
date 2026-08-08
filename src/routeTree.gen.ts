@@ -22,6 +22,7 @@ import { Route as RssDotxmlRouteImport } from './routes/rss[.]xml'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as ThemeTestRouteImport } from './routes/theme-test'
+import { Route as ToolsRouteImport } from './routes/tools'
 import { Route as AuthenticatedBellScheduleRouteImport } from './routes/_authenticated.bell-schedule'
 import { Route as AuthenticatedIngestRouteImport } from './routes/_authenticated.ingest'
 import { Route as AuthenticatedInsightsRouteImport } from './routes/_authenticated.insights'
@@ -141,6 +142,11 @@ const SupportRoute = SupportRouteImport.update({
 const ThemeTestRoute = ThemeTestRouteImport.update({
   id: '/theme-test',
   path: '/theme-test',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ToolsRoute = ToolsRouteImport.update({
+  id: '/tools',
+  path: '/tools',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedBellScheduleRoute =
@@ -305,9 +311,9 @@ const PartnersSchoolsRoute = PartnersSchoolsRouteImport.update({
   getParentRoute: () => PartnersRoute,
 } as any)
 const ToolsGroupMakerRoute = ToolsGroupMakerRouteImport.update({
-  id: '/tools/group-maker',
-  path: '/tools/group-maker',
-  getParentRoute: () => rootRouteImport,
+  id: '/group-maker',
+  path: '/group-maker',
+  getParentRoute: () => ToolsRoute,
 } as any)
 const AuthenticatedAnalyticsClassIdRoute =
   AuthenticatedAnalyticsClassIdRouteImport.update({
@@ -473,6 +479,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
   '/theme-test': typeof ThemeTestRoute
+  '/tools': typeof ToolsRouteWithChildren
   '/bell-schedule': typeof AuthenticatedBellScheduleRoute
   '/ingest': typeof AuthenticatedIngestRoute
   '/insights': typeof AuthenticatedInsightsRoute
@@ -540,6 +547,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
   '/theme-test': typeof ThemeTestRoute
+  '/tools': typeof ToolsRouteWithChildren
   '/bell-schedule': typeof AuthenticatedBellScheduleRoute
   '/ingest': typeof AuthenticatedIngestRoute
   '/insights': typeof AuthenticatedInsightsRoute
@@ -612,6 +620,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
   '/theme-test': typeof ThemeTestRoute
+  '/tools': typeof ToolsRouteWithChildren
   '/_authenticated/bell-schedule': typeof AuthenticatedBellScheduleRoute
   '/_authenticated/ingest': typeof AuthenticatedIngestRoute
   '/_authenticated/insights': typeof AuthenticatedInsightsRoute
@@ -684,6 +693,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/support'
     | '/theme-test'
+    | '/tools'
     | '/bell-schedule'
     | '/ingest'
     | '/insights'
@@ -751,6 +761,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/support'
     | '/theme-test'
+    | '/tools'
     | '/bell-schedule'
     | '/ingest'
     | '/insights'
@@ -822,6 +833,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/support'
     | '/theme-test'
+    | '/tools'
     | '/_authenticated/bell-schedule'
     | '/_authenticated/ingest'
     | '/_authenticated/insights'
@@ -894,9 +906,9 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SupportRoute: typeof SupportRoute
   ThemeTestRoute: typeof ThemeTestRoute
+  ToolsRoute: typeof ToolsRouteWithChildren
   CSlugRoute: typeof CSlugRoute
   PTokenRoute: typeof PTokenRoute
-  ToolsGroupMakerRoute: typeof ToolsGroupMakerRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -990,6 +1002,13 @@ declare module '@tanstack/react-router' {
       path: '/theme-test'
       fullPath: '/theme-test'
       preLoaderRoute: typeof ThemeTestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tools': {
+      id: '/tools'
+      path: '/tools'
+      fullPath: '/tools'
+      preLoaderRoute: typeof ToolsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/bell-schedule': {
@@ -1204,10 +1223,10 @@ declare module '@tanstack/react-router' {
     }
     '/tools/group-maker': {
       id: '/tools/group-maker'
-      path: '/tools/group-maker'
+      path: '/group-maker'
       fullPath: '/tools/group-maker'
       preLoaderRoute: typeof ToolsGroupMakerRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof ToolsRoute
     }
     '/_authenticated/analytics/$classId': {
       id: '/_authenticated/analytics/$classId'
@@ -1569,6 +1588,16 @@ const PartnersRouteWithChildren = PartnersRoute._addFileChildren(
   PartnersRouteChildren,
 )
 
+interface ToolsRouteChildren {
+  ToolsGroupMakerRoute: typeof ToolsGroupMakerRoute
+}
+
+const ToolsRouteChildren: ToolsRouteChildren = {
+  ToolsGroupMakerRoute: ToolsGroupMakerRoute,
+}
+
+const ToolsRouteWithChildren = ToolsRoute._addFileChildren(ToolsRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
@@ -1583,20 +1612,10 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SupportRoute: SupportRoute,
   ThemeTestRoute: ThemeTestRoute,
+  ToolsRoute: ToolsRouteWithChildren,
   CSlugRoute: CSlugRoute,
   PTokenRoute: PTokenRoute,
-  ToolsGroupMakerRoute: ToolsGroupMakerRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

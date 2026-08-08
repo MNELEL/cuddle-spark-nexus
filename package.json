@@ -11,7 +11,9 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "check:tanstack": "node scripts/check-tanstack-versions.mjs",
-    "check:seo": "node scripts/check-seo-meta.mjs"
+    "check:seo": "node scripts/check-seo-meta.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.47.0",
@@ -87,6 +89,7 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^5.0.4",
+    "dotenv": "^17.4.2",
     "eslint": "^9.32.0",
     "eslint-config-prettier": "^10.1.1",
     "eslint-plugin-prettier": "^5.5.6",
@@ -96,7 +99,8 @@
     "prettier": "^3.9.6",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.56.1",
-    "vite": "^7.3.6"
+    "vite": "^7.3.6",
+    "vitest": "^3"
   },
   "overrides": {
     "js-yaml": "^4.3.0",

@@ -11,6 +11,8 @@ import { getMyTrialStatus } from "@/lib/trial.functions";
 type Props = {
   title: string;
   description: string;
+  /** When true, an expired trial blocks the content instead of only warning. */
+  requireActiveTrial?: boolean;
   children: React.ReactNode;
 };
 
@@ -19,7 +21,7 @@ type Props = {
  * but after hydration only registered users keep seeing it. Anyone signed out — or whose
  * session expired — gets a re-auth card with a way back to the home screen.
  */
-export function RegistrationGate({ title, description, children }: Props) {
+export function RegistrationGate({ title, description, requireActiveTrial = false, children }: Props) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -83,6 +85,40 @@ export function RegistrationGate({ title, description, children }: Props) {
   }
 
   const expired = trial.data && !trial.data.active;
+
+  if (expired && requireActiveTrial) {
+    return (
+      <div dir="rtl" className="flex min-h-[70vh] items-center justify-center px-6 py-16">
+        <div className="w-full max-w-lg rounded-2xl border border-amber/40 bg-card/70 p-8 text-center backdrop-blur">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-amber/10 text-amber">
+            <AlertTriangle className="h-5 w-5" aria-hidden="true" />
+          </div>
+          <h2 className="mt-5 font-display text-2xl font-bold">תקופת הניסיון הסתיימה</h2>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            הכלי הזה פתוח למשתמשים עם ניסיון פעיל או מנוי. הבלוג ומחולל הקבוצות נשארים פתוחים לכולם,
+            תמיד וללא רישום.
+          </p>
+          <div className="mt-7 flex flex-wrap justify-center gap-2">
+            <Link to="/support">
+              <Button className="gap-2 shadow-glow-primary">
+                <Mail className="h-4 w-4" aria-hidden="true" /> פנה אלינו לשדרוג
+              </Button>
+            </Link>
+            <Link to="/tools/group-maker">
+              <Button variant="outline" className="gap-2">
+                <Gift className="h-4 w-4" aria-hidden="true" /> למחולל הקבוצות החינמי
+              </Button>
+            </Link>
+            <Link to="/">
+              <Button variant="ghost" className="gap-2">
+                <Home className="h-4 w-4" aria-hidden="true" /> מסך הבית
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

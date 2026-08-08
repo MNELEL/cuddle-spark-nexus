@@ -1,13 +1,6 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
-import { RegistrationGate } from "@/components/registration-gate";
 
+// The blog is always-free content (see src/lib/free-access.ts) — no registration gate.
 export const Route = createFileRoute("/blog")({
-  component: () => (
-    <RegistrationGate
-      title="הבלוג פתוח לרשומים בלבד"
-      description="הירשם במייל (בחינם) כדי לקרוא את כל המדריכים, התבניות והצ׳קליסטים למלמדים ולרבנים."
-    >
-      <Outlet />
-    </RegistrationGate>
-  ),
+  component: () => <Outlet />,
 });
