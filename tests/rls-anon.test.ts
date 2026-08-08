@@ -24,6 +24,7 @@ suite("RLS: anonymous reads are blocked", () => {
     "app_logs",
     "partner_leads",
     "checklist_leads",
+    "notifications",
   ] as const;
 
   for (const table of tables) {
@@ -44,6 +45,30 @@ suite("RLS: anonymous writes are blocked", () => {
   });
 
   it("rejects anon INSERT into student_profiles", async () => {
+    const res = await supabase!
+      .from("student_profiles")
+      .insert({
+        student_id: crypto.randomUUID(),
+        class_id: crypto.randomUUID(),
+        sensitive_notes: "rls-probe",
+      } as never)
+      .select();
+    expect(res.error, "anon was able to insert a sensitive student profile").toBeTruthy();
+  });
+
+  it("rejects anon INSERT into notifications (spoofed cross-user notice)", async () => {
+    const res = await supabase!
+      .from("notifications")
+      .insert({
+        recipient_id: crypto.randomUUID(),
+        type: "class_archived",
+        title: "rls-probe",
+      } as never)
+      .select();
+    expect(res.error, "anon was able to insert a notification").toBeTruthy();
+  });
+
+  it("rejects anon INSERT into student_profiles (duplicate probe)", async () => {
     const res = await supabase!
       .from("student_profiles")
       .insert({
