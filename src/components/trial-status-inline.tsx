@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Clock, Gift, Loader2 } from "lucide-react";
@@ -16,6 +16,7 @@ export function TrialStatusInline({ continueTo }: { continueTo: string }) {
   useEffect(() => setMounted(true), []);
   const { user, loading } = useAuth();
   const fetchTrial = useServerFn(getMyTrialStatus);
+  const navigate = useNavigate();
 
   const trial = useQuery({
     queryKey: ["trial-status", user?.id],
@@ -44,9 +45,9 @@ export function TrialStatusInline({ continueTo }: { continueTo: string }) {
             הניסיון החינמי שלך פעיל — נותרו {trial.data.daysLeft} ימים
           </p>
           <p className="mt-1 text-muted-foreground">כל הכלים והתוכן פתוחים לך בתקופה זו.</p>
-          <Link to={continueTo} className="mt-3 inline-block">
-            <Button size="sm">המשך לאפליקציה</Button>
-          </Link>
+          <Button size="sm" className="mt-3" onClick={() => navigate({ href: continueTo })}>
+            המשך לאפליקציה
+          </Button>
         </>
       ) : (
         <>
