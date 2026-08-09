@@ -81,3 +81,56 @@ export async function createClassFor(user: TestUser, name: string) {
   if (error) throw error;
   return data;
 }
+/** Publishable-key client with NO session — represents the `anon` role. */
+export function anonClient(): SupabaseClient<Database> {
+  const env = requireEnv();
+  return createClient<Database>(env.url, env.publishableKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
+/** Creates a student in the given class (via the owner's client). */
+export async function createStudentFor(user: TestUser, classId: string, name: string) {
+  const { data, error } = await user.client
+    .from("students")
+    .insert({ class_id: classId, name })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+/** Creates an institution using the service role (fixtures only). */
+export async function createInstitution(name: string) {
+  const { data, error } = await adminClient()
+    .from("institutions")
+    .insert({ name })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+/** Grants a role (optionally institution-scoped) using the service role. */
+export async function grantRole(
+  user: TestUser,
+  role: "admin" | "principal" | "teacher" | "secretary",
+  institutionId?: string | null,
+) {
+  const { error } = await adminClient()
+    .from("user_roles")
+    .insert({ user_id: user.id, role, institution_id: institutionId ?? null });
+  if (error) throw error;
+}
+
+/** Deletes an institution and its role rows (service role). Never throws. */
+export async function deleteInstitution(institutionId: string | null | undefined) {
+  if (!institutionId) return;
+  try {
+    const admin = adminClient();
+    await admin.from("user_roles").delete().eq("institution_id", institutionId);
+    await admin.from("institutions").delete().eq("id", institutionId);
+  } catch (e) {
+    console.warn("[test cleanup] deleteInstitution failed", e);
+  }
+}
