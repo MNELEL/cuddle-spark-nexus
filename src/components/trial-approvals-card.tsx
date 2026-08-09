@@ -59,16 +59,15 @@ function PendingTrialRequests({ highlightUser }: { highlightUser?: string }) {
     mutation.mutate({ requestId, decision, days });
   }
 
-  if (isError) return null;
-
   const rows = data ?? [];
 
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
     if (highlightUser && focusRef.current) {
       focusRef.current.scrollIntoView({ block: "center", behavior: "smooth" });
     }
   }, [highlightUser, rows.length]);
+
+  if (isError) return null;
 
   return (
     <div className="mb-6 rounded-lg border border-amber/40 bg-amber/5 p-4">
