@@ -245,7 +245,6 @@ export function ClassAssignmentsTable() {
               {reassignM.isPending && <Loader2 className="ms-1 h-4 w-4 animate-spin" />} שמור שיוך
             </Button>
           </DialogFooter>
-        </DialogFooter>
         </DialogContent>
       </Dialog>
     </Card>
