@@ -80,6 +80,7 @@ import { Route as AuthenticatedResourcesResourceIdRouteImport } from './routes/_
 import { Route as AuthenticatedResourcesGenerateRouteImport } from './routes/_authenticated.resources.generate'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated.settings.index'
 import { Route as AuthenticatedSettingsBrandRouteImport } from './routes/_authenticated.settings.brand'
+import { Route as AuthenticatedSettingsThemeRouteImport } from './routes/_authenticated.settings.theme'
 import { Route as AuthenticatedShareClassIdRouteImport } from './routes/_authenticated.share.$classId'
 import { Route as AuthenticatedStudentViewClassIdRouteImport } from './routes/_authenticated.student-view.$classId'
 import { Route as AuthenticatedWeeklyScheduleClassIdRouteImport } from './routes/_authenticated.weekly-schedule.$classId'
@@ -474,6 +475,12 @@ const AuthenticatedSettingsBrandRoute =
     path: '/settings/brand',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedSettingsThemeRoute =
+  AuthenticatedSettingsThemeRouteImport.update({
+    id: '/settings/theme',
+    path: '/settings/theme',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedShareClassIdRoute =
   AuthenticatedShareClassIdRouteImport.update({
     id: '/share/$classId',
@@ -573,6 +580,7 @@ export interface FileRoutesByFullPath {
   '/resources/$resourceId': typeof AuthenticatedResourcesResourceIdRoute
   '/resources/generate': typeof AuthenticatedResourcesGenerateRoute
   '/settings/brand': typeof AuthenticatedSettingsBrandRoute
+  '/settings/theme': typeof AuthenticatedSettingsThemeRoute
   '/share/$classId': typeof AuthenticatedShareClassIdRoute
   '/student-view/$classId': typeof AuthenticatedStudentViewClassIdRoute
   '/weekly-schedule/$classId': typeof AuthenticatedWeeklyScheduleClassIdRoute
@@ -647,6 +655,7 @@ export interface FileRoutesByTo {
   '/resources/$resourceId': typeof AuthenticatedResourcesResourceIdRoute
   '/resources/generate': typeof AuthenticatedResourcesGenerateRoute
   '/settings/brand': typeof AuthenticatedSettingsBrandRoute
+  '/settings/theme': typeof AuthenticatedSettingsThemeRoute
   '/share/$classId': typeof AuthenticatedShareClassIdRoute
   '/student-view/$classId': typeof AuthenticatedStudentViewClassIdRoute
   '/weekly-schedule/$classId': typeof AuthenticatedWeeklyScheduleClassIdRoute
@@ -726,6 +735,7 @@ export interface FileRoutesById {
   '/_authenticated/resources/$resourceId': typeof AuthenticatedResourcesResourceIdRoute
   '/_authenticated/resources/generate': typeof AuthenticatedResourcesGenerateRoute
   '/_authenticated/settings/brand': typeof AuthenticatedSettingsBrandRoute
+  '/_authenticated/settings/theme': typeof AuthenticatedSettingsThemeRoute
   '/_authenticated/share/$classId': typeof AuthenticatedShareClassIdRoute
   '/_authenticated/student-view/$classId': typeof AuthenticatedStudentViewClassIdRoute
   '/_authenticated/weekly-schedule/$classId': typeof AuthenticatedWeeklyScheduleClassIdRoute
@@ -805,6 +815,7 @@ export interface FileRouteTypes {
     | '/resources/$resourceId'
     | '/resources/generate'
     | '/settings/brand'
+    | '/settings/theme'
     | '/share/$classId'
     | '/student-view/$classId'
     | '/weekly-schedule/$classId'
@@ -879,6 +890,7 @@ export interface FileRouteTypes {
     | '/resources/$resourceId'
     | '/resources/generate'
     | '/settings/brand'
+    | '/settings/theme'
     | '/share/$classId'
     | '/student-view/$classId'
     | '/weekly-schedule/$classId'
@@ -957,6 +969,7 @@ export interface FileRouteTypes {
     | '/_authenticated/resources/$resourceId'
     | '/_authenticated/resources/generate'
     | '/_authenticated/settings/brand'
+    | '/_authenticated/settings/theme'
     | '/_authenticated/share/$classId'
     | '/_authenticated/student-view/$classId'
     | '/_authenticated/weekly-schedule/$classId'
@@ -1490,6 +1503,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsBrandRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/settings/theme': {
+      id: '/_authenticated/settings/theme'
+      path: '/settings/theme'
+      fullPath: '/settings/theme'
+      preLoaderRoute: typeof AuthenticatedSettingsThemeRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/share/$classId': {
       id: '/_authenticated/share/$classId'
       path: '/share/$classId'
@@ -1571,6 +1591,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedResourcesResourceIdRoute: typeof AuthenticatedResourcesResourceIdRoute
   AuthenticatedResourcesGenerateRoute: typeof AuthenticatedResourcesGenerateRoute
   AuthenticatedSettingsBrandRoute: typeof AuthenticatedSettingsBrandRoute
+  AuthenticatedSettingsThemeRoute: typeof AuthenticatedSettingsThemeRoute
   AuthenticatedShareClassIdRoute: typeof AuthenticatedShareClassIdRoute
   AuthenticatedStudentViewClassIdRoute: typeof AuthenticatedStudentViewClassIdRoute
   AuthenticatedWeeklyScheduleClassIdRoute: typeof AuthenticatedWeeklyScheduleClassIdRoute
@@ -1609,6 +1630,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedResourcesResourceIdRoute: AuthenticatedResourcesResourceIdRoute,
   AuthenticatedResourcesGenerateRoute: AuthenticatedResourcesGenerateRoute,
   AuthenticatedSettingsBrandRoute: AuthenticatedSettingsBrandRoute,
+  AuthenticatedSettingsThemeRoute: AuthenticatedSettingsThemeRoute,
   AuthenticatedShareClassIdRoute: AuthenticatedShareClassIdRoute,
   AuthenticatedStudentViewClassIdRoute: AuthenticatedStudentViewClassIdRoute,
   AuthenticatedWeeklyScheduleClassIdRoute:
