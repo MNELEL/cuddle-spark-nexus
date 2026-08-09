@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import {
 import { Loader2, Send, Info } from "lucide-react";
 import { toast } from "sonner";
 import { submitAccessRequest, myAccessRequests } from "@/lib/access-requests.functions";
+import { AccessRequestResultNotice } from "@/components/access-request-result-notice";
 import type { Role } from "@/lib/user-roles.functions";
 
 
@@ -70,9 +71,25 @@ export function AccessRequestForm() {
 
   const latest = (mine ?? [])[0];
   const hasPending = latest?.status === "pending";
+  const unseenResult =
+    latest && latest.status !== "pending" && !latest.seen_by_requester_at ? latest : null;
+
+  const toastedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!unseenResult || toastedRef.current === unseenResult.id) return;
+    toastedRef.current = unseenResult.id;
+    const roleKey = (unseenResult.granted_role ?? unseenResult.requested_role) as Role;
+    if (unseenResult.status === "approved") {
+      toast.success(`בקשתך אושרה — התפקיד ${ROLE_LABELS[roleKey] ?? roleKey} שויך לחשבונך`);
+    } else {
+      toast.info(`בקשתך נדחתה (${ROLE_LABELS[unseenResult.requested_role as Role] ?? ""})`);
+    }
+  }, [unseenResult]);
 
   return (
     <div className="space-y-4 text-start">
+      {unseenResult && <AccessRequestResultNotice request={unseenResult} />}
+
       {latest && (
         <div className="rounded-md border bg-muted/40 p-3 text-sm">
           הבקשה האחרונה שלך ({ROLE_LABELS[latest.requested_role as Role]}):{" "}

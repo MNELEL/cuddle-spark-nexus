@@ -48,12 +48,16 @@ export type Database = {
         Row: {
           created_at: string
           email: string | null
+          granted_institution_name: string | null
+          granted_role: Database["public"]["Enums"]["app_role"] | null
           id: string
           institution_name: string | null
           message: string | null
           requested_role: Database["public"]["Enums"]["app_role"]
+          review_note: string | null
           reviewed_at: string | null
           reviewed_by: string | null
+          seen_by_requester_at: string | null
           status: string
           updated_at: string
           user_id: string
@@ -61,12 +65,16 @@ export type Database = {
         Insert: {
           created_at?: string
           email?: string | null
+          granted_institution_name?: string | null
+          granted_role?: Database["public"]["Enums"]["app_role"] | null
           id?: string
           institution_name?: string | null
           message?: string | null
           requested_role?: Database["public"]["Enums"]["app_role"]
+          review_note?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          seen_by_requester_at?: string | null
           status?: string
           updated_at?: string
           user_id: string
@@ -74,12 +82,16 @@ export type Database = {
         Update: {
           created_at?: string
           email?: string | null
+          granted_institution_name?: string | null
+          granted_role?: Database["public"]["Enums"]["app_role"] | null
           id?: string
           institution_name?: string | null
           message?: string | null
           requested_role?: Database["public"]["Enums"]["app_role"]
+          review_note?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          seen_by_requester_at?: string | null
           status?: string
           updated_at?: string
           user_id?: string

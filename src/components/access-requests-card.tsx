@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Check, Inbox, X } from "lucide-react";
 import { toast } from "sonner";
@@ -71,9 +72,11 @@ export function AccessRequestsCard({ canResolve: canResolveHint }: { canResolve:
   const queryClient = useQueryClient();
 
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [denyDialogOpen, setDenyDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<AccessRequest | null>(null);
   const [role, setRole] = useState<Role>("teacher");
   const [institutionId, setInstitutionId] = useState<string>(NO_INSTITUTION);
+  const [reviewNote, setReviewNote] = useState("");
 
   const { data: requests, isLoading } = useQuery({
     queryKey: ["access-requests"],
@@ -98,34 +101,53 @@ export function AccessRequestsCard({ canResolve: canResolveHint }: { canResolve:
     setSelectedRequest(req);
     setRole(req.requested_role as Role);
     setInstitutionId(NO_INSTITUTION);
+    setReviewNote("");
     setDialogOpen(true);
+  };
+
+  const openDenyDialog = (req: AccessRequest) => {
+    setSelectedRequest(req);
+    setReviewNote("");
+    setDenyDialogOpen(true);
   };
 
   const closeDialog = () => {
     setDialogOpen(false);
+    setDenyDialogOpen(false);
     setSelectedRequest(null);
+    setReviewNote("");
   };
 
   const resolveMutation = useMutation({
-    mutationFn: async (vars: { request_id: string; status: "approved" | "denied" }) =>
+    mutationFn: async (vars: {
+      request_id: string;
+      status: "approved" | "denied";
+      review_note?: string;
+    }) =>
       await resolveFn({ data: vars }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["access-requests"] });
       queryClient.invalidateQueries({ queryKey: ["role-audit-log"] });
-      toast.success("הבקשה עודכנה");
+      toast.success("הבקשה עודכנה והמבקש יקבל הודעה עם סיכום ההחלטה");
+      closeDialog();
     },
     onError: (err) => toast.error(err instanceof Error ? err.message : "עדכון הבקשה נכשל"),
   });
 
   const approveMutation = useMutation({
-    mutationFn: async (vars: { request_id: string; role: Role; institution_id?: string }) =>
+    mutationFn: async (vars: {
+      request_id: string;
+      role: Role;
+      institution_id?: string;
+      review_note?: string;
+    }) =>
       await approveFn({ data: vars }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["access-requests"] });
       queryClient.invalidateQueries({ queryKey: ["role-audit-log"] });
       queryClient.invalidateQueries({ queryKey: ["users-with-roles"] });
       queryClient.invalidateQueries({ queryKey: ["institutions"] });
-      toast.success("הבקשה אושרה והתפקיד שויך");
+      toast.success("הבקשה אושרה, התפקיד שויך והמבקש יקבל הודעה עם סיכום ההחלטה");
       closeDialog();
     },
     onError: (err) => toast.error(err instanceof Error ? err.message : "האישור נכשל"),
@@ -137,6 +159,7 @@ export function AccessRequestsCard({ canResolve: canResolveHint }: { canResolve:
       request_id: selectedRequest.id,
       role,
       institution_id: institutionId === NO_INSTITUTION ? undefined : institutionId,
+      review_note: reviewNote.trim() || undefined,
     });
   };
 
@@ -197,7 +220,7 @@ export function AccessRequestsCard({ canResolve: canResolveHint }: { canResolve:
                           size="sm"
                           variant="outline"
                           disabled={resolveMutation.isPending}
-                          onClick={() => resolveMutation.mutate({ request_id: req.id, status: "denied" })}
+                          onClick={() => openDenyDialog(req)}
                         >
                           <X className="me-1 h-4 w-4" /> דחייה
                         </Button>
@@ -266,6 +289,17 @@ export function AccessRequestsCard({ canResolve: canResolveHint }: { canResolve:
                 </p>
               </div>
             )}
+
+            <div className="grid gap-2">
+              <Label htmlFor="approve-note">הערה למבקש (אופציונלי)</Label>
+              <Textarea
+                id="approve-note"
+                rows={2}
+                value={reviewNote}
+                onChange={(e) => setReviewNote(e.target.value)}
+                placeholder="תוצג למבקש יחד עם סיכום ההחלטה"
+              />
+            </div>
           </div>
 
           <DialogFooter className="flex-col gap-2 sm:flex-row-reverse">
@@ -287,6 +321,56 @@ export function AccessRequestsCard({ canResolve: canResolveHint }: { canResolve:
               onClick={closeDialog}
               disabled={approveMutation.isPending}
               className="w-full sm:w-auto"
+            >
+              ביטול
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={denyDialogOpen} onOpenChange={(o) => (o ? setDenyDialogOpen(true) : closeDialog())}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>דחיית בקשת גישה</DialogTitle>
+            <DialogDescription>
+              {selectedRequest
+                ? `בקשה מ-${selectedRequest.email ?? selectedRequest.user_id} לתפקיד ${ROLE_LABELS[selectedRequest.requested_role as Role]}. המבקש יקבל הודעה עם סיכום ההחלטה.`
+                : "דחיית בקשת גישה."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-2 py-2">
+            <Label htmlFor="deny-note">הערה למבקש (אופציונלי)</Label>
+            <Textarea
+              id="deny-note"
+              rows={2}
+              value={reviewNote}
+              onChange={(e) => setReviewNote(e.target.value)}
+              placeholder="סיבת הדחייה או הנחיה להמשך"
+            />
+          </div>
+
+          <DialogFooter className="flex-col gap-2 sm:flex-row-reverse">
+            <Button
+              variant="destructive"
+              className="w-full sm:w-auto"
+              disabled={resolveMutation.isPending || !selectedRequest}
+              onClick={() =>
+                selectedRequest &&
+                resolveMutation.mutate({
+                  request_id: selectedRequest.id,
+                  status: "denied",
+                  review_note: reviewNote.trim() || undefined,
+                })
+              }
+            >
+              <X className="me-1 h-4 w-4" /> דחה בקשה
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full sm:w-auto"
+              onClick={closeDialog}
+              disabled={resolveMutation.isPending}
             >
               ביטול
             </Button>

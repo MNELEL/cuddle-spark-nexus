@@ -50,12 +50,29 @@ export const myAccessRequests = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
     const { data, error } = await supabase
       .from("access_requests")
-      .select("id, requested_role, institution_name, message, status, created_at")
+      .select(
+        "id, requested_role, institution_name, message, status, created_at, granted_role, granted_institution_name, review_note, reviewed_at, seen_by_requester_at",
+      )
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(10);
     if (error) throw new Error(error.message);
     return data ?? [];
+  });
+
+/** The requester marks the approval/denial notice as seen. */
+export const acknowledgeAccessRequestResult = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ request_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { error } = await supabase
+      .from("access_requests")
+      .update({ seen_by_requester_at: new Date().toISOString() })
+      .eq("id", data.request_id)
+      .eq("user_id", userId);
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
   });
 
 /** Admins and principals may review the queue (enforced by RLS as well). */
@@ -98,6 +115,7 @@ export const canResolveAccessRequests = createServerFn({ method: "GET" })
 const resolveSchema = z.object({
   request_id: z.string().uuid(),
   status: z.enum(["approved", "denied"]),
+  review_note: z.string().trim().max(500).optional(),
 });
 
 export const resolveAccessRequest = createServerFn({ method: "POST" })
@@ -117,7 +135,13 @@ export const resolveAccessRequest = createServerFn({ method: "POST" })
 
     const { error } = await supabase
       .from("access_requests")
-      .update({ status: data.status, reviewed_by: userId, reviewed_at: new Date().toISOString() })
+      .update({
+        status: data.status,
+        reviewed_by: userId,
+        reviewed_at: new Date().toISOString(),
+        review_note: data.review_note ?? null,
+        seen_by_requester_at: null,
+      })
       .eq("id", data.request_id);
     if (error) throw new Error(error.message);
 
@@ -135,6 +159,7 @@ const approveAndAssignSchema = z.object({
   request_id: z.string().uuid(),
   role: roleSchema,
   institution_id: z.string().uuid().optional(),
+  review_note: z.string().trim().max(500).optional(),
 });
 
 /** Approve the request and assign the requested role in a single action. */
@@ -168,9 +193,27 @@ export const approveAndAssignRole = createServerFn({ method: "POST" })
     });
     if (roleInsertError) throw new Error(roleInsertError.message);
 
+    let institutionName: string | null = null;
+    if (data.institution_id) {
+      const { data: inst } = await supabase
+        .from("institutions")
+        .select("name")
+        .eq("id", data.institution_id)
+        .maybeSingle();
+      institutionName = inst?.name ?? null;
+    }
+
     const { error: updateError } = await supabase
       .from("access_requests")
-      .update({ status: "approved", reviewed_by: userId, reviewed_at: new Date().toISOString() })
+      .update({
+        status: "approved",
+        reviewed_by: userId,
+        reviewed_at: new Date().toISOString(),
+        granted_role: data.role,
+        granted_institution_name: institutionName,
+        review_note: data.review_note ?? null,
+        seen_by_requester_at: null,
+      })
       .eq("id", data.request_id);
     if (updateError) throw new Error(updateError.message);
 
