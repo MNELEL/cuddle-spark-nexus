@@ -27,7 +27,7 @@ export function ThemePickerCard() {
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-sm text-muted-foreground">
-          בחירת המראה של האפליקציה. הבחירה נשמרת במחשב או במכשיר הזה ומוחלת מיד על כל המסכים.
+          בחירת המראה של האפליקציה — מוחלת מיד על כל המסכים במכשיר הזה. לשמירה לחשבון (ולהחלה בכל מכשיר) יש מסך ערכות נושא מלא עם תצוגה מקדימה.
         </p>
         <div className="grid gap-2 sm:grid-cols-2">
           {THEMES.map((t) => {
@@ -58,11 +58,18 @@ export function ThemePickerCard() {
             );
           })}
         </div>
-        <Button asChild variant="ghost" size="sm" className="justify-start">
-          <Link to="/theme-test">
-            <ExternalLink className="ms-1 h-4 w-4" /> השוואת כל ערכות הנושא במסך אחד
-          </Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild size="sm" variant="outline">
+            <Link to="/settings/theme">
+              <Palette className="ms-1 h-4 w-4" /> מסך ערכות נושא — תצוגה מקדימה ושמירה
+            </Link>
+          </Button>
+          <Button asChild variant="ghost" size="sm">
+            <Link to="/theme-test">
+              <ExternalLink className="ms-1 h-4 w-4" /> השוואת כל ערכות הנושא במסך אחד
+            </Link>
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
