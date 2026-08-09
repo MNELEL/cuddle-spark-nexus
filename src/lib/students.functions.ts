@@ -26,11 +26,6 @@ export const listStudents = createServerFn({ method: "POST" })
     return rows ?? [];
   });
 
-export const upsertStudent = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async () => null as never);
-
 export const getStudent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
@@ -41,7 +36,7 @@ export const getStudent = createServerFn({ method: "POST" })
     return row;
   });
 
-export const upsertStudentPlaceholder = createServerFn({ method: "POST" })
+export const upsertStudent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
     z.object({
