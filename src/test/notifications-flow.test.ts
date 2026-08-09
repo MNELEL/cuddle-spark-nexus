@@ -179,3 +179,137 @@ describe.skipIf(!hasTestEnv)("flow: class_notifications end-to-end", () => {
     expect(upd.data ?? []).toHaveLength(0);
   });
 });
+
+/**
+ * Pagination + ordering must never widen the recipient filter.
+ * Uses its own users/class so the counts above stay intact.
+ */
+describe.skipIf(!hasTestEnv)("flow: class_notifications recipient filter with pagination + ordering", () => {
+  const pageIds: string[] = [];
+  let mine: TestUser;
+  let theirs: TestUser;
+  let classId: string;
+  let className: string;
+  const MINE_COUNT = 12;
+  const THEIRS_COUNT = 5;
+
+  /** Same query chain as listUnreadClassNotifications, plus range/order knobs. */
+  async function page(
+    user: TestUser,
+    opts: { ascending?: boolean; from: number; to: number; recipientId?: string; filter?: boolean }
+  ) {
+    let q = user.client
+      .from("class_notifications")
+      .select("id, recipient_id, created_at")
+      .is("read_at", null);
+    if (opts.filter !== false) q = q.eq("recipient_id", opts.recipientId ?? user.id);
+    return q.order("created_at", { ascending: opts.ascending ?? false }).range(opts.from, opts.to);
+  }
+
+  beforeAll(async () => {
+    mine = await createTestUser("notif-page-mine");
+    theirs = await createTestUser("notif-page-theirs");
+    const cls = await createClassFor(mine, "כיתה — דפדוף התראות");
+    classId = cls.id;
+    className = cls.name;
+
+    const base = Date.now();
+    const rows = [
+      ...Array.from({ length: MINE_COUNT }, (_, i) => ({
+        class_id: classId,
+        class_name: className,
+        recipient_id: mine.id,
+        type: "archived_by_admin",
+        created_at: new Date(base - i * 3_600_000).toISOString(),
+      })),
+      ...Array.from({ length: THEIRS_COUNT }, (_, i) => ({
+        class_id: classId,
+        class_name: className,
+        recipient_id: theirs.id,
+        type: "archived_by_admin",
+        created_at: new Date(base - i * 3_600_000).toISOString(),
+      })),
+    ];
+    const { data, error } = await adminClient().from("class_notifications").insert(rows).select("id");
+    if (error) throw error;
+    pageIds.push(...(data ?? []).map((r) => r.id));
+  });
+
+  afterAll(async () => {
+    if (pageIds.length) await adminClient().from("class_notifications").delete().in("id", pageIds);
+    await deleteTestUser(mine);
+    await deleteTestUser(theirs);
+  });
+
+  it("each page (desc order) contains only the caller's rows", async () => {
+    const first = await page(mine, { from: 0, to: 4 });
+    const second = await page(mine, { from: 5, to: 9 });
+    expect(first.error).toBeNull();
+    expect(second.error).toBeNull();
+    expect(first.data).toHaveLength(5);
+    expect(second.data).toHaveLength(5);
+    for (const row of [...(first.data ?? []), ...(second.data ?? [])]) {
+      expect(row.recipient_id).toBe(mine.id);
+    }
+  });
+
+  it("order + range without an explicit recipient filter is still limited by RLS", async () => {
+    const res = await page(mine, { from: 0, to: 19, filter: false });
+    expect(res.error).toBeNull();
+    expect(res.data).toHaveLength(MINE_COUNT);
+    expect(res.data?.every((r) => r.recipient_id === mine.id)).toBe(true);
+  });
+
+  it("ascending and descending return the same id set, reversed, with no foreign rows", async () => {
+    const desc = await page(mine, { from: 0, to: 19, ascending: false });
+    const asc = await page(mine, { from: 0, to: 19, ascending: true });
+    const descIds = (desc.data ?? []).map((r) => r.id);
+    const ascIds = (asc.data ?? []).map((r) => r.id);
+    expect(descIds).toHaveLength(MINE_COUNT);
+    expect([...ascIds].reverse()).toEqual(descIds);
+    expect(new Set(descIds).size).toBe(MINE_COUNT);
+
+    const foreign = await page(theirs, { from: 0, to: 19 });
+    const foreignIds = new Set((foreign.data ?? []).map((r) => r.id));
+    expect(descIds.some((id) => foreignIds.has(id))).toBe(false);
+  });
+
+  it("paging through everything yields each row exactly once, in non-increasing created_at order", async () => {
+    const collected: string[] = [];
+    const dates: string[] = [];
+    for (let from = 0; from < MINE_COUNT + 5; from += 5) {
+      const res = await page(mine, { from, to: from + 4 });
+      expect(res.error).toBeNull();
+      for (const row of res.data ?? []) {
+        collected.push(row.id);
+        dates.push(row.created_at);
+      }
+    }
+    expect(new Set(collected).size).toBe(MINE_COUNT);
+    expect(collected).toHaveLength(MINE_COUNT);
+    for (let i = 1; i < dates.length; i += 1) {
+      expect(new Date(dates[i]!).getTime()).toBeLessThanOrEqual(new Date(dates[i - 1]!).getTime());
+    }
+  });
+
+  it("a page past the end is empty rather than an error", async () => {
+    const res = await page(mine, { from: 100, to: 119 });
+    expect(res.error).toBeNull();
+    expect(res.data ?? []).toHaveLength(0);
+  });
+
+  it("paging with another user's recipient id returns nothing on every page", async () => {
+    for (const from of [0, 5, 10]) {
+      const res = await page(mine, { from, to: from + 4, recipientId: theirs.id });
+      expect(res.error).toBeNull();
+      expect(res.data ?? []).toHaveLength(0);
+    }
+  });
+
+  it("the other recipient sees only their own rows on a wide page", async () => {
+    const res = await page(theirs, { from: 0, to: 19 });
+    expect(res.error).toBeNull();
+    expect(res.data).toHaveLength(THEIRS_COUNT);
+    expect(res.data?.every((r) => r.recipient_id === theirs.id)).toBe(true);
+  });
+});
