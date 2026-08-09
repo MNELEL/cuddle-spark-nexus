@@ -202,19 +202,36 @@ function UserManagementPage() {
   if (!canManage) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center px-4">
-        <Card className="w-full max-w-lg">
+        <Card className="w-full max-w-2xl">
           <CardHeader className="text-center">
             <ShieldCheck className="mx-auto h-10 w-10 text-muted-foreground" />
             <CardTitle as="h1" className="mt-2 text-xl">גישה מוגבלת</CardTitle>
             <CardDescription>
               מסך ניהול המשתמשים פתוח למנהל מערכת ולמנהל מוסד בלבד.
-              כדי לקבל גישה, מלא את הטופס הקצר שלמטה. מנהל המערכת יקבל את הבקשה,
-              יאשר אותה וישייך לך תפקיד — ותקבל גישה מיד לאחר מכן.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
+            <div className="rounded-lg border bg-muted/30 p-4">
+              <h2 className="mb-3 font-display text-base font-semibold">אז מה עושים?</h2>
+              <ol className="list-decimal space-y-2 pr-5 text-sm text-muted-foreground">
+                <li>
+                  <strong className="text-foreground">מלא את טופס בקשת הגישה</strong> — הוסף את
+                  תפקיד הרצוי (מלמד, מזכירה, מנהל מוסד) ופרטי המוסד.
+                </li>
+                <li>
+                  <strong className="text-foreground">מנהל המערכת יבדוק ויאשר</strong> — לחיצה על
+                  "אישור ושיוך" תקצה לך את התפקיד באופן מיידי.
+                </li>
+                <li>
+                  <strong className="text-foreground">חזור לכאן</strong> — לאחר האישור, עמוד זה יוצג
+                  לך עם הכלים המותאמים לתפקיד שלך.
+                </li>
+              </ol>
+            </div>
+
             <AccessRequestForm />
-            <div className="grid gap-2 sm:grid-cols-2">
+
+            <div className="grid gap-3 sm:grid-cols-2">
               <Button asChild variant="outline">
                 <a href="mailto:support@classalign.studio?subject=בקשת%20הרשאות%20לניהול%20משתמשים">
                   יצירת קשר עם מנהל המערכת
