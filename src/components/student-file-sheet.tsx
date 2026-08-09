@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/select";
 import {
   FileText, Phone, MessageCircle, Mail, Users, Plus, Trash2,
-  Download, Upload, ShieldAlert, ShieldCheck, Calendar, Lock,
+  Download, Upload, ShieldAlert, ShieldCheck, Calendar, Lock, IdCard, Loader2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -30,6 +30,12 @@ import {
   getStudentProfile, upsertStudentProfile,
   SENSITIVE_FLAGS, sensitiveFlagLabel, type SensitiveFlag,
 } from "@/lib/student-profiles.functions";
+import { getStudent, upsertStudent } from "@/lib/students.functions";
+import {
+  validateNationalId, validatePhone, validateBirthDate,
+  phoneHref, whatsappHref,
+} from "@/lib/student-field-validation";
+import { nextHebrewBirthday, toHebrewDateLabel, daysUntilLabel } from "@/lib/hebrew-date";
 
 type Props = {
   open: boolean;
@@ -220,6 +226,9 @@ function StudentFileSheetInner(props: Props) {
             <TabsTrigger value="profile" className="flex-1">
               <Lock className="ms-1 h-4 w-4" /> פרופיל תלמיד
             </TabsTrigger>
+            <TabsTrigger value="contact" className="flex-1">
+              <IdCard className="ms-1 h-4 w-4" /> פרטי קשר
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="documents" className="mt-4">
             <DocumentsPanel {...props} />
@@ -232,6 +241,9 @@ function StudentFileSheetInner(props: Props) {
           </TabsContent>
           <TabsContent value="profile" className="mt-4">
             <StudentProfilePanel {...props} />
+          </TabsContent>
+          <TabsContent value="contact" className="mt-4">
+            <ContactDetailsPanel {...props} />
           </TabsContent>
         </Tabs>
       </SheetContent>
