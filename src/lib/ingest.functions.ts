@@ -2,6 +2,13 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { callLovableAI } from "./ai-gateway.server";
+import {
+  buildMatchIndex,
+  mergePatch,
+  rememberMatch,
+  resolveMatch,
+  studentFieldsFromRow,
+} from "./roster-merge";
 
 const uuid = z.string().uuid();
 const KIND = z.enum(["roster", "resource", "lesson_audio", "auto"]);
