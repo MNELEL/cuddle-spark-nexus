@@ -152,9 +152,11 @@ export function AccessRequestsCard({ canResolve: canResolveHint }: { canResolve:
             <Inbox className="h-5 w-5 text-primary" /> בקשות הרשאה
           </CardTitle>
           <CardDescription>
-            {canResolve ? (
-              <>
-                אשר בקשות גישה ושייך את התפקיד המבוקש בקליק אחד.{
+            {canResolve
+              ? "אשר בקשות גישה ושייך את התפקיד המבוקש בקליק אחד. פעולה זו זמינה רק למנהל מערכת."
+              : "תצוגה בלבד: הבקשות שהתקבלו. אישור או דחייה מתבצעים על ידי מנהל המערכת בלבד, במסך ניהול המשתמשים."}
+          </CardDescription>
+        </CardHeader>
         <CardContent>
           {isLoading ? (
             <div className="py-6 text-center text-sm text-muted-foreground">טוען בקשות...</div>
