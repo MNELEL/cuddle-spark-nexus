@@ -22,6 +22,7 @@ import {
   createClass, suggestParentClass, listRolloverStudents,
 } from "@/lib/classes.functions";
 import { defaultAcademicYear } from "@/lib/year-rollover";
+import { getMyInstitution } from "@/lib/institution-dashboard.functions";
 import { listClassProfiles } from "@/lib/student-profiles.functions";
 import { buildHandoffPdfBlob, handoffPdfFilename } from "@/lib/pdf/handoff-report-pdf";
 import { downloadPdfBlob } from "@/lib/pdf/pdf-builder";
@@ -36,13 +37,22 @@ export function NewClassWizard() {
   const [otherId, setOtherId] = useState<string>("");
   const [excluded, setExcluded] = useState<Set<string>>(new Set());
   const [archiveParent, setArchiveParent] = useState(true);
+  const [connectLibrary, setConnectLibrary] = useState(true);
 
   const suggestFn = useServerFn(suggestParentClass);
   const studentsFn = useServerFn(listRolloverStudents);
   const createFn = useServerFn(createClass);
   const profilesFn = useServerFn(listClassProfiles);
+  const institutionFn = useServerFn(getMyInstitution);
   const qc = useQueryClient();
   const navigate = useNavigate();
+
+  const { data: myInstitution } = useQuery({
+    queryKey: ["my-institution"],
+    queryFn: () => institutionFn(),
+    enabled: open,
+    retry: false,
+  });
 
   const trimmed = name.trim();
   const [debounced, setDebounced] = useState("");
@@ -95,6 +105,7 @@ export function NewClassWizard() {
   const reset = () => {
     setName(""); setDebounced(""); setYear(defaultAcademicYear());
     setMode("none"); setOtherId(""); setExcluded(new Set()); setArchiveParent(true);
+    setConnectLibrary(true);
   };
 
   const createM = useMutation({
@@ -114,7 +125,14 @@ export function NewClassWizard() {
       toast.success(copied > 0 ? `הכיתה נוצרה עם ${copied} תלמידים` : "הכיתה נוצרה");
       setOpen(false);
       reset();
-      if (row?.id) navigate({ to: "/classes/$classId", params: { classId: row.id } });
+      if (row?.id) {
+        // Land on the weekly schedule so the library can be linked immediately.
+        navigate(
+          connectLibrary
+            ? { to: "/weekly-schedule/$classId", params: { classId: row.id } }
+            : { to: "/classes/$classId", params: { classId: row.id } },
+        );
+      }
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
   });
@@ -273,6 +291,24 @@ export function NewClassWizard() {
               </label>
             </div>
           )}
+
+          <div className="space-y-3 rounded-xl border p-3">
+            <span className="text-sm font-medium">מוסד וספרייה</span>
+            <p className="text-xs text-muted-foreground">
+              {myInstitution
+                ? `הכיתה תשויך אוטומטית למוסד ״${myInstitution.name}״ ותירש את מיתוג המוסד.`
+                : "אינך משויך למוסד — הכיתה תיפתח כעצמאית. שיוך למוסד נעשה על ידי מנהל המערכת בניהול המשתמשים."}
+            </p>
+            <label className="flex items-start gap-2 text-sm">
+              <Checkbox checked={connectLibrary} onCheckedChange={(v) => setConnectLibrary(!!v)} />
+              <span>
+                המשך מיד לחיבור הספרייה — נפתח מסך המערכת השבועית לשיבוץ שיעור עם חומר הוראה
+                <span className="block text-xs text-muted-foreground">
+                  כך הכיתה תסומן כ״ספרייה מחוברת״. אפשר גם לחבר דרך עלון בהמשך.
+                </span>
+              </span>
+            </label>
+          </div>
         </div>
 
         <DialogFooter>
