@@ -88,7 +88,7 @@ describe("AI gateway circuit breaker", () => {
     await expect(callLovableAI({ messages })).rejects.toThrow();
 
     vi.advanceTimersByTime(61_000);
-    fetchMock.mockResolvedValue(jsonResponse(OK_BODY));
+    fetchMock.mockImplementation(async () => jsonResponse(OK_BODY));
     await expect(callLovableAI({ messages })).resolves.toBe("שלום");
     expect(fetchMock).toHaveBeenCalledTimes(2);
 
