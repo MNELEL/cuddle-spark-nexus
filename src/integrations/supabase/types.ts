@@ -998,6 +998,39 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_sounds: {
+        Row: {
+          created_at: string
+          file_size: number | null
+          id: string
+          mime_type: string
+          name: string
+          owner_id: string
+          storage_path: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string
+          name: string
+          owner_id: string
+          storage_path: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string
+          name?: string
+          owner_id?: string
+          storage_path?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       discipline_events: {
         Row: {
           category: string
@@ -2058,6 +2091,7 @@ export type Database = {
       sound_preferences: {
         Row: {
           created_at: string
+          duration_scale: number
           enabled: boolean
           event_key: string
           id: string
@@ -2068,6 +2102,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          duration_scale?: number
           enabled?: boolean
           event_key: string
           id?: string
@@ -2078,6 +2113,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          duration_scale?: number
           enabled?: boolean
           event_key?: string
           id?: string
