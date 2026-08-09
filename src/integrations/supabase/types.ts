@@ -1836,10 +1836,12 @@ export type Database = {
           father_id: string | null
           father_name: string | null
           father_phone: string | null
+          first_name: string | null
           gender: string | null
           has_special_accommodation: boolean
           height: string
           id: string
+          last_name: string | null
           mother_id: string | null
           mother_name: string | null
           mother_phone: string | null
@@ -1861,10 +1863,12 @@ export type Database = {
           father_id?: string | null
           father_name?: string | null
           father_phone?: string | null
+          first_name?: string | null
           gender?: string | null
           has_special_accommodation?: boolean
           height?: string
           id?: string
+          last_name?: string | null
           mother_id?: string | null
           mother_name?: string | null
           mother_phone?: string | null
@@ -1886,10 +1890,12 @@ export type Database = {
           father_id?: string | null
           father_name?: string | null
           father_phone?: string | null
+          first_name?: string | null
           gender?: string | null
           has_special_accommodation?: boolean
           height?: string
           id?: string
+          last_name?: string | null
           mother_id?: string | null
           mother_name?: string | null
           mother_phone?: string | null
