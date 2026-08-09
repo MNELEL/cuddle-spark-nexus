@@ -41,6 +41,9 @@ import { AiAssistantDock } from "@/components/ai-assistant-dock";
 import { LessonsTab } from "@/components/lessons-tab";
 import { SeatFillGrid } from "@/components/seat-fill-grid";
 import { openCommandPalette } from "@/components/global-command-palette";
+import { isValidClassId } from "@/lib/class-id-guard";
+import { nextHebrewBirthday, daysUntilLabel, toHebrewDateLabel } from "@/lib/hebrew-date";
+import { phoneHref, whatsappHref, validateNationalId, validatePhone, validateBirthDate } from "@/lib/student-field-validation";
 
 /* ---------------- Action grid (responsive toolbar) ---------------- */
 
@@ -166,22 +169,42 @@ type Student = {
   id: string; class_id: string; name: string; notes: string | null;
   height: "low" | "mid" | "high"; row_pref: "front" | "mid" | "back" | "any"; corner_pref: boolean;
   has_special_accommodation?: boolean; accommodation_note?: string | null;
+  first_name?: string | null; last_name?: string | null;
+  national_id?: string | null; birth_date?: string | null; address?: string | null;
+  father_name?: string | null; father_id?: string | null; father_phone?: string | null;
+  mother_name?: string | null; mother_id?: string | null; mother_phone?: string | null;
+  seat_row?: number | null; seat_col?: number | null;
 };
 
 function ClassDetail() {
   const { classId } = Route.useParams();
+  const validClass = isValidClassId(classId);
   const [tab, setTab] = useState("students");
   const getC = useServerFn(getClass);
   const listS = useServerFn(listStudents);
   const listR = useServerFn(listRelations);
   const listInputs = useServerFn(listClassScoreInputs);
 
-  const { data: cls, isLoading: clsLoading } = useQuery({ queryKey: ["class", classId], queryFn: () => getC({ data: { id: classId } }) });
-  const { data: students = [] } = useQuery({ queryKey: ["students", classId], queryFn: () => listS({ data: { classId } }) });
-  const { data: relations = [] } = useQuery({ queryKey: ["relations", classId], queryFn: () => listR({ data: { classId } }) });
-  const { data: scoreInputs } = useQuery({ queryKey: ["score-inputs", classId], queryFn: () => listInputs({ data: { classId } }) });
+  const { data: cls, isLoading: clsLoading } = useQuery({ queryKey: ["class", classId], queryFn: () => getC({ data: { id: classId } }), enabled: validClass });
+  const { data: students = [] } = useQuery({ queryKey: ["students", classId], queryFn: () => listS({ data: { classId } }), enabled: validClass });
+  const { data: relations = [] } = useQuery({ queryKey: ["relations", classId], queryFn: () => listR({ data: { classId } }), enabled: validClass });
+  const { data: scoreInputs } = useQuery({ queryKey: ["score-inputs", classId], queryFn: () => listInputs({ data: { classId } }), enabled: validClass });
   const isArchived = (cls as { status?: string } | undefined)?.status === "archived";
   const academicYear = (cls as { academic_year?: string | null } | undefined)?.academic_year ?? null;
+
+  if (!validClass) {
+    return (
+      <div className="mx-auto max-w-lg py-16 text-center">
+        <h1 className="font-display text-2xl font-bold">כיתה לא נמצאה</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          הקישור שהגעת אליו אינו מפנה לכיתה קיימת.
+        </p>
+        <Link to="/classes" className="mt-4 inline-flex">
+          <Button variant="outline"><ArrowRight className="ms-1 h-4 w-4" /> חזרה לכיתות</Button>
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-6xl space-y-5">
