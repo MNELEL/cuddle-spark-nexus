@@ -10,7 +10,7 @@ import type { RosterStudentDraft } from "@/lib/ingest.functions";
 /* ------- target fields ------- */
 
 export const FIELD_KEYS = [
-  "name", "national_id", "birth_date", "address",
+  "name", "first_name", "last_name", "national_id", "birth_date", "address",
   "father_name", "father_id", "father_phone",
   "mother_name", "mother_id", "mother_phone",
 ] as const;
@@ -18,6 +18,8 @@ export type FieldKey = typeof FIELD_KEYS[number];
 
 const FIELD_LABEL: Record<FieldKey, string> = {
   name: "שם התלמיד",
+  first_name: "שם פרטי",
+  last_name: "שם משפחה",
   national_id: "ת.ז. תלמיד",
   birth_date: "תאריך לידה",
   address: "כתובת",
@@ -30,7 +32,8 @@ const FIELD_LABEL: Record<FieldKey, string> = {
 };
 
 const FIELD_GROUP: Record<FieldKey, "student" | "ids" | "address" | "father" | "mother"> = {
-  name: "student", national_id: "ids", birth_date: "student", address: "address",
+  name: "student", first_name: "student", last_name: "student",
+  national_id: "ids", birth_date: "student", address: "address",
   father_name: "father", father_id: "ids", father_phone: "father",
   mother_name: "mother", mother_id: "ids", mother_phone: "mother",
 };
