@@ -838,21 +838,72 @@ export const commitRoster = createServerFn({ method: "POST" })
       .from("classes").select("id").eq("id", data.class_id).eq("owner_id", context.userId).maybeSingle();
     if (!cls) throw new Error("הכיתה לא נמצאה");
 
-    const rows = data.students.map((s) => ({
-      class_id: data.class_id,
-      name: s.name.trim(),
-      national_id: s.national_id || null,
-      birth_date: s.birth_date || null,
-      address: s.address || null,
-      father_name: s.father_name || null,
-      father_id: s.father_id || null,
-      father_phone: s.father_phone || null,
-      mother_name: s.mother_name || null,
-      mother_id: s.mother_id || null,
-      mother_phone: s.mother_phone || null,
-    }));
-    const { error } = await context.supabase.from("students").insert(rows as never);
-    if (error) { console.error("[DB]", error); throw new Error("הפעולה נכשלה."); }
+    // existing roster, for field-level merge instead of blind insert
+    const { data: existing } = await context.supabase
+      .from("students")
+      .select("id, name, national_id")
+      .eq("class_id", data.class_id);
+
+    const norm = (v: string | null | undefined) => (v ?? "").trim().replace(/\s+/g, " ");
+    const digits = (v: string | null | undefined) => (v ?? "").replace(/\D/g, "");
+    const byId = new Map<string, string>();
+    const byName = new Map<string, string>();
+    for (const row of existing ?? []) {
+      const idKey = digits(row.national_id);
+      if (idKey.length >= 5 && !byId.has(idKey)) byId.set(idKey, row.id);
+      const nameKey = norm(row.name);
+      if (nameKey && !byName.has(nameKey)) byName.set(nameKey, row.id);
+    }
+
+    let inserted = 0;
+    let updated = 0;
+
+    for (const s of data.students) {
+      const fullName = norm(s.name);
+      const parts = fullName.split(" ").filter(Boolean);
+      const fields: Record<string, string | null> = {
+        name: fullName,
+        first_name: parts[0] ?? null,
+        last_name: parts.length > 1 ? parts.slice(1).join(" ") : null,
+        national_id: s.national_id || null,
+        birth_date: s.birth_date || null,
+        address: s.address || null,
+        father_name: s.father_name || null,
+        father_id: s.father_id || null,
+        father_phone: s.father_phone || null,
+        mother_name: s.mother_name || null,
+        mother_id: s.mother_id || null,
+        mother_phone: s.mother_phone || null,
+      };
+
+      const idKey = digits(s.national_id);
+      const matchId =
+        (idKey.length >= 5 ? byId.get(idKey) : undefined) ?? byName.get(fullName);
+
+      if (matchId) {
+        // field-level merge: only non-empty incoming values overwrite; every
+        // field absent from the uploaded file keeps its stored value
+        const patch = Object.fromEntries(
+          Object.entries(fields).filter(([, v]) => (v ?? "") !== ""),
+        );
+        if (Object.keys(patch).length > 0) {
+          const { error } = await context.supabase
+            .from("students").update(patch as never).eq("id", matchId);
+          if (error) { console.error("[DB]", error); throw new Error("הפעולה נכשלה."); }
+        }
+        updated += 1;
+      } else {
+        const { data: ins, error } = await context.supabase
+          .from("students")
+          .insert({ class_id: data.class_id, ...fields } as never)
+          .select("id")
+          .single();
+        if (error) { console.error("[DB]", error); throw new Error("הפעולה נכשלה."); }
+        inserted += 1;
+        if (idKey.length >= 5) byId.set(idKey, (ins as { id: string }).id);
+        if (fullName) byName.set(fullName, (ins as { id: string }).id);
+      }
+    }
 
     // cleanup
     await context.supabase.storage.from("ingest-staging")
@@ -861,7 +912,7 @@ export const commitRoster = createServerFn({ method: "POST" })
       .update({ status: "committed", committed_at: new Date().toISOString() } as never)
       .eq("id", data.jobId);
 
-    return { ok: true, inserted: rows.length };
+    return { ok: true, inserted, updated };
   });
 
 export const commitResource = createServerFn({ method: "POST" })
