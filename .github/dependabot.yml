@@ -12,6 +12,14 @@
 #      `bun run check:tanstack` + typecheck + production build on every PR.
 #      That enforces the README compatibility rules automatically — an unsafe
 #      bump fails CI and cannot be merged.
+#   4. The Cloudflare/Workers build stack (@cloudflare/vite-plugin, wrangler,
+#      miniflare, nitro) drags in transitive copies of `undici`. Those are
+#      pinned through the `overrides` block in package.json, which Dependabot
+#      does NOT update. So: bump the Cloudflare stack in its own daily PR, and
+#      group security updates separately so advisory fixes never wait for the
+#      weekly window. When a Cloudflare bump lands, re-check the `undici`
+#      override in package.json (`bun why undici`) and raise it if a newer
+#      patched version is available.
 
 version: 2
 updates:
@@ -22,7 +30,7 @@ updates:
       day: monday
       time: "06:00"
       timezone: Asia/Jerusalem
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 8
     labels:
       - dependencies
     commit-message:
@@ -41,10 +49,33 @@ updates:
       - dependency-name: "@tanstack/router-core"
         update-types: ["version-update:semver-major"]
     groups:
+      # Security advisories are raised by Dependabot regardless of the weekly
+      # schedule. Grouping them into one PR avoids a flood of single-package
+      # PRs (each transitive `undici` advisory would otherwise get its own).
+      npm-security-fixes:
+        applies-to: security-updates
+        patterns:
+          - "*"
+      # Cloudflare Workers build stack — source of the recurring transitive
+      # `undici` advisories. Kept in its own PR so a security bump here is
+      # easy to review and merge fast.
+      cloudflare-workers-stack:
+        applies-to: version-updates
+        patterns:
+          - "@cloudflare/*"
+          - "wrangler"
+          - "miniflare"
+          - "nitropack"
+          - "nitro"
+          - "undici"
+        update-types:
+          - minor
+          - patch
       # One PR bumps the whole router stack together. This is the ONLY safe
       # way to update these packages — CI (`check:tanstack`) will reject a
       # PR where these versions drift apart.
       tanstack-router-stack:
+        applies-to: version-updates
         patterns:
           - "@tanstack/react-start"
           - "@tanstack/react-router"
@@ -58,6 +89,7 @@ updates:
           - patch
       # react-query is independent and safe on its own (README §4).
       tanstack-react-query:
+        applies-to: version-updates
         patterns:
           - "@tanstack/react-query"
           - "@tanstack/query-*"
@@ -67,10 +99,17 @@ updates:
           - patch
       # Everything else — one grouped PR per week keeps noise low.
       minor-and-patch:
+        applies-to: version-updates
         patterns:
           - "*"
         exclude-patterns:
           - "@tanstack/*"
+          - "@cloudflare/*"
+          - "wrangler"
+          - "miniflare"
+          - "nitropack"
+          - "nitro"
+          - "undici"
         update-types:
           - minor
           - patch
