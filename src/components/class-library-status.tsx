@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { BookOpen, Link2, Link2Off } from "lucide-react";
 import { getClassLibraryLink } from "@/lib/class-assignments.functions";
 import { Button } from "@/components/ui/button";
+import { ConnectLibraryDialog } from "@/components/connect-library-dialog";
 
 /** Shows whether the class is connected to the library through a lesson or a bulletin. */
 export function ClassLibraryStatus({ classId }: { classId: string }) {
@@ -36,6 +37,7 @@ export function ClassLibraryStatus({ classId }: { classId: string }) {
         )}
       </span>
       <div className="flex shrink-0 gap-2">
+        <ConnectLibraryDialog classId={classId} />
         <Button asChild variant="outline" size="sm" className="rounded-xl">
           <Link to="/weekly-schedule/$classId" params={{ classId }}>
             <BookOpen className="ms-1 h-4 w-4" aria-hidden="true" /> חבר דרך שיעור
