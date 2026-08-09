@@ -543,6 +543,8 @@ function UserManagementPage() {
           </CardTitle>
           <CardDescription>20 הפעולות האחרונות בניהול מוסדות ותפקידים.</CardDescription>
         </CardHeader>
+          <CardDescription>20 הפעולות האחרונות בניהול מוסדות ותפקידים.</CardDescription>
+        </CardHeader>
         <CardContent>
           {auditLoading ? (
             <div className="py-6 text-center text-sm text-muted-foreground">טוען יומן...</div>
