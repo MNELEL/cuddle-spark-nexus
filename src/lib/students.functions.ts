@@ -55,7 +55,12 @@ export const upsertStudent = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     if (data.id) {
       const { id, ...rest } = data;
-      const { error } = await context.supabase.from("students").update(rest).eq("id", id);
+      // drop keys the caller didn't send, so a partial edit form never wipes
+      // fields it doesn't render
+      const patch = Object.fromEntries(
+        Object.entries(rest).filter(([, v]) => v !== undefined),
+      );
+      const { error } = await context.supabase.from("students").update(patch).eq("id", id);
       if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
       return { ok: true };
     }
