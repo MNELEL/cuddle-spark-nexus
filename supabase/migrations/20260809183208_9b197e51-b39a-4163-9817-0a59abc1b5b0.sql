@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.guard_access_request_requester_update() FROM PUBLIC, anon, authenticated;
