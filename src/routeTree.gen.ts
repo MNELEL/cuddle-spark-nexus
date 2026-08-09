@@ -57,6 +57,7 @@ import { Route as PartnersCaseStudiesRouteImport } from './routes/partners.case-
 import { Route as PartnersDistrictsRouteImport } from './routes/partners.districts'
 import { Route as PartnersSchoolsRouteImport } from './routes/partners.schools'
 import { Route as ToolsGroupMakerRouteImport } from './routes/tools.group-maker'
+import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as AuthenticatedAnalyticsClassIdRouteImport } from './routes/_authenticated.analytics.$classId'
 import { Route as AuthenticatedBulletinsClassIdRouteImport } from './routes/_authenticated.bulletins.$classId'
@@ -336,6 +337,11 @@ const ToolsGroupMakerRoute = ToolsGroupMakerRouteImport.update({
   path: '/group-maker',
   getParentRoute: () => ToolsRoute,
 } as any)
+const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
+  id: '/.lovable/oauth/consent',
+  path: '/.lovable/oauth/consent',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const Char91DotmcpChar93InvokeToolToolRoute =
   Char91DotmcpChar93InvokeToolToolRouteImport.update({
     id: '/.mcp/invoke-tool/$tool',
@@ -541,6 +547,7 @@ export interface FileRoutesByFullPath {
   '/blog/': typeof BlogIndexRoute
   '/help/': typeof HelpIndexRoute
   '/parents-guide/': typeof ParentsGuideIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/analytics/$classId': typeof AuthenticatedAnalyticsClassIdRoute
   '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
@@ -613,6 +620,7 @@ export interface FileRoutesByTo {
   '/blog': typeof BlogIndexRoute
   '/help': typeof HelpIndexRoute
   '/parents-guide': typeof ParentsGuideIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/analytics/$classId': typeof AuthenticatedAnalyticsClassIdRoute
   '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
@@ -690,6 +698,7 @@ export interface FileRoutesById {
   '/blog/': typeof BlogIndexRoute
   '/help/': typeof HelpIndexRoute
   '/parents-guide/': typeof ParentsGuideIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/_authenticated/analytics/$classId': typeof AuthenticatedAnalyticsClassIdRoute
   '/_authenticated/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
@@ -767,6 +776,7 @@ export interface FileRouteTypes {
     | '/blog/'
     | '/help/'
     | '/parents-guide/'
+    | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/analytics/$classId'
     | '/bulletins/$classId'
@@ -839,6 +849,7 @@ export interface FileRouteTypes {
     | '/blog'
     | '/help'
     | '/parents-guide'
+    | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/analytics/$classId'
     | '/bulletins/$classId'
@@ -915,6 +926,7 @@ export interface FileRouteTypes {
     | '/blog/'
     | '/help/'
     | '/parents-guide/'
+    | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/_authenticated/analytics/$classId'
     | '/_authenticated/bulletins/$classId'
@@ -963,6 +975,7 @@ export interface RootRouteChildren {
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   CSlugRoute: typeof CSlugRoute
   PTokenRoute: typeof PTokenRoute
+  DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
 }
 
@@ -1303,6 +1316,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/tools/group-maker'
       preLoaderRoute: typeof ToolsGroupMakerRouteImport
       parentRoute: typeof ToolsRoute
+    }
+    '/.lovable/oauth/consent': {
+      id: '/.lovable/oauth/consent'
+      path: '/.lovable/oauth/consent'
+      fullPath: '/.lovable/oauth/consent'
+      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/.mcp/invoke-tool/$tool': {
       id: '/.mcp/invoke-tool/$tool'
@@ -1702,6 +1722,7 @@ const rootRouteChildren: RootRouteChildren = {
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
   CSlugRoute: CSlugRoute,
   PTokenRoute: PTokenRoute,
+  DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
 }
 export const routeTree = rootRouteImport
