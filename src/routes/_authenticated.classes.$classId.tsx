@@ -296,6 +296,103 @@ function ClassDetail() {
 const heightLabel = { low: "נמוך", mid: "בינוני", high: "גבוה" };
 const rowLabel = { front: "קדמית", mid: "אמצעית", back: "אחורית", any: "לא משנה" };
 
+/* ---- sorting ---- */
+
+const SORT_OPTIONS = {
+  first_name: "שם פרטי",
+  last_name: "שם משפחה",
+  parent_name: "שם הורה",
+  birthday: "יום הולדת קרוב",
+  score: "ציון (גבוה→נמוך)",
+  seat: "מקום ישיבה",
+} as const;
+type SortKey = keyof typeof SORT_OPTIONS;
+
+function sortStorageKey(classId: string) { return `students-sort:${classId}`; }
+
+function parentSortName(s: Student): string {
+  return (s.father_name?.trim() || s.mother_name?.trim() || "");
+}
+
+function sortStudents(
+  students: Student[],
+  key: SortKey,
+  scoreOf: (id: string) => number | null,
+): Student[] {
+  const he = (a: string, b: string) => a.localeCompare(b, "he");
+  const rows = [...students];
+  switch (key) {
+    case "first_name":
+      return rows.sort((a, b) => he(a.first_name?.trim() || a.name, b.first_name?.trim() || b.name));
+    case "last_name":
+      return rows.sort((a, b) => he(a.last_name?.trim() || a.name, b.last_name?.trim() || b.name));
+    case "parent_name":
+      return rows.sort((a, b) => {
+        const pa = parentSortName(a);
+        const pb = parentSortName(b);
+        // students with no parent name at all sink to the bottom
+        if (!pa && !pb) return he(a.name, b.name);
+        if (!pa) return 1;
+        if (!pb) return -1;
+        return he(pa, pb) || he(a.name, b.name);
+      });
+    case "birthday":
+      return rows.sort((a, b) => {
+        const da = nextHebrewBirthday(a.birth_date)?.daysUntil;
+        const db = nextHebrewBirthday(b.birth_date)?.daysUntil;
+        if (da == null && db == null) return he(a.name, b.name);
+        if (da == null) return 1;
+        if (db == null) return -1;
+        return da - db;
+      });
+    case "score":
+      return rows.sort((a, b) => {
+        const sa = scoreOf(a.id);
+        const sb = scoreOf(b.id);
+        if (sa == null && sb == null) return he(a.name, b.name);
+        if (sa == null) return 1;
+        if (sb == null) return -1;
+        return sb - sa;
+      });
+    case "seat":
+      return rows.sort((a, b) => {
+        const seated = (s: Student) => s.seat_row != null && s.seat_col != null;
+        if (!seated(a) && !seated(b)) return he(a.name, b.name);
+        if (!seated(a)) return 1;
+        if (!seated(b)) return -1;
+        return (a.seat_row! - b.seat_row!) || (a.seat_col! - b.seat_col!);
+      });
+  }
+}
+
+/* ---- upcoming Hebrew birthdays banner ---- */
+
+function UpcomingBirthdays({ students }: { students: Student[] }) {
+  const upcoming = students
+    .map((s) => ({ s, b: nextHebrewBirthday(s.birth_date) }))
+    .filter((x): x is { s: Student; b: NonNullable<ReturnType<typeof nextHebrewBirthday>> } =>
+      !!x.b && x.b.daysUntil <= 14)
+    .sort((a, b) => a.b.daysUntil - b.b.daysUntil);
+
+  if (upcoming.length === 0) return null;
+  return (
+    <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-3">
+      <p className="flex items-center gap-2 text-sm font-semibold">
+        <CalendarDays className="h-4 w-4" /> ימי הולדת קרובים (14 הימים הבאים)
+      </p>
+      <ul className="mt-2 flex flex-wrap gap-2 text-xs">
+        {upcoming.map(({ s, b }) => (
+          <li key={s.id} className="rounded-lg border bg-background px-2 py-1">
+            <span className="font-medium">{s.name}</span>
+            <span className="text-muted-foreground"> · {b.hebrewLabel} · {daysUntilLabel(b.daysUntil)}</span>
+            {b.age != null && <span className="text-muted-foreground"> · גיל {b.age}</span>}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function StudentsTab({
   classId, students, scoreInputs,
 }: {
@@ -305,6 +402,24 @@ function StudentsTab({
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Student | null>(null);
   const [fileFor, setFileFor] = useState<Student | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey>("first_name");
+  useEffect(() => {
+    const saved = localStorage.getItem(sortStorageKey(classId));
+    if (saved && saved in SORT_OPTIONS) setSortKey(saved as SortKey);
+  }, [classId]);
+  const changeSort = (k: SortKey) => {
+    setSortKey(k);
+    localStorage.setItem(sortStorageKey(classId), k);
+  };
+
+  const scoreOf = (id: string) =>
+    scoreInputs
+      ? computeStudentScore(id, scoreInputs.grades, scoreInputs.attendance, scoreInputs.behavior)?.total ?? null
+      : null;
+  const sorted = useMemo(
+    () => sortStudents(students, sortKey, scoreOf),
+    [students, sortKey, scoreInputs],
+  );
   const className = "רשימת תלמידים";
   const profilesFn = useServerFn(listClassProfiles);
   const handoffM = useMutation({
@@ -330,6 +445,17 @@ function StudentsTab({
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap justify-end gap-2">
+        <div className="me-auto flex items-center gap-2">
+          <Label htmlFor="students-sort" className="text-xs text-muted-foreground">מיון</Label>
+          <Select value={sortKey} onValueChange={(v) => changeSort(v as SortKey)}>
+            <SelectTrigger id="students-sort" className="h-9 w-44 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {Object.entries(SORT_OPTIONS).map(([k, label]) => (
+                <SelectItem key={k} value={k} className="text-xs">{label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <Button variant="outline" size="sm" onClick={doPrint}><Printer className="ms-1 h-4 w-4" /> הדפסה</Button>
         <Button variant="outline" size="sm" onClick={doCopy}><Copy className="ms-1 h-4 w-4" /> העתק שמות</Button>
         <Button variant="outline" size="sm" disabled={handoffM.isPending} onClick={() => handoffM.mutate()}>
@@ -343,11 +469,13 @@ function StudentsTab({
         </Dialog>
       </div>
 
+      <UpcomingBirthdays students={students} />
+
       {students.length === 0 ? (
         <Card><CardContent className="py-10 text-center text-muted-foreground">אין תלמידים. הוסף את הראשון.</CardContent></Card>
       ) : (
         <div className="grid gap-2">
-          {students.map((s) => (
+          {sorted.map((s) => (
             <StudentRow key={s.id} student={s} scoreInputs={scoreInputs}
               onEdit={() => { setEditing(s); setOpen(true); }}
               onOpenFile={() => setFileFor(s)} />
