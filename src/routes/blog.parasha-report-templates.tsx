@@ -2,7 +2,7 @@ import { blogPostHead } from "@/lib/blog-seo";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { FaqSection, faqJsonLd, type FaqItem } from "@/components/faq-section";
 
-const URL = "https://cuddle-spark-nexus.lovable.app/blog/parasha-report-templates";
+const URL = "https://hakitasheli.lovable.app/blog/parasha-report-templates";
 const TITLE = "תבניות דפי קשר ודו״ח שבועי לפרשת השבוע — להדפסה";
 const DESCRIPTION =
   "ספריית תבניות מוכנות להדפסה לדו״ח שבועי ולדף קשר על פרשת השבוע בתלמוד תורה — לפי גילאים, עם נוסח מוכן למלמד ולרב ואפשרות הפקה אוטומטית כ-PDF.";

@@ -32,9 +32,9 @@ export const Route = createFileRoute("/login")({
       { name: "description", content: "התחבר ל-״הכיתה שלי״ — סטודיו לניהול כיתה תורנית: סידור הושבה, ציונים, דוחות פדגוגיים וכלי AI בעברית מלאה." },
       { property: "og:title", content: "כניסה למערכת · הכיתה שלי" },
       { property: "og:description", content: "התחבר ל-״הכיתה שלי״ — סטודיו לניהול כיתה תורנית בעברית מלאה." },
-      { property: "og:url", content: "https://cuddle-spark-nexus.lovable.app/login" },
+      { property: "og:url", content: "https://hakitasheli.lovable.app/login" },
     ],
-    links: [{ rel: "canonical", href: "https://cuddle-spark-nexus.lovable.app/login" }],
+    links: [{ rel: "canonical", href: "https://hakitasheli.lovable.app/login" }],
   }),
 });
 

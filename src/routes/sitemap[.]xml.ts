@@ -3,7 +3,7 @@ import type {} from "@tanstack/react-start";
 import { ARTICLES as HELP_ARTICLES } from "@/routes/help.$slug";
 import { GUIDES as PARENTS_GUIDES } from "@/routes/parents-guide.$slug";
 
-const BASE_URL = "https://cuddle-spark-nexus.lovable.app";
+const BASE_URL = "https://hakitasheli.lovable.app";
 
 interface SitemapEntry {
   path: string;

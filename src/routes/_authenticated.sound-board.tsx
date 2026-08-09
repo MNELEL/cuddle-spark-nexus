@@ -28,7 +28,7 @@ export const Route = createFileRoute("/_authenticated/sound-board")({
       { name: "description", content: "ספריית צלילים לכיתה ומיפוי אירועים לצלילים — הישגים, התראות ומעברים ומוזיקת רקע." },
       { property: "og:title", content: "ניהול סאונד ואפקטים · הכיתה שלי" },
       { property: "og:description", content: "ספריית צלילים ומיפוי אירועים — הישגים, מעברים ומוזיקה." },
-      { property: "og:url", content: "https://cuddle-spark-nexus.lovable.app/sound-board" },
+      { property: "og:url", content: "https://hakitasheli.lovable.app/sound-board" },
       { name: "robots", content: "noindex" },
     ],
   }),

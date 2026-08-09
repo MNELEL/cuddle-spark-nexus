@@ -1,7 +1,7 @@
 import { blogPostHead } from "@/lib/blog-seo";
 import { createFileRoute, Link } from "@tanstack/react-router";
 
-const URL = "https://cuddle-spark-nexus.lovable.app/blog/progress-tracking-guide";
+const URL = "https://hakitasheli.lovable.app/blog/progress-tracking-guide";
 const TITLE = "מעקב התקדמות תלמידים — מדריך מלא לרבנים ומלמדים";
 const DESCRIPTION =
   "איך לבנות מערכת מעקב התקדמות תלמידים בתלמוד תורה: יעדים, אינדיקטורים, דוחות שבועיים ושיחות עם הורים — עם דוגמאות מעשיות.";

@@ -9,9 +9,9 @@ export const Route = createFileRoute("/privacy")({
       { property: "og:title", content: "מדיניות פרטיות — הכיתה שלי" },
       { property: "og:description", content: "מדיניות הפרטיות של הכיתה שלי — איזה מידע נאסף, איך הוא נשמר ומה הזכויות שלך." },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://cuddle-spark-nexus.lovable.app/privacy" },
+      { property: "og:url", content: "https://hakitasheli.lovable.app/privacy" },
     ],
-    links: [{ rel: "canonical", href: "https://cuddle-spark-nexus.lovable.app/privacy" }],
+    links: [{ rel: "canonical", href: "https://hakitasheli.lovable.app/privacy" }],
   }),
 });
 

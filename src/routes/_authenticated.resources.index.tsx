@@ -49,7 +49,7 @@ export const Route = createFileRoute("/_authenticated/resources/")({
       { name: "description", content: "ספרייה חכמה של דפי עבודה, מבחנים ושאלות לפי מקצועות קודש — ניתן לחפש, לסנן, לערוך ולייצא." },
       { property: "og:title", content: "ספריית חומרי הוראה · הכיתה שלי" },
       { property: "og:description", content: "ספרייה חכמה של דפי עבודה, מבחנים ושאלות לפי מקצועות קודש." },
-      { property: "og:url", content: "https://cuddle-spark-nexus.lovable.app/resources" },
+      { property: "og:url", content: "https://hakitasheli.lovable.app/resources" },
       { name: "robots", content: "noindex" },
     ],
   }),

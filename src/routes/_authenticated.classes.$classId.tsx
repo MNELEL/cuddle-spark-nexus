@@ -151,7 +151,7 @@ export const Route = createFileRoute("/_authenticated/classes/$classId")({
   },
   head: ({ loaderData, params }) => {
     const name = loaderData?.className ?? "כיתה";
-    const url = `https://cuddle-spark-nexus.lovable.app/classes/${params.classId}`;
+    const url = `https://hakitasheli.lovable.app/classes/${params.classId}`;
     return {
       meta: [
         { title: `${name} · ניהול כיתה · הכיתה שלי` },

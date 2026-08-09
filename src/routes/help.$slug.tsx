@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 
-const BASE = "https://cuddle-spark-nexus.lovable.app";
+const BASE = "https://hakitasheli.lovable.app";
 
 type Section = { id: string; heading: string; body: string[] };
 type Article = {

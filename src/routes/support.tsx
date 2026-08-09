@@ -9,9 +9,9 @@ export const Route = createFileRoute("/support")({
       { property: "og:title", content: "תמיכה — הכיתה שלי" },
       { property: "og:description", content: "תמיכה למשתמשי הכיתה שלי — שאלות נפוצות, יצירת קשר וקישורים שימושיים." },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://cuddle-spark-nexus.lovable.app/support" },
+      { property: "og:url", content: "https://hakitasheli.lovable.app/support" },
     ],
-    links: [{ rel: "canonical", href: "https://cuddle-spark-nexus.lovable.app/support" }],
+    links: [{ rel: "canonical", href: "https://hakitasheli.lovable.app/support" }],
     scripts: [
       {
         type: "application/ld+json",

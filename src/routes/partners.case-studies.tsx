@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { FaqSection, faqJsonLd, type FaqItem } from "@/components/faq-section";
 
-const BASE = "https://cuddle-spark-nexus.lovable.app";
+const BASE = "https://hakitasheli.lovable.app";
 const URL = `${BASE}/partners/case-studies`;
 const TITLE = "Case Studies — סיפורי הטמעה של הכיתה שלי בבתי ספר ותלמודי תורה";
 const DESCRIPTION =

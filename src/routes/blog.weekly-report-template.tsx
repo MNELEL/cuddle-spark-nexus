@@ -1,7 +1,7 @@
 import { blogPostHead } from "@/lib/blog-seo";
 import { createFileRoute, Link } from "@tanstack/react-router";
 
-const URL = "https://cuddle-spark-nexus.lovable.app/blog/weekly-report-template";
+const URL = "https://hakitasheli.lovable.app/blog/weekly-report-template";
 const TITLE = "תבנית דו״ח שבועי לתלמיד — להורדה ולשימוש בכיתה";
 const DESCRIPTION =
   "תבנית דו״ח שבועי מוכנה לתלמודי תורה: שדות למעקב לימודי, התנהגותי ורוחני, עם דוגמאות מלאות ופורמט להדפסה או שליחה להורים.";

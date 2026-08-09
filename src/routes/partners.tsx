@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { submitPartnerLead } from "@/lib/partner-leads.functions";
 import { useHcaptcha } from "@/hooks/use-hcaptcha";
 
-const URL_SELF = "https://cuddle-spark-nexus.lovable.app/partners";
+const URL_SELF = "https://hakitasheli.lovable.app/partners";
 
 
 export const Route = createFileRoute("/partners")({

@@ -43,7 +43,7 @@ export const Route = createFileRoute("/_authenticated/ingest")({
       { name: "description", content: "העלאה חכמה של קבצים – רשימות תלמידים, חומרי לימוד והקלטות שיעור מנותחים אוטומטית ומשובצים למקומם." },
       { property: "og:title", content: "העלאה חכמה · הכיתה שלי" },
       { property: "og:description", content: "רשימות תלמידים, חומרי לימוד והקלטות שיעור — מנותחים ומשובצים אוטומטית." },
-      { property: "og:url", content: "https://cuddle-spark-nexus.lovable.app/ingest" },
+      { property: "og:url", content: "https://hakitasheli.lovable.app/ingest" },
       { name: "robots", content: "noindex" },
     ],
   }),

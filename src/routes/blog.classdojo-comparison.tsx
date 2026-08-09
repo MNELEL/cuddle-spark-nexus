@@ -2,7 +2,7 @@ import { blogPostHead } from "@/lib/blog-seo";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { FaqSection, faqJsonLd, type FaqItem } from "@/components/faq-section";
 
-const URL = "https://cuddle-spark-nexus.lovable.app/blog/classdojo-comparison";
+const URL = "https://hakitasheli.lovable.app/blog/classdojo-comparison";
 const TITLE = "ClassDojo מול הכיתה שלי — השוואה למלמדים בתלמודי תורה";
 const DESCRIPTION =
   "ClassDojo מול הכיתה שלי: השוואה למלמדים בתלמודי תורה וחיידרים — עברית, מקצועות קודש, פרטיות ודו״חות פדגוגיים.";

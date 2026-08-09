@@ -26,7 +26,7 @@ export const Route = createFileRoute("/_authenticated/toolkit")({
       { name: "description", content: "כלים מהירים לניהול השיעור — טיימר, בוחר תלמיד אקראי, הקראה, והגדרות אבטחה." },
       { property: "og:title", content: "ארגז כלים לכיתה · הכיתה שלי" },
       { property: "og:description", content: "כלים מהירים לניהול השיעור: טיימר, בוחר אקראי, הקראה ואבטחה." },
-      { property: "og:url", content: "https://cuddle-spark-nexus.lovable.app/toolkit" },
+      { property: "og:url", content: "https://hakitasheli.lovable.app/toolkit" },
       { name: "robots", content: "noindex" },
     ],
   }),

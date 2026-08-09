@@ -4,7 +4,7 @@ import { FaqSection, faqJsonLd, type FaqItem } from "@/components/faq-section";
 import { RewardChartPrintView } from "@/components/reward-chart-print";
 import { REWARD_CHARTS } from "@/lib/reward-charts";
 
-const URL = "https://cuddle-spark-nexus.lovable.app/blog/torah-study-reward-charts";
+const URL = "https://hakitasheli.lovable.app/blog/torah-study-reward-charts";
 const TITLE = "לוח מבצעים ופרסים לתלמידים — מדריך ותבניות להדפסה";
 const DESCRIPTION =
   "מדריך מלא להפעלת מבצעי לימוד בתלמוד תורה: לוחות מבצעים להדפסה, שיטות ניקוד, סולם פרסים לפי גיל ומעבר חלק מלוח נייר למעקב דיגיטלי בעברית.";
