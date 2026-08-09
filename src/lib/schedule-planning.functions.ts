@@ -229,7 +229,7 @@ export const applyTemplateToWeeks = createServerFn({ method: "POST" })
 
     const dayIndex: Record<string, number> = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
     const skip = new Set(data.skipDates);
-    const rows: Record<string, unknown>[] = [];
+    const rows: { class_id: string; week_start: string; day_key: string; hour: number; duration: number; title: string; subject: string | null; notes: string | null; library_item_id: string | null }[] = [];
 
     for (const weekStart of data.weekStarts) {
       if (data.replace) {

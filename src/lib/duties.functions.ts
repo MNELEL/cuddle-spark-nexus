@@ -213,7 +213,7 @@ export const generateDutyRotation = createServerFn({ method: "POST" })
       }
     }
 
-    const rows: Record<string, unknown>[] = [];
+    const rows: { class_id: string; duty_type_id: string; date: string; student_id: string | null; source: string }[] = [];
     types.forEach((t, idx) => {
       for (const slot of buildRotation({ studentIds, dates, offset: idx })) {
         if (manual.has(`${t.id}|${slot.date}`)) continue;
