@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { listClasses, deleteClass, setClassStatus } from "@/lib/classes.functions";
 import { getMyInstitution } from "@/lib/institution-dashboard.functions";
+import { listUnreadClassNotifications, markNotificationRead } from "@/lib/notifications.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -41,9 +42,20 @@ function ClassesPage() {
   const remove = useServerFn(deleteClass);
   const setStatus = useServerFn(setClassStatus);
   const fetchInstitution = useServerFn(getMyInstitution);
+  const fetchNotifications = useServerFn(listUnreadClassNotifications);
+  const markRead = useServerFn(markNotificationRead);
   const qc = useQueryClient();
   const [q, setQ] = useState("");
   const [statusFilter, setStatusFilter] = useState<"active" | "archived" | "all">("active");
+
+  const { data: notifications = [] } = useQuery({
+    queryKey: ["class-notifications"],
+    queryFn: () => fetchNotifications(),
+  });
+  const dismiss = useMutation({
+    mutationFn: (id: string) => markRead({ data: { id } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["class-notifications"] }),
+  });
 
   const { data: classes = [], isLoading } = useQuery({
     queryKey: ["classes"],
