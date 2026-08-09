@@ -703,7 +703,7 @@ function StudentDialog({ classId, editing, onClose }: { classId: string; editing
       </div>
       <DialogFooter>
         <Button variant="ghost" onClick={onClose}>ביטול</Button>
-        <Button onClick={() => m.mutate()} disabled={!name.trim() || m.isPending}>
+        <Button onClick={() => m.mutate()} disabled={!firstName.trim() || m.isPending}>
           {editing ? "שמור" : "הוסף"}
         </Button>
       </DialogFooter>
