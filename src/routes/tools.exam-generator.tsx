@@ -91,7 +91,12 @@ export const Route = createFileRoute("/tools/exam-generator")({
           "@type": "BreadcrumbList",
           itemListElement: [
             { "@type": "ListItem", position: 1, name: "בית", item: "https://hakitasheli.lovable.app/" },
-            { "@type": "ListItem", position: 2, name: "כלים", item: "https://hakitasheli.lovable.app/tools/group-maker" },
+            {
+              "@type": "ListItem",
+              position: 2,
+              name: "כלים חינמיים",
+              item: "https://hakitasheli.lovable.app/blog/free-tools-comparison",
+            },
             { "@type": "ListItem", position: 3, name: "מחולל מבחנים" },
           ],
         }),
