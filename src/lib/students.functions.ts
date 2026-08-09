@@ -59,7 +59,7 @@ export const upsertStudent = createServerFn({ method: "POST" })
       // fields it doesn't render
       const patch = Object.fromEntries(
         Object.entries(rest).filter(([, v]) => v !== undefined),
-      );
+      ) as Record<string, never>;
       const { error } = await context.supabase.from("students").update(patch).eq("id", id);
       if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
       return { ok: true };
