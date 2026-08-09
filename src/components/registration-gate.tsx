@@ -4,9 +4,10 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { TorahLogo } from "@/components/torah-logo";
-import { Mail, Gift, Lock, Home, Loader2, AlertTriangle } from "lucide-react";
+import { Mail, Gift, Lock, Home, Loader2, AlertTriangle, BadgeCheck } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { getMyTrialStatus } from "@/lib/trial.functions";
+import { isAdmin } from "@/lib/user-roles.functions";
 import { TrialExtensionRequestButton } from "@/components/trial-extension-request-button";
 
 type Props = {
@@ -28,6 +29,7 @@ export function RegistrationGate({ title, description, requireActiveTrial = fals
 
   const { user, loading } = useAuth();
   const fetchTrial = useServerFn(getMyTrialStatus);
+  const fetchIsAdmin = useServerFn(isAdmin);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   const trial = useQuery({
@@ -36,6 +38,26 @@ export function RegistrationGate({ title, description, requireActiveTrial = fals
     enabled: mounted && !!user,
     retry: false,
   });
+
+  const { data: viewerIsAdmin } = useQuery({
+    queryKey: ["is-admin"],
+    queryFn: () => fetchIsAdmin(),
+    enabled: mounted && !!user,
+    staleTime: 5 * 60_000,
+    retry: false,
+  });
+
+  /** Direct one-click approval link for admins: lands on the approvals card with this user focused. */
+  const approvalLink = (
+    <Link
+      to="/user-management"
+      search={{ focus: "trials" as const, trialUser: user?.email ?? user?.id }}
+    >
+      <Button variant="outline" size="sm" className="gap-2">
+        <BadgeCheck className="h-4 w-4" aria-hidden="true" /> אישור מיידי במסך האישורים
+      </Button>
+    </Link>
+  );
 
   // Before hydration finishes we render the content as-is (SSR/SEO parity).
   if (!mounted) return <>{children}</>;
@@ -101,6 +123,7 @@ export function RegistrationGate({ title, description, requireActiveTrial = fals
           </p>
           <div className="mt-7 flex flex-wrap justify-center gap-2">
             <TrialExtensionRequestButton className="shadow-glow-primary" />
+            {viewerIsAdmin && approvalLink}
             <Link to="/support">
               <Button className="gap-2 shadow-glow-primary">
                 <Mail className="h-4 w-4" aria-hidden="true" /> פנה אלינו לשדרוג
@@ -137,6 +160,7 @@ export function RegistrationGate({ title, description, requireActiveTrial = fals
               , או בקש הארכה שהמנהל מאשר בקליק אחד.
             </p>
             <TrialExtensionRequestButton size="sm" variant="outline" />
+            {viewerIsAdmin && approvalLink}
             </div>
           </div>
         </div>
