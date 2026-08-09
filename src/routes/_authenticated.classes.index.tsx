@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Trash2, ChevronLeft, Search, Archive, ArchiveRestore, X, Building2 } from "lucide-react";
 import { SeatFillGrid } from "@/components/seat-fill-grid";
 import { NewClassWizard } from "@/components/new-class-wizard";
+import { ClassAssignmentsTable } from "@/components/class-assignments-table";
 import { OnboardingProgressCard } from "@/components/onboarding-progress-card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -158,6 +159,8 @@ function ClassesPage() {
           <NewClassWizard />
         </CardContent>
       </Card>
+
+      {!isLoading && classes.length > 0 && <ClassAssignmentsTable />}
 
       {!isLoading && classes.length > 0 && (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

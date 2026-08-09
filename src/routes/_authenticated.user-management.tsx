@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -41,6 +42,7 @@ import {
   createInstitution,
   listInstitutionClasses,
   listRoleAuditLog,
+  attachTeacherClassesToInstitution,
 } from "@/lib/institutions.functions";
 import { TrialApprovalsCard } from "@/components/trial-approvals-card";
 import { AccessRequestForm } from "@/components/access-request-form";
@@ -79,6 +81,7 @@ function UserManagementPage() {
   const checkAccess = useServerFn(canManageUsers);
   const listUsers = useServerFn(listUsersWithRoles);
   const assignRoleFn = useServerFn(assignRole);
+  const attachClassesFn = useServerFn(attachTeacherClassesToInstitution);
   const removeRoleFn = useServerFn(removeRole);
   const bootstrapFn = useServerFn(bootstrapFirstAdmin);
   const listInstitutionsFn = useServerFn(listInstitutions);
@@ -105,6 +108,7 @@ function UserManagementPage() {
   const [selectedRole, setSelectedRole] = useState<Role | "">("");
   const [selectedInstitution, setSelectedInstitution] = useState<string>(NO_INSTITUTION);
   const [newInstitutionName, setNewInstitutionName] = useState("");
+  const [autoAssignClasses, setAutoAssignClasses] = useState(true);
   const [institutionSearch, setInstitutionSearch] = useState("");
   const [institutionPage, setInstitutionPage] = useState(1);
   const [classesInstitution, setClassesInstitution] = useState<string>("");
@@ -145,13 +149,25 @@ function UserManagementPage() {
       user_id,
       role,
       institution_id,
-    }: { user_id: string; role: Role; institution_id?: string }) => {
-      return await assignRoleFn({ data: { user_id, role, institution_id } });
+      attach_classes,
+    }: { user_id: string; role: Role; institution_id?: string; attach_classes?: boolean }) => {
+      await assignRoleFn({ data: { user_id, role, institution_id } });
+      if (attach_classes && institution_id) {
+        return await attachClassesFn({ data: { user_id, institution_id } });
+      }
+      return null;
     },
-    onSuccess: () => {
+    onSuccess: (res) => {
+      if (res && res.attached > 0) {
+        toast.success(`${res.attached} כיתות של המלמד שויכו למוסד`);
+      } else if (res && res.skippedArchived > 0) {
+        toast.info(`${res.skippedArchived} כיתות בארכיון לא שויכו — החזר אותן לפעילות תחילה`);
+      }
       queryClient.invalidateQueries({ queryKey: ["users-with-roles"] });
       queryClient.invalidateQueries({ queryKey: ["role-audit-log"] });
       queryClient.invalidateQueries({ queryKey: ["system-admins"] });
+      queryClient.invalidateQueries({ queryKey: ["class-assignments"] });
+      queryClient.invalidateQueries({ queryKey: ["institution-classes"] });
       setSelectedRole("");
       setSelectedInstitution(NO_INSTITUTION);
       toast.success("תפקיד הוקצה בהצלחה");
@@ -333,6 +349,7 @@ function UserManagementPage() {
       user_id: selectedUser,
       role: selectedRole as Role,
       institution_id: selectedInstitution === NO_INSTITUTION ? undefined : selectedInstitution,
+      attach_classes: autoAssignClasses,
     });
   };
 
@@ -576,6 +593,21 @@ function UserManagementPage() {
               )}
             </div>
           </div>
+          {selectedInstitution !== NO_INSTITUTION && (
+            <label className="flex items-start gap-2 rounded-lg border p-3 text-sm">
+              <Checkbox
+                checked={autoAssignClasses}
+                onCheckedChange={(v) => setAutoAssignClasses(!!v)}
+                aria-label="שייך אוטומטית את הכיתות הקיימות של המלמד למוסד"
+              />
+              <span>
+                שייך אוטומטית את הכיתות הקיימות של המלמד למוסד זה
+                <span className="block text-xs text-muted-foreground">
+                  כיתות בארכיון יידלגו. אפשר לנתק או לשייך מחדש בכל עת בטבלת שיוכי הכיתות במסך הכיתות.
+                </span>
+              </span>
+            </label>
+          )}
           <Button
             disabled={!selectedUser || !selectedRole || institutionMissing || assignMutation.isPending}
             onClick={handleAssign}

@@ -270,39 +270,59 @@ export type Database = {
           created_at: string
           header_line: string | null
           id: string
+          institution_id: string | null
+          locked_fields: string[]
           logo_data_url: string | null
           primary_color: string | null
           principal_name_default: string | null
           school_name: string | null
+          scope: string
           teacher_name_default: string | null
+          theme: Json
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
           header_line?: string | null
           id?: string
+          institution_id?: string | null
+          locked_fields?: string[]
           logo_data_url?: string | null
           primary_color?: string | null
           principal_name_default?: string | null
           school_name?: string | null
+          scope?: string
           teacher_name_default?: string | null
+          theme?: Json
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
           header_line?: string | null
           id?: string
+          institution_id?: string | null
+          locked_fields?: string[]
           logo_data_url?: string | null
           primary_color?: string | null
           principal_name_default?: string | null
           school_name?: string | null
+          scope?: string
           teacher_name_default?: string | null
+          theme?: Json
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "brand_settings_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       bulletin_resources: {
         Row: {

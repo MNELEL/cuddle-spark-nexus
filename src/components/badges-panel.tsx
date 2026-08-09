@@ -22,6 +22,7 @@ import {
   removeBadgeAward, suggestBadgeIdeas,
 } from "@/lib/badges.functions";
 import { useAppSounds } from "@/hooks/use-app-sounds";
+import { useBrand } from "@/hooks/use-brand";
 import {
   BADGE_CATEGORIES, BADGE_CATEGORY_LABELS, type BadgeCategory, type BadgeRow,
 } from "@/lib/badge-options";
@@ -36,6 +37,7 @@ export function BadgesPanel({ classId, students, readOnly = false }: {
 }) {
   const qc = useQueryClient();
   const { playEvent } = useAppSounds();
+  const { brand } = useBrand();
   const fetchBadges = useServerFn(listBadges);
   const fetchAwards = useServerFn(listBadgeAwards);
   const save = useServerFn(upsertBadge);
@@ -115,10 +117,19 @@ export function BadgesPanel({ classId, students, readOnly = false }: {
           ) : (
             <ul className="grid gap-3 md:grid-cols-2">
               {badges.map((b) => (
-                <li key={b.id} className="rounded-lg border p-3">
+                <li
+                  key={b.id}
+                  className="rounded-lg border p-3"
+                  style={{ borderColor: brand.theme.card_border_color, background: brand.theme.card_color }}
+                >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 space-y-1">
                       <p className="flex items-center gap-2 font-medium">
+                        <span
+                          aria-hidden
+                          className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+                          style={{ background: brand.theme.badge_color }}
+                        />
                         {b.name}
                         {!b.active && <Badge variant="outline">לא פעיל</Badge>}
                       </p>

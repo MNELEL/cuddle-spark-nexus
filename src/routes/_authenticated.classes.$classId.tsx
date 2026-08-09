@@ -21,6 +21,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { ClassLibraryStatus } from "@/components/class-library-status";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowRight, Heart, Ban, MoveHorizontal, Pencil, Plus, Trash2, FolderOpen, FileText, Sparkles, Trophy, Users, Library, Monitor, Upload, Printer, Copy, Dices, Globe2, Award, ScanText, TrendingUp, CalendarDays, Wand2, MessageSquare, MoreHorizontal, LayoutGrid } from "lucide-react";
 import { toast } from "sonner";
@@ -244,6 +245,8 @@ function ClassDetail() {
       </div>
 
       <YearChain classId={classId} />
+
+      <ClassLibraryStatus classId={classId} />
 
       <Tabs value={tab} onValueChange={setTab} dir="rtl">
         <TabsList className="flex-wrap h-auto">
