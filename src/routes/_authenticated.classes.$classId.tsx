@@ -613,7 +613,12 @@ function StudentRow({
 function StudentDialog({ classId, editing, onClose }: { classId: string; editing: Student | null; onClose: () => void }) {
   const upsert = useServerFn(upsertStudent);
   const qc = useQueryClient();
-  const [name, setName] = useState(editing?.name ?? "");
+  const [firstName, setFirstName] = useState(
+    editing?.first_name ?? (editing ? (editing.name ?? "").trim().split(/\s+/)[0] ?? "" : ""),
+  );
+  const [lastName, setLastName] = useState(
+    editing?.last_name ?? (editing ? (editing.name ?? "").trim().split(/\s+/).slice(1).join(" ") : ""),
+  );
   const [notes, setNotes] = useState(editing?.notes ?? "");
   const [height, setHeight] = useState<Student["height"]>(editing?.height ?? "mid");
   const [rowPref, setRowPref] = useState<Student["row_pref"]>(editing?.row_pref ?? "any");
@@ -623,7 +628,10 @@ function StudentDialog({ classId, editing, onClose }: { classId: string; editing
 
   const m = useMutation({
     mutationFn: () => upsert({ data: {
-      id: editing?.id, class_id: classId, name: name.trim(),
+      id: editing?.id, class_id: classId,
+      name: [firstName.trim(), lastName.trim()].filter(Boolean).join(" "),
+      first_name: firstName.trim() || null,
+      last_name: lastName.trim() || null,
       notes, height, row_pref: rowPref, corner_pref: corner,
       has_special_accommodation: special,
       accommodation_note: special ? (accNote || null) : null,
@@ -640,9 +648,15 @@ function StudentDialog({ classId, editing, onClose }: { classId: string; editing
     <DialogContent>
       <DialogHeader><DialogTitle>{editing ? "עריכת תלמיד" : "הוספת תלמיד"}</DialogTitle></DialogHeader>
       <div className="space-y-3">
-        <div>
-          <Label>שם</Label>
-          <Input value={name} onChange={(e) => setName(e.target.value)} />
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label htmlFor="st-first">שם פרטי</Label>
+            <Input id="st-first" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+          </div>
+          <div>
+            <Label htmlFor="st-last">שם משפחה</Label>
+            <Input id="st-last" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+          </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
