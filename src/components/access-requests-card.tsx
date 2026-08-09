@@ -26,6 +26,7 @@ import {
   listAccessRequests,
   resolveAccessRequest,
   approveAndAssignRole,
+  canResolveAccessRequests,
 } from "@/lib/access-requests.functions";
 import { listInstitutions } from "@/lib/institutions.functions";
 import type { Role } from "@/lib/user-roles.functions";
@@ -56,12 +57,17 @@ interface AccessRequest {
   created_at: string;
 }
 
-/** Review queue for access requests. Approving/denying is admin-only. */
-export function AccessRequestsCard({ canResolve }: { canResolve: boolean }) {
+/**
+ * Review queue for access requests.
+ * Only system admins may approve/deny; principals get a read-only view.
+ * The prop is a hint only — the actual capability is verified server-side.
+ */
+export function AccessRequestsCard({ canResolve: canResolveHint }: { canResolve: boolean }) {
   const listFn = useServerFn(listAccessRequests);
   const resolveFn = useServerFn(resolveAccessRequest);
   const approveFn = useServerFn(approveAndAssignRole);
   const listInstitutionsFn = useServerFn(listInstitutions);
+  const canResolveFn = useServerFn(canResolveAccessRequests);
   const queryClient = useQueryClient();
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -73,6 +79,14 @@ export function AccessRequestsCard({ canResolve }: { canResolve: boolean }) {
     queryKey: ["access-requests"],
     queryFn: () => listFn(),
   });
+
+  const { data: capability } = useQuery({
+    queryKey: ["can-resolve-access-requests"],
+    queryFn: () => canResolveFn(),
+  });
+
+  // Admin-only: server-verified, and never wider than the caller's hint.
+  const canResolve = canResolveHint && capability?.canResolve === true;
 
   const { data: institutions, isLoading: institutionsLoading } = useQuery({
     queryKey: ["institutions"],
@@ -140,7 +154,7 @@ export function AccessRequestsCard({ canResolve }: { canResolve: boolean }) {
           <CardDescription>
             {canResolve
               ? "אשר בקשות גישה ושייך את התפקיד המבוקש בקליק אחד."
-              : "בקשות הגישה שהתקבלו. האישור מתבצע על ידי מנהל המערכת."}
+              : "תצוגה בלבד: הבקשות שהתקבלו. אישור או דחייה מתבצעים על ידי מנהל המערכת בלבד."}
           </CardDescription>
         </CardHeader>
         <CardContent>
