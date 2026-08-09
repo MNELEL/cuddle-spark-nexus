@@ -12,8 +12,49 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Rejects unsigned / unverified commits so release artifacts always trace
+  # back to a verified identity (required for SLSA-style provenance to mean anything).
+  verify-signatures:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Verify commit signatures
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            RANGE="${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
+          else
+            RANGE="${{ github.event.before || github.sha }}..${{ github.sha }}"
+          fi
+          COMMITS=$(git rev-list "$RANGE" 2>/dev/null || git rev-list -1 "${{ github.sha }}")
+          FAILED=0
+          for sha in $COMMITS; do
+            VERIFIED=$(gh api "repos/$REPO/commits/$sha" --jq '.commit.verification.verified')
+            REASON=$(gh api "repos/$REPO/commits/$sha" --jq '.commit.verification.reason')
+            if [ "$VERIFIED" = "true" ]; then
+              echo "signed   $sha"
+            else
+              echo "UNSIGNED $sha ($REASON)"
+              FAILED=1
+            fi
+          done
+          if [ "$FAILED" = "1" ]; then
+            echo "::error::One or more commits are not signed/verified. Enable commit signing (git config commit.gpgsign true, or use SSH/gitsign keys)."
+            exit 1
+          fi
+
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v7
       - uses: oven-sh/setup-bun@v2
@@ -43,3 +84,28 @@ jobs:
 
       - name: Production build
         run: bun run build
+
+      # Component/version inventory for every build, kept as a downloadable artifact
+      # so we can diff dependency drift over time.
+      - name: Generate SBOM (CycloneDX + SPDX)
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: cyclonedx-json
+          artifact-name: sbom-cyclonedx-${{ github.sha }}.json
+          output-file: sbom/sbom-cyclonedx.json
+
+      - name: Generate SBOM (SPDX)
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: spdx-json
+          artifact-name: sbom-spdx-${{ github.sha }}.json
+          output-file: sbom/sbom-spdx.json
+
+      - name: Upload SBOM bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ github.sha }}
+          path: sbom/
+          retention-days: 90
