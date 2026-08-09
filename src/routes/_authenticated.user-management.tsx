@@ -42,6 +42,7 @@ import {
   listInstitutionClasses,
   listRoleAuditLog,
 } from "@/lib/institutions.functions";
+import { TrialApprovalsCard } from "@/components/trial-approvals-card";
 
 const NO_INSTITUTION = "__none__";
 const INSTITUTIONS_PAGE_SIZE = 10;
