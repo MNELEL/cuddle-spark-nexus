@@ -658,14 +658,14 @@ function DisciplinePanel({ classId, studentId }: Props) {
 /* ---------------- Contact details (פרטי קשר) ---------------- */
 
 type ContactForm = {
-  first_name: string; last_name: string;
+  first_name: string; middle_name: string; last_name: string;
   national_id: string; birth_date: string; address: string;
   father_name: string; father_id: string; father_phone: string;
   mother_name: string; mother_id: string; mother_phone: string;
 };
 
 const emptyContact: ContactForm = {
-  first_name: "", last_name: "", national_id: "", birth_date: "", address: "",
+  first_name: "", middle_name: "", last_name: "", national_id: "", birth_date: "", address: "",
   father_name: "", father_id: "", father_phone: "",
   mother_name: "", mother_id: "", mother_phone: "",
 };
@@ -709,9 +709,10 @@ function ContactDetailsPanel({ classId, studentId }: Props) {
         data: {
           id: studentId,
           class_id: classId,
-          name: [current.first_name.trim(), current.last_name.trim()].filter(Boolean).join(" ")
+          name: [current.first_name.trim(), current.middle_name.trim(), current.last_name.trim()].filter(Boolean).join(" ")
             || ((student as { name?: string } | null | undefined)?.name ?? ""),
           first_name: current.first_name.trim() || null,
+          middle_name: current.middle_name.trim() || null,
           last_name: current.last_name.trim() || null,
           national_id: current.national_id.trim() || null,
           birth_date: current.birth_date.trim() || null,
@@ -767,6 +768,7 @@ function ContactDetailsPanel({ classId, studentId }: Props) {
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-2">
         {field("first_name", "שם פרטי")}
+        {field("middle_name", "שם אמצעי / כינוי")}
         {field("last_name", "שם משפחה")}
         {field("national_id", "תעודת זהות", { dir: "ltr" })}
         {field("birth_date", "תאריך לידה", { type: "date", dir: "ltr" })}
