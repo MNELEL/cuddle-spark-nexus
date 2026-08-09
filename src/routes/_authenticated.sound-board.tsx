@@ -19,6 +19,9 @@ import {
   type SoundCategory,
 } from "@/lib/sounds";
 import { listSoundPreferences, saveSoundPreference } from "@/lib/sound-preferences.functions";
+import { listCustomSoundsWithUrls } from "@/lib/custom-sounds.functions";
+import { registerCustomSoundUrl } from "@/lib/sounds";
+import { CustomSoundsManager } from "@/components/custom-sounds-manager";
 
 export const Route = createFileRoute("/_authenticated/sound-board")({
   component: SoundBoardPage,
@@ -93,6 +96,7 @@ function SoundBoardPage() {
       <Tabs defaultValue="library" dir="rtl">
         <TabsList className="h-auto flex-wrap">
           <TabsTrigger value="library">ספריית צלילים</TabsTrigger>
+          <TabsTrigger value="custom">הצלילים שלי</TabsTrigger>
           <TabsTrigger value="mapping">מיפוי אירועים</TabsTrigger>
         </TabsList>
 
@@ -128,6 +132,10 @@ function SoundBoardPage() {
         <TabsContent value="mapping" className="mt-4">
           <EventMapping />
         </TabsContent>
+
+        <TabsContent value="custom" className="mt-4">
+          <CustomSoundsManager />
+        </TabsContent>
       </Tabs>
     </div>
   );
@@ -136,6 +144,7 @@ function SoundBoardPage() {
 function EventMapping() {
   const fetchPrefs = useServerFn(listSoundPreferences);
   const savePref = useServerFn(saveSoundPreference);
+  const fetchCustom = useServerFn(listCustomSoundsWithUrls);
   const qc = useQueryClient();
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [statusMsg, setStatusMsg] = useState("");
@@ -145,8 +154,16 @@ function EventMapping() {
     queryFn: () => fetchPrefs(),
   });
 
+  const { data: customSounds = [] } = useQuery({
+    queryKey: ["custom-sounds-urls"],
+    queryFn: () => fetchCustom(),
+  });
+  for (const s of customSounds) {
+    if (s.url) registerCustomSoundUrl(`custom:${s.id}`, s.url);
+  }
+
   const saveMut = useMutation({
-    mutationFn: (v: { event_key: string; sound_id: string; enabled: boolean; volume: number }) =>
+    mutationFn: (v: { event_key: string; sound_id: string; enabled: boolean; volume: number; duration_scale: number }) =>
       savePref({ data: v }),
     onMutate: (v) => setSavingKey(v.event_key),
     onSuccess: () => {
@@ -173,10 +190,12 @@ function EventMapping() {
         const soundId = pref?.sound_id ?? defaultSoundFor(ev.key);
         const enabled = pref?.enabled ?? true;
         const vol = pref?.volume ?? 0.6;
+        const scale = pref?.duration_scale ?? 1;
         const saving = savingKey === ev.key;
+        const base = { event_key: ev.key, sound_id: soundId, enabled, volume: vol, duration_scale: scale };
         return (
           <Card key={ev.key}>
-            <CardContent className="flex flex-col gap-4 py-4 lg:flex-row lg:items-center">
+            <CardContent className="flex flex-col gap-4 py-4 xl:flex-row xl:items-center">
               <div className="min-w-52 flex-1">
                 <p className="font-medium">{ev.label}</p>
                 <p className="text-xs text-muted-foreground">
@@ -186,41 +205,54 @@ function EventMapping() {
 
               <Select
                 value={soundId}
-                onValueChange={(v) => saveMut.mutate({ event_key: ev.key, sound_id: v, enabled, volume: vol })}
+                onValueChange={(v) => saveMut.mutate({ ...base, sound_id: v })}
               >
-                <SelectTrigger className="w-full lg:w-56" aria-label={`בחירת צליל עבור ${ev.label}`}>
+                <SelectTrigger className="w-full xl:w-56" aria-label={`בחירת צליל עבור ${ev.label}`}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {SOUND_LIBRARY.map((s) => (
                     <SelectItem key={s.id} value={s.id}>{s.emoji} {s.label}</SelectItem>
                   ))}
+                  {customSounds.map((s) => (
+                    <SelectItem key={s.id} value={`custom:${s.id}`}>🎧 {s.name} (שלי)</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
 
-              <div className="flex min-w-44 items-center gap-2">
+              <div className="flex min-w-40 items-center gap-2">
+                <Label className="whitespace-nowrap text-xs text-muted-foreground">עוצמה</Label>
                 <Slider
                   value={[Math.round(vol * 100)]}
                   min={0} max={100} step={10}
-                  onValueChange={([v]) =>
-                    saveMut.mutate({ event_key: ev.key, sound_id: soundId, enabled, volume: (v ?? 60) / 100 })
-                  }
+                  onValueChange={([v]) => saveMut.mutate({ ...base, volume: (v ?? 60) / 100 })}
                   aria-label={`עוצמת הצליל עבור ${ev.label}`}
                 />
                 <span className="w-10 text-end text-xs tabular-nums">{Math.round(vol * 100)}%</span>
               </div>
 
+              <div className="flex min-w-40 items-center gap-2">
+                <Label className="whitespace-nowrap text-xs text-muted-foreground">אורך</Label>
+                <Slider
+                  value={[Math.round(scale * 10)]}
+                  min={5} max={50} step={5}
+                  onValueChange={([v]) => saveMut.mutate({ ...base, duration_scale: (v ?? 10) / 10 })}
+                  aria-label={`אורך הצליל עבור ${ev.label} — מכפיל משך ההשמעה`}
+                />
+                <span className="w-10 text-end text-xs tabular-nums">×{scale.toFixed(1)}</span>
+              </div>
+
               <div className="flex items-center gap-2">
                 <Switch
                   checked={enabled}
-                  onCheckedChange={(v) => saveMut.mutate({ event_key: ev.key, sound_id: soundId, enabled: v, volume: vol })}
+                  onCheckedChange={(v) => saveMut.mutate({ ...base, enabled: v })}
                   aria-label={enabled ? `כבה צליל עבור ${ev.label}` : `הפעל צליל עבור ${ev.label}`}
                 />
                 <Button
                   variant="outline"
                   size="icon"
                   className="min-h-11 min-w-11"
-                  onClick={() => playSound(soundId, vol)}
+                  onClick={() => playSound(soundId, vol, scale)}
                   aria-busy={saving}
                   aria-label={`השמעה לדוגמה של הצליל עבור ${ev.label}`}
                 >
