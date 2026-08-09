@@ -207,9 +207,9 @@ function UserManagementPage() {
             <ShieldCheck className="mx-auto h-10 w-10 text-muted-foreground" />
             <CardTitle as="h1" className="mt-2 text-xl">גישה מוגבלת</CardTitle>
             <CardDescription>
-              מסך ניהול המשתמשים פתוח למנהל מערכת ולמנהל מוסד בלבד. מה עושים הלאה?
-              מלא את הטופס הקצר שלמטה, מנהל המערכת יקבל את הבקשה ויאשר לך תפקיד —
-              ותקבל גישה מיד לאחר האישור.
+              מסך ניהול המשתמשים פתוח למנהל מערכת ולמנהל מוסד בלבד.
+              כדי לקבל גישה, מלא את הטופס הקצר שלמטה. מנהל המערכת יקבל את הבקשה,
+              יאשר אותה וישייך לך תפקיד — ותקבל גישה מיד לאחר מכן.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
