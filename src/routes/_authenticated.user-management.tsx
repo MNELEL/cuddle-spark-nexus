@@ -60,6 +60,10 @@ const ROLE_OPTIONS: Role[] = ["teacher", "secretary", "principal", "admin"];
 
 export const Route = createFileRoute("/_authenticated/user-management")({
   component: UserManagementPage,
+  validateSearch: (search: Record<string, unknown>): { focus?: "trials"; trialUser?: string } => ({
+    focus: search["focus"] === "trials" ? "trials" : undefined,
+    trialUser: typeof search["trialUser"] === "string" ? search["trialUser"] : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "ניהול משתמשים ותפקידים · הכיתה שלי" },
@@ -70,6 +74,7 @@ export const Route = createFileRoute("/_authenticated/user-management")({
 });
 
 function UserManagementPage() {
+  const { focus, trialUser } = Route.useSearch();
   const checkAccess = useServerFn(canManageUsers);
   const listUsers = useServerFn(listUsersWithRoles);
   const assignRoleFn = useServerFn(assignRole);
@@ -583,7 +588,10 @@ function UserManagementPage() {
         </CardContent>
       </Card>
 
-      <TrialApprovalsCard />
+      <TrialApprovalsCard
+        initialSearch={trialUser}
+        highlightUser={focus === "trials" ? trialUser : undefined}
+      />
 
       <AccessRequestsCard canResolve />
 
