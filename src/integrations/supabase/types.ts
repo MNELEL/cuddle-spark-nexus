@@ -492,6 +492,108 @@ export type Database = {
         }
         Relationships: []
       }
+      class_duty_assignments: {
+        Row: {
+          class_id: string
+          created_at: string
+          date: string
+          done: boolean
+          duty_type_id: string
+          id: string
+          notes: string | null
+          source: string
+          student_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          date: string
+          done?: boolean
+          duty_type_id: string
+          id?: string
+          notes?: string | null
+          source?: string
+          student_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          date?: string
+          done?: boolean
+          duty_type_id?: string
+          id?: string
+          notes?: string | null
+          source?: string
+          student_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_duty_assignments_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_duty_assignments_duty_type_id_fkey"
+            columns: ["duty_type_id"]
+            isOneToOne: false
+            referencedRelation: "class_duty_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_duty_assignments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      class_duty_types: {
+        Row: {
+          active: boolean
+          class_id: string
+          created_at: string
+          icon: string
+          id: string
+          name: string
+          order_index: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          class_id: string
+          created_at?: string
+          icon?: string
+          id?: string
+          name: string
+          order_index?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          class_id?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          name?: string
+          order_index?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_duty_types_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       class_events: {
         Row: {
           class_id: string
@@ -636,6 +738,85 @@ export type Database = {
             columns: ["resource_id"]
             isOneToOne: false
             referencedRelation: "teaching_resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      class_schedule_settings: {
+        Row: {
+          active_days: string[]
+          class_id: string
+          created_at: string
+          end_hour: number
+          start_hour: number
+          updated_at: string
+          year_end_date: string | null
+          year_start_date: string | null
+        }
+        Insert: {
+          active_days?: string[]
+          class_id: string
+          created_at?: string
+          end_hour?: number
+          start_hour?: number
+          updated_at?: string
+          year_end_date?: string | null
+          year_start_date?: string | null
+        }
+        Update: {
+          active_days?: string[]
+          class_id?: string
+          created_at?: string
+          end_hour?: number
+          start_hour?: number
+          updated_at?: string
+          year_end_date?: string | null
+          year_start_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_schedule_settings_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: true
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      class_week_notes: {
+        Row: {
+          class_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          parasha_override: string | null
+          updated_at: string
+          week_start: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          parasha_override?: string | null
+          updated_at?: string
+          week_start: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          parasha_override?: string | null
+          updated_at?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_week_notes_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
             referencedColumns: ["id"]
           },
         ]
@@ -1580,6 +1761,126 @@ export type Database = {
         }
         Relationships: []
       }
+      schedule_tasks: {
+        Row: {
+          class_id: string
+          created_at: string
+          curriculum_unit_id: string | null
+          date: string
+          done: boolean
+          done_at: string | null
+          hour: number | null
+          id: string
+          kind: string
+          notes: string | null
+          subject: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          curriculum_unit_id?: string | null
+          date: string
+          done?: boolean
+          done_at?: string | null
+          hour?: number | null
+          id?: string
+          kind?: string
+          notes?: string | null
+          subject?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          curriculum_unit_id?: string | null
+          date?: string
+          done?: boolean
+          done_at?: string | null
+          hour?: number | null
+          id?: string
+          kind?: string
+          notes?: string | null
+          subject?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedule_tasks_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schedule_tasks_curriculum_unit_id_fkey"
+            columns: ["curriculum_unit_id"]
+            isOneToOne: false
+            referencedRelation: "curriculum_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      schedule_template_slots: {
+        Row: {
+          class_id: string
+          created_at: string
+          day_key: string
+          duration: number
+          hour: number
+          id: string
+          library_item_id: string | null
+          notes: string | null
+          subject: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          day_key: string
+          duration?: number
+          hour: number
+          id?: string
+          library_item_id?: string | null
+          notes?: string | null
+          subject?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          day_key?: string
+          duration?: number
+          hour?: number
+          id?: string
+          library_item_id?: string | null
+          notes?: string | null
+          subject?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedule_template_slots_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schedule_template_slots_library_item_id_fkey"
+            columns: ["library_item_id"]
+            isOneToOne: false
+            referencedRelation: "teaching_resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seating_configs: {
         Row: {
           class_id: string
@@ -1630,6 +1931,47 @@ export type Database = {
           weight_social?: number
         }
         Relationships: []
+      }
+      semester_targets: {
+        Row: {
+          class_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          semester: string
+          subject: string
+          target_units: number
+          updated_at: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          semester: string
+          subject: string
+          target_units?: number
+          updated_at?: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          semester?: string
+          subject?: string
+          target_units?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "semester_targets_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sent_reminder_alerts: {
         Row: {

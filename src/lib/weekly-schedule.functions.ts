@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-export type WeeklyDayKey = "sun" | "mon" | "tue" | "wed" | "thu";
+export type WeeklyDayKey = "sun" | "mon" | "tue" | "wed" | "thu" | "fri" | "sat";
 
 export type WeeklyLesson = {
   id: string;
@@ -18,7 +18,7 @@ export type WeeklyLesson = {
 };
 
 const dateStr = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
-const dayKey = z.enum(["sun", "mon", "tue", "wed", "thu"]);
+const dayKey = z.enum(["sun", "mon", "tue", "wed", "thu", "fri", "sat"]);
 
 export const listWeeklyLessons = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -50,7 +50,7 @@ export const upsertWeeklyLesson = createServerFn({ method: "POST" })
       classId: z.string().uuid(),
       weekStart: dateStr,
       dayKey,
-      hour: z.number().int().min(6).max(20),
+      hour: z.number().int().min(6).max(22),
       duration: z.union([z.literal(1), z.literal(2)]).default(1),
       title: z.string().min(1).max(200),
       subject: z.string().max(100).nullable().optional(),
@@ -99,7 +99,7 @@ export const moveWeeklyLesson = createServerFn({ method: "POST" })
     z.object({
       id: z.string().uuid(),
       dayKey,
-      hour: z.number().int().min(6).max(20),
+      hour: z.number().int().min(6).max(22),
     }).parse(d),
   )
   .handler(async ({ data, context }) => {

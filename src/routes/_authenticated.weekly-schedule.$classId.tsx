@@ -6,7 +6,7 @@ import {
   DndContext, DragEndEvent, DragOverlay, DragStartEvent,
   PointerSensor, useDraggable, useDroppable, useSensor, useSensors,
 } from "@dnd-kit/core";
-import { ArrowRight, ChevronRight, ChevronLeft, Plus, Trash2, BookOpen } from "lucide-react";
+import { ArrowRight, ChevronRight, ChevronLeft, Plus, Trash2, BookOpen, Printer } from "lucide-react";
 import { toast } from "sonner";
 import {
   listWeeklyLessons, upsertWeeklyLesson, moveWeeklyLesson, deleteWeeklyLesson,
@@ -20,6 +20,17 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { ALL_DAYS, OVERRIDE_LABEL } from "@/components/schedule/schedule-context";
+import { useScheduleYear } from "@/components/schedule/use-schedule-year";
+import { CalendarSettingsPanel } from "@/components/schedule/calendar-settings-panel";
+import { TasksPanel } from "@/components/schedule/tasks-panel";
+import { DutiesPanel } from "@/components/schedule/duties-panel";
+import { SemesterTargetsPanel } from "@/components/schedule/semester-targets-panel";
+import { MonthView, YearView } from "@/components/schedule/month-year-views";
+import { hebrewDayLabel, parashaForWeek } from "@/lib/parasha";
+import { printHtmlTable } from "@/lib/print-schedule";
 
 export const Route = createFileRoute("/_authenticated/weekly-schedule/$classId")({
   component: WeeklySchedulePage,
@@ -32,15 +43,7 @@ export const Route = createFileRoute("/_authenticated/weekly-schedule/$classId")
   }),
 });
 
-const DAYS: { key: WeeklyDayKey; label: string }[] = [
-  { key: "sun", label: "ראשון" },
-  { key: "mon", label: "שני" },
-  { key: "tue", label: "שלישי" },
-  { key: "wed", label: "רביעי" },
-  { key: "thu", label: "חמישי" },
-];
-
-const HOURS = Array.from({ length: 10 }, (_, i) => 7 + i); // 07:00–16:00
+const DAYS = ALL_DAYS;
 
 const SUBJECT_COLORS = [
   "bg-blue-100 text-blue-700 border-blue-200",
@@ -129,6 +132,9 @@ function WeeklySchedulePage() {
   const { classId } = Route.useParams();
   const qc = useQueryClient();
   const [weekOffset, setWeekOffset] = useState(0);
+  const [view, setView] = useState("week");
+  const [dayIdx, setDayIdx] = useState(new Date().getDay());
+  const [monthOffset, setMonthOffset] = useState(0);
   const [dialog, setDialog] = useState<{ open: boolean; day: WeeklyDayKey; hour: number; editing: WeeklyLesson | null }>({
     open: false, day: "sun", hour: 8, editing: null,
   });
@@ -136,7 +142,18 @@ function WeeklySchedulePage() {
 
   const weekStart = useMemo(() => addDays(getWeekStart(new Date()), weekOffset * 7), [weekOffset]);
   const weekKey = isoDate(weekStart);
-  const weekLabel = `${shortDate(weekStart)} – ${shortDate(addDays(weekStart, 4))}`;
+  const weekLabel = `${shortDate(weekStart)} – ${shortDate(addDays(weekStart, 6))}`;
+
+  const year = useScheduleYear(classId);
+  const HOURS = useMemo(() => {
+    const start = year.settings?.start_hour ?? 7;
+    const end = year.settings?.end_hour ?? 16;
+    return Array.from({ length: Math.max(1, end - start + 1) }, (_, i) => start + i);
+  }, [year.settings]);
+
+  const parasha = year.noteByWeek.get(weekKey)?.parasha_override ?? parashaForWeek(weekStart);
+  const weekDates = useMemo(() => DAYS.map((_, i) => isoDate(addDays(weekStart, i))), [weekStart]);
+  const teachingDatesThisWeek = weekDates.filter((d) => year.isTeachingDate(d));
 
   const list = useServerFn(listWeeklyLessons);
   const upsert = useServerFn(upsertWeeklyLesson);
@@ -153,7 +170,7 @@ function WeeklySchedulePage() {
     queryFn: () => listResourcesFn({ data: {} }).catch(() => []),
   });
 
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["weekly-lessons", classId, weekKey] });
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["weekly-lessons", classId] });
 
   const upsertM = useMutation({
     mutationFn: upsert,
@@ -211,6 +228,38 @@ function WeeklySchedulePage() {
   const openNew = (day: WeeklyDayKey, hour: number) => setDialog({ open: true, day, hour, editing: null });
   const openEdit = (l: WeeklyLesson) => setDialog({ open: true, day: l.day_key, hour: l.hour, editing: l });
 
+  const printWeek = () =>
+    printHtmlTable({
+      title: `לוח שבועי · ${weekLabel}`,
+      subtitle: parasha ? `פרשת ${parasha}` : undefined,
+      head: ["שעה", ...DAYS.map((d, i) => `${d.label} ${shortDate(addDays(weekStart, i))}`)],
+      rows: HOURS.map((hour) => [
+        `${pad2(hour)}:00`,
+        ...DAYS.map((d, i) => {
+          const iso = weekDates[i]!;
+          const cell = (byCell.get(`${d.key}-${hour}`) ?? [])
+            .map((l) => [l.title, l.subject].filter(Boolean).join(" · "))
+            .join("\n");
+          return { text: cell || "—", off: !year.isTeachingDate(iso) };
+        }),
+      ]),
+    });
+
+  const dayKeyForDayView = DAYS[dayIdx]?.key ?? "sun";
+  const dayIso = weekDates[dayIdx] ?? weekKey;
+  const monthAnchor = useMemo(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth() + monthOffset, 1);
+  }, [monthOffset]);
+
+  const dayBadges = (iso: string) => {
+    const items = [
+      ...(year.holidayByDate.get(iso)?.title ? [year.holidayByDate.get(iso)!.title] : []),
+      ...(year.overrideByDate.get(iso) ?? []).map((o) => o.label || OVERRIDE_LABEL[o.type] || o.type),
+    ];
+    return items;
+  };
+
   return (
     <div className="mx-auto max-w-6xl space-y-5">
       <div className="flex items-center gap-2">
@@ -220,77 +269,183 @@ function WeeklySchedulePage() {
       </div>
 
       <div className="rounded-2xl border bg-card p-6 shadow-sm">
-        <h1 className="font-display text-3xl font-bold">לוח שבועי</h1>
-        <p className="mt-1 text-sm text-muted-foreground">תכנון שיעורים לפי יום ושעה, כולל קישור לחומרי הוראה מהספרייה.</p>
+        <h1 className="font-display text-3xl font-bold">לוח הכיתה ותכנון השנה</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          מערכת שבועית לשבעה ימים, סנכרון חגים מלוח השנה העברי, פרשת השבוע, תורנויות, משימות ומבחנים ויעדי הספק למחצית.
+        </p>
       </div>
 
-      <Card>
-        <CardHeader className="flex-row items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={() => setWeekOffset((v) => v - 1)} aria-label="שבוע קודם"><ChevronRight className="h-4 w-4" /></Button>
-            <CardTitle className="min-w-32 text-center text-base">{weekLabel}</CardTitle>
-            <Button variant="outline" size="icon" onClick={() => setWeekOffset((v) => v + 1)} aria-label="שבוע הבא"><ChevronLeft className="h-4 w-4" /></Button>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="secondary" size="sm" onClick={() => setWeekOffset(0)}>השבוע</Button>
-            <Button size="sm" onClick={() => openNew("sun", 8)}><Plus className="ms-1 h-4 w-4" /> הוסף שיעור</Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {colorMap.size > 0 && (
-            <div className="mb-3 flex flex-wrap gap-1.5">
-              {Array.from(colorMap.entries()).map(([subject, color]) => (
-                <span key={subject} className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${color}`}>{subject}</span>
-              ))}
-            </div>
-          )}
+      <Tabs value={view} onValueChange={setView}>
+        <TabsList className="flex-wrap">
+          <TabsTrigger value="day">יומי</TabsTrigger>
+          <TabsTrigger value="week">שבועי</TabsTrigger>
+          <TabsTrigger value="month">חודשי</TabsTrigger>
+          <TabsTrigger value="year">שנתי</TabsTrigger>
+          <TabsTrigger value="duties">תורנויות</TabsTrigger>
+          <TabsTrigger value="targets">הספקים ויעדים</TabsTrigger>
+          <TabsTrigger value="settings">הגדרות ומערכת קבועה</TabsTrigger>
+        </TabsList>
 
-          <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
-            <div className="overflow-x-auto">
-              <div className="min-w-[640px]">
-                <div className="mb-1 grid gap-1" style={{ gridTemplateColumns: "48px repeat(5, 1fr)" }}>
-                  <div />
-                  {DAYS.map((d, i) => (
-                    <div key={d.key} className="rounded-xl bg-muted py-2 text-center text-xs font-bold text-muted-foreground">
-                      <div>{d.label}</div>
-                      <div className="mt-0.5 text-[11px] font-normal text-muted-foreground/60">{shortDate(addDays(weekStart, i))}</div>
-                    </div>
+        <TabsContent value="week" className="mt-4 space-y-4">
+          <Card>
+            <CardHeader className="flex-row flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="icon" onClick={() => setWeekOffset((v) => v - 1)} aria-label="שבוע קודם"><ChevronRight className="h-4 w-4" /></Button>
+                <div className="min-w-40 text-center">
+                  <CardTitle className="text-base">{weekLabel}</CardTitle>
+                  {parasha && <div className="text-[11px] text-muted-foreground">פרשת {parasha}</div>}
+                </div>
+                <Button variant="outline" size="icon" onClick={() => setWeekOffset((v) => v + 1)} aria-label="שבוע הבא"><ChevronLeft className="h-4 w-4" /></Button>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button variant="secondary" size="sm" onClick={() => setWeekOffset(0)}>השבוע</Button>
+                <Button variant="outline" size="sm" onClick={printWeek}><Printer className="ms-1 h-4 w-4" /> הדפסה</Button>
+                <Button size="sm" onClick={() => openNew("sun", HOURS[0] ?? 8)}><Plus className="ms-1 h-4 w-4" /> הוסף שיעור</Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {colorMap.size > 0 && (
+                <div className="mb-3 flex flex-wrap gap-1.5">
+                  {Array.from(colorMap.entries()).map(([subject, color]) => (
+                    <span key={subject} className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${color}`}>{subject}</span>
                   ))}
                 </div>
-                {HOURS.map((hour) => (
-                  <div key={hour} className="mb-1 grid gap-1" style={{ gridTemplateColumns: "48px repeat(5, 1fr)" }}>
-                    <div className="flex items-start justify-center pt-2">
-                      <span className="text-[11px] font-medium text-muted-foreground">{pad2(hour)}:00</span>
+              )}
+
+              <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
+                <div className="overflow-x-auto">
+                  <div className="min-w-[860px]">
+                    <div className="mb-1 grid gap-1" style={{ gridTemplateColumns: "48px repeat(7, 1fr)" }}>
+                      <div />
+                      {DAYS.map((d, i) => {
+                        const iso = weekDates[i]!;
+                        const off = !year.isTeachingDate(iso);
+                        return (
+                          <div key={d.key} className={`rounded-xl py-2 text-center text-xs font-bold ${off ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"}`}>
+                            <div>{d.label}</div>
+                            <div className="mt-0.5 text-[11px] font-normal opacity-70">{shortDate(addDays(weekStart, i))} · {hebrewDayLabel(addDays(weekStart, i))}</div>
+                            {dayBadges(iso).slice(0, 1).map((b) => (
+                              <div key={b} className="mt-0.5 truncate px-1 text-[10px] font-normal">{b}</div>
+                            ))}
+                          </div>
+                        );
+                      })}
                     </div>
-                    {DAYS.map((day) => {
-                      const cellLessons = byCell.get(`${day.key}-${hour}`) ?? [];
-                      return (
-                        <DroppableCell key={day.key} dayKey={day.key} hour={hour} onClickEmpty={() => openNew(day.key, hour)}>
-                          {cellLessons.map((l) => (
-                            <div key={l.id} data-no-cell onClick={() => openEdit(l)}>
-                              <DraggableLesson
-                                lesson={l}
-                                color={subjectColor(l.subject, colorMap)}
-                                onDelete={() => delM.mutate({ data: { id: l.id } })}
-                                libraryItem={l.library_item_id ? resourceById.get(l.library_item_id) : null}
-                              />
+                    {HOURS.map((hour) => (
+                      <div key={hour} className="mb-1 grid gap-1" style={{ gridTemplateColumns: "48px repeat(7, 1fr)" }}>
+                        <div className="flex items-start justify-center pt-2">
+                          <span className="text-[11px] font-medium text-muted-foreground">{pad2(hour)}:00</span>
+                        </div>
+                        {DAYS.map((day, i) => {
+                          const cellLessons = byCell.get(`${day.key}-${hour}`) ?? [];
+                          const off = !year.isTeachingDate(weekDates[i]!);
+                          return (
+                            <div key={day.key} className={off ? "opacity-60" : ""}>
+                              <DroppableCell dayKey={day.key} hour={hour} onClickEmpty={() => openNew(day.key, hour)}>
+                                {cellLessons.map((l) => (
+                                  <div key={l.id} data-no-cell onClick={() => openEdit(l)}>
+                                    <DraggableLesson
+                                      lesson={l}
+                                      color={subjectColor(l.subject, colorMap)}
+                                      onDelete={() => delM.mutate({ data: { id: l.id } })}
+                                      libraryItem={l.library_item_id ? resourceById.get(l.library_item_id) : null}
+                                    />
+                                  </div>
+                                ))}
+                              </DroppableCell>
                             </div>
-                          ))}
-                        </DroppableCell>
-                      );
-                    })}
+                          );
+                        })}
+                      </div>
+                    ))}
                   </div>
+                </div>
+                <DragOverlay>
+                  {activeLesson && (
+                    <LessonChip lesson={activeLesson} color={subjectColor(activeLesson.subject, colorMap)} onDelete={() => {}} />
+                  )}
+                </DragOverlay>
+              </DndContext>
+            </CardContent>
+          </Card>
+
+          <TasksPanel classId={classId} from={weekDates[0]!} to={weekDates[6]!} defaultDate={weekDates[0]!} heading="משימות ומבחנים לשבוע זה" />
+        </TabsContent>
+
+        <TabsContent value="day" className="mt-4 space-y-4">
+          <Card>
+            <CardHeader className="flex-row flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-1.5">
+                {DAYS.map((d, i) => (
+                  <Button key={d.key} size="sm" variant={i === dayIdx ? "default" : "outline"} onClick={() => setDayIdx(i)}>
+                    {d.label}
+                  </Button>
                 ))}
               </div>
-            </div>
-            <DragOverlay>
-              {activeLesson && (
-                <LessonChip lesson={activeLesson} color={subjectColor(activeLesson.subject, colorMap)} onDelete={() => {}} />
-              )}
-            </DragOverlay>
-          </DndContext>
-        </CardContent>
-      </Card>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                {dayIso} · {hebrewDayLabel(new Date(`${dayIso}T00:00:00`))}
+                {!year.isTeachingDate(dayIso) && <Badge variant="destructive">אין לימודים</Badge>}
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {dayBadges(dayIso).map((b) => <Badge key={b} variant="secondary">{b}</Badge>)}
+              {HOURS.map((hour) => {
+                const cellLessons = byCell.get(`${dayKeyForDayView}-${hour}`) ?? [];
+                return (
+                  <div key={hour} className="flex items-start gap-3 rounded-xl border p-2">
+                    <span className="w-14 shrink-0 pt-1 text-xs font-medium text-muted-foreground">{pad2(hour)}:00</span>
+                    <div className="flex-1 space-y-1">
+                      {cellLessons.length === 0 ? (
+                        <button className="text-xs text-muted-foreground hover:underline" onClick={() => openNew(dayKeyForDayView, hour)}>
+                          + הוסף שיעור
+                        </button>
+                      ) : (
+                        cellLessons.map((l) => (
+                          <div key={l.id} onClick={() => openEdit(l)} className="cursor-pointer">
+                            <LessonChip
+                              lesson={l}
+                              color={subjectColor(l.subject, colorMap)}
+                              onDelete={() => delM.mutate({ data: { id: l.id } })}
+                              libraryItem={l.library_item_id ? resourceById.get(l.library_item_id) : null}
+                            />
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+
+          <TasksPanel classId={classId} from={dayIso} to={dayIso} defaultDate={dayIso} heading="משימות ומבחנים ליום זה" />
+        </TabsContent>
+
+        <TabsContent value="month" className="mt-4 space-y-4">
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={() => setMonthOffset((v) => v - 1)} aria-label="חודש קודם"><ChevronRight className="h-4 w-4" /></Button>
+            <Button variant="secondary" size="sm" onClick={() => setMonthOffset(0)}>החודש</Button>
+            <Button variant="outline" size="icon" onClick={() => setMonthOffset((v) => v + 1)} aria-label="חודש הבא"><ChevronLeft className="h-4 w-4" /></Button>
+          </div>
+          <MonthView classId={classId} year={year} anchor={monthAnchor} />
+        </TabsContent>
+
+        <TabsContent value="year" className="mt-4">
+          <YearView classId={classId} year={year} />
+        </TabsContent>
+
+        <TabsContent value="duties" className="mt-4">
+          <DutiesPanel classId={classId} weekStart={weekKey} teachingDates={teachingDatesThisWeek} />
+        </TabsContent>
+
+        <TabsContent value="targets" className="mt-4">
+          <SemesterTargetsPanel classId={classId} />
+        </TabsContent>
+
+        <TabsContent value="settings" className="mt-4">
+          <CalendarSettingsPanel classId={classId} year={year} />
+        </TabsContent>
+      </Tabs>
 
       {dialog.open && (
         <LessonForm
@@ -299,6 +454,7 @@ function WeeklySchedulePage() {
           weekKey={weekKey}
           day={dialog.day}
           hour={dialog.hour}
+          hours={HOURS}
           editing={dialog.editing}
           resources={resources as { id: string; title: string }[]}
           onClose={() => setDialog((d) => ({ ...d, open: false, editing: null }))}
@@ -309,8 +465,8 @@ function WeeklySchedulePage() {
   );
 }
 
-function LessonForm({ classId, weekKey, day, hour, editing, resources, onClose, onSave }: {
-  classId: string; weekKey: string; day: WeeklyDayKey; hour: number; editing: WeeklyLesson | null;
+function LessonForm({ classId, weekKey, day, hour, hours, editing, resources, onClose, onSave }: {
+  classId: string; weekKey: string; day: WeeklyDayKey; hour: number; hours: number[]; editing: WeeklyLesson | null;
   resources: { id: string; title: string }[];
   onClose: () => void;
   onSave: (payload: {
@@ -353,7 +509,7 @@ function LessonForm({ classId, weekKey, day, hour, editing, resources, onClose, 
               <Label>שעה</Label>
               <Select value={String(hourVal)} onValueChange={(v) => setHourVal(Number(v))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{HOURS.map((h) => <SelectItem key={h} value={String(h)}>{pad2(h)}:00</SelectItem>)}</SelectContent>
+                <SelectContent>{hours.map((h) => <SelectItem key={h} value={String(h)}>{pad2(h)}:00</SelectItem>)}</SelectContent>
               </Select>
             </div>
           </div>
