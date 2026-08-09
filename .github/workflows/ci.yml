@@ -128,3 +128,72 @@ jobs:
           name: sbom-${{ github.sha }}
           path: sbom/
           retention-days: 90
+
+  # Recipient filtering on class notifications is a privacy boundary: a teacher must
+  # never load another user's notifications. The full suite in `build` skips DB-backed
+  # tests when credentials are absent, which would go green on a broken filter — this
+  # job fails instead of skipping, so every PR really exercises the boundary.
+  notifications-guard:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Require database credentials
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+          MISSING=""
+          for var in SUPABASE_URL SUPABASE_PUBLISHABLE_KEY SUPABASE_SERVICE_ROLE_KEY; do
+            if [ -z "${!var:-}" ]; then MISSING="$MISSING $var"; fi
+          done
+          if [ -n "$MISSING" ]; then
+            echo "::error::Missing repository secrets:$MISSING. The notification recipient-filtering tests cannot run, so this guard fails instead of skipping them."
+            exit 1
+          fi
+          echo "All database credentials present."
+
+      - name: Run notification recipient-filtering tests
+        run: bun run test:notifications --reporter=json --outputFile=notifications-report.json
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Assert tests actually ran
+        run: |
+          set -euo pipefail
+          node -e '
+            const fs = require("fs");
+            const report = JSON.parse(fs.readFileSync("notifications-report.json", "utf8"));
+            const tests = (report.testResults ?? []).flatMap((f) => f.assertionResults ?? []);
+            const passed = tests.filter((t) => t.status === "passed").length;
+            const skipped = tests.filter((t) => t.status === "pending" || t.status === "skipped").length;
+            console.log(`passed=${passed} skipped=${skipped} total=${tests.length}`);
+            if (passed === 0) {
+              console.error("::error::No notification tests ran — the recipient-filtering guard was not exercised.");
+              process.exit(1);
+            }
+            if (skipped > 0) {
+              console.error(`::error::${skipped} notification test(s) were skipped. The recipient-filtering guard must run every case.`);
+              process.exit(1);
+            }
+          '
+
+      - name: Upload notification test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: notifications-report-${{ github.sha }}
+          path: notifications-report.json
+          retention-days: 30
