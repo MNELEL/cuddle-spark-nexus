@@ -56,6 +56,7 @@ import { Route as ParentsGuideSlugRouteImport } from './routes/parents-guide.$sl
 import { Route as PartnersCaseStudiesRouteImport } from './routes/partners.case-studies'
 import { Route as PartnersDistrictsRouteImport } from './routes/partners.districts'
 import { Route as PartnersSchoolsRouteImport } from './routes/partners.schools'
+import { Route as ToolsExamGeneratorRouteImport } from './routes/tools.exam-generator'
 import { Route as ToolsGroupMakerRouteImport } from './routes/tools.group-maker'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
@@ -332,6 +333,11 @@ const PartnersSchoolsRoute = PartnersSchoolsRouteImport.update({
   path: '/schools',
   getParentRoute: () => PartnersRoute,
 } as any)
+const ToolsExamGeneratorRoute = ToolsExamGeneratorRouteImport.update({
+  id: '/exam-generator',
+  path: '/exam-generator',
+  getParentRoute: () => ToolsRoute,
+} as any)
 const ToolsGroupMakerRoute = ToolsGroupMakerRouteImport.update({
   id: '/group-maker',
   path: '/group-maker',
@@ -543,6 +549,7 @@ export interface FileRoutesByFullPath {
   '/partners/case-studies': typeof PartnersCaseStudiesRoute
   '/partners/districts': typeof PartnersDistrictsRoute
   '/partners/schools': typeof PartnersSchoolsRoute
+  '/tools/exam-generator': typeof ToolsExamGeneratorRoute
   '/tools/group-maker': typeof ToolsGroupMakerRoute
   '/blog/': typeof BlogIndexRoute
   '/help/': typeof HelpIndexRoute
@@ -616,6 +623,7 @@ export interface FileRoutesByTo {
   '/partners/case-studies': typeof PartnersCaseStudiesRoute
   '/partners/districts': typeof PartnersDistrictsRoute
   '/partners/schools': typeof PartnersSchoolsRoute
+  '/tools/exam-generator': typeof ToolsExamGeneratorRoute
   '/tools/group-maker': typeof ToolsGroupMakerRoute
   '/blog': typeof BlogIndexRoute
   '/help': typeof HelpIndexRoute
@@ -694,6 +702,7 @@ export interface FileRoutesById {
   '/partners/case-studies': typeof PartnersCaseStudiesRoute
   '/partners/districts': typeof PartnersDistrictsRoute
   '/partners/schools': typeof PartnersSchoolsRoute
+  '/tools/exam-generator': typeof ToolsExamGeneratorRoute
   '/tools/group-maker': typeof ToolsGroupMakerRoute
   '/blog/': typeof BlogIndexRoute
   '/help/': typeof HelpIndexRoute
@@ -772,6 +781,7 @@ export interface FileRouteTypes {
     | '/partners/case-studies'
     | '/partners/districts'
     | '/partners/schools'
+    | '/tools/exam-generator'
     | '/tools/group-maker'
     | '/blog/'
     | '/help/'
@@ -845,6 +855,7 @@ export interface FileRouteTypes {
     | '/partners/case-studies'
     | '/partners/districts'
     | '/partners/schools'
+    | '/tools/exam-generator'
     | '/tools/group-maker'
     | '/blog'
     | '/help'
@@ -922,6 +933,7 @@ export interface FileRouteTypes {
     | '/partners/case-studies'
     | '/partners/districts'
     | '/partners/schools'
+    | '/tools/exam-generator'
     | '/tools/group-maker'
     | '/blog/'
     | '/help/'
@@ -1310,6 +1322,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PartnersSchoolsRouteImport
       parentRoute: typeof PartnersRoute
     }
+    '/tools/exam-generator': {
+      id: '/tools/exam-generator'
+      path: '/exam-generator'
+      fullPath: '/tools/exam-generator'
+      preLoaderRoute: typeof ToolsExamGeneratorRouteImport
+      parentRoute: typeof ToolsRoute
+    }
     '/tools/group-maker': {
       id: '/tools/group-maker'
       path: '/group-maker'
@@ -1692,10 +1711,12 @@ const PartnersRouteWithChildren = PartnersRoute._addFileChildren(
 )
 
 interface ToolsRouteChildren {
+  ToolsExamGeneratorRoute: typeof ToolsExamGeneratorRoute
   ToolsGroupMakerRoute: typeof ToolsGroupMakerRoute
 }
 
 const ToolsRouteChildren: ToolsRouteChildren = {
+  ToolsExamGeneratorRoute: ToolsExamGeneratorRoute,
   ToolsGroupMakerRoute: ToolsGroupMakerRoute,
 }
 
