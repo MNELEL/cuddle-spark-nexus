@@ -104,7 +104,7 @@ function YearChain({ classId }: { classId: string }) {
   const chainFn = useServerFn(getClassChain);
   const { data } = useQuery({
     queryKey: ["class-chain", classId],
-    queryFn: () => chainFn({ data: { id: classId } }),
+    queryFn: () => chainFn({ data: { classId } }),
   });
   const prev = data?.previous ?? null;
   const nextList = data?.next ?? [];
