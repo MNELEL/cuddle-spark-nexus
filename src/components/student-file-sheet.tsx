@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/select";
 import {
   FileText, Phone, MessageCircle, Mail, Users, Plus, Trash2,
-  Download, Upload, ShieldAlert, ShieldCheck, Calendar, Lock,
+  Download, Upload, ShieldAlert, ShieldCheck, Calendar, Lock, IdCard, Loader2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -30,6 +30,12 @@ import {
   getStudentProfile, upsertStudentProfile,
   SENSITIVE_FLAGS, sensitiveFlagLabel, type SensitiveFlag,
 } from "@/lib/student-profiles.functions";
+import { getStudent, upsertStudent } from "@/lib/students.functions";
+import {
+  validateNationalId, validatePhone, validateBirthDate,
+  phoneHref, whatsappHref,
+} from "@/lib/student-field-validation";
+import { nextHebrewBirthday, toHebrewDateLabel, daysUntilLabel } from "@/lib/hebrew-date";
 
 type Props = {
   open: boolean;
@@ -220,6 +226,9 @@ function StudentFileSheetInner(props: Props) {
             <TabsTrigger value="profile" className="flex-1">
               <Lock className="ms-1 h-4 w-4" /> פרופיל תלמיד
             </TabsTrigger>
+            <TabsTrigger value="contact" className="flex-1">
+              <IdCard className="ms-1 h-4 w-4" /> פרטי קשר
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="documents" className="mt-4">
             <DocumentsPanel {...props} />
@@ -232,6 +241,9 @@ function StudentFileSheetInner(props: Props) {
           </TabsContent>
           <TabsContent value="profile" className="mt-4">
             <StudentProfilePanel {...props} />
+          </TabsContent>
+          <TabsContent value="contact" className="mt-4">
+            <ContactDetailsPanel {...props} />
           </TabsContent>
         </Tabs>
       </SheetContent>
@@ -640,6 +652,183 @@ function DisciplinePanel({ classId, studentId }: Props) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+/* ---------------- Contact details (פרטי קשר) ---------------- */
+
+type ContactForm = {
+  first_name: string; last_name: string;
+  national_id: string; birth_date: string; address: string;
+  father_name: string; father_id: string; father_phone: string;
+  mother_name: string; mother_id: string; mother_phone: string;
+};
+
+const emptyContact: ContactForm = {
+  first_name: "", last_name: "", national_id: "", birth_date: "", address: "",
+  father_name: "", father_id: "", father_phone: "",
+  mother_name: "", mother_id: "", mother_phone: "",
+};
+
+function ContactDetailsPanel({ classId, studentId }: Props) {
+  const fetchStudent = useServerFn(getStudent);
+  const save = useServerFn(upsertStudent);
+  const qc = useQueryClient();
+
+  const { data: student, isLoading } = useQuery({
+    queryKey: ["student-contact", studentId],
+    queryFn: () => fetchStudent({ data: { id: studentId } }),
+  });
+
+  const [form, setForm] = useState<ContactForm | null>(null);
+  const current: ContactForm = form ?? {
+    ...emptyContact,
+    ...Object.fromEntries(
+      Object.keys(emptyContact).map((k) => [
+        k,
+        ((student as Record<string, unknown> | null | undefined)?.[k] as string | null) ?? "",
+      ]),
+    ),
+  } as ContactForm;
+
+  const set = (k: keyof ContactForm, v: string) => setForm({ ...current, [k]: v });
+
+  const errors: Partial<Record<keyof ContactForm, string>> = {
+    national_id: validateNationalId(current.national_id) ?? undefined,
+    father_id: validateNationalId(current.father_id) ?? undefined,
+    mother_id: validateNationalId(current.mother_id) ?? undefined,
+    father_phone: validatePhone(current.father_phone) ?? undefined,
+    mother_phone: validatePhone(current.mother_phone) ?? undefined,
+    birth_date: validateBirthDate(current.birth_date) ?? undefined,
+  };
+  const hasErrors = Object.values(errors).some(Boolean);
+
+  const m = useMutation({
+    mutationFn: () =>
+      save({
+        data: {
+          id: studentId,
+          class_id: classId,
+          name: [current.first_name.trim(), current.last_name.trim()].filter(Boolean).join(" ")
+            || ((student as { name?: string } | null | undefined)?.name ?? ""),
+          first_name: current.first_name.trim() || null,
+          last_name: current.last_name.trim() || null,
+          national_id: current.national_id.trim() || null,
+          birth_date: current.birth_date.trim() || null,
+          address: current.address.trim() || null,
+          father_name: current.father_name.trim() || null,
+          father_id: current.father_id.trim() || null,
+          father_phone: current.father_phone.trim() || null,
+          mother_name: current.mother_name.trim() || null,
+          mother_id: current.mother_id.trim() || null,
+          mother_phone: current.mother_phone.trim() || null,
+        },
+      }),
+    onSuccess: () => {
+      toast.success("פרטי הקשר נשמרו");
+      setForm(null);
+      qc.invalidateQueries({ queryKey: ["student-contact", studentId] });
+      qc.invalidateQueries({ queryKey: ["students", classId] });
+    },
+    onError: (e: Error) => toast.error(e.message || "השמירה נכשלה"),
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-10 text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin" />
+      </div>
+    );
+  }
+
+  const bday = nextHebrewBirthday(current.birth_date || null);
+  const hebLabel = toHebrewDateLabel(current.birth_date || null);
+
+  const field = (
+    k: keyof ContactForm,
+    label: string,
+    extra?: { type?: string; dir?: "ltr" | "rtl" },
+  ) => (
+    <div>
+      <Label htmlFor={`c-${k}`}>{label}</Label>
+      <Input
+        id={`c-${k}`}
+        type={extra?.type ?? "text"}
+        dir={extra?.dir}
+        value={current[k]}
+        onChange={(e) => set(k, e.target.value)}
+        aria-invalid={!!errors[k]}
+      />
+      {errors[k] && <p className="mt-1 text-xs text-destructive">{errors[k]}</p>}
+    </div>
+  );
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-3 sm:grid-cols-2">
+        {field("first_name", "שם פרטי")}
+        {field("last_name", "שם משפחה")}
+        {field("national_id", "תעודת זהות", { dir: "ltr" })}
+        {field("birth_date", "תאריך לידה", { type: "date", dir: "ltr" })}
+      </div>
+
+      {(hebLabel || bday) && (
+        <p className="rounded-xl border bg-muted/40 px-3 py-2 text-xs">
+          {hebLabel && <span>תאריך עברי: <span className="font-medium">{hebLabel}</span></span>}
+          {bday && <span> · יום הולדת עברי הבא: {bday.hebrewLabel} ({daysUntilLabel(bday.daysUntil)})</span>}
+          {bday?.age != null && <span> · גיל {bday.age}</span>}
+        </p>
+      )}
+
+      <div>
+        <Label htmlFor="c-address">כתובת</Label>
+        <Input id="c-address" value={current.address} onChange={(e) => set("address", e.target.value)} />
+      </div>
+
+      <Card>
+        <CardContent className="grid gap-3 pt-4 sm:grid-cols-3">
+          {field("father_name", "שם האב")}
+          {field("father_id", "ת.ז. האב", { dir: "ltr" })}
+          {field("father_phone", "טלפון האב", { dir: "ltr" })}
+        </CardContent>
+      </Card>
+      {current.father_phone && !errors.father_phone && (
+        <div className="flex gap-2 text-xs">
+          {phoneHref(current.father_phone) && (
+            <a className="underline" href={`tel:${phoneHref(current.father_phone)}`}>התקשר לאב</a>
+          )}
+          {whatsappHref(current.father_phone) && (
+            <a className="underline" target="_blank" rel="noopener noreferrer" href={whatsappHref(current.father_phone)!}>וואטסאפ לאב</a>
+          )}
+        </div>
+      )}
+
+      <Card>
+        <CardContent className="grid gap-3 pt-4 sm:grid-cols-3">
+          {field("mother_name", "שם האם")}
+          {field("mother_id", "ת.ז. האם", { dir: "ltr" })}
+          {field("mother_phone", "טלפון האם", { dir: "ltr" })}
+        </CardContent>
+      </Card>
+      {current.mother_phone && !errors.mother_phone && (
+        <div className="flex gap-2 text-xs">
+          {phoneHref(current.mother_phone) && (
+            <a className="underline" href={`tel:${phoneHref(current.mother_phone)}`}>התקשר לאם</a>
+          )}
+          {whatsappHref(current.mother_phone) && (
+            <a className="underline" target="_blank" rel="noopener noreferrer" href={whatsappHref(current.mother_phone)!}>וואטסאפ לאם</a>
+          )}
+        </div>
+      )}
+
+      <div className="flex justify-end gap-2">
+        <Button variant="ghost" onClick={() => setForm(null)} disabled={!form || m.isPending}>
+          ביטול שינויים
+        </Button>
+        <Button onClick={() => m.mutate()} disabled={hasErrors || !form || m.isPending}>
+          {m.isPending && <Loader2 className="ms-1 h-4 w-4 animate-spin" />} שמור פרטי קשר
+        </Button>
+      </div>
     </div>
   );
 }

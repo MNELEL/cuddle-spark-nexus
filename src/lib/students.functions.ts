@@ -6,6 +6,13 @@ import { smartAssign, type ScoringStudent, type ScoringRelation } from "@/lib/se
 const heightEnum = z.enum(["low", "mid", "high"]);
 const rowEnum = z.enum(["front", "mid", "back", "any"]);
 
+const optText = (max: number) => z.string().max(max).nullable().optional();
+const optDate = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "תאריך לא תקין")
+  .nullable()
+  .optional();
+
 export const listStudents = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ classId: z.string().uuid() }).parse(d))
@@ -19,6 +26,16 @@ export const listStudents = createServerFn({ method: "POST" })
     return rows ?? [];
   });
 
+export const getStudent = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: row, error } = await context.supabase
+      .from("students").select("*").eq("id", data.id).maybeSingle();
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    return row;
+  });
+
 export const upsertStudent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
@@ -26,6 +43,17 @@ export const upsertStudent = createServerFn({ method: "POST" })
       id: z.string().uuid().optional(),
       class_id: z.string().uuid(),
       name: z.string().min(1).max(100),
+      first_name: optText(60),
+      last_name: optText(60),
+      national_id: optText(20),
+      birth_date: optDate,
+      address: optText(200),
+      father_name: optText(100),
+      father_id: optText(20),
+      father_phone: optText(20),
+      mother_name: optText(100),
+      mother_id: optText(20),
+      mother_phone: optText(20),
       notes: z.string().max(2000).optional().default(""),
       height: heightEnum.default("mid"),
       row_pref: rowEnum.default("any"),
@@ -37,7 +65,12 @@ export const upsertStudent = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     if (data.id) {
       const { id, ...rest } = data;
-      const { error } = await context.supabase.from("students").update(rest).eq("id", id);
+      // drop keys the caller didn't send, so a partial edit form never wipes
+      // fields it doesn't render
+      const patch = Object.fromEntries(
+        Object.entries(rest).filter(([, v]) => v !== undefined),
+      ) as Record<string, never>;
+      const { error } = await context.supabase.from("students").update(patch).eq("id", id);
       if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
       return { ok: true };
     }

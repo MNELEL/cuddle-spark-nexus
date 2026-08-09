@@ -477,7 +477,14 @@ function RosterPreview({ job, classes, preferredClassId, onDone }: {
       if (!classId) throw new Error("בחר כיתה");
       return commit({ data: { jobId: job.id, class_id: classId, students: included } });
     },
-    onSuccess: (r) => { toast.success(`נוספו ${r.inserted} תלמידים`); onDone(); },
+    onSuccess: (r) => {
+      toast.success(
+        r.updated > 0
+          ? `נוספו ${r.inserted} תלמידים, עודכנו ${r.updated}`
+          : `נוספו ${r.inserted} תלמידים`,
+      );
+      onDone();
+    },
     onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
   });
 

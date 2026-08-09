@@ -11,6 +11,7 @@ import {
 } from "@/lib/class-events.functions";
 import { buildWeeklySummary } from "@/lib/ai-weekly-summary.functions";
 import { listStudents } from "@/lib/students.functions";
+import { hebrewBirthdaysInRange } from "@/lib/hebrew-date";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -168,8 +169,28 @@ function CalendarPage() {
         map.set(k, arr);
       }
     }
+
+    // derived Hebrew birthdays (not stored) — merged as virtual events so the
+    // grid, the cake marker and the day dialog all show them
+    for (const s of students as { id: string; name: string; birth_date?: string | null }[]) {
+      for (const b of hebrewBirthdaysInRange(s.birth_date ?? null, gridFrom, gridTo)) {
+        const arr = map.get(b.iso) ?? [];
+        arr.push({
+          id: `hb:${s.id}:${b.iso}`,
+          class_id: classId,
+          title: `יום הולדת ל${s.name}${b.age != null ? ` · גיל ${b.age}` : ""}`,
+          type: "birthday",
+          date: b.iso,
+          end_date: null,
+          student_id: s.id,
+          notes: b.hebrewLabel ? `תאריך עברי: ${b.hebrewLabel}` : null,
+          color: null,
+        } as ClassEvent);
+        map.set(b.iso, arr);
+      }
+    }
     return map;
-  }, [events]);
+  }, [events, students, gridFrom, gridTo, classId]);
 
   const openDay = (iso: string) => { setDayOpen(iso); setEditing(null); };
   const openNew = (iso: string) => { setEditing({ id: "", class_id: classId, title: "", type: "other", date: iso, end_date: null, student_id: null, notes: null, color: null }); setFormOpen(true); };
@@ -364,10 +385,14 @@ function DayDialog({ open, onOpenChange, iso, events, onNew, onEdit, classId }: 
                   {e.notes && <div className="text-xs text-muted-foreground line-clamp-2">{e.notes}</div>}
                 </div>
               </div>
+              {e.id.startsWith("hb:") ? (
+                <Badge variant="secondary" className="shrink-0 text-[10px]">מחושב אוטומטית</Badge>
+              ) : (
               <div className="flex gap-1">
                 <Button variant="ghost" size="icon" aria-label="ערוך" onClick={() => onEdit(e)}><Pencil className="h-4 w-4" /></Button>
                 <Button variant="ghost" size="icon" aria-label="מחק" className="text-destructive" onClick={() => removeM.mutate(e.id)}><Trash2 className="h-4 w-4" /></Button>
               </div>
+              )}
             </div>
             );
           })}
