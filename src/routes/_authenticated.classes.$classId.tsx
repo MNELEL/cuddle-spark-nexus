@@ -43,7 +43,7 @@ import { SeatFillGrid } from "@/components/seat-fill-grid";
 import { openCommandPalette } from "@/components/global-command-palette";
 import { isValidClassId } from "@/lib/class-id-guard";
 import { nextHebrewBirthday, daysUntilLabel, toHebrewDateLabel } from "@/lib/hebrew-date";
-import { phoneHref, whatsappHref, validateNationalId, validatePhone, validateBirthDate } from "@/lib/student-field-validation";
+import { phoneHref, whatsappHref } from "@/lib/student-field-validation";
 
 /* ---------------- Action grid (responsive toolbar) ---------------- */
 
