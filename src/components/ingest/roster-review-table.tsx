@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -368,7 +368,7 @@ export function RosterReviewTable({
         </div>
 
         <p className="text-[11px] text-muted-foreground leading-relaxed">
-          לחיצה על כותרת עמודה מאפשרת להתאים אותה לשדה יעד אחר. הערכים בעמודה יוחלפו בהתאם. שדות חובה: שם התלמיד. אדום = שגיאת ולידציה, כתום = שדה אופציונלי חסר.
+          לחיצה על כותרת עמודה מאפשרת להתאים אותה לשדה יעד אחר. הערכים בעמודה יוחלפו בהתאם. שדות חובה: שם פרטי ושם משפחה (מרכיבים יחד את שם התלמיד). אדום = שגיאת ולידציה, כתום = שדה אופציונלי חסר.
         </p>
       </div>
     </TooltipProvider>
