@@ -10,7 +10,7 @@ export const SITE_DESCRIPTION =
 
 export const SITE_NAME = "הכיתה שלי";
 
-export const SITE_URL = "https://cuddle-spark-nexus.lovable.app";
+export const SITE_URL = "https://hakitasheli.lovable.app";
 
 /** SEO length budgets used by the automated check. */
 export const META_LIMITS = {

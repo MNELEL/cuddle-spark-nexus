@@ -1,7 +1,7 @@
 import { blogPostHead } from "@/lib/blog-seo";
 import { createFileRoute, Link } from "@tanstack/react-router";
 
-const URL = "https://cuddle-spark-nexus.lovable.app/blog/digital-hall-pass-guide";
+const URL = "https://hakitasheli.lovable.app/blog/digital-hall-pass-guide";
 const TITLE = "ניהול אישורי יציאה דיגיטליים בתלמוד תורה — מדריך מלא";
 const DESCRIPTION =
   "מדריך לרבנים ומנהלי תלמודי תורה: איך מערכת אישורי יציאה דיגיטלית מצמצמת הפרעות, שומרת על סדר וביטחון, ומחליפה את eHallPass.";

@@ -2,7 +2,7 @@ import { blogPostHead } from "@/lib/blog-seo";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { FaqSection, faqJsonLd, type FaqItem } from "@/components/faq-section";
 
-const URL = "https://cuddle-spark-nexus.lovable.app/blog/free-tools-comparison";
+const URL = "https://hakitasheli.lovable.app/blog/free-tools-comparison";
 const TITLE = "השוואת כלי ניהול כיתה חינמיים למלמדים בתלמודי תורה";
 const DESCRIPTION =
   "מדריך השוואה מעשי בין כלים חינמיים לניהול כיתה במגזר החרדי — פנקס ידני, גיליון אקסל וכלים דיגיטליים ייעודיים. יתרונות, חסרונות והמלצה לכל שלב.";

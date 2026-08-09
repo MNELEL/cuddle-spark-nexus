@@ -33,7 +33,7 @@ export const Route = createFileRoute("/_authenticated/questions")({
       { name: "description", content: "חיפוש, סינון ובחירת שאלות מוכנות מהספרייה לשימוש חוזר במבחנים ובדפי עבודה." },
       { property: "og:title", content: "בנק שאלות · הכיתה שלי" },
       { property: "og:description", content: "חיפוש ובחירת שאלות מוכנות למבחנים ולדפי עבודה." },
-      { property: "og:url", content: "https://cuddle-spark-nexus.lovable.app/questions" },
+      { property: "og:url", content: "https://hakitasheli.lovable.app/questions" },
       { name: "robots", content: "noindex" },
     ],
   }),

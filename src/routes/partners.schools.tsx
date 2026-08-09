@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, School, BookOpen, Sparkles, Users, Mail, Download, CheckCircle2 } from "lucide-react";
 import { FaqSection, faqJsonLd, type FaqItem } from "@/components/faq-section";
 
-const URL_SELF = "https://cuddle-spark-nexus.lovable.app/partners/schools";
+const URL_SELF = "https://hakitasheli.lovable.app/partners/schools";
 
 const FAQ: FaqItem[] = [
   {

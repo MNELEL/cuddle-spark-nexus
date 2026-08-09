@@ -6,7 +6,7 @@ import { submitChecklistLead } from "@/lib/checklist-leads.functions";
 import { getAntiSpamConfig } from "@/lib/anti-spam-config.functions";
 import { generateClassroomManagementChecklistPdf } from "@/lib/pdf/classroom-management-checklist-pdf";
 
-const URL = "https://cuddle-spark-nexus.lovable.app/blog/classroom-management-strategies/checklist";
+const URL = "https://hakitasheli.lovable.app/blog/classroom-management-strategies/checklist";
 const TITLE = "צ'קליסט ניהול כיתה בתלמוד תורה — PDF להורדה חינם";
 const DESCRIPTION =
   "צ'קליסט מקצועי (PDF) עם 5 אסטרטגיות ניהול כיתה + מעקב שבועי למלמד. הרשמה קצרה ותוריד מיד עם מיתוג הכיתה שלי.";

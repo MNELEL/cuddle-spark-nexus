@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Shuffle, Users, UserRound, Copy, Sparkles, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
-const URL_SELF = "https://cuddle-spark-nexus.lovable.app/tools/group-maker";
+const URL_SELF = "https://hakitasheli.lovable.app/tools/group-maker";
 
 export const Route = createFileRoute("/tools/group-maker")({
   component: GroupMakerPage,
@@ -69,8 +69,8 @@ export const Route = createFileRoute("/tools/group-maker")({
           "@context": "https://schema.org",
           "@type": "BreadcrumbList",
           itemListElement: [
-            { "@type": "ListItem", position: 1, name: "בית", item: "https://cuddle-spark-nexus.lovable.app/" },
-            { "@type": "ListItem", position: 2, name: "כלים", item: "https://cuddle-spark-nexus.lovable.app/tools/group-maker" },
+            { "@type": "ListItem", position: 1, name: "בית", item: "https://hakitasheli.lovable.app/" },
+            { "@type": "ListItem", position: 2, name: "כלים", item: "https://hakitasheli.lovable.app/tools/group-maker" },
             { "@type": "ListItem", position: 3, name: "מחולל קבוצות" },
           ],
         }),

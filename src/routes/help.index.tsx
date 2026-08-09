@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
-const BASE = "https://cuddle-spark-nexus.lovable.app";
+const BASE = "https://hakitasheli.lovable.app";
 const URL = `${BASE}/help`;
 const TITLE = "מרכז העזרה של הכיתה שלי — מדריכים ושאלות נפוצות";
 const DESCRIPTION =

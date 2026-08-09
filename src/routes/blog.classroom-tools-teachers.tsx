@@ -1,7 +1,7 @@
 import { blogPostHead } from "@/lib/blog-seo";
 import { createFileRoute, Link } from "@tanstack/react-router";
 
-const URL = "https://cuddle-spark-nexus.lovable.app/blog/classroom-tools-teachers";
+const URL = "https://hakitasheli.lovable.app/blog/classroom-tools-teachers";
 const TITLE = "10 כלי הוראה חינמיים שכל מלמד חייב להכיר";
 const DESCRIPTION =
   "רשימה מקצועית של כלי הוראה מודרניים — הגרלות בכיתה, יצירת קבוצות, מבחנים אוטומטיים ומעקב התקדמות — עם הסברים והמלצות שימוש.";

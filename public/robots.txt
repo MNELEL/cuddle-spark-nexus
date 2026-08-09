@@ -24,4 +24,4 @@ Disallow: /raffle/
 Disallow: /reports
 Disallow: /share/
 
-Sitemap: https://cuddle-spark-nexus.lovable.app/sitemap.xml
+Sitemap: https://hakitasheli.lovable.app/sitemap.xml

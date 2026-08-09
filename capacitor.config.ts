@@ -8,7 +8,7 @@ const config: CapacitorConfig = {
     allowMixedContent: false,
   },
   // For live-reload development against the deployed preview, uncomment:
-  // server: { url: "https://cuddle-spark-nexus.lovable.app", cleartext: false },
+  // server: { url: "https://hakitasheli.lovable.app", cleartext: false },
 };
 
 export default config;

@@ -12,7 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { ArrowRight, Copy, ExternalLink, Globe2 } from "lucide-react";
 
-const BASE = typeof window !== "undefined" ? window.location.origin : "https://cuddle-spark-nexus.lovable.app";
+const BASE = typeof window !== "undefined" ? window.location.origin : "https://hakitasheli.lovable.app";
 
 function slugify(input: string) {
   return input

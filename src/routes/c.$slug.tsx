@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { GraduationCap, Calendar, Users, BookOpen, Sparkles } from "lucide-react";
 
-const BASE = "https://cuddle-spark-nexus.lovable.app";
+const BASE = "https://hakitasheli.lovable.app";
 
 const showcaseOpts = (slug: string) =>
   queryOptions({
