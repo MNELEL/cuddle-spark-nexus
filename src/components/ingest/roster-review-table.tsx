@@ -241,6 +241,32 @@ export function RosterReviewTable({
         <div className="overflow-x-auto rounded-lg border">
           <table className="w-full text-xs">
             <thead>
+              <tr className="border-b bg-muted/70">
+                <th className="p-1" colSpan={3} />
+                {(() => {
+                  const cells: React.ReactNode[] = [];
+                  let idx = 0;
+                  while (idx < columns.length) {
+                    const col = columns[idx];
+                    if (NAME_KEYS.includes(col)) {
+                      let span = 0;
+                      while (idx + span < columns.length && NAME_KEYS.includes(columns[idx + span])) span++;
+                      cells.push(
+                        <th key={`g-${idx}`} colSpan={span}
+                          className="p-1 text-center text-[11px] font-semibold text-primary bg-primary/10 border-x">
+                          שם התלמיד
+                        </th>,
+                      );
+                      idx += span;
+                    } else {
+                      cells.push(<th key={`g-${idx}`} className="p-1" />);
+                      idx++;
+                    }
+                  }
+                  return cells;
+                })()}
+                <th className="p-1" />
+              </tr>
               <tr className="border-b bg-muted/50">
                 <th className="p-2 text-center w-8">✓</th>
                 <th className="p-2 text-center w-10">#</th>
