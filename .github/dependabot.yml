@@ -49,10 +49,18 @@ updates:
       - dependency-name: "@tanstack/router-core"
         update-types: ["version-update:semver-major"]
     groups:
+      # Security advisories are raised by Dependabot regardless of the weekly
+      # schedule. Grouping them into one PR avoids a flood of single-package
+      # PRs (each transitive `undici` advisory would otherwise get its own).
+      npm-security-fixes:
+        applies-to: security-updates
+        patterns:
+          - "*"
       # Cloudflare Workers build stack — source of the recurring transitive
       # `undici` advisories. Kept in its own PR so a security bump here is
       # easy to review and merge fast.
       cloudflare-workers-stack:
+        applies-to: version-updates
         patterns:
           - "@cloudflare/*"
           - "wrangler"
@@ -67,6 +75,7 @@ updates:
       # way to update these packages — CI (`check:tanstack`) will reject a
       # PR where these versions drift apart.
       tanstack-router-stack:
+        applies-to: version-updates
         patterns:
           - "@tanstack/react-start"
           - "@tanstack/react-router"
@@ -80,6 +89,7 @@ updates:
           - patch
       # react-query is independent and safe on its own (README §4).
       tanstack-react-query:
+        applies-to: version-updates
         patterns:
           - "@tanstack/react-query"
           - "@tanstack/query-*"
@@ -89,6 +99,7 @@ updates:
           - patch
       # Everything else — one grouped PR per week keeps noise low.
       minor-and-patch:
+        applies-to: version-updates
         patterns:
           - "*"
         exclude-patterns:
