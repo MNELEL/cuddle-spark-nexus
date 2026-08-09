@@ -310,7 +310,17 @@ export function RosterReviewTable({
                       cells.push(
                         <th key={`g-${idx}`} colSpan={span}
                           className="p-1 text-center text-[11px] font-semibold text-primary bg-primary/10 border-x">
-                          שם התלמיד
+                          <span className="inline-flex items-center gap-1">
+                            שם התלמיד
+                            {(sort && NAME_KEYS.includes(sort.key)) ||
+                            NAME_KEYS.some((k) => (nameFilters[k] ?? "").trim()) ? (
+                              <Button size="sm" variant="ghost"
+                                className="h-5 px-1 text-[10px] font-normal"
+                                onClick={() => { setSort(null); clearNameFilters(); }}>
+                                <X className="h-3 w-3" />נקה סינון ומיון
+                              </Button>
+                            ) : null}
+                          </span>
                         </th>,
                       );
                       idx += span;
@@ -329,21 +339,58 @@ export function RosterReviewTable({
                 <th className="p-2 text-center w-24">ביטחון</th>
                 {columns.map((col, colIdx) => (
                   <th key={colIdx} className="p-1 min-w-[130px] text-start">
-                    <Select value={col} onValueChange={(v) => remapColumn(colIdx, v as FieldKey)}>
-                      <SelectTrigger className={`h-7 text-[11px] ${GROUP_COLOR[FIELD_GROUP[col]]}`}>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {FIELD_KEYS.map((k) => (
-                          <SelectItem key={k} value={k} className="text-xs">
-                            {FIELD_LABEL[k]}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="flex items-center gap-1">
+                      <Select value={col} onValueChange={(v) => remapColumn(colIdx, v as FieldKey)}>
+                        <SelectTrigger className={`h-7 flex-1 text-[11px] ${GROUP_COLOR[FIELD_GROUP[col]]}`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {FIELD_KEYS.map((k) => (
+                            <SelectItem key={k} value={k} className="text-xs">
+                              {FIELD_LABEL[k]}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {NAME_KEYS.includes(col) && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0"
+                              onClick={() => toggleSort(col)}
+                              aria-label={`מיין לפי ${FIELD_LABEL[col]}`}>
+                              {sort?.key === col
+                                ? sort.dir === "asc"
+                                  ? <ArrowUp className="h-3 w-3 text-primary" />
+                                  : <ArrowDown className="h-3 w-3 text-primary" />
+                                : <ArrowUpDown className="h-3 w-3 text-muted-foreground" />}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="text-xs">
+                            מיון לפי {FIELD_LABEL[col]} (א׳→ת׳ / ת׳→א׳ / ביטול)
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                    </div>
                   </th>
                 ))}
                 <th className="p-2 text-center w-24">סטטוס</th>
+              </tr>
+              <tr className="border-b bg-background/60">
+                <th className="p-1" colSpan={3} />
+                {columns.map((col, colIdx) => (
+                  <th key={`f-${colIdx}`} className="p-1">
+                    {NAME_KEYS.includes(col) ? (
+                      <Input
+                        value={nameFilters[col] ?? ""}
+                        onChange={(e) => setNameFilters((p) => ({ ...p, [col]: e.target.value }))}
+                        className="h-6 text-[11px]"
+                        placeholder={`סנן ${FIELD_LABEL[col]}`}
+                        aria-label={`סנן לפי ${FIELD_LABEL[col]}`}
+                      />
+                    ) : null}
+                  </th>
+                ))}
+                <th className="p-1" />
               </tr>
             </thead>
             <tbody>
