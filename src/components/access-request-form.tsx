@@ -13,10 +13,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Send } from "lucide-react";
+import { Loader2, Send, Info } from "lucide-react";
 import { toast } from "sonner";
 import { submitAccessRequest, myAccessRequests } from "@/lib/access-requests.functions";
 import type { Role } from "@/lib/user-roles.functions";
+
 
 const ROLE_LABELS: Record<Role, string> = {
   admin: "מנהל מערכת",
@@ -112,6 +113,13 @@ export function AccessRequestForm() {
           rows={3}
           placeholder="ספר בקצרה למה נדרשת הגישה"
         />
+      </div>
+
+      <div className="flex items-start gap-2 rounded-md border bg-muted/40 p-3 text-xs text-muted-foreground">
+        <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+        <span>
+          הבקשה נשלחת למנהל המערכת. מנהל מוסד יכול לצפות בבקשות אך רק מנהל מערכת יכול לאשר או לדחות אותן. לאחר האישור, התפקיד המבוקש ישוייך לחשבונך בעמוד זה.
+        </span>
       </div>
 
       <Button
