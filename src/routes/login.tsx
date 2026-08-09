@@ -131,7 +131,7 @@ function LoginPage() {
           email: email.trim(),
           password,
           options: {
-            emailRedirectTo: window.location.origin,
+            emailRedirectTo: `${window.location.origin}${nextPath}`,
             data: { display_name: name.trim() || email.trim().split("@")[0] },
           },
         });
@@ -165,7 +165,9 @@ function LoginPage() {
     setGoogleBusy(true);
     setErrorMsg(null);
     setSuccessMsg(null);
-    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: `${window.location.origin}${nextPath}`,
+    });
     if (result.error) {
       setErrorMsg("שגיאה בהתחברות עם Google");
       toast.error("שגיאה בהתחברות עם Google");
