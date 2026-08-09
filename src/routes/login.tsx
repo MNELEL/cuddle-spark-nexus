@@ -43,6 +43,12 @@ function LoginPage() {
   const search = useSearch({ from: "/login" });
   const resetExpired = search.reset === "expired";
   const nextPath = search.next ?? "/classes";
+  /**
+   * `next` may carry its own query string (e.g. "/classes?from=exam-generator").
+   * `navigate({ to })` treats the whole string as a pathname, so use `href`,
+   * which parses pathname + search and preserves those params.
+   */
+  const goNext = () => navigate({ href: nextPath });
   const [mode, setMode] = useState<"signin" | "signup">(search.mode === "signup" ? "signup" : "signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -93,7 +99,7 @@ function LoginPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) navigate({ to: nextPath });
+      if (session) goNext();
     });
   }, [navigate, nextPath]);
 
@@ -141,7 +147,7 @@ function LoginPage() {
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
         if (error) throw error;
-        navigate({ to: nextPath });
+        goNext();
       }
     } catch (err) {
       const raw = err instanceof Error ? err.message : "";
