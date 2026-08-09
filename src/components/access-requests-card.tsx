@@ -289,6 +289,17 @@ export function AccessRequestsCard({ canResolve: canResolveHint }: { canResolve:
                 </p>
               </div>
             )}
+
+            <div className="grid gap-2">
+              <Label htmlFor="approve-note">הערה למבקש (אופציונלי)</Label>
+              <Textarea
+                id="approve-note"
+                rows={2}
+                value={reviewNote}
+                onChange={(e) => setReviewNote(e.target.value)}
+                placeholder="תוצג למבקש יחד עם סיכום ההחלטה"
+              />
+            </div>
           </div>
 
           <DialogFooter className="flex-col gap-2 sm:flex-row-reverse">
@@ -310,6 +321,56 @@ export function AccessRequestsCard({ canResolve: canResolveHint }: { canResolve:
               onClick={closeDialog}
               disabled={approveMutation.isPending}
               className="w-full sm:w-auto"
+            >
+              ביטול
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={denyDialogOpen} onOpenChange={(o) => (o ? setDenyDialogOpen(true) : closeDialog())}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>דחיית בקשת גישה</DialogTitle>
+            <DialogDescription>
+              {selectedRequest
+                ? `בקשה מ-${selectedRequest.email ?? selectedRequest.user_id} לתפקיד ${ROLE_LABELS[selectedRequest.requested_role as Role]}. המבקש יקבל הודעה עם סיכום ההחלטה.`
+                : "דחיית בקשת גישה."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-2 py-2">
+            <Label htmlFor="deny-note">הערה למבקש (אופציונלי)</Label>
+            <Textarea
+              id="deny-note"
+              rows={2}
+              value={reviewNote}
+              onChange={(e) => setReviewNote(e.target.value)}
+              placeholder="סיבת הדחייה או הנחיה להמשך"
+            />
+          </div>
+
+          <DialogFooter className="flex-col gap-2 sm:flex-row-reverse">
+            <Button
+              variant="destructive"
+              className="w-full sm:w-auto"
+              disabled={resolveMutation.isPending || !selectedRequest}
+              onClick={() =>
+                selectedRequest &&
+                resolveMutation.mutate({
+                  request_id: selectedRequest.id,
+                  status: "denied",
+                  review_note: reviewNote.trim() || undefined,
+                })
+              }
+            >
+              <X className="me-1 h-4 w-4" /> דחה בקשה
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full sm:w-auto"
+              onClick={closeDialog}
+              disabled={resolveMutation.isPending}
             >
               ביטול
             </Button>
