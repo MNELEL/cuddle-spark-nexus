@@ -1,45 +1,45 @@
-# פרטי תלמיד מלאים, מיון רשימה, ויום הולדת עברי
+# סגירת פער A1 — כיסוי בדיקות אוטומטי (RLS + לוגיקה טהורה)
 
-## מה נמצא בבדיקה (לפני התכנון)
+עבודת בדיקות בלבד. שום התנהגות קיימת לא משתנה. שני חילוצים (refactor) קטנים מסומנים בנפרד וטעונים אישור מפורש.
 
-- טבלת `students` **כבר** מכילה: `national_id`, `birth_date`, `address`, `father_name/id/phone`, `mother_name/id/phone`, `has_special_accommodation`. חסרים רק `first_name` / `last_name`.
-- `upsertStudent` ב-`src/lib/students.functions.ts` מקבל היום רק `name, notes, height, row_pref, corner_pref, accommodation*` — כל השדות האישיים **לא נשמרים** דרך הטופס.
-- `commitRoster` ב-`src/lib/ingest.functions.ts` **כן** שומר את כל השדות האישיים, אבל עושה `insert` בלבד — אין מיזוג לתלמיד קיים, ולכן ייבוא חוזר יוצר כפילויות. אין בו `first_name/last_name`.
-- `@hebcal/core` בשימוש **רק** ב-`src/routes/_authenticated.calendar.$classId.tsx` (HDate/renderGematriya/HebrewCalendar) — אין wrapper משותף. `src/lib/year-rollover.ts` אכן מחשב רק שנה עברית ולא ייגע.
-- `student-file-sheet.tsx` כולל 4 טאבים: מסמכים, הורים, משמעת, "פרופיל תלמיד" (מידע רגיש). לכן הטאב החדש ייקרא **"פרטי קשר"** — אין התנגשות.
-- הרשאות: המדיניות על `students` היא `students_owner_all` ל-`ALL` אבל מוגדרת ל-`public` (כולל anon), ול-`anon` יש GRANT מלא על הטבלה. הרשאת `auth.uid()` חוסמת בפועל, אבל זו הגנה חלשה יותר מ-`student_profiles` שמוגדרת `TO authenticated` בלבד + מדיניות נפרדת למנהל מוסד.
+## מה אומת לפני התוכנית
 
-## תוכנית
+- `src/test/helpers.ts` כבר מספק `hasTestEnv`, `adminClient()`, `createTestUser()`, `deleteTestUser()`, `createClassFor()` — התוספות ישתמשו בו כמו שהוא, עם עוד helper אחד (`grantRole`) לתפקידים.
+- הקובץ הנכון להתראות ארכוב הוא `src/lib/notifications.functions.ts` (מייצא `listUnreadClassNotifications`, `markNotificationRead`) — אין `class-notifications.functions.ts`.
+- `requireSupabaseAuth` דורש הקשר HTTP אמיתי, ולכן כל בדיקת DB תרוץ ישירות מול הטבלה עם קליינט publishable מחובר (בדיוק כמו `rls-classes.test.ts`), ולא דרך ה-serverFn.
+- מדיניות RLS קיימת (מ-`pg_policies`): `reminders_owner_all`, `behavior_points_owner_all`, `class_notifications_recipient_select/update` מוגדרות ל-`{public}`; `grade_weights_owner_all` ו-`user_roles` (צפייה בתפקידים שלי) ל-`{authenticated}`. הבדיקות יתעדו את ההתנהגות בפועל, לא ישנו מדיניות.
+- הלוגיקה של מיזוג שדה-שדה בייבוא **קבורה בתוך** `.handler` של `commitRoster` (`src/lib/ingest.functions.ts`, סביב שורות 847-892) — נורמליזציה, מפתחות התאמה (`byId`/`byName`) ובניית ה-patch. לא ניתנת לייבוא כרגע.
+- ה-circuit breaker ב-`src/lib/ai-gateway.server.ts` הוא state מודולרי פרטי (`breaker`, `openBreaker`, `breakerBlockedMessage`) — אך `callLovableAI` מיוצא, כך שאפשר לבדוק את המכונה דרכו עם `fetch` מזויף ושעונים מזויפים, בלי refactor.
 
-### 1. Guard על classId
-`src/lib/class-id-guard.ts` חדש: `isValidClassId(v)` (בדיקת UUID). בכל מסך כיתה (`classes.$classId`, `calendar`, `analytics`, `tracking`, `parents`) — `enabled: isValidClassId(classId)` בכל `useQuery`, ובמידה ולא תקין תוצג הודעה ידידותית "כיתה לא נמצאה" עם קישור חזרה לרשימת הכיתות, במקום שגיאת Zod אדומה.
+## חלק 1 — בדיקות RLS/DB (תבנית `rls-*.test.ts`, `describe.skipIf(!hasTestEnv)`)
 
-### 2. שם פרטי ושם משפחה
-- Migration: הוספת `first_name`, `last_name` (text, nullable) ל-`students`, backfill חד-פעמי מ-`name` (מילה ראשונה = פרטי, השאר = משפחה; מילה אחת → `last_name` ריק), אינדקסים על `(class_id, last_name)` ו-`(class_id, first_name)`, וטריגר BEFORE INSERT/UPDATE שמסנכרן `name` מהשניים כשהם מלאים — כדי שהושבה, ציונים, דוחות ו-`seating-logic` ימשיכו לעבוד ללא שינוי.
-- `upsertStudent`: הרחבת הסכימה לכל השדות (first/last name, ת.ז., תאריך לידה, כתובת, הורים) כ-`.nullable().optional()`.
-- `StudentDialog`: שני שדות שם נפרדים במקום שדה יחיד.
+קבצים חדשים תחת `src/test/`:
 
-### 3. מיון רשימת התלמידים
-בורר מיון בראש טאב "תלמידים": שם פרטי · שם משפחה · תאריך יום הולדת (לפי יום ההולדת העברי הקרוב) · ציון (גבוה→נמוך, מבוסס `computeStudentScore` הקיים) · מקום ישיבה. המיון בצד הלקוח, והבחירה נשמרת ב-localStorage במפתח לפי `classId`.
+1. `rls-students.test.ts` — בעלים קורא/מעדכן תלמיד בכיתה שלו; מורה אחר חסום ב-SELECT וב-UPDATE (כולל אימות שהשם לא השתנה); `anon` (קליינט publishable ללא התחברות) חסום לגמרי — אימות מפורש שה-REVOKE בתוקף; טריגר `sync_student_name` — הזנת `first_name`+`last_name` מסנכרנת את `name`, ועדכון חלקי לא מוחק אותו.
+2. `rls-reminders.test.ts` — בעלים יוצר/קורא/מוחק תזכורת; מורה אחר חסום; `anon` חסום.
+3. `rls-behavior-points.test.ts` — בעלים יוצר/קורא נקודות התנהגות; מורה אחר חסום; `anon` חסום.
+4. `rls-grade-weights.test.ts` — בעלים יוצר/מעדכן משקל למקצוע; מורה אחר חסום מקריאה ומעדכון; `anon` חסום.
+5. `rls-institutions.test.ts` — מוסד + שלושה משתמשים: `admin`, `principal`, ומורה רגיל (חבר במוסד ללא תפקיד ניהולי). נבדק: חבר רואה את המוסד שלו; `admin` ו-`principal` שניהם מצליחים לעדכן את המוסד ולנהל `user_roles` במוסד שלהם (זו ההוכחה ש-`private.is_institution_admin` מכסה את `principal`); מורה רגיל חסום מעדכון המוסד ומהוספת תפקידים; אף אחד לא רואה מוסד שאינו שלו.
+6. `rls-class-notifications.test.ts` — התראה נוצרת עבור בעלים (fixture בשירות-שרת); הבעלים רואה אותה ומסמן `read_at`; משתמש אחר לא רואה אותה ולא יכול לסמן; אימות שאין INSERT/DELETE מהקליינט.
 
-### 4. סיכום בכרטיס StudentRow
-שורת פרטים קומפקטית: ת.ז. · תאריך לידה + התאריך העברי · כתובת · אב + טלפון · אם + טלפון. הטלפונים כקישורי `tel:`/וואטסאפ. שדות ריקים לא מוצגים כלל.
+תוספת ל-`src/test/helpers.ts` (בדיקות בלבד, לא production): `createInstitution()`, `grantRole(user, role, institutionId)`, `anonClient()`, `createStudentFor()`.
 
-### 5. טאב "פרטי קשר" בתיק התלמיד + הידוק הרשאות
-- טאב חמישי "פרטי קשר" (נפרד וברור מול "פרופיל תלמיד" הרגיש) עם עריכת: שם פרטי/משפחה, ת.ז., תאריך לידה, כתובת, שם/ת.ז./טלפון של אב ואם.
-- ולידציה בצד הלקוח: ת.ז. 5–9 ספרות, טלפון 9–10 ספרות שמתחיל ב-0, תאריך תקין ובטווח סביר — באותה לוגיקה כמו `roster-review-table.tsx` (תחלץ למודול משותף `src/lib/student-field-validation.ts`).
-- Migration אבטחה: `REVOKE ALL ON public.students FROM anon`, החלפת `students_owner_all` במדיניות `TO authenticated` בלבד, והוספת מדיניות SELECT למנהל מוסד באמצעות `private.is_institution_admin` — כך שההגנה על השדות האישיים לפחות ברמת `student_profiles`.
+## חלק 2 — בדיקות לוגיקה טהורה (ללא DB, רצות גם ב-CI בלי סודות)
 
-### 6. יום הולדת עברי
-`src/lib/hebrew-date.ts` חדש (בלי לגעת ב-`year-rollover.ts`, ובלי לשנות את מסך היומן הקיים מעבר לשילוב):
-- `toHebrewDateLabel(iso)` — למשל "י״ב בכסלו" (דרך `HDate.renderGematriya`).
-- `nextHebrewBirthday(iso)` — מציאת התאריך הלועזי הבא שבו חל אותו יום+חודש עברי, עם טיפול בגבולות: 30 בחשוון/כסלו בשנה שבה החודש חסר (גלישה ל-1 בכסלו/טבת), ואדר בשנה פשוטה מול אדר א׳/ב׳ במעוברת.
-- `daysUntil(iso)` → "היום!" / "בעוד X ימים".
-- שימוש: בכרטיס ובתיק התלמיד; באנר "ימי הולדת קרובים" (14 ימים) בראש טאב תלמידים; וביומן הכיתה — ימי הולדת עבריים כאירועים **מחושבים** שמתמזגים לרשימת האירועים, ללא שמירה ב-DB.
+1. `hebrew-date.test.ts` — `nextHebrewBirthday` עם `from` קבוע: יום הולדת "היום" מחזיר `daysUntil: 0`; גלישת 30 בכסלו ו-30 בחשוון לשנה שבה החודש קצר (1 בטבת/1 בכסלו); אדר בשנה פשוטה מול אדר א׳/ב׳ בשנה מעוברת; קלט לא תקין/ריק → `null`; `hebrewBirthdaysInRange` מחזיר תוצאה בתוך חלון ולא מחוצה לו; `daysUntilLabel` ("היום!"/"מחר"/"בעוד N ימים").
+2. `student-field-validation.test.ts` — `validateNationalId` (ריק=תקין, 5-9 ספרות, קצר/ארוך מדי), `validatePhone` (9-10 ספרות, חייב להתחיל ב-0, מקפים מותרים), `validateBirthDate` (פורמט, תאריך לא קיים, שנה מחוץ לטווח), `phoneHref`/`whatsappHref`.
+3. `grade-weighting.test.ts` — `weightMap`/`weightFor` (ברירת מחדל 1, מקצוע לא מוכר), `subjectAverages`, `weightedAverage` (משקלים שונים מול ממוצע פשוט), `weightedAverageByStudent`, `hasCustomWeights`.
+4. `ai-gateway-breaker.test.ts` — דרך `callLovableAI` עם `vi.stubGlobal("fetch", ...)` ו-`vi.useFakeTimers()`: 429 פותח את המפסק ומחזיר הודעת מכסה; קריאה נוספת נכשלת מיד בלי fetch; אחרי 60 שניות מותרת בדיקה חוזרת אחת; 402 חוסם 5 דקות; הצלחה סוגרת את המפסק. `LOVABLE_API_KEY` מוזרק דרך `process.env` בתוך הטסט ומשוחזר אחריו.
+5. `roster-merge.test.ts` — בודק את המיזוג שדה-שדה: התאמה לפי ת.ז., נפילה להתאמה לפי שם, שדות ריקים בקובץ לא מוחקים ערך קיים, פיצול `name` ל-`first_name`/`last_name`, ורשומה בלי התאמה מסומנת כהוספה. **תלוי בחילוץ שלהלן.**
 
-### 7. ייבוא (/ingest)
-- הוספת `first_name`/`last_name` לסכימת `commitRoster` (או פיצול בשרת מ-`name`).
-- מיזוג במקום כפילות: לפני ההכנסה, שליפת התלמידים הקיימים בכיתה והתאמה לפי `national_id` (עדיפות ראשונה) ואחריה לפי `name` מנורמל — התאמה → `update` של השדות הלא-ריקים בלבד; אין התאמה → `insert`. הפונקציה תחזיר `{ inserted, updated }` וה-UI יציג "נוספו X, עודכנו Y".
+## refactor שדורש אישור מפורש (שינוי קוד production)
 
-## מחוץ להיקף
-`student_profiles`, `seating-logic`, `year-rollover.ts`.
+חילוץ אחד בלבד, ללא שינוי התנהגות:
+
+- מ-`src/lib/ingest.functions.ts` → קובץ חדש `src/lib/roster-merge.ts`, המייצא פונקציות טהורות: `normalizeName`, `digitsOnly`, `buildMatchIndex(existing)`, `studentFieldsFromRow(row)`, `mergePatch(fields)` ו-`resolveMatch(index, row)`. ה-`.handler` של `commitRoster` יקרא להן במקום לקוד המוטבע — אותם חישובים, אותה סדר פעולות, אותן שאילתות DB.
+
+אם החילוץ לא מאושר: `roster-merge.test.ts` יורד מהתוכנית ושאר 4 קבצי הלוגיקה הטהורה + 6 קבצי ה-RLS מיושמים כרגיל.
+
+## CI
+
+`bun run test` הקיים תופס אוטומטית כל קובץ חדש. בלי סודות DB — 6 קבצי ה-RLS מדולגים ו-5 קבצי הלוגיקה הטהורה רצים במלואם. אין שינוי ל-`ci.yml`.
