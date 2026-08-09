@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -14,12 +14,20 @@ import {
 import {
   Play, Pause, RotateCcw, Shuffle, ChevronRight, ChevronLeft, Mic, MicOff, Wrench, Settings, BellRing,
   Music, Trophy, Dices, ClipboardList, ScanText, Wand2, Award, TrendingUp, FileText, Palette, Mail,
-  Globe2, CalendarDays, LineChart, BookOpen, Library, MessageSquare, Sparkles,
+  Globe2, CalendarDays, LineChart, BookOpen, Library, MessageSquare, Sparkles, Building2, ShieldCheck,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToolAccess } from "@/hooks/use-tool-access";
+import { TOOLS, canUseTool, type ToolEntry, type ToolSection } from "@/lib/tool-registry";
+
+const SECTION_IDS: ToolSection[] = ["tools", "sound", "motivation", "assess", "docs", "settings"];
 
 export const Route = createFileRoute("/_authenticated/toolkit")({
   component: ToolkitPage,
+  validateSearch: (search: Record<string, unknown>): { section: ToolSection } => {
+    const raw = String(search.section ?? "");
+    return { section: (SECTION_IDS as string[]).includes(raw) ? (raw as ToolSection) : "tools" };
+  },
   head: () => ({
     meta: [
       { title: "ארגז כלים לכיתה · הכיתה שלי" },
