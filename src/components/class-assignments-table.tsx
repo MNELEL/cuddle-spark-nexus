@@ -33,6 +33,10 @@ export function ClassAssignmentsTable() {
   const [editing, setEditing] = useState<ClassAssignmentRow | null>(null);
   const [institutionId, setInstitutionId] = useState<string>("");
   const [teacherId, setTeacherId] = useState<string>("");
+  const [selected, setSelected] = useState<string[]>([]);
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkInstitution, setBulkInstitution] = useState<string>("");
+  const [bulkTeacher, setBulkTeacher] = useState<string>("");
 
   const { data, isLoading } = useQuery({
     queryKey: ["class-assignments"],
@@ -44,7 +48,7 @@ export function ClassAssignmentsTable() {
   const { data: institutions = [] } = useQuery({
     queryKey: ["institutions-for-assign"],
     queryFn: () => institutionsFn(),
-    enabled: canManage && !!editing,
+    enabled: canManage && (!!editing || bulkOpen),
     retry: false,
   });
 
@@ -52,6 +56,13 @@ export function ClassAssignmentsTable() {
     queryKey: ["assignable-teachers", institutionId],
     queryFn: () => teachersFn({ data: { institutionId } }),
     enabled: canManage && !!editing && !!institutionId,
+    retry: false,
+  });
+
+  const { data: bulkTeachers = [] } = useQuery({
+    queryKey: ["assignable-teachers", bulkInstitution],
+    queryFn: () => teachersFn({ data: { institutionId: bulkInstitution } }),
+    enabled: canManage && bulkOpen && !!bulkInstitution,
     retry: false,
   });
 
@@ -90,6 +101,48 @@ export function ClassAssignmentsTable() {
   };
 
   const rows = data?.classes ?? [];
+  const selectableIds = rows.filter((r) => r.status !== "archived").map((r) => r.id);
+  const selectedRows = rows.filter((r) => selected.includes(r.id));
+  const allSelected = selectableIds.length > 0 && selectableIds.every((id) => selected.includes(id));
+
+  const toggleRow = (id: string) =>
+    setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+
+  const bulkDetachM = useMutation({
+    mutationFn: async () => {
+      const targets = selectedRows.filter((r) => r.institutionId);
+      for (const r of targets) await detachFn({ data: { classId: r.id } });
+      return targets.length;
+    },
+    onSuccess: (n) => {
+      invalidate();
+      setSelected([]);
+      toast.success(n > 0 ? `${n} כיתות נותקו מהמוסד` : "לא נמצאו כיתות משויכות לניתוק");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
+  });
+
+  const bulkReassignM = useMutation({
+    mutationFn: async () => {
+      for (const r of selectedRows) {
+        await reassignFn({
+          data: {
+            classId: r.id,
+            institutionId: bulkInstitution || null,
+            ...(bulkTeacher ? { teacherId: bulkTeacher } : {}),
+          },
+        });
+      }
+      return selectedRows.length;
+    },
+    onSuccess: (n) => {
+      invalidate();
+      setBulkOpen(false);
+      setSelected([]);
+      toast.success(`${n} כיתות שויכו מחדש`);
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
+  });
 
   return (
     <Card className="rounded-2xl">
@@ -105,11 +158,51 @@ export function ClassAssignmentsTable() {
           <p className="text-sm text-muted-foreground">אין כיתות להצגה.</p>
         ) : (
           <div className="max-h-[28rem] overflow-auto">
-            <p className="pb-2 text-xs text-muted-foreground font-mono-tabular">{rows.length} כיתות</p>
+            <div className="flex flex-wrap items-center justify-between gap-2 pb-2">
+              <p className="text-xs text-muted-foreground font-mono-tabular">
+                {rows.length} כיתות{selected.length > 0 ? ` · ${selected.length} נבחרו` : ""}
+              </p>
+              {canManage && selected.length > 0 && (
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="rounded-xl"
+                    onClick={() => {
+                      const first = selectedRows[0];
+                      setBulkInstitution(first?.institutionId ?? "");
+                      setBulkTeacher("");
+                      setBulkOpen(true);
+                    }}
+                  >
+                    <UserCog className="ms-1 h-4 w-4" aria-hidden="true" /> שיוך מחדש לנבחרות
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="rounded-xl text-destructive"
+                    disabled={bulkDetachM.isPending}
+                    onClick={() => bulkDetachM.mutate()}
+                  >
+                    <Unlink className="ms-1 h-4 w-4" aria-hidden="true" /> נתק נבחרות
+                  </Button>
+                </div>
+              )}
+            </div>
             <table className="w-full text-sm">
               <caption className="sr-only">טבלת שיוכי כיתות למוסד, למלמד ולספרייה</caption>
               <thead>
                 <tr className="border-b bg-card text-start text-xs text-muted-foreground [&>th]:sticky [&>th]:top-0 [&>th]:bg-card">
+                  {canManage && (
+                    <th scope="col" className="p-2 text-start">
+                      <input
+                        type="checkbox"
+                        aria-label="בחר את כל הכיתות"
+                        checked={allSelected}
+                        onChange={() => setSelected(allSelected ? [] : selectableIds)}
+                      />
+                    </th>
+                  )}
                   <th scope="col" className="p-2 text-start">כיתה</th>
                   <th scope="col" className="p-2 text-start">מוסד</th>
                   <th scope="col" className="p-2 text-start">מלמד</th>
@@ -120,6 +213,17 @@ export function ClassAssignmentsTable() {
               <tbody>
                 {rows.map((row) => (
                   <tr key={row.id} className="border-b last:border-0">
+                    {canManage && (
+                      <td className="p-2">
+                        <input
+                          type="checkbox"
+                          aria-label={`בחר את הכיתה ${row.name}`}
+                          disabled={row.status === "archived"}
+                          checked={selected.includes(row.id)}
+                          onChange={() => toggleRow(row.id)}
+                        />
+                      </td>
+                    )}
                     <td className="p-2">
                       <Link
                         to="/classes/$classId"
@@ -244,6 +348,54 @@ export function ClassAssignmentsTable() {
             <Button variant="outline" onClick={() => setEditing(null)}>ביטול</Button>
             <Button onClick={() => reassignM.mutate()} disabled={reassignM.isPending}>
               {reassignM.isPending && <Loader2 className="ms-1 h-4 w-4 animate-spin" />} שמור שיוך
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={bulkOpen} onOpenChange={setBulkOpen}>
+        <DialogContent dir="rtl">
+          <DialogHeader>
+            <DialogTitle>שיוך מחדש ל-{selected.length} כיתות</DialogTitle>
+            <DialogDescription>
+              כל הכיתות הנבחרות ישויכו למוסד שנבחר. העברת בעלות אפשרית רק למלמד המשויך לאותו מוסד.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="bulk-institution">מוסד</Label>
+              <select
+                id="bulk-institution"
+                value={bulkInstitution}
+                onChange={(e) => { setBulkInstitution(e.target.value); setBulkTeacher(""); }}
+                className="mt-1 h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+              >
+                <option value="">ללא מוסד</option>
+                {institutions.map((i) => (
+                  <option key={i.id} value={i.id}>{i.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <Label htmlFor="bulk-teacher">מלמד</Label>
+              <select
+                id="bulk-teacher"
+                value={bulkTeacher}
+                disabled={!bulkInstitution}
+                onChange={(e) => setBulkTeacher(e.target.value)}
+                className="mt-1 h-9 w-full rounded-md border border-input bg-background px-3 text-sm disabled:opacity-50"
+              >
+                <option value="">ללא שינוי בעלות</option>
+                {bulkTeachers.map((t) => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkOpen(false)}>ביטול</Button>
+            <Button onClick={() => bulkReassignM.mutate()} disabled={bulkReassignM.isPending}>
+              {bulkReassignM.isPending && <Loader2 className="ms-1 h-4 w-4 animate-spin" />} שמור לכל הנבחרות
             </Button>
           </DialogFooter>
         </DialogContent>
