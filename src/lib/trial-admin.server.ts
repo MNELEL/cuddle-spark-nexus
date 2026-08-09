@@ -9,6 +9,14 @@ export type UserTrialRow = {
   endsAt: string | null;
   active: boolean;
   daysLeft: number;
+  lastReview: LastReview | null;
+};
+
+export type LastReview = {
+  decision: "approved" | "rejected";
+  grantedDays: number | null;
+  reviewedAt: string | null;
+  reviewerName: string | null;
 };
 
 export async function assertAdmin(supabase: SupabaseClient<Database>, userId: string) {
@@ -39,6 +47,46 @@ function derive(endsAt: string | null) {
   return { active: ms > 0, daysLeft: Math.max(0, Math.ceil(ms / 86_400_000)) };
 }
 
+/**
+ * Latest approved/rejected extension request per user, with the reviewer's name.
+ * Uses the admin client so the summary is available for every listed user.
+ */
+async function fetchLastReviews(userIds: string[]): Promise<Map<string, LastReview>> {
+  const map = new Map<string, LastReview>();
+  if (userIds.length === 0) return map;
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+  const { data: reviews } = await supabaseAdmin
+    .from("trial_extension_requests")
+    .select("user_id, status, granted_days, reviewed_at, reviewed_by")
+    .in("user_id", userIds)
+    .in("status", ["approved", "rejected"])
+    .order("reviewed_at", { ascending: false })
+    .limit(500);
+
+  const rows = reviews ?? [];
+  const reviewerIds = [...new Set(rows.map((r) => r.reviewed_by).filter((v): v is string => !!v))];
+  const names = new Map<string, string>();
+  if (reviewerIds.length > 0) {
+    const { data: reviewers } = await supabaseAdmin
+      .from("profiles")
+      .select("id, display_name")
+      .in("id", reviewerIds);
+    for (const p of reviewers ?? []) if (p.display_name) names.set(p.id, p.display_name);
+  }
+
+  for (const r of rows) {
+    if (map.has(r.user_id)) continue; // rows are newest-first
+    map.set(r.user_id, {
+      decision: r.status === "approved" ? "approved" : "rejected",
+      grantedDays: r.granted_days ?? null,
+      reviewedAt: r.reviewed_at ?? null,
+      reviewerName: (r.reviewed_by && names.get(r.reviewed_by)) || null,
+    });
+  }
+  return map;
+}
+
 /** Admin-only: all users with their trial/approval window. */
 export async function listUserTrialsImpl(supabase: SupabaseClient<Database>, userId: string): Promise<UserTrialRow[]> {
   await assertAdmin(supabase, userId);
@@ -54,7 +102,10 @@ export async function listUserTrialsImpl(supabase: SupabaseClient<Database>, use
 
   const byId = new Map((profiles ?? []).map((p) => [p.id, p]));
 
-  return (users.users ?? []).map((u) => {
+  const allUsers = users.users ?? [];
+  const lastReviews = await fetchLastReviews(allUsers.map((u) => u.id));
+
+  return allUsers.map((u) => {
     const p = byId.get(u.id);
     const endsAt = p?.trial_ends_at ?? null;
     return {
@@ -63,6 +114,7 @@ export async function listUserTrialsImpl(supabase: SupabaseClient<Database>, use
       displayName: (u.user_metadata?.display_name as string | undefined) ?? u.email?.split("@")[0] ?? "",
       startedAt: p?.trial_started_at ?? null,
       endsAt,
+      lastReview: lastReviews.get(u.id) ?? null,
       ...derive(endsAt),
     };
   });
@@ -112,6 +164,7 @@ export type PendingTrialRequest = {
   endsAt: string | null;
   active: boolean;
   daysLeft: number;
+  lastReview: LastReview | null;
 };
 
 /** Admins and principals: the open extension requests, enriched with each user's trial state. */
@@ -138,6 +191,8 @@ export async function listPendingTrialRequestsImpl(
     .in("id", ids);
   const byId = new Map((profiles ?? []).map((p) => [p.id, p]));
 
+  const lastReviews = await fetchLastReviews(ids);
+
   return (requests ?? []).map((r) => {
     const p = byId.get(r.user_id);
     const endsAt = p?.trial_ends_at ?? null;
@@ -151,6 +206,7 @@ export async function listPendingTrialRequestsImpl(
       requestedDays: r.requested_days,
       createdAt: r.created_at,
       endsAt,
+      lastReview: lastReviews.get(r.user_id) ?? null,
       ...derive(endsAt),
     };
   });
