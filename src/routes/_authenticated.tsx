@@ -12,6 +12,9 @@ import { getSecurity, verifyUnlockToken } from "@/lib/security.functions";
 import { isAdmin } from "@/lib/user-roles.functions";
 import { PinLockScreen } from "@/components/pin-lock-screen";
 import { GlobalCommandPalette } from "@/components/global-command-palette";
+import { ThemeSync } from "@/components/theme-sync";
+import { ToolBreadcrumbs } from "@/components/tool-breadcrumbs";
+import { ToolAccessGuard } from "@/components/tool-access-guard";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthLayout,
@@ -139,8 +142,12 @@ function AuthLayout() {
         </div>
       </header>
       <main className="container mx-auto px-3 py-6 sm:px-6">
-        <Outlet />
+        <ToolBreadcrumbs />
+        <ToolAccessGuard>
+          <Outlet />
+        </ToolAccessGuard>
       </main>
+      <ThemeSync />
       <GlobalCommandPalette />
     </div>
   );
