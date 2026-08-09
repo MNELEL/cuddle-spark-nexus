@@ -1,4 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { Settings, Palette, ArrowLeft, Wrench, Library, ShieldCheck } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,6 +8,7 @@ import { SubscriptionStatusCard } from "@/components/subscription-status-card";
 import { ReminderPreferencesCard } from "@/components/reminder-preferences-card";
 import { SecuritySettings } from "@/components/security-settings";
 import { useBrand } from "@/hooks/use-brand";
+import { isAdmin } from "@/lib/user-roles.functions";
 
 export const Route = createFileRoute("/_authenticated/settings/")({
   component: SettingsPage,
@@ -20,6 +23,12 @@ export const Route = createFileRoute("/_authenticated/settings/")({
 
 function SettingsPage() {
   const { brand } = useBrand();
+  const isAdminFn = useServerFn(isAdmin);
+  const { data: viewerIsAdmin } = useQuery({
+    queryKey: ["is-admin"],
+    queryFn: () => isAdminFn(),
+    staleTime: 5 * 60_000,
+  });
 
   return (
     <div className="mx-auto max-w-3xl space-y-5">
@@ -74,16 +83,18 @@ function SettingsPage() {
 
       <Card>
         <CardHeader><CardTitle className="text-base">קישורים נוספים</CardTitle></CardHeader>
-        <CardContent className="grid gap-2 sm:grid-cols-3">
+        <CardContent className={`grid gap-2 ${viewerIsAdmin ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
           <Button asChild variant="ghost" className="justify-start">
             <Link to="/toolkit"><Wrench className="ms-1 h-4 w-4" /> ארגז כלים</Link>
           </Button>
           <Button asChild variant="ghost" className="justify-start">
             <Link to="/resources"><Library className="ms-1 h-4 w-4" /> ספרייה</Link>
           </Button>
-          <Button asChild variant="ghost" className="justify-start">
-            <Link to="/user-management"><ShieldCheck className="ms-1 h-4 w-4" /> ניהול משתמשים</Link>
-          </Button>
+          {viewerIsAdmin && (
+            <Button asChild variant="ghost" className="justify-start">
+              <Link to="/user-management"><ShieldCheck className="ms-1 h-4 w-4" /> ניהול משתמשים</Link>
+            </Button>
+          )}
         </CardContent>
       </Card>
     </div>
