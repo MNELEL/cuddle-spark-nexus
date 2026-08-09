@@ -1,0 +1,235 @@
+{
+  "version": 1,
+  "sdk_version": "0.26.1",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://omtuuvzhxomakneuqifr.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "harmony-hub",
+      "version": "0.1.0",
+      "title": "Harmony Hub"
+    },
+    "tools": [
+      {
+        "name": "list_classes",
+        "title": "רשימת כיתות",
+        "description": "List the classes the signed-in teacher can access, with status and academic year.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "status": {
+              "description": "Filter by class status. Defaults to active.",
+              "type": "string",
+              "enum": [
+                "active",
+                "archived",
+                "all"
+              ]
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_students",
+        "title": "רשימת תלמידים",
+        "description": "List the students of one class the signed-in teacher can access. Returns names and seat position only — no sensitive contact details.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "class_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "description": "The class id, as returned by list_classes."
+            }
+          },
+          "required": [
+            "class_id"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "behavior_summary",
+        "title": "סיכום נקודות התנהגות",
+        "description": "Summarize behavior points per student for one class, optionally limited to a date range (YYYY-MM-DD).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "class_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "description": "The class id."
+            },
+            "from": {
+              "description": "Start date, YYYY-MM-DD.",
+              "type": "string"
+            },
+            "to": {
+              "description": "End date, YYYY-MM-DD.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "class_id"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "add_behavior_point",
+        "title": "הוספת נקודת התנהגות",
+        "description": "Record behavior points for one student (positive or negative).",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "class_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "description": "The class id."
+            },
+            "student_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "description": "The student id, as returned by list_students."
+            },
+            "points": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991,
+              "description": "Points to record. Negative values subtract."
+            },
+            "category": {
+              "description": "Category label, e.g. התנהגות / לימוד / תפילה.",
+              "type": "string"
+            },
+            "note": {
+              "description": "Short free-text note.",
+              "type": "string"
+            },
+            "date": {
+              "description": "Date of the entry, YYYY-MM-DD. Defaults to today.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "class_id",
+            "student_id",
+            "points"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "create_reminder",
+        "title": "יצירת תזכורת",
+        "description": "Create a follow-up reminder for one student in a class.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "class_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "description": "The class id."
+            },
+            "student_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "description": "The student id."
+            },
+            "title": {
+              "type": "string",
+              "description": "Short reminder title."
+            },
+            "description": {
+              "description": "Optional details.",
+              "type": "string"
+            },
+            "due_date": {
+              "description": "Due date, YYYY-MM-DD.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "class_id",
+            "student_id",
+            "title"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_reminders",
+        "title": "רשימת תזכורות",
+        "description": "List reminders for one class, optionally only the open (not completed) ones.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "class_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "description": "The class id."
+            },
+            "only_open": {
+              "description": "When true, return only reminders that are not completed.",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "class_id"
+          ]
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
