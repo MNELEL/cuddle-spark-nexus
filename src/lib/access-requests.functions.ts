@@ -80,6 +80,21 @@ export const listAccessRequests = createServerFn({ method: "GET" })
     return data ?? [];
   });
 
+/** True only for system admins. Principals are read-only reviewers. */
+export const canResolveAccessRequests = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data, error } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "admin")
+      .limit(1);
+    if (error) throw new Error(error.message);
+    return { canResolve: (data ?? []).length > 0 };
+  });
+
 const resolveSchema = z.object({
   request_id: z.string().uuid(),
   status: z.enum(["approved", "denied"]),
