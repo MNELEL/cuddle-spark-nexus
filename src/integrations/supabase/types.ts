@@ -1884,6 +1884,7 @@ export type Database = {
           height: string
           id: string
           last_name: string | null
+          middle_name: string | null
           mother_id: string | null
           mother_name: string | null
           mother_phone: string | null
@@ -1911,6 +1912,7 @@ export type Database = {
           height?: string
           id?: string
           last_name?: string | null
+          middle_name?: string | null
           mother_id?: string | null
           mother_name?: string | null
           mother_phone?: string | null
@@ -1938,6 +1940,7 @@ export type Database = {
           height?: string
           id?: string
           last_name?: string | null
+          middle_name?: string | null
           mother_id?: string | null
           mother_name?: string | null
           mother_phone?: string | null

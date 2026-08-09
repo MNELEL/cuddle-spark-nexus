@@ -34,6 +34,7 @@ export type IngestJob = {
 export type RosterStudentDraft = {
   name: string;
   first_name?: string;
+  middle_name?: string;
   last_name?: string;
   national_id?: string;
   birth_date?: string; // YYYY-MM-DD
@@ -51,7 +52,7 @@ export type RosterStudentDraft = {
 export type RosterExtracted = { kind: "roster"; students: RosterStudentDraft[] };
 
 export const ROSTER_TARGET_FIELDS = [
-  "ignore", "name", "first_name", "last_name", "national_id", "birth_date", "address",
+  "ignore", "name", "first_name", "middle_name", "last_name", "national_id", "birth_date", "address",
   "father_name", "father_id", "father_phone",
   "mother_name", "mother_id", "mother_phone",
 ] as const;
@@ -598,6 +599,7 @@ function guessFieldFromHeader(h: string): RosterTargetField {
   if (/כתובת|רחוב|address/i.test(s)) return "address";
   if (/תאריך|לידה|birth/i.test(s)) return "birth_date";
   if (/שם\s*פרטי|first\s*name/i.test(s)) return "first_name";
+  if (/שם\s*אמצעי|כינוי|middle\s*name|nickname/i.test(s)) return "middle_name";
   if (/שם\s*משפחה|משפחה|last\s*name|surname|family/i.test(s)) return "last_name";
   if (/שם|name/i.test(s)) return "name";
   return "ignore";
@@ -617,12 +619,14 @@ export function applyRosterMapping(headers: string[], rows: string[][], mapping:
   };
   return rows.map<RosterStudentDraft | null>((row) => {
     const first = cleanStr(pick(row, "first_name"), 60) ?? "";
+    const middle = cleanStr(pick(row, "middle_name"), 60) ?? "";
     const last = cleanStr(pick(row, "last_name"), 60) ?? "";
-    const name = pick(row, "name") || [last, first].filter(Boolean).join(" ");
+    const name = pick(row, "name") || [first, middle, last].filter(Boolean).join(" ");
     if (!name) return null;
     const draft: RosterStudentDraft = {
       name: name.slice(0, 100),
       first_name: first || undefined,
+      middle_name: middle || undefined,
       last_name: last || undefined,
       national_id: cleanStr(pick(row, "national_id"), 20),
       birth_date: normDate(pick(row, "birth_date")),
@@ -833,6 +837,7 @@ const rosterCommitSchema = z.object({
   students: z.array(z.object({
     name: z.string().min(1).max(100),
     first_name: z.string().max(60).optional().nullable(),
+    middle_name: z.string().max(60).optional().nullable(),
     last_name: z.string().max(60).optional().nullable(),
     national_id: z.string().max(20).optional().nullable(),
     birth_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),

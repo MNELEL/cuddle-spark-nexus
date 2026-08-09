@@ -15,6 +15,7 @@ export type RosterExistingRow = {
 export type RosterInputRow = {
   name: string;
   first_name?: string | null;
+  middle_name?: string | null;
   last_name?: string | null;
   national_id?: string | null;
   birth_date?: string | null;
@@ -64,10 +65,12 @@ export function studentFieldsFromRow(s: RosterInputRow): StudentFields {
   const fullName = normalizeName(s.name);
   const parts = fullName.split(" ").filter(Boolean);
   const explicitFirst = normalizeName(s.first_name);
+  const explicitMiddle = normalizeName(s.middle_name);
   const explicitLast = normalizeName(s.last_name);
   return {
     name: fullName,
     first_name: explicitFirst || parts[0] || null,
+    middle_name: explicitMiddle || null,
     last_name: explicitLast || (parts.length > 1 ? parts.slice(1).join(" ") : null),
     national_id: s.national_id || null,
     birth_date: s.birth_date || null,
