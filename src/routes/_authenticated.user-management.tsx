@@ -45,6 +45,7 @@ import {
 import { TrialApprovalsCard } from "@/components/trial-approvals-card";
 import { AccessRequestForm } from "@/components/access-request-form";
 import { AccessRequestsCard } from "@/components/access-requests-card";
+import { SystemAdminsCard } from "@/components/system-admins-card";
 
 const NO_INSTITUTION = "__none__";
 const INSTITUTIONS_PAGE_SIZE = 10;
@@ -211,6 +212,7 @@ function UserManagementPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            <SystemAdminsCard />
             <div className="rounded-lg border bg-muted/30 p-4">
               <h2 className="mb-3 font-display text-base font-semibold">אז מה עושים?</h2>
               <ol className="list-decimal space-y-2 pr-5 text-sm text-muted-foreground">
@@ -280,6 +282,7 @@ function UserManagementPage() {
           </Link>
         </div>
         <AccessRequestsCard canResolve={false} />
+        <SystemAdminsCard />
         <Card>
           <CardHeader>
             <CardTitle className="text-base">ניהול המוסד שלך</CardTitle>
