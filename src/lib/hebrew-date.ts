@@ -121,3 +121,38 @@ export function daysUntilLabel(daysUntil: number): string {
   if (daysUntil === 1) return "מחר";
   return `בעוד ${daysUntil} ימים`;
 }
+
+/**
+ * ISO Gregorian dates on which the Hebrew birthday of `iso` falls inside the
+ * [fromIso, toIso] window (used by the class calendar grid). Derived on the
+ * fly — nothing is stored.
+ */
+export function hebrewBirthdaysInRange(
+  iso: string | null | undefined,
+  fromIso: string,
+  toIso: string,
+): { iso: string; hebrewLabel: string; age: number | null }[] {
+  const start = parseIso(fromIso);
+  const end = parseIso(toIso);
+  const birthDate = iso ? parseIso(iso) : null;
+  if (!start || !end || !birthDate) return [];
+
+  const birth = new HDate(birthDate);
+  const hYears = new Set([
+    new HDate(start).getFullYear(),
+    new HDate(end).getFullYear(),
+  ]);
+  const out: { iso: string; hebrewLabel: string; age: number | null }[] = [];
+  for (const hyear of hYears) {
+    const greg = hebrewAnniversary(birth, hyear).greg();
+    const day = new Date(greg.getFullYear(), greg.getMonth(), greg.getDate());
+    if (day < start || day > end) continue;
+    const age = hyear - birth.getFullYear();
+    out.push({
+      iso: toIsoDate(day),
+      hebrewLabel: toHebrewDateLabel(iso) ?? "",
+      age: age > 0 && age < 130 ? age : null,
+    });
+  }
+  return out;
+}
