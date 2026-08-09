@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -67,6 +67,15 @@ export function CalendarSettingsPanel({ classId, year }: { classId: string; year
   const [days, setDays] = useState<Set<string>>(new Set(s?.active_days ?? ["sun", "mon", "tue", "wed", "thu", "fri"]));
   const [yearStart, setYearStart] = useState(s?.year_start_date ?? "");
   const [yearEnd, setYearEnd] = useState(s?.year_end_date ?? "");
+
+  useEffect(() => {
+    if (!s) return;
+    setStartHour(String(s.start_hour));
+    setEndHour(String(s.end_hour));
+    setDays(new Set(s.active_days));
+    setYearStart(s.year_start_date ?? "");
+    setYearEnd(s.year_end_date ?? "");
+  }, [s]);
 
   // ---- holiday multi-select
   const [selectedHolidays, setSelectedHolidays] = useState<Set<string>>(new Set());
@@ -251,7 +260,7 @@ export function CalendarSettingsPanel({ classId, year }: { classId: string; year
                       items: [{
                         startDate: breakStart,
                         endDate: breakEnd < breakStart ? breakStart : breakEnd,
-                        type: breakType as CalendarOverride["type"] & "institution_break",
+                        type: breakType as "institution_break",
                         label: breakLabel || null,
                       }],
                     },
