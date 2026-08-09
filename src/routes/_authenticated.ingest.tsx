@@ -74,6 +74,7 @@ function IngestPage() {
   const search = useSearch({ from: "/_authenticated/ingest" });
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [classId, setClassId] = useState<string | undefined>(search.classId);
+  const [showManual, setShowManual] = useState(false);
   const listFn = useServerFn(listIngestJobs);
   const listClsFn = useServerFn(listClasses);
 
@@ -99,31 +100,25 @@ function IngestPage() {
         onCreated={(id) => { setSelectedJobId(id); refetch(); }}
       />
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <UploadCard kind="roster" icon={<Users className="h-6 w-6" />}
-          title="רשימת תלמידים" desc="תמונה, PDF או Excel/CSV — עמודות טבלאיות ימופו אוטומטית לשדות המערכת עם אפשרות תיקון ידני"
-          accept="image/*,application/pdf,.csv,.xlsx,.xls,.txt"
-          onCreated={(id) => { setSelectedJobId(id); refetch(); }}
-          classes={classes as { id: string; name: string }[]}
-          classId={classId} setClassId={setClassId} requiresClass />
-        <UploadCard kind="resource" icon={<FileText className="h-6 w-6" />}
-          title="חומר לימוד" desc="דף עבודה, מערך שיעור, חידה, סיפור"
-          accept="image/*,application/pdf,.txt,.md,.docx"
-          onCreated={(id) => { setSelectedJobId(id); refetch(); }} />
-        <UploadCard kind="lesson_audio" icon={<Mic className="h-6 w-6" />}
-          title="הקלטת שיעור" desc="MP3, WAV, M4A, WEBM — עד 20MB"
-          accept="audio/*"
-          onCreated={(id) => { setSelectedJobId(id); refetch(); }}
-          classes={classes as { id: string; name: string }[]}
-          classId={classId} setClassId={setClassId} requiresClass />
+      <div className="space-y-3">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowManual((v) => !v)}
+          aria-expanded={showManual}
+        >
+          <Upload className="ms-1 h-4 w-4" />
+          {showManual ? "הסתר העלאה לפי סוג מדויק" : "העלאה לפי סוג מדויק (רשימה / חומר / הקלטה)"}
+        </Button>
+        {showManual && (
+          <DropZone
+            classes={classes as { id: string; name: string }[]}
+            classId={classId}
+            setClassId={setClassId}
+            onCreated={(id) => { setSelectedJobId(id); refetch(); }}
+          />
+        )}
       </div>
-
-      <DropZone
-        classes={classes as { id: string; name: string }[]}
-        classId={classId}
-        setClassId={setClassId}
-        onCreated={(id) => { setSelectedJobId(id); refetch(); }}
-      />
 
       {selectedJobId && (
         <JobDetail jobId={selectedJobId} classes={classes as { id: string; name: string }[]}
@@ -143,86 +138,6 @@ function IngestPage() {
         </CardContent>
       </Card>
     </div>
-  );
-}
-
-function UploadCard({
-  kind, icon, title, desc, accept, onCreated,
-  classes, classId, setClassId, requiresClass,
-}: {
-  kind: IngestKind; icon: React.ReactNode; title: string; desc: string; accept: string;
-  onCreated: (jobId: string) => void;
-  classes?: { id: string; name: string }[]; classId?: string; setClassId?: (v: string) => void;
-  requiresClass?: boolean;
-}) {
-  const [busy, setBusy] = useState(false);
-  const [dragOver, setDragOver] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const getUrl = useServerFn(getIngestUploadUrl);
-  const create = useServerFn(createIngestJob);
-  const analyze = useServerFn(analyzeIngestJob);
-
-  async function onFile(file: File) {
-    if (requiresClass && !classId) { toast.error("בחר כיתה קודם"); return; }
-    if (file.size > 20 * 1024 * 1024) { toast.error("הקובץ גדול מ-20MB"); return; }
-    setBusy(true);
-    try {
-      const safeName = file.name.replace(/[^a-zA-Z0-9._\- ]/g, "_");
-      const { path, token } = await getUrl({ data: { filename: safeName } });
-      const up = await supabase.storage.from("ingest-staging").uploadToSignedUrl(path, token, file, { contentType: file.type });
-      if (up.error) throw new Error(up.error.message);
-      const { id } = await create({ data: {
-        kind, source_path: path, file_name: file.name, mime_type: file.type,
-        class_id: requiresClass ? (classId ?? null) : null,
-      }});
-      toast.success("הועלה, מנתח...");
-      onCreated(id);
-      await analyze({ data: { id } }).catch((e) => toast.error(e instanceof Error ? e.message : "שגיאה בניתוח"));
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "שגיאה בהעלאה");
-    } finally {
-      setBusy(false);
-      if (inputRef.current) inputRef.current.value = "";
-    }
-  }
-
-  return (
-    <Card
-      className={`transition hover:border-primary/40 hover:shadow-md ${dragOver ? "border-primary ring-2 ring-primary/30 bg-primary/5" : ""}`}
-      onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-      onDragLeave={() => setDragOver(false)}
-      onDrop={(e) => {
-        e.preventDefault(); setDragOver(false);
-        const f = e.dataTransfer.files?.[0]; if (f) void onFile(f);
-      }}
-    >
-      <CardContent className="pt-6 space-y-3">
-        <div className="flex items-center gap-2 text-primary">{icon}<span className="font-semibold text-foreground">{title}</span></div>
-        <p className="text-xs text-muted-foreground min-h-8">{desc}</p>
-        <div className="flex flex-wrap gap-1">
-          {KIND_FORMATS[kind].map((f) => (
-            <Badge key={f} variant="secondary" className="text-[10px] font-normal">{f}</Badge>
-          ))}
-        </div>
-        <p className="text-[11px] text-muted-foreground italic">{KIND_HINT[kind]}</p>
-        {requiresClass && (
-          <div>
-            <Label className="text-xs">כיתה</Label>
-            <Select value={classId ?? ""} onValueChange={(v) => setClassId?.(v)}>
-              <SelectTrigger><SelectValue placeholder="בחר כיתה" /></SelectTrigger>
-              <SelectContent>
-                {(classes ?? []).map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-        <input ref={inputRef} type="file" accept={accept} className="hidden"
-          onChange={(e) => { const f = e.target.files?.[0]; if (f) void onFile(f); }} />
-        <Button className="w-full" disabled={busy} onClick={() => inputRef.current?.click()}>
-          {busy ? <><Loader2 className="ms-1 h-4 w-4 animate-spin" /> מעלה...</> : <><Upload className="ms-1 h-4 w-4" /> בחר קובץ או גרור לכאן</>}
-        </Button>
-      </CardContent>
-    </Card>
   );
 }
 
