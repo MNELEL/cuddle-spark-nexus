@@ -108,6 +108,32 @@ function ClassesPage() {
 
       <OnboardingProgressCard />
 
+      {notifications.length > 0 && (
+        <div className="space-y-2" aria-live="polite">
+          {notifications.map((n) => (
+            <div
+              key={n.id}
+              className="flex items-center justify-between gap-3 rounded-xl border border-amber/40 bg-amber/10 px-4 py-3 text-sm"
+            >
+              <span className="flex min-w-0 items-center gap-2">
+                <Archive className="h-4 w-4 shrink-0 text-amber" aria-hidden="true" />
+                <span className="truncate">הכיתה ״{n.class_name}״ הועברה לארכיון</span>
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 shrink-0 p-0"
+                aria-label={`סגור התראה על הכיתה ${n.class_name}`}
+                disabled={dismiss.isPending}
+                onClick={() => dismiss.mutate(n.id)}
+              >
+                <X className="h-4 w-4" aria-hidden="true" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+
       {institution && (
         <Card className="rounded-2xl border-primary/30 bg-primary/5">
           <CardContent className="flex flex-col gap-2 pt-6 sm:flex-row sm:items-center sm:justify-between">
