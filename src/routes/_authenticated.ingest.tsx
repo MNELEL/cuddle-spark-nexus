@@ -364,8 +364,15 @@ function JobRow({ job, onOpen, onDeleted }: { job: IngestJob; onOpen: () => void
     job.status === "failed" ? <XCircle className="h-4 w-4 text-destructive" /> :
     job.status === "analyzing" ? <Loader2 className="h-4 w-4 animate-spin" /> : null;
   return (
-    <div className="flex items-center gap-2 rounded-lg border p-3">
-      <div className="flex-1 min-w-0">
+    <div className="flex items-center gap-2 rounded-lg border p-3 transition hover:border-primary/40 hover:bg-muted/40">
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={onOpen}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(); } }}
+        className="flex-1 min-w-0 cursor-pointer text-start rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        title="לחץ לפתיחת הפריט"
+      >
         <div className="flex items-center gap-2">
           <Badge variant="outline">{KIND_LABEL[job.kind]}</Badge>
           {statusIcon}
@@ -373,8 +380,13 @@ function JobRow({ job, onOpen, onDeleted }: { job: IngestJob; onOpen: () => void
         </div>
         <div className="text-xs text-muted-foreground mt-0.5">{job.summary || job.error || job.status}</div>
       </div>
-      {job.status === "ready" && <Button size="sm" onClick={onOpen}>סקירה ואישור</Button>}
-      {job.status === "failed" && <Button size="sm" variant="outline" onClick={onOpen}>נסה שוב</Button>}
+      {job.status === "ready" ? (
+        <Button size="sm" onClick={onOpen}>סקירה ואישור</Button>
+      ) : job.status === "failed" ? (
+        <Button size="sm" variant="outline" onClick={onOpen}>נסה שוב</Button>
+      ) : (
+        <Button size="sm" variant="outline" onClick={onOpen}>פתח</Button>
+      )}
       <Button size="icon" variant="ghost" className="text-destructive" onClick={() => removeM.mutate()}>
         <Trash2 className="h-4 w-4" />
       </Button>
@@ -423,7 +435,33 @@ function JobDetail({ jobId, classes, preferredClassId, onClose }: {
       </CardContent></Card>
     );
   }
-  if (job.status !== "ready") return null;
+  if (job.status === "committed") {
+    return (
+      <Card><CardContent className="py-6 space-y-3">
+        <div className="flex items-center gap-2 text-green-600"><CheckCircle2 className="h-5 w-5" /> הפריט הזה כבר אושר ונשמר במערכת</div>
+        <p className="text-sm text-muted-foreground">{job.summary || job.file_name}</p>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={() => reAnalyze.mutate()} disabled={reAnalyze.isPending || isFetching}>
+            נתח מחדש לסקירה נוספת
+          </Button>
+          <Button size="sm" variant="ghost" onClick={onClose}>סגור</Button>
+        </div>
+      </CardContent></Card>
+    );
+  }
+  if (job.status !== "ready") {
+    return (
+      <Card><CardContent className="py-6 space-y-3">
+        <p className="text-sm text-muted-foreground">
+          הפריט במצב "{job.status}" ואין לו כרגע מסך סקירה. נסה לנתח מחדש.
+        </p>
+        <div className="flex gap-2">
+          <Button size="sm" onClick={() => reAnalyze.mutate()} disabled={reAnalyze.isPending || isFetching}>נתח מחדש</Button>
+          <Button size="sm" variant="ghost" onClick={onClose}>סגור</Button>
+        </div>
+      </CardContent></Card>
+    );
+  }
 
   if (job.kind === "roster") return <RosterPreview job={job} classes={classes} preferredClassId={preferredClassId} onDone={onClose} />;
   if (job.kind === "resource") return <ResourcePreview job={job} onDone={onClose} />;
