@@ -155,7 +155,7 @@ function GroupMakerPage() {
         <div className="grid gap-6 md:grid-cols-[1fr_1.2fr]">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">רשימת שמות</CardTitle>
+              <CardTitle as="h2" className="text-base">רשימת שמות</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
@@ -194,7 +194,7 @@ function GroupMakerPage() {
 
           <Card>
             <CardHeader className="flex-row items-center justify-between space-y-0">
-              <CardTitle className="text-base">תוצאה</CardTitle>
+              <CardTitle as="h2" className="text-base">תוצאה</CardTitle>
               {groups.length > 0 && (
                 <Button size="sm" variant="ghost" onClick={copyAll} className="gap-1">
                   <Copy className="h-3.5 w-3.5" /> העתק
