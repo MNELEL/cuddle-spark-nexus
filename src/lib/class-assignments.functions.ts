@@ -274,7 +274,6 @@ export const reassignClass = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-/** Teachers assignable to a class: members of the target institution. */
 /** Lessons + bulletins of a class that a library resource can be attached to. */
 export const listClassLibraryTargets = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -375,6 +374,7 @@ export const connectClassLibrary = createServerFn({ method: "POST" })
     return { ok: true, message: `החומר "${resource.title}" חובר לעלון "${bulletin.title}"` };
   });
 
+/** Teachers assignable to a class: members of the target institution. */
 export const listAssignableTeachers = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ institutionId: z.string().uuid() }).parse(d))
