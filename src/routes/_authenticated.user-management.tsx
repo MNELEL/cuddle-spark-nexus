@@ -583,7 +583,10 @@ function UserManagementPage() {
         </CardContent>
       </Card>
 
-      <TrialApprovalsCard />
+      <TrialApprovalsCard
+        initialSearch={trialUser}
+        highlightUser={focus === "trials" ? trialUser : undefined}
+      />
 
       <AccessRequestsCard canResolve />
 
