@@ -115,6 +115,13 @@ export function AccessRequestForm() {
         />
       </div>
 
+      <div className="flex items-start gap-2 rounded-md border bg-muted/40 p-3 text-xs text-muted-foreground">
+        <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+        <span>
+          הבקשה נשלחת למנהל המערכת. מנהל מוסד יכול לצפות בבקשות אך רק מנהל מערכת יכול לאשר או לדחות אותן. לאחר האישור, התפקיד המבוקש ישוייך לחשבונך בעמוד זה.
+        </span>
+      </div>
+
       <Button
         className="w-full"
         disabled={submitMutation.isPending || hasPending}
