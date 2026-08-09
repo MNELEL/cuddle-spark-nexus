@@ -279,6 +279,11 @@ function Index() {
                     לכניסה לכלים החינמיים <ArrowLeft className="h-4 w-4" aria-hidden="true" />
                   </Button>
                 </Link>
+                <Link to="/tools/exam-generator">
+                  <Button variant="outline" className="gap-2">
+                    מחולל מבחנים AI
+                  </Button>
+                </Link>
                 <Link to="/login">
                   <Button variant="outline" className="gap-2">
                     <Gift className="h-4 w-4" aria-hidden="true" /> חודש ניסיון חינם
