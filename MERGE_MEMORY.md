@@ -334,3 +334,12 @@ Test suite ל-RLS ולהעתקת תלמידים — נבדק: אין תשתית 
 - **חישובים / תאריכים:** `src/test/grade-weighting.test.ts`, `src/test/hebrew-date.test.ts` — רגרסיות בממוצעים משוקללים או בלוח השנה העברי.
 
 **פערי schema prod↔repo:** נמצאו 6 טבלאות שנוצרו בעבר ידנית ב-SQL בלי מיגרציה בריפו — `curriculum_units`, `class_pacing_settings`, `academic_calendar_overrides`, `curriculum_history_snapshots`, `pacing_recalc_log`, `seating_wizard_prefs`. נוספה מיגרציית **baseline אידמפוטנטית** שמתעדת אותן (CREATE TABLE IF NOT EXISTS + GRANTs + RLS + policies בתוך `DO $$ IF NOT EXISTS`) וגם **מבטלת גישת anon** לשש הטבלאות (הן היו עם `GRANT SELECT` ל-anon, חסום בפועל ע"י RLS). אחרי המיגרציה אין פערי טבלאות בין prod לריפו.
+
+#### 12.4.3 שומר CI לסינון recipient בהתראות (9/8/2026)
+
+נוסף job נפרד `notifications-guard` ב-`.github/workflows/ci.yml`, שרץ בכל push ובכל pull request במקביל ל-job `build`:
+
+- מריץ `bun run test:notifications` בלבד — `src/test/notifications-flow.test.ts` + `src/test/rls-class-notifications.test.ts` (11 טסטים, כולל recipient לא תואם ובידוד `institution_admin`).
+- **נכשל ולא מדלג:** אם אחד מ-`SUPABASE_URL` / `SUPABASE_PUBLISHABLE_KEY` / `SUPABASE_SERVICE_ROLE_KEY` חסר — ה-job נכשל עם שגיאה מפורשת. הסיבה: הסוויטות משתמשות ב-`describe.skipIf(!hasTestEnv)`, ולכן בלי הסודות הריצה הייתה יורקת ירוק גם אם הסינון נשבר.
+- אחרי הריצה נבדק דוח ה-JSON: אם `passed === 0` או שיש טסט שדולג — ה-job נכשל. הדוח נשמר כ-artifact (`notifications-report-<sha>`, 30 יום).
+- ה-job `build` ממשיך להריץ את כל הסוויטה; `notifications-guard` הוא סיגנל נוסף וממוקד לגבול הפרטיות של ההתראות.
