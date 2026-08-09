@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,12 +19,20 @@ function fmt(iso: string | null) {
   return new Date(iso).toLocaleDateString("he-IL", { day: "numeric", month: "long", year: "numeric" });
 }
 
+/** Matches a row against a focus token (user id or email). */
+function isFocused(token: string | undefined, row: { userId: string; email: string | null }) {
+  if (!token) return false;
+  const t = token.toLowerCase();
+  return row.userId.toLowerCase() === t || (row.email ?? "").toLowerCase() === t;
+}
+
 /** Pending self-service extension requests: approve (and extend) or reject in one click. */
-function PendingTrialRequests() {
+function PendingTrialRequests({ highlightUser }: { highlightUser?: string }) {
   const qc = useQueryClient();
   const listPending = useServerFn(listPendingTrialRequests);
   const review = useServerFn(reviewTrialRequest);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const focusRef = useRef<HTMLDivElement | null>(null);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["pending-trial-requests"],
@@ -55,6 +63,13 @@ function PendingTrialRequests() {
 
   const rows = data ?? [];
 
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  useEffect(() => {
+    if (highlightUser && focusRef.current) {
+      focusRef.current.scrollIntoView({ block: "center", behavior: "smooth" });
+    }
+  }, [highlightUser, rows.length]);
+
   return (
     <div className="mb-6 rounded-lg border border-amber/40 bg-amber/5 p-4">
       <div className="mb-3 flex items-center gap-2">
@@ -71,8 +86,15 @@ function PendingTrialRequests() {
         <div className="divide-y divide-amber/20">
           {rows.map((r) => {
             const busy = busyId === r.id && mutation.isPending;
+            const focused = isFocused(highlightUser, r);
             return (
-              <div key={r.id} className="flex flex-wrap items-start justify-between gap-3 py-3 first:pt-0 last:pb-0">
+              <div
+                key={r.id}
+                ref={focused ? focusRef : undefined}
+                className={`flex flex-wrap items-start justify-between gap-3 py-3 first:pt-0 last:pb-0 ${
+                  focused ? "rounded-lg bg-amber/10 px-3 ring-2 ring-amber" : ""
+                }`}
+              >
                 <div className="min-w-0 space-y-1">
                   <p className="truncate font-medium">{r.displayName || r.email}</p>
                   <p className="truncate text-sm text-muted-foreground">{r.email}</p>
