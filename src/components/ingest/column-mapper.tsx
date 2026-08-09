@@ -9,6 +9,7 @@ const FIELD_LABEL: Record<RosterTargetField, string> = {
   ignore: "— התעלם —",
   name: "שם התלמיד",
   first_name: "שם פרטי (תלמיד)",
+  middle_name: "שם אמצעי / כינוי (תלמיד)",
   last_name: "שם משפחה (תלמיד)",
   national_id: "ת.ז. תלמיד",
   birth_date: "תאריך לידה",
