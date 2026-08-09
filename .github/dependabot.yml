@@ -103,29 +103,6 @@ updates:
           - minor
           - patch
 
-  # Security advisories: Dependabot opens these regardless of the weekly
-  # schedule. Grouping them here keeps one PR per ecosystem instead of a
-  # flood of single-package PRs (each transitive `undici` advisory would
-  # otherwise be its own PR).
-  - package-ecosystem: npm
-    directory: "/"
-    schedule:
-      interval: daily
-      time: "06:00"
-      timezone: Asia/Jerusalem
-    open-pull-requests-limit: 10
-    labels:
-      - dependencies
-      - security
-    commit-message:
-      prefix: "fix(deps)"
-      include: scope
-    groups:
-      npm-security-fixes:
-        applies-to: security-updates
-        patterns:
-          - "*"
-
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
