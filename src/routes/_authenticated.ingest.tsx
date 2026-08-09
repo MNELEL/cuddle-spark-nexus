@@ -435,7 +435,33 @@ function JobDetail({ jobId, classes, preferredClassId, onClose }: {
       </CardContent></Card>
     );
   }
-  if (job.status !== "ready") return null;
+  if (job.status === "committed") {
+    return (
+      <Card><CardContent className="py-6 space-y-3">
+        <div className="flex items-center gap-2 text-green-600"><CheckCircle2 className="h-5 w-5" /> הפריט הזה כבר אושר ונשמר במערכת</div>
+        <p className="text-sm text-muted-foreground">{job.summary || job.file_name}</p>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={() => reAnalyze.mutate()} disabled={reAnalyze.isPending || isFetching}>
+            נתח מחדש לסקירה נוספת
+          </Button>
+          <Button size="sm" variant="ghost" onClick={onClose}>סגור</Button>
+        </div>
+      </CardContent></Card>
+    );
+  }
+  if (job.status !== "ready") {
+    return (
+      <Card><CardContent className="py-6 space-y-3">
+        <p className="text-sm text-muted-foreground">
+          הפריט במצב "{job.status}" ואין לו כרגע מסך סקירה. נסה לנתח מחדש.
+        </p>
+        <div className="flex gap-2">
+          <Button size="sm" onClick={() => reAnalyze.mutate()} disabled={reAnalyze.isPending || isFetching}>נתח מחדש</Button>
+          <Button size="sm" variant="ghost" onClick={onClose}>סגור</Button>
+        </div>
+      </CardContent></Card>
+    );
+  }
 
   if (job.kind === "roster") return <RosterPreview job={job} classes={classes} preferredClassId={preferredClassId} onDone={onClose} />;
   if (job.kind === "resource") return <ResourcePreview job={job} onDone={onClose} />;
