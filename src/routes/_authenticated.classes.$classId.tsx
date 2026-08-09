@@ -239,6 +239,13 @@ function ClassDetail() {
               <p className="mt-1 text-sm text-primary-foreground/85 font-mono-tabular">
                 {students.length} תלמידים · {relations.length} אילוצים
               </p>
+              <div className="mt-1">
+                <ClassTeacherName
+                  classId={classId}
+                  teacherName={cls?.teacher_name ?? null}
+                  readOnly={isArchived}
+                />
+              </div>
             </>
           )}
         </div>
