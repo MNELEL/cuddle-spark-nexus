@@ -1,0 +1,102 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write      # create the release / upload assets
+      id-token: write      # OIDC token used to sign provenance attestations
+      attestations: write  # store SLSA-style build provenance
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Verify the release tag commit is signed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          VERIFIED=$(gh api "repos/${{ github.repository }}/commits/${{ github.sha }}" --jq '.commit.verification.verified')
+          REASON=$(gh api "repos/${{ github.repository }}/commits/${{ github.sha }}" --jq '.commit.verification.reason')
+          echo "verified=$VERIFIED reason=$REASON"
+          if [ "$VERIFIED" != "true" ]; then
+            echo "::error::Release commit ${{ github.sha }} is not signed/verified ($REASON). Refusing to publish."
+            exit 1
+          fi
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Production build
+        run: bun run build
+
+      - name: Generate SBOM (CycloneDX)
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: cyclonedx-json
+          output-file: sbom/sbom-cyclonedx.json
+          artifact-name: sbom-cyclonedx-${{ github.ref_name }}.json
+
+      - name: Generate SBOM (SPDX)
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: spdx-json
+          output-file: sbom/sbom-spdx.json
+          artifact-name: sbom-spdx-${{ github.ref_name }}.json
+
+      - name: Package release artifact
+        run: |
+          set -euo pipefail
+          mkdir -p release
+          tar -czf "release/build-${{ github.ref_name }}.tar.gz" dist sbom
+          (cd release && sha256sum "build-${{ github.ref_name }}.tar.gz" > "build-${{ github.ref_name }}.tar.gz.sha256")
+
+      # SLSA-style provenance: cryptographically ties the artifact to this
+      # workflow, commit, and runner. Verify with:
+      #   gh attestation verify release/build-<tag>.tar.gz --repo <owner>/<repo>
+      - name: Attest build provenance (artifact)
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: |
+            release/build-${{ github.ref_name }}.tar.gz
+
+      - name: Attest SBOM
+        uses: actions/attest-sbom@v3
+        with:
+          subject-path: release/build-${{ github.ref_name }}.tar.gz
+          sbom-path: sbom/sbom-spdx.json
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ github.ref_name }}
+          path: |
+            release/
+            sbom/
+          retention-days: 365
+
+      - name: Attach to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --title "${{ github.ref_name }}" \
+            --generate-notes \
+            release/* sbom/* || \
+          gh release upload "${{ github.ref_name }}" release/* sbom/* --clobber
