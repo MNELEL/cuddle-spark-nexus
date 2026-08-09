@@ -1,20 +1,36 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, ChevronLeft, Building2, Users, GraduationCap, Archive } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog";
+import { Search, ChevronLeft, Building2, Users, GraduationCap, Archive, UserPlus, Loader2 } from "lucide-react";
 import {
   getMyInstitution,
   getInstitutionOverview,
   listMyInstitutionClasses,
   listMyInstitutionAudit,
 } from "@/lib/institution-dashboard.functions";
+import {
+  listInstitutionTeachers,
+  inviteTeacherToInstitution,
+  removeTeacherFromInstitution,
+} from "@/lib/institution-teachers.functions";
 
 export const Route = createFileRoute("/_authenticated/institution")({
   component: InstitutionDashboardPage,
