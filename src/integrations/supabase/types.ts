@@ -839,6 +839,7 @@ export type Database = {
           public_slug: string | null
           room_objects: Json
           status: string
+          teacher_name: string | null
           updated_at: string
         }
         Insert: {
@@ -858,6 +859,7 @@ export type Database = {
           public_slug?: string | null
           room_objects?: Json
           status?: string
+          teacher_name?: string | null
           updated_at?: string
         }
         Update: {
@@ -877,6 +879,7 @@ export type Database = {
           public_slug?: string | null
           room_objects?: Json
           status?: string
+          teacher_name?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1228,6 +1231,59 @@ export type Database = {
             columns: ["class_id"]
             isOneToOne: false
             referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      institution_staff: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          email: string | null
+          id: string
+          institution_id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          title: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          institution_id: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          institution_id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "institution_staff_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
             referencedColumns: ["id"]
           },
         ]
