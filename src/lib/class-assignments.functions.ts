@@ -275,6 +275,106 @@ export const reassignClass = createServerFn({ method: "POST" })
   });
 
 /** Teachers assignable to a class: members of the target institution. */
+/** Lessons + bulletins of a class that a library resource can be attached to. */
+export const listClassLibraryTargets = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ classId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const [lessons, bulletins] = await Promise.all([
+      supabase
+        .from("weekly_lessons")
+        .select("id, title, subject, week_start, day_key, hour, library_item_id")
+        .eq("class_id", data.classId)
+        .order("week_start", { ascending: false })
+        .limit(60),
+      supabase
+        .from("weekly_bulletins")
+        .select("id, title, start_date, end_date")
+        .eq("class_id", data.classId)
+        .order("start_date", { ascending: false })
+        .limit(30),
+    ]);
+    if (lessons.error || bulletins.error) {
+      console.error("[DB Error]", lessons.error ?? bulletins.error);
+      throw new Error(FAIL);
+    }
+    return {
+      lessons: (lessons.data ?? []).map((l) => ({
+        id: l.id,
+        title: l.title,
+        subject: l.subject,
+        weekStart: l.week_start,
+        linked: !!l.library_item_id,
+      })),
+      bulletins: (bulletins.data ?? []).map((b) => ({
+        id: b.id,
+        title: b.title,
+        startDate: b.start_date,
+      })),
+    };
+  });
+
+/** Attaches a library resource to a chosen lesson or bulletin of the class. */
+export const connectClassLibrary = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z
+      .object({
+        classId: z.string().uuid(),
+        resourceId: z.string().uuid(),
+        target: z.enum(["lesson", "bulletin"]),
+        targetId: z.string().uuid(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    const { data: cls, error: cErr } = await supabase
+      .from("classes").select("id, status").eq("id", data.classId).maybeSingle();
+    if (cErr) { console.error("[DB Error]", cErr); throw new Error(FAIL); }
+    if (!cls) throw new Error("הכיתה לא נמצאה");
+    if (cls.status === "archived") throw new Error(ARCHIVED_MSG);
+
+    const { data: resource, error: rErr } = await supabase
+      .from("teaching_resources").select("id, title").eq("id", data.resourceId).maybeSingle();
+    if (rErr) { console.error("[DB Error]", rErr); throw new Error(FAIL); }
+    if (!resource) throw new Error("חומר ההוראה שנבחר לא נמצא בספרייה שלך");
+
+    if (data.target === "lesson") {
+      const { data: lesson, error } = await supabase
+        .from("weekly_lessons").select("id, class_id, title")
+        .eq("id", data.targetId).maybeSingle();
+      if (error) { console.error("[DB Error]", error); throw new Error(FAIL); }
+      if (!lesson || lesson.class_id !== data.classId) {
+        throw new Error("השיעור שנבחר אינו שייך לכיתה הזו");
+      }
+      const { error: uErr } = await supabase
+        .from("weekly_lessons")
+        .update({ library_item_id: data.resourceId })
+        .eq("id", data.targetId);
+      if (uErr) { console.error("[DB Error]", uErr); throw new Error(FAIL); }
+      return { ok: true, message: `החומר "${resource.title}" חובר לשיעור "${lesson.title}"` };
+    }
+
+    const { data: bulletin, error } = await supabase
+      .from("weekly_bulletins").select("id, class_id, title")
+      .eq("id", data.targetId).maybeSingle();
+    if (error) { console.error("[DB Error]", error); throw new Error(FAIL); }
+    if (!bulletin || bulletin.class_id !== data.classId) {
+      throw new Error("העלון שנבחר אינו שייך לכיתה הזו");
+    }
+    const { error: iErr } = await supabase
+      .from("bulletin_resources")
+      .upsert(
+        { bulletin_id: data.targetId, resource_id: data.resourceId, owner_id: userId } as never,
+        { onConflict: "bulletin_id,resource_id" },
+      );
+    if (iErr) { console.error("[DB Error]", iErr); throw new Error(FAIL); }
+    return { ok: true, message: `החומר "${resource.title}" חובר לעלון "${bulletin.title}"` };
+  });
+
 export const listAssignableTeachers = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ institutionId: z.string().uuid() }).parse(d))
