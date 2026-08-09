@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -6,18 +6,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AlertTriangle, CheckCircle2, Filter, EyeOff, Eye, Gauge } from "lucide-react";
 import type { RosterStudentDraft } from "@/lib/ingest.functions";
+import { joinName, splitFullName } from "@/lib/student-field-validation";
 
 /* ------- target fields ------- */
 
 export const FIELD_KEYS = [
-  "name", "first_name", "middle_name", "last_name", "national_id", "birth_date", "address",
+  "first_name", "middle_name", "last_name", "national_id", "birth_date", "address",
   "father_name", "father_id", "father_phone",
   "mother_name", "mother_id", "mother_phone",
 ] as const;
 export type FieldKey = typeof FIELD_KEYS[number];
 
 const FIELD_LABEL: Record<FieldKey, string> = {
-  name: "שם התלמיד",
   first_name: "שם פרטי",
   middle_name: "שם אמצעי / כינוי",
   last_name: "שם משפחה",
@@ -33,11 +33,14 @@ const FIELD_LABEL: Record<FieldKey, string> = {
 };
 
 const FIELD_GROUP: Record<FieldKey, "student" | "ids" | "address" | "father" | "mother"> = {
-  name: "student", first_name: "student", middle_name: "student", last_name: "student",
+  first_name: "student", middle_name: "student", last_name: "student",
   national_id: "ids", birth_date: "student", address: "address",
   father_name: "father", father_id: "ids", father_phone: "father",
   mother_name: "mother", mother_id: "ids", mother_phone: "mother",
 };
+
+/** columns that belong to the "שם התלמיד" name group */
+const NAME_KEYS: FieldKey[] = ["first_name", "middle_name", "last_name"];
 const GROUP_COLOR: Record<string, string> = {
   student: "bg-primary/10 text-primary",
   ids: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
@@ -50,9 +53,12 @@ const GROUP_COLOR: Record<string, string> = {
 
 function validate(key: FieldKey, v: string): { ok: true } | { ok: false; msg: string } {
   const val = (v ?? "").trim();
-  if (key === "name") {
-    if (!val) return { ok: false, msg: "שם התלמיד חובה" };
-    if (val.length < 2) return { ok: false, msg: "שם קצר מדי" };
+  if (key === "first_name") {
+    if (!val) return { ok: false, msg: "שם פרטי חובה" };
+    return { ok: true };
+  }
+  if (key === "last_name") {
+    if (!val) return { ok: false, msg: "שם משפחה חובה" };
     return { ok: true };
   }
   if (!val) return { ok: true }; // optional
@@ -90,7 +96,19 @@ export function RosterReviewTable({
   onChange: (rows: Row[], errorCount: number) => void;
 }) {
   const [rows, setRows] = useState<Row[]>(
-    initialRows.map((r) => ({ ...r, include: r.include !== false })),
+    initialRows.map((r) => {
+      const hasSplit = ((r.first_name ?? "") + (r.last_name ?? "")).trim().length > 0;
+      const split = hasSplit
+        ? { first_name: r.first_name ?? "", last_name: r.last_name ?? "" }
+        : splitFullName(r.name ?? "");
+      return {
+        ...r,
+        first_name: split.first_name,
+        last_name: split.last_name,
+        name: joinName(split.first_name, split.last_name),
+        include: r.include !== false,
+      };
+    }),
   );
   const [columns, setColumns] = useState<FieldKey[]>([...FIELD_KEYS]);
   const [filter, setFilter] = useState<"all" | "errors" | "missing">("all");
@@ -103,7 +121,14 @@ export function RosterReviewTable({
   }
 
   function updateCell(rowIdx: number, key: FieldKey, val: string) {
-    const next = rows.map((r, i) => (i === rowIdx ? { ...r, [key]: val } : r));
+    const next = rows.map((r, i) => {
+      if (i !== rowIdx) return r;
+      const updated = { ...r, [key]: val } as Row;
+      if (key === "first_name" || key === "last_name") {
+        updated.name = joinName(updated.first_name, updated.last_name);
+      }
+      return updated;
+    });
     commit(next);
   }
   function toggleInclude(rowIdx: number, include: boolean) {
@@ -135,7 +160,9 @@ export function RosterReviewTable({
     const nextRows = rows.map((r) => {
       const a = (r[oldKey] as string | undefined) ?? "";
       const b = (r[newKey] as string | undefined) ?? "";
-      return { ...r, [oldKey]: b, [newKey]: a } as Row;
+      const next = { ...r, [oldKey]: b, [newKey]: a } as Row;
+      next.name = joinName(next.first_name, next.last_name);
+      return next;
     });
     setColumns(nextCols);
     commit(nextRows);
@@ -214,6 +241,32 @@ export function RosterReviewTable({
         <div className="overflow-x-auto rounded-lg border">
           <table className="w-full text-xs">
             <thead>
+              <tr className="border-b bg-muted/70">
+                <th className="p-1" colSpan={3} />
+                {(() => {
+                  const cells: React.ReactNode[] = [];
+                  let idx = 0;
+                  while (idx < columns.length) {
+                    const col = columns[idx];
+                    if (NAME_KEYS.includes(col)) {
+                      let span = 0;
+                      while (idx + span < columns.length && NAME_KEYS.includes(columns[idx + span])) span++;
+                      cells.push(
+                        <th key={`g-${idx}`} colSpan={span}
+                          className="p-1 text-center text-[11px] font-semibold text-primary bg-primary/10 border-x">
+                          שם התלמיד
+                        </th>,
+                      );
+                      idx += span;
+                    } else {
+                      cells.push(<th key={`g-${idx}`} className="p-1" />);
+                      idx++;
+                    }
+                  }
+                  return cells;
+                })()}
+                <th className="p-1" />
+              </tr>
               <tr className="border-b bg-muted/50">
                 <th className="p-2 text-center w-8">✓</th>
                 <th className="p-2 text-center w-10">#</th>
@@ -315,7 +368,7 @@ export function RosterReviewTable({
         </div>
 
         <p className="text-[11px] text-muted-foreground leading-relaxed">
-          לחיצה על כותרת עמודה מאפשרת להתאים אותה לשדה יעד אחר. הערכים בעמודה יוחלפו בהתאם. שדות חובה: שם התלמיד. אדום = שגיאת ולידציה, כתום = שדה אופציונלי חסר.
+          לחיצה על כותרת עמודה מאפשרת להתאים אותה לשדה יעד אחר. הערכים בעמודה יוחלפו בהתאם. שדות חובה: שם פרטי ושם משפחה (מרכיבים יחד את שם התלמיד). אדום = שגיאת ולידציה, כתום = שדה אופציונלי חסר.
         </p>
       </div>
     </TooltipProvider>
@@ -335,7 +388,9 @@ function rowErrors(r: RosterStudentDraft): Map<FieldKey, string> {
 }
 function rowHasError(r: RosterStudentDraft): boolean { return rowErrors(r).size > 0; }
 function rowMissingCount(r: RosterStudentDraft): number {
-  return FIELD_KEYS.filter((k) => k !== "name" && !((r[k] as string | undefined) ?? "").trim()).length;
+  return FIELD_KEYS.filter(
+    (k) => k !== "first_name" && k !== "last_name" && !((r[k] as string | undefined) ?? "").trim(),
+  ).length;
 }
 function rowHasMissing(r: RosterStudentDraft): boolean { return rowMissingCount(r) > 0; }
 
