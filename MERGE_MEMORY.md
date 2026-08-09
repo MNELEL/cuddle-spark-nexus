@@ -263,3 +263,43 @@ Test suite ל-RLS ולהעתקת תלמידים — נבדק: אין תשתית 
 שני הפריטים האלה טרם תוכננו ומחכים להחלטת מיכאל על גישה/עדיפות לפני שליחת קוד.
 
 חשוב: זהו עדכון תוכן Markdown בלבד. אין לגעת בשום קובץ קוד אחר.
+
+---
+
+## 12. דוח diff — מ-commit 8a21569 (8/8/2026) עד HEAD (9/8/2026)
+
+### 12.0 עקביות DB↔ריפו — מיגרציית notifications הזנוחה (טופלה)
+
+הטבלה `public.notifications` (מיגרציה `20260808225907`) נוצרה ב-8/8 אך **בוטלה כבר למחרת** — המיגרציה של `class_notifications` (`20260809092949`) פתחה ב-`drop table if exists public.notifications`. אומת מול ה-DB בפועל: קיימת רק `class_notifications`; `notifications` אינה קיימת, ואין אף הפניה אליה בקוד.
+לכן, לשם עקביות בין ה-DB לריפו:
+- קובץ המיגרציה `20260808225907_...sql` **נמחק**.
+- שורת ה-`drop table if exists public.notifications;` הוסרה מראש מיגרציית `class_notifications` (אין יותר טבלה למחוק).
+מסקנה מתועדת: מנגנון ההתראות בפרויקט הוא **`class_notifications` בלבד** (התראת ארכוב כיתה לבעלים). אין טבלת notifications גנרית — אם יידרש מנגנון רחב, זו תוספת חדשה ולא "החזרה" של הטבלה שנמחקה.
+
+### 12.1 DB — מיגרציות שנוספו בתקופה
+
+| מיגרציה | תוכן |
+|---|---|
+| `20260809092949` | `public.class_notifications` + policies `class_notifications_recipient_select/update` + REVOKE anon + GRANT select/update ל-authenticated |
+| `20260809093401` | `GRANT EXECUTE` על `private.is_institution_admin(uuid,uuid)` ל-authenticated/service_role, `REVOKE` מ-anon/public |
+| `20260809111211` | `students.first_name` + `students.last_name`, backfill חד-פעמי מ-`name` (עם השהיית טריגר הארכוב), ועדכון `sync_student_name()` |
+| `20260809143704` | `public.access_requests` (user_id, email, requested_role, institution_name, message, status, reviewed_by/at) + RLS: הגשה/צפייה עצמית, צפייה ל-admin+principal, עדכון/מחיקה ל-admin בלבד + REVOKE anon |
+| `20260809144854` | `students.middle_name` + `sync_student_name()` מרכיב שם מלא מ-first/middle/last |
+
+### 12.2 פיצ'רים שהושלמו
+
+- **התראת ארכוב כיתה** — `src/lib/notifications.functions.ts` (`listUnreadClassNotifications`, `markNotificationRead`), כתיבת התראה ב-`setClassStatus` כשמנהל מארכב כיתה של מורה אחר, באנר במסך הכיתות. **סוגר את פריט C-9 שהיה פתוח בסעיף 11.3.**
+- **תשתית טסטים + סגירת פער A1** — vitest, `src/test/helpers.ts` (משתמשי טסט, anonClient, מוסדות, grantRole), 14 קבצי טסט: RLS ל-classes/students/reminders/behavior_points/grade_weights/institutions/class_notifications/student_profiles/access_requests, ולוגיקה טהורה ל-hebrew-date/student-field-validation/grade-weighting/roster-merge/ai-gateway-breaker/rollover-copy. חילוץ `src/lib/roster-merge.ts` מתוך `commitRoster`. CI מריץ `bun run test`. **סוגר את פריט C-11 שהיה פתוח בסעיף 11.3.**
+- **פרטי תלמיד מלאים** — first/middle/last name בכל השרשרת: מיפוי עמודות בייבוא (כולל זיהוי אוטומטי מכותרות עבריות), טבלת סקירה, מיזוג שדה-שדה שלא מוחק ערכים קיימים, כרטיס פרטי קשר, יום הולדת עברי בכרטיסי כיתה וביומן, guard על `classId`.
+- **שדרוג ספריית חומרי הוראה** — מועדפים, רמת קושי, נגישות מקלדת (`src/hooks/use-tablist-keys.ts`), שני מחוללים פדגוגיים.
+- **מנוי ואישורי גישה (חדש, לא היה בידיעה)** — `src/lib/trial-admin.server.ts` + `listUserTrials`/`extendUserTrial`, כרטיס `src/components/trial-approvals-card.tsx` (אישור +30 יום / שנה בלחיצה), `src/components/subscription-status-card.tsx` עם פנייה למנהל, וקישור "ניהול משתמשים" בהגדרות **חסום למנהל בלבד**.
+- **בקשות הרשאה (חדש)** — `src/lib/access-requests.functions.ts`, `access-request-form.tsx`, `access-requests-card.tsx`; `canManageUsers` מאפשר גם ל-principal לצפות בתור (קריאה בלבד), פעולות הרסניות נשארות admin-only ונאכפות בשרת.
+- **פישוט מסך /ingest (חדש)** — הוסרו שלושה כרטיסי העלאה כפולים; נשארה העלאה חכמה אחת, והעלאה לפי סוג מדויק מוסתרת מאחורי toggle. כל שורה בהיסטוריה נפתחת (כולל jobs שאושרו) עם מסך מתאים במקום מסך ריק.
+- **קשיחות שרשרת אספקה (חדש)** — `@cloudflare/vite-plugin` 1.51.1, `undici` מוצמד ל-8.10.0 דרך overrides+resolutions, dependabot + workflow לסנכרון lockfile, SLSA/SBOM ב-ci/release. אומת עם `bun install --frozen-lockfile` + build נקי.
+- **SEO** — תיקון דילוג על רמות כותרות (`CardTitle as=`), מטא-דאטה עברית מקוצרת, RSS/JSON-LD, טופס לידים לשותפים עם hCaptcha.
+
+### 12.3 פתוח / התחיל ולא נגמר
+
+- `notifications` הגנרי — בוטל במכוון (12.0). מה שקיים הוא התראת ארכוב בלבד; פעמון גלובלי/סוגי התראות נוספים לא מומשו.
+- 10.2 — יומן צפיות מלא במידע רגיש: עדיין רק "מי עדכן אחרון", בלי audit של קריאות.
+- פערי סעיף 9 ללא שינוי: סנכרון Google Calendar, דוח תעודות חודשי מרוכז + מסך אישור, דשבורד מרוכז להתקדמות מורים, Google Drive תיקייה שלמה, שיתוף משאבים בין מוסדות, push/SMS, צ'אט צוות, Google Classroom, iOS+offline, 3D שולחנות מתקדם, Campaigns/Leaderboard.
