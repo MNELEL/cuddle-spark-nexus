@@ -83,17 +83,27 @@ function SettingsPage() {
 
       <Card>
         <CardHeader><CardTitle className="text-base">קישורים נוספים</CardTitle></CardHeader>
-        <CardContent className={`grid gap-2 ${viewerIsAdmin ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
+        <CardContent className="grid gap-2 sm:grid-cols-3">
           <Button asChild variant="ghost" className="justify-start">
             <Link to="/toolkit"><Wrench className="ms-1 h-4 w-4" /> ארגז כלים</Link>
           </Button>
           <Button asChild variant="ghost" className="justify-start">
             <Link to="/resources"><Library className="ms-1 h-4 w-4" /> ספרייה</Link>
           </Button>
-          {viewerIsAdmin && (
+          {viewerIsAdmin ? (
             <Button asChild variant="ghost" className="justify-start">
               <Link to="/user-management"><ShieldCheck className="ms-1 h-4 w-4" /> ניהול משתמשים</Link>
             </Button>
+          ) : (
+            <div className="flex items-start gap-2 rounded-md border bg-muted/40 p-3 text-xs text-muted-foreground">
+              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>
+                ניהול משתמשים זמין למנהל מערכת ולמנהל מוסד בלבד.{" "}
+                <Link to="/user-management" className="text-primary hover:underline">
+                  לבקשת הרשאה בלחיצה
+                </Link>
+              </span>
+            </div>
           )}
         </CardContent>
       </Card>

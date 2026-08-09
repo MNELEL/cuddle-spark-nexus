@@ -163,3 +163,26 @@ export const bootstrapFirstAdmin = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true, message: "נוצר מנהל מערכת ראשון" };
   });
+
+/**
+ * Server-side gate for the user-management screen.
+ * Both admins and institution principals may open it; write actions on roles
+ * stay admin-only (see `verifyAdmin`).
+ */
+export const canManageUsers = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data, error } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .in("role", ["admin", "principal"]);
+    if (error) throw new Error(error.message);
+    const roles = (data ?? []).map((r) => r.role);
+    return {
+      isAdmin: roles.includes("admin"),
+      isPrincipal: roles.includes("principal"),
+      canManage: roles.length > 0,
+    };
+  });
