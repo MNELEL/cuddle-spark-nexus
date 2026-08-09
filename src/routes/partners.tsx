@@ -126,7 +126,7 @@ function PartnersPage() {
             <Card className="h-full transition hover:border-primary hover:shadow-lg">
               <CardHeader>
                 <Building2 className="h-8 w-8 text-primary mb-2" />
-                <CardTitle className="text-2xl">מחוזות חינוך ורשתות</CardTitle>
+                <CardTitle as="h2" className="text-2xl">מחוזות חינוך ורשתות</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 text-muted-foreground">
                 <p>הטמעה רב-מוסדית עם ניהול מרכזי, דוחות אגרגטיביים ותקציב שנתי מתואם.</p>
@@ -139,7 +139,7 @@ function PartnersPage() {
             <Card className="h-full transition hover:border-primary hover:shadow-lg">
               <CardHeader>
                 <School className="h-8 w-8 text-primary mb-2" />
-                <CardTitle className="text-2xl">בתי ספר, חיידרים ותלמודי תורה</CardTitle>
+                <CardTitle as="h2" className="text-2xl">בתי ספר, חיידרים ותלמודי תורה</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 text-muted-foreground">
                 <p>רישיון מוסדי עם הדרכה למלמדים, תבניות סדר יום, וסנכרון עם המזכירות.</p>
@@ -152,9 +152,9 @@ function PartnersPage() {
         <section className="mb-12">
           <Link to="/partners/case-studies" className="group block">
             <Card className="transition hover:border-primary hover:shadow-lg">
-              <CardHeader>
-                <CardTitle className="text-2xl">Case Studies — סיפורי הטמעה אמיתיים</CardTitle>
-              </CardHeader>
+            <CardHeader>
+              <CardTitle as="h2" className="text-2xl">Case Studies — סיפורי הטמעה אמיתיים</CardTitle>
+            </CardHeader>
               <CardContent className="space-y-2 text-muted-foreground">
                 <p>ישיבה קטנה, רשת תלמודי תורה ובית ספר ממ״ד — יעדים, לוח זמנים של 90 יום ותוצאות מדידות לפני ואחרי.</p>
                 <div className="text-primary text-sm group-hover:underline">לצפייה בסיפורי הלקוחות ←</div>
@@ -177,7 +177,7 @@ function PartnersPage() {
               <Card key={title}>
                 <CardHeader>
                   <Icon className="h-6 w-6 text-primary mb-1" />
-                  <CardTitle className="text-lg">{title}</CardTitle>
+                  <CardTitle as="h3" className="text-lg">{title}</CardTitle>
                 </CardHeader>
                 <CardContent className="text-muted-foreground text-sm">{body}</CardContent>
               </Card>
@@ -257,7 +257,7 @@ function PartnerContactForm() {
       <section id="contact" className="max-w-3xl mx-auto">
         <Card className="border-primary/30">
           <CardHeader>
-            <CardTitle className="text-2xl">הבקשה נשלחה בהצלחה</CardTitle>
+            <CardTitle as="h2" className="text-2xl">הבקשה נשלחה בהצלחה</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3" role="status" aria-live="polite">
             <p className="text-sm text-muted-foreground">
@@ -276,7 +276,7 @@ function PartnerContactForm() {
     <section id="contact" className="max-w-3xl mx-auto">
       <Card className="border-primary/30">
         <CardHeader>
-          <CardTitle className="text-2xl">בקשת דמו למחוזות ובתי ספר</CardTitle>
+          <CardTitle as="h2" className="text-2xl">בקשת דמו למחוזות ובתי ספר</CardTitle>
           <p className="text-sm text-muted-foreground">
             מלאו פרטי מוסד ואיש קשר, ונחזור אליכם עם ערכת הטמעה מלאה ומועד לדמו חי.
           </p>
