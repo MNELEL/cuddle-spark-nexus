@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { CalendarClock, BadgeCheck, Mail } from "lucide-react";
 import { getMyTrialStatus } from "@/lib/trial.functions";
 import { isAdmin } from "@/lib/user-roles.functions";
+import { TrialExtensionRequestButton } from "@/components/trial-extension-request-button";
 
 const ADMIN_EMAIL = "nm0527603669@gmail.com";
 
@@ -77,6 +78,7 @@ export function SubscriptionStatusCard() {
                   : "כדי להמשיך להשתמש בכל התכונות נדרש אישור של מנהל המערכת."}
               </p>
               <div className="flex flex-wrap gap-2">
+                <TrialExtensionRequestButton size="sm" />
                 <Button asChild variant="outline" size="sm">
                   <a href={`mailto:${ADMIN_EMAIL}?subject=${encodeURIComponent("בקשת אישור מנוי")}`}>
                     <Mail className="ms-1 h-4 w-4" /> פנייה למנהל המערכת
