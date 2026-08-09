@@ -153,8 +153,8 @@ export function AccessRequestsCard({ canResolve: canResolveHint }: { canResolve:
           </CardTitle>
           <CardDescription>
             {canResolve
-              ? "אשר בקשות גישה ושייך את התפקיד המבוקש בקליק אחד."
-              : "תצוגה בלבד: הבקשות שהתקבלו. אישור או דחייה מתבצעים על ידי מנהל המערכת בלבד."}
+              ? "אשר בקשות גישה ושייך את התפקיד המבוקש בקליק אחד. פעולה זו זמינה רק למנהל מערכת."
+              : "תצוגה בלבד: הבקשות שהתקבלו. אישור או דחייה מתבצעים על ידי מנהל המערכת בלבד, במסך ניהול המשתמשים."}
           </CardDescription>
         </CardHeader>
         <CardContent>
