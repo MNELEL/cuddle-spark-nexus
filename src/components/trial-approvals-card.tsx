@@ -124,13 +124,22 @@ function PendingTrialRequests({ highlightUser }: { highlightUser?: string }) {
   );
 }
 
+type TrialApprovalsCardProps = {
+  /** Pre-fills the search box (e.g. the email coming from a trial-expiry notification). */
+  initialSearch?: string;
+  /** User id or email whose row is highlighted and scrolled into view. */
+  highlightUser?: string;
+};
+
 /** Admin-only card: approve or extend users' access in one click. */
-export function TrialApprovalsCard() {
+export function TrialApprovalsCard({ initialSearch, highlightUser }: TrialApprovalsCardProps = {}) {
   const qc = useQueryClient();
   const list = useServerFn(listUserTrials);
   const extend = useServerFn(extendUserTrial);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(initialSearch ?? "");
   const [pendingId, setPendingId] = useState<string | null>(null);
+  const focusRef = useRef<HTMLDivElement | null>(null);
+  const cardRef = useRef<HTMLDivElement | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-user-trials"],
@@ -159,8 +168,13 @@ export function TrialApprovalsCard() {
     mutation.mutate({ userId, days });
   }
 
+  useEffect(() => {
+    const target = focusRef.current ?? (highlightUser ? cardRef.current : null);
+    if (target) target.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [highlightUser, rows.length]);
+
   return (
-    <Card>
+    <Card ref={cardRef} className={highlightUser ? "ring-1 ring-amber/50" : undefined}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
           <BadgeCheck className="h-5 w-5 text-amber" /> אישורי מנוי ותקופות ניסיון
@@ -176,10 +190,15 @@ export function TrialApprovalsCard() {
               className="pe-4 ps-10"
             />
           </div>
+          {search && (
+            <Button variant="ghost" size="sm" className="mt-2" onClick={() => setSearch("")}>
+              הצג את כל המשתמשים
+            </Button>
+          )}
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <PendingTrialRequests />
+        <PendingTrialRequests highlightUser={highlightUser} />
         {isLoading ? (
           <div className="py-8 text-center text-muted-foreground">טוען מצב מנויים...</div>
         ) : rows.length === 0 ? (
@@ -188,8 +207,16 @@ export function TrialApprovalsCard() {
           <div className="divide-y">
             {rows.map((r) => {
               const busy = pendingId === r.userId && mutation.isPending;
+              const focused = isFocused(highlightUser, r);
               return (
-                <div key={r.userId} className="flex flex-wrap items-center justify-between gap-3 py-4 first:pt-0 last:pb-0">
+                <div
+                  key={r.userId}
+                  ref={focused ? focusRef : undefined}
+                  tabIndex={focused ? -1 : undefined}
+                  className={`flex flex-wrap items-center justify-between gap-3 py-4 first:pt-0 last:pb-0 ${
+                    focused ? "rounded-lg bg-amber/10 px-3 ring-2 ring-amber" : ""
+                  }`}
+                >
                   <div className="min-w-0">
                     <p className="truncate font-medium">{r.displayName || r.email}</p>
                     <p className="truncate text-sm text-muted-foreground">{r.email}</p>
