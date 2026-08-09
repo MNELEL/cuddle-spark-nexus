@@ -7,6 +7,7 @@ import { TorahLogo } from "@/components/torah-logo";
 import { Mail, Gift, Lock, Home, Loader2, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { getMyTrialStatus } from "@/lib/trial.functions";
+import { TrialExtensionRequestButton } from "@/components/trial-extension-request-button";
 
 type Props = {
   title: string;
@@ -99,6 +100,7 @@ export function RegistrationGate({ title, description, requireActiveTrial = fals
             תמיד וללא רישום.
           </p>
           <div className="mt-7 flex flex-wrap justify-center gap-2">
+            <TrialExtensionRequestButton className="shadow-glow-primary" />
             <Link to="/support">
               <Button className="gap-2 shadow-glow-primary">
                 <Mail className="h-4 w-4" aria-hidden="true" /> פנה אלינו לשדרוג
@@ -126,13 +128,16 @@ export function RegistrationGate({ title, description, requireActiveTrial = fals
         <div dir="rtl" className="border-b border-amber/40 bg-amber/10 px-6 py-3 text-sm">
           <div className="mx-auto flex max-w-3xl items-start gap-2">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber" aria-hidden="true" />
+            <div className="space-y-2">
             <p>
               תקופת הניסיון החינמית שלך הסתיימה. התוכן נשאר פתוח לקריאה — לשדרוג פנה אלינו בעמוד{" "}
               <Link to="/support" className="font-medium underline underline-offset-4">
                 התמיכה
               </Link>
-              .
+              , או בקש הארכה שהמנהל מאשר בקליק אחד.
             </p>
+            <TrialExtensionRequestButton size="sm" variant="outline" />
+            </div>
           </div>
         </div>
       )}
