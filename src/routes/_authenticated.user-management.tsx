@@ -30,6 +30,7 @@ import {
 import { toast } from "sonner";
 import {
   isAdmin,
+  canManageUsers,
   listUsersWithRoles,
   assignRole,
   removeRole,
@@ -43,6 +44,8 @@ import {
   listRoleAuditLog,
 } from "@/lib/institutions.functions";
 import { TrialApprovalsCard } from "@/components/trial-approvals-card";
+import { AccessRequestForm } from "@/components/access-request-form";
+import { AccessRequestsCard } from "@/components/access-requests-card";
 
 const NO_INSTITUTION = "__none__";
 const INSTITUTIONS_PAGE_SIZE = 10;
@@ -68,7 +71,7 @@ export const Route = createFileRoute("/_authenticated/user-management")({
 });
 
 function UserManagementPage() {
-  const checkAdmin = useServerFn(isAdmin);
+  const checkAccess = useServerFn(canManageUsers);
   const listUsers = useServerFn(listUsersWithRoles);
   const assignRoleFn = useServerFn(assignRole);
   const removeRoleFn = useServerFn(removeRole);
@@ -79,10 +82,12 @@ function UserManagementPage() {
   const listAuditLogFn = useServerFn(listRoleAuditLog);
   const queryClient = useQueryClient();
 
-  const { data: isAdminUser, isLoading: isAdminLoading } = useQuery({
-    queryKey: ["is-admin"],
-    queryFn: () => checkAdmin(),
+  const { data: access, isLoading: isAdminLoading } = useQuery({
+    queryKey: ["can-manage-users"],
+    queryFn: () => checkAccess(),
   });
+  const isAdminUser = access?.isAdmin === true;
+  const canManage = access?.canManage === true;
 
   const { data: users, isLoading: usersLoading } = useQuery({
     queryKey: ["users-with-roles"],
@@ -171,7 +176,7 @@ function UserManagementPage() {
     onSuccess: (res) => {
       if (res.ok) {
         toast.success(res.message);
-        queryClient.invalidateQueries({ queryKey: ["is-admin"] });
+        queryClient.invalidateQueries({ queryKey: ["can-manage-users"] });
       } else {
         toast.info(res.message);
       }
@@ -190,31 +195,74 @@ function UserManagementPage() {
     );
   }
 
-  if (!isAdminUser) {
+  if (!canManage) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <Card className="max-w-md text-center">
-          <CardContent className="py-10">
+      <div className="flex min-h-[60vh] items-center justify-center px-4">
+        <Card className="w-full max-w-lg">
+          <CardHeader className="text-center">
             <ShieldCheck className="mx-auto h-10 w-10 text-muted-foreground" />
-            <h1 className="mt-4 text-xl font-semibold">גישה מוגבלת</h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              דף זה זמין רק למנהלי מערכת. אם נדרשת גישה, פנה למנהל המוסד.
+            <CardTitle as="h1" className="mt-2 text-xl">גישה מוגבלת</CardTitle>
+            <CardDescription>
+              מסך ניהול המשתמשים פתוח למנהל מערכת ולמנהל מוסד בלבד. מה עושים הלאה?
+              מלא את הטופס הקצר שלמטה, מנהל המערכת יקבל את הבקשה ויאשר לך תפקיד —
+              ותקבל גישה מיד לאחר האישור.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <AccessRequestForm />
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Button asChild variant="outline">
+                <a href="mailto:support@classalign.studio?subject=בקשת%20הרשאות%20לניהול%20משתמשים">
+                  יצירת קשר עם מנהל המערכת
+                </a>
+              </Button>
+              <Button
+                variant="ghost"
+                disabled={bootstrapMutation.isPending}
+                onClick={() => bootstrapMutation.mutate()}
+              >
+                {bootstrapMutation.isPending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+                אתחל מנהל מערכת ראשון
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              כפתור האתחול פועל רק כאשר אין עדיין מנהל במערכת.
             </p>
-            <Button
-              variant="outline"
-              className="mt-4"
-              disabled={bootstrapMutation.isPending}
-              onClick={() => bootstrapMutation.mutate()}
-            >
-              {bootstrapMutation.isPending && <Loader2 className="ms-2 h-4 w-4 animate-spin" />}
-              אתחל מנהל מערכת ראשון
-            </Button>
-            <p className="mt-3 text-xs text-muted-foreground">
-              כפתור זה פועל רק כאשר אין עדיין מנהל במערכת.
-            </p>
-            <Link to="/classes" className="mt-4 inline-block text-primary hover:underline">
+            <Link to="/classes" className="inline-block text-sm text-primary hover:underline">
               <ArrowLeft className="me-1 inline h-4 w-4" /> חזרה לכיתות
             </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!isAdminUser) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="font-display text-2xl font-bold">ניהול משתמשים ותפקידים</h1>
+            <p className="text-sm text-muted-foreground">
+              כמנהל מוסד אתה רואה את בקשות ההרשאה. הקצאת תפקידים מתבצעת על ידי מנהל המערכת.
+            </p>
+          </div>
+          <Link to="/classes">
+            <Button variant="outline"><ArrowLeft className="me-2 h-4 w-4" /> חזרה</Button>
+          </Link>
+        </div>
+        <AccessRequestsCard canResolve={false} />
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">ניהול המוסד שלך</CardTitle>
+            <CardDescription>מלמדים, כיתות ומדדים מוסדיים.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild variant="outline">
+              <Link to="/institution">
+                <Building2 className="me-2 h-4 w-4" /> לדשבורד המוסד
+              </Link>
+            </Button>
           </CardContent>
         </Card>
       </div>
