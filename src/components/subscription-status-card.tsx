@@ -1,10 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { Link } from "@tanstack/react-router";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CalendarClock } from "lucide-react";
+import { CalendarClock, BadgeCheck, Mail } from "lucide-react";
 import { getMyTrialStatus } from "@/lib/trial.functions";
+import { isAdmin } from "@/lib/user-roles.functions";
+
+const ADMIN_EMAIL = "nm0527603669@gmail.com";
 
 function formatDate(iso: string | null): string {
   if (!iso) return "—";
@@ -14,9 +19,15 @@ function formatDate(iso: string | null): string {
 /** Shows the signed-in user's free-trial / subscription state. */
 export function SubscriptionStatusCard() {
   const fn = useServerFn(getMyTrialStatus);
+  const adminFn = useServerFn(isAdmin);
   const { data, isLoading, isError } = useQuery({
     queryKey: ["my-trial-status"],
     queryFn: () => fn(),
+    staleTime: 5 * 60_000,
+  });
+  const { data: viewerIsAdmin } = useQuery({
+    queryKey: ["is-admin"],
+    queryFn: () => adminFn(),
     staleTime: 5 * 60_000,
   });
 
@@ -59,11 +70,27 @@ export function SubscriptionStatusCard() {
                 <dd className="font-medium">{formatDate(data.endsAt)}</dd>
               </div>
             </dl>
-            {!data.active && (
-              <p className="text-sm text-muted-foreground">
-                כדי להמשיך להשתמש בכל התכונות, פנה אלינו במייל nm0527603669@gmail.com להמשך המנוי.
+            <div className="space-y-2 rounded-md border bg-muted/40 p-3">
+              <p className="text-sm">
+                {data.active
+                  ? "הארכת המנוי מאושרת על ידי מנהל המערכת."
+                  : "כדי להמשיך להשתמש בכל התכונות נדרש אישור של מנהל המערכת."}
               </p>
-            )}
+              <div className="flex flex-wrap gap-2">
+                <Button asChild variant="outline" size="sm">
+                  <a href={`mailto:${ADMIN_EMAIL}?subject=${encodeURIComponent("בקשת אישור מנוי")}`}>
+                    <Mail className="ms-1 h-4 w-4" /> פנייה למנהל המערכת
+                  </a>
+                </Button>
+                {viewerIsAdmin && (
+                  <Button asChild size="sm">
+                    <Link to="/user-management">
+                      <BadgeCheck className="ms-1 h-4 w-4" /> אישור מנויים למשתמשים
+                    </Link>
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </CardContent>
