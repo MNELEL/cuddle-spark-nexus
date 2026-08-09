@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as BlogRouteImport } from './routes/blog'
 import { Route as HelpRouteImport } from './routes/help'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as McpRouteImport } from './routes/mcp'
 import { Route as ParentsGuideRouteImport } from './routes/parents-guide'
 import { Route as PartnersRouteImport } from './routes/partners'
 import { Route as PrivacyRouteImport } from './routes/privacy'
@@ -23,6 +24,8 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as ThemeTestRouteImport } from './routes/theme-test'
 import { Route as ToolsRouteImport } from './routes/tools'
+import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
+import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as AuthenticatedBellScheduleRouteImport } from './routes/_authenticated.bell-schedule'
 import { Route as AuthenticatedIngestRouteImport } from './routes/_authenticated.ingest'
 import { Route as AuthenticatedInsightsRouteImport } from './routes/_authenticated.insights'
@@ -54,6 +57,7 @@ import { Route as PartnersCaseStudiesRouteImport } from './routes/partners.case-
 import { Route as PartnersDistrictsRouteImport } from './routes/partners.districts'
 import { Route as PartnersSchoolsRouteImport } from './routes/partners.schools'
 import { Route as ToolsGroupMakerRouteImport } from './routes/tools.group-maker'
+import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as AuthenticatedAnalyticsClassIdRouteImport } from './routes/_authenticated.analytics.$classId'
 import { Route as AuthenticatedBulletinsClassIdRouteImport } from './routes/_authenticated.bulletins.$classId'
 import { Route as AuthenticatedCalendarClassIdRouteImport } from './routes/_authenticated.calendar.$classId'
@@ -104,6 +108,11 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ParentsGuideRoute = ParentsGuideRouteImport.update({
   id: '/parents-guide',
   path: '/parents-guide',
@@ -149,6 +158,18 @@ const ToolsRoute = ToolsRouteImport.update({
   path: '/tools',
   getParentRoute: () => rootRouteImport,
 } as any)
+const Char91DotmcpChar93ListToolsRoute =
+  Char91DotmcpChar93ListToolsRouteImport.update({
+    id: '/.mcp/list-tools',
+    path: '/.mcp/list-tools',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const Char91DotwellKnownChar93OauthProtectedResourceRoute =
+  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
+    id: '/.well-known/oauth-protected-resource',
+    path: '/.well-known/oauth-protected-resource',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedBellScheduleRoute =
   AuthenticatedBellScheduleRouteImport.update({
     id: '/bell-schedule',
@@ -315,6 +336,12 @@ const ToolsGroupMakerRoute = ToolsGroupMakerRouteImport.update({
   path: '/group-maker',
   getParentRoute: () => ToolsRoute,
 } as any)
+const Char91DotmcpChar93InvokeToolToolRoute =
+  Char91DotmcpChar93InvokeToolToolRouteImport.update({
+    id: '/.mcp/invoke-tool/$tool',
+    path: '/.mcp/invoke-tool/$tool',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedAnalyticsClassIdRoute =
   AuthenticatedAnalyticsClassIdRouteImport.update({
     id: '/analytics/$classId',
@@ -471,6 +498,7 @@ export interface FileRoutesByFullPath {
   '/blog': typeof BlogRouteWithChildren
   '/help': typeof HelpRouteWithChildren
   '/login': typeof LoginRoute
+  '/mcp': typeof McpRoute
   '/parents-guide': typeof ParentsGuideRouteWithChildren
   '/partners': typeof PartnersRouteWithChildren
   '/privacy': typeof PrivacyRoute
@@ -480,6 +508,8 @@ export interface FileRoutesByFullPath {
   '/support': typeof SupportRoute
   '/theme-test': typeof ThemeTestRoute
   '/tools': typeof ToolsRouteWithChildren
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/bell-schedule': typeof AuthenticatedBellScheduleRoute
   '/ingest': typeof AuthenticatedIngestRoute
   '/insights': typeof AuthenticatedInsightsRoute
@@ -511,6 +541,7 @@ export interface FileRoutesByFullPath {
   '/blog/': typeof BlogIndexRoute
   '/help/': typeof HelpIndexRoute
   '/parents-guide/': typeof ParentsGuideIndexRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/analytics/$classId': typeof AuthenticatedAnalyticsClassIdRoute
   '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
   '/calendar/$classId': typeof AuthenticatedCalendarClassIdRoute
@@ -540,6 +571,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/mcp': typeof McpRoute
   '/partners': typeof PartnersRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -548,6 +580,8 @@ export interface FileRoutesByTo {
   '/support': typeof SupportRoute
   '/theme-test': typeof ThemeTestRoute
   '/tools': typeof ToolsRouteWithChildren
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/bell-schedule': typeof AuthenticatedBellScheduleRoute
   '/ingest': typeof AuthenticatedIngestRoute
   '/insights': typeof AuthenticatedInsightsRoute
@@ -579,6 +613,7 @@ export interface FileRoutesByTo {
   '/blog': typeof BlogIndexRoute
   '/help': typeof HelpIndexRoute
   '/parents-guide': typeof ParentsGuideIndexRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/analytics/$classId': typeof AuthenticatedAnalyticsClassIdRoute
   '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
   '/calendar/$classId': typeof AuthenticatedCalendarClassIdRoute
@@ -612,6 +647,7 @@ export interface FileRoutesById {
   '/blog': typeof BlogRouteWithChildren
   '/help': typeof HelpRouteWithChildren
   '/login': typeof LoginRoute
+  '/mcp': typeof McpRoute
   '/parents-guide': typeof ParentsGuideRouteWithChildren
   '/partners': typeof PartnersRouteWithChildren
   '/privacy': typeof PrivacyRoute
@@ -621,6 +657,8 @@ export interface FileRoutesById {
   '/support': typeof SupportRoute
   '/theme-test': typeof ThemeTestRoute
   '/tools': typeof ToolsRouteWithChildren
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_authenticated/bell-schedule': typeof AuthenticatedBellScheduleRoute
   '/_authenticated/ingest': typeof AuthenticatedIngestRoute
   '/_authenticated/insights': typeof AuthenticatedInsightsRoute
@@ -652,6 +690,7 @@ export interface FileRoutesById {
   '/blog/': typeof BlogIndexRoute
   '/help/': typeof HelpIndexRoute
   '/parents-guide/': typeof ParentsGuideIndexRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/_authenticated/analytics/$classId': typeof AuthenticatedAnalyticsClassIdRoute
   '/_authenticated/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
   '/_authenticated/calendar/$classId': typeof AuthenticatedCalendarClassIdRoute
@@ -685,6 +724,7 @@ export interface FileRouteTypes {
     | '/blog'
     | '/help'
     | '/login'
+    | '/mcp'
     | '/parents-guide'
     | '/partners'
     | '/privacy'
@@ -694,6 +734,8 @@ export interface FileRouteTypes {
     | '/support'
     | '/theme-test'
     | '/tools'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/bell-schedule'
     | '/ingest'
     | '/insights'
@@ -725,6 +767,7 @@ export interface FileRouteTypes {
     | '/blog/'
     | '/help/'
     | '/parents-guide/'
+    | '/.mcp/invoke-tool/$tool'
     | '/analytics/$classId'
     | '/bulletins/$classId'
     | '/calendar/$classId'
@@ -754,6 +797,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/mcp'
     | '/partners'
     | '/privacy'
     | '/reset-password'
@@ -762,6 +806,8 @@ export interface FileRouteTypes {
     | '/support'
     | '/theme-test'
     | '/tools'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/bell-schedule'
     | '/ingest'
     | '/insights'
@@ -793,6 +839,7 @@ export interface FileRouteTypes {
     | '/blog'
     | '/help'
     | '/parents-guide'
+    | '/.mcp/invoke-tool/$tool'
     | '/analytics/$classId'
     | '/bulletins/$classId'
     | '/calendar/$classId'
@@ -825,6 +872,7 @@ export interface FileRouteTypes {
     | '/blog'
     | '/help'
     | '/login'
+    | '/mcp'
     | '/parents-guide'
     | '/partners'
     | '/privacy'
@@ -834,6 +882,8 @@ export interface FileRouteTypes {
     | '/support'
     | '/theme-test'
     | '/tools'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/_authenticated/bell-schedule'
     | '/_authenticated/ingest'
     | '/_authenticated/insights'
@@ -865,6 +915,7 @@ export interface FileRouteTypes {
     | '/blog/'
     | '/help/'
     | '/parents-guide/'
+    | '/.mcp/invoke-tool/$tool'
     | '/_authenticated/analytics/$classId'
     | '/_authenticated/bulletins/$classId'
     | '/_authenticated/calendar/$classId'
@@ -898,6 +949,7 @@ export interface RootRouteChildren {
   BlogRoute: typeof BlogRouteWithChildren
   HelpRoute: typeof HelpRouteWithChildren
   LoginRoute: typeof LoginRoute
+  McpRoute: typeof McpRoute
   ParentsGuideRoute: typeof ParentsGuideRouteWithChildren
   PartnersRoute: typeof PartnersRouteWithChildren
   PrivacyRoute: typeof PrivacyRoute
@@ -907,8 +959,11 @@ export interface RootRouteChildren {
   SupportRoute: typeof SupportRoute
   ThemeTestRoute: typeof ThemeTestRoute
   ToolsRoute: typeof ToolsRouteWithChildren
+  Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
+  Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   CSlugRoute: typeof CSlugRoute
   PTokenRoute: typeof PTokenRoute
+  Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -946,6 +1001,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/parents-guide': {
@@ -1009,6 +1071,20 @@ declare module '@tanstack/react-router' {
       path: '/tools'
       fullPath: '/tools'
       preLoaderRoute: typeof ToolsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.mcp/list-tools': {
+      id: '/.mcp/list-tools'
+      path: '/.mcp/list-tools'
+      fullPath: '/.mcp/list-tools'
+      preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.well-known/oauth-protected-resource': {
+      id: '/.well-known/oauth-protected-resource'
+      path: '/.well-known/oauth-protected-resource'
+      fullPath: '/.well-known/oauth-protected-resource'
+      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/bell-schedule': {
@@ -1227,6 +1303,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/tools/group-maker'
       preLoaderRoute: typeof ToolsGroupMakerRouteImport
       parentRoute: typeof ToolsRoute
+    }
+    '/.mcp/invoke-tool/$tool': {
+      id: '/.mcp/invoke-tool/$tool'
+      path: '/.mcp/invoke-tool/$tool'
+      fullPath: '/.mcp/invoke-tool/$tool'
+      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/analytics/$classId': {
       id: '/_authenticated/analytics/$classId'
@@ -1604,6 +1687,7 @@ const rootRouteChildren: RootRouteChildren = {
   BlogRoute: BlogRouteWithChildren,
   HelpRoute: HelpRouteWithChildren,
   LoginRoute: LoginRoute,
+  McpRoute: McpRoute,
   ParentsGuideRoute: ParentsGuideRouteWithChildren,
   PartnersRoute: PartnersRouteWithChildren,
   PrivacyRoute: PrivacyRoute,
@@ -1613,8 +1697,12 @@ const rootRouteChildren: RootRouteChildren = {
   SupportRoute: SupportRoute,
   ThemeTestRoute: ThemeTestRoute,
   ToolsRoute: ToolsRouteWithChildren,
+  Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
+  Char91DotwellKnownChar93OauthProtectedResourceRoute:
+    Char91DotwellKnownChar93OauthProtectedResourceRoute,
   CSlugRoute: CSlugRoute,
   PTokenRoute: PTokenRoute,
+  Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

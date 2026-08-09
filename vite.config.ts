@@ -5,6 +5,7 @@
 //     error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... } }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/tanstack/vite";
 
 // Defensive guard for the auto-generated route tree: if a route module fails
 // to export `Route` (e.g. a transient circular-import during dev), the
@@ -34,6 +35,6 @@ export default defineConfig({
     server: { entry: "server" },
   },
   vite: {
-    plugins: [guardRouteTreePlugin],
+    plugins: [guardRouteTreePlugin, mcpPlugin()],
   },
 });
