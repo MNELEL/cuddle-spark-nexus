@@ -372,14 +372,30 @@ export const setClassStatus = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
+    // Read the owner before the update so we know whether someone else (e.g. an
+    // institution admin) archived this class and the owner must be notified.
+    const { data: before } = await context.supabase
+      .from("classes")
+      .select("owner_id, name")
+      .eq("id", data.id)
+      .maybeSingle();
+
     const { error } = await context.supabase
       .from("classes")
       .update({ status: data.status, updated_at: new Date().toISOString() })
       .eq("id", data.id);
     if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     if (data.status === "archived") {
-      const { notifyClassArchived } = await import("@/lib/notifications.server");
-      await notifyClassArchived({ classId: data.id, actorId: context.userId });
+      if (before?.owner_id && before.owner_id !== context.userId) {
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { error: ne } = await supabaseAdmin.from("class_notifications").insert({
+          class_id: data.id,
+          class_name: before.name,
+          recipient_id: before.owner_id,
+          type: "class_archived",
+        });
+        if (ne) console.error("[Notify Error]", ne);
+      }
       await logInfo("כיתה הועברה לארכיון", {
         source: "year_rollover",
         userId: context.userId,
