@@ -13,10 +13,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Send } from "lucide-react";
+import { Loader2, Send, Info } from "lucide-react";
 import { toast } from "sonner";
 import { submitAccessRequest, myAccessRequests } from "@/lib/access-requests.functions";
 import type { Role } from "@/lib/user-roles.functions";
+
 
 const ROLE_LABELS: Record<Role, string> = {
   admin: "מנהל מערכת",
