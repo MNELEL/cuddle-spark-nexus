@@ -220,8 +220,19 @@ export function RosterReviewTable({
               <EyeOff className="ms-1 h-3 w-3" />החרג שורות עם שגיאות
             </Button>
             <div className="flex items-center gap-1 rounded-md border px-2 h-7">
-              <Gauge className="h-3 w-3 text-muted-foreground" />
-              <span className="text-[11px] text-muted-foreground">סף</span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="flex items-center gap-1 cursor-help">
+                    <Gauge className="h-3 w-3 text-muted-foreground" />
+                    <span className="text-[11px] text-muted-foreground">סף ביטחון</span>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-64 text-xs leading-relaxed">
+                  לכל שורה יש אחוז "ביטחון" — מדד לאיכות הזיהוי מהקובץ. כאן קובעים סף:
+                  לחיצה על "החרג מתחת לסף" תבטל את הסימון של כל השורות שאחוז הביטחון שלהן נמוך מהסף,
+                  כדי שלא ייובאו. תמיד ניתן לסמן שורה מחדש בעצמכם.
+                </TooltipContent>
+              </Tooltip>
               <input
                 type="range" min={0} max={100} step={5}
                 value={threshold}
@@ -230,9 +241,16 @@ export function RosterReviewTable({
                 aria-label="סף ביטחון"
               />
               <span className="text-[11px] tabular-nums w-8 text-end">{threshold}%</span>
-              <Button size="sm" variant="ghost" className="h-6 px-1 text-[11px]" onClick={excludeBelowThreshold}>
-                החרג מתחת לסף
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button size="sm" variant="ghost" className="h-6 px-1 text-[11px]" onClick={excludeBelowThreshold}>
+                    החרג מתחת לסף
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-64 text-xs leading-relaxed">
+                  יבטל את הסימון של כל שורה שאחוז הביטחון שלה נמוך מ-{threshold}% — כלומר היא לא תיובא.
+                </TooltipContent>
+              </Tooltip>
             </div>
           </div>
         </div>
