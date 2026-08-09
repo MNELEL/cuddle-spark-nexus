@@ -2,7 +2,7 @@
 > מסמך זיכרון קבוע לפרויקט מיזוג האפליקציות. עדכן אותו בכל שיחה חדשה כדי לא לאבד החלטות.
 > יעד סופי: **Lovable**. הפרויקט החי: **"הכיתה שלי"** (שם קודם: Harmony Hub; repo: `cuddle-spark-nexus`), פרויקט Lovable ID `2734475a-1431-4ef2-8175-67b8af357276`.
 
-**עדכון אחרון:** 8 באוגוסט 2026 — נוסף סעיף 11: בוצעו בפועל תיקוני קבוצה B (Retry + עדכון אופטימי ב-SecuritySettings/ReminderPreferencesCard) וחלק מקבוצה C (audit log לרולאובר דרך app_logs הקיים, תאריך עדכון בדוח מסירה PDF). שני הפריטים הגדולים בקבוצה C — מנגנון התראה בין-משתמשי לארכוב, ו-test suite ל-RLS/רולאובר — עדיין לא בוצעו, ממתינים לתכנון עיצוב.
+**עדכון אחרון:** 9 באוגוסט 2026 — נוסף סעיף 12.4.1/12.4.2: סיכום כיסוי טבלאות שנבדקו, ספירת טסטים (91), וקישורים לטסטי האינטגרציה המרכזיים לבדיקות עתידיות.
 
 **היסטוריית עדכונים קודמים (לשקיפות):**
 - 23/7: הושלמה משימת Task Automation + איחוד AI Gateway.
@@ -11,7 +11,7 @@
 - 2/8: השוואה מול Teacher-students-management-interface (ClassAlign) — אימות שרוב פערי ClassAlign כבר מיושמים, אישור שני פערים אמיתיים (שקלול ציונים, circuit breaker), עדכון מוצלח של docs/lms-gap-analysis.md הפנימי.
 - 4/8: בדיקה עצמאית נוספת (בלי לראות את עדכוני 30/7 ו-2/8 מראש) הגיעה באופן בלתי-תלוי לאותה מסקנה בדיוק — חיזוק משולש לגבי שני הפערים הנותרים.
 - 5/8: בדיקה ממוקדת מול קוד חי לרשימת פערים/בקשות שהתקבלה בשיחה נפרדת (ראה סעיף 10).
-- 8/8: ביצוע קבוצה B (Retry + rollback ב-Settings) וחלק מקבוצה C (audit log לרולאובר, תאריך ב-PDF מסירה) — ראה סעיף 11.
+- 9/8: עדכון סיכום בדיקות: כיסוי טבלאות, ספירת 91 טסטים, וקישורים לטסטי אינטגרציה (סעיף 12.4).
 
 ---
 
@@ -310,6 +310,27 @@ Test suite ל-RLS ולהעתקת תלמידים — נבדק: אין תשתית 
 
 **הרשאות שנבדקו על `class_notifications`:** `authenticated` = SELECT/INSERT/UPDATE ✔, `service_role` = מלא ✔, `anon` = ללא הרשאה בכלל ✔. Policies: `class_notifications_recipient_select`, `class_notifications_recipient_update` בלבד (אין INSERT/DELETE ללקוח — נכתב רק ב-service role מתוך `setClassStatus`).
 
-**טסטים:** 16 קבצים / 89 טסטים עוברים, כולל `src/test/rls-class-notifications.test.ts` (5) ו-`src/test/notifications-flow.test.ts` (4, חדש) — טסט זרימה מקצה-לקצה שמשחזר בדיוק את השאילתות של `listUnreadClassNotifications` / `markNotificationRead`: סינון לפי `recipient_id`, סינון `read_at is null`, סימון כנקרא שמוציא מהרשימה, אי-אפשרות לסמן התראה של מישהו אחר, ווידוא שטבלת `notifications` אכן לא קיימת.
+**טסטים:** 16 קבצי טסט / 91 טסטים עוברים (ספירה מעודכנת אוגוסט 2026), כולל `src/test/rls-class-notifications.test.ts` (5) ו-`src/test/notifications-flow.test.ts` (6, חדש) — טסט זרימה מקצה-לקצה שמשחזר בדיוק את השאילתות של `listUnreadClassNotifications` / `markNotificationRead`: סינון לפי `recipient_id`, סינון `read_at is null`, סימון כנקרא שמוציא מהרשימה, אי-אפשרות לסמן התראה של מישהו אחר, ווידוא שטבלת `notifications` אכן לא קיימת.
+
+#### 12.4.1 כיסוי טבלאות ותיקי טסטים (קצת מעודכן)
+
+| קבוצת טבלאות | טבלאות נבדקות | קבצי טסט | מספר `it()` |
+|---|---|---|---|
+| RLS כיתות + תלמידים | `classes`, `students`, `student_relations`, `groups`, `seating_configs` | `rls-classes.test.ts`, `rls-students.test.ts`, `rollover-copy.test.ts` | 3 + 4 + 4 = 11 |
+| RLS נתוני כיתה | `behavior_points`, `grade_weights`, `reminders`, `curriculum_units` | `rls-behavior-points.test.ts`, `rls-grade-weights.test.ts`, `rls-reminders.test.ts` | 3 + 3 + 4 = 10 |
+| RLS מוסדות + תפקידים | `institutions`, `user_roles`, `access_requests` | `rls-institutions.test.ts`, `rls-access-requests.test.ts` | 9 + 6 = 15 |
+| RLS מידע רגיש והתראות | `student_profiles`, `class_notifications` | `rls-student-profiles.test.ts`, `rls-class-notifications.test.ts`, `notifications-flow.test.ts` | 2 + 5 + 6 = 13 |
+| לוגיקה עסקית | שקלול ציונים, תאריכים עבריים, אימות שדות תלמיד, מיזוג roster | `grade-weighting.test.ts`, `hebrew-date.test.ts`, `student-field-validation.test.ts`, `roster-merge.test.ts` | 8 + 10 + 10 + 7 = 35 |
+| תשתית | Circuit breaker AI Gateway | `ai-gateway-breaker.test.ts` | 7 |
+
+**סה"כ:** 16 קבצים, 91 מקרי בדיקה (`it()`).
+
+#### 12.4.2 קישורים לטסטים מרכזיים לבדיקות עתידיות
+
+- **זרימת התראות ארכוב (class_notifications):** `src/test/notifications-flow.test.ts` — מסמך מקצה-לקצה לבדיקה עתידית של כל שינוי ב-`src/lib/notifications.functions.ts`.
+- **RLS כללי:** `src/test/rls-classes.test.ts`, `src/test/rls-students.test.ts`, `src/test/rls-institutions.test.ts` — הדגלנים של בדיקות הרשאות.
+- **מידע רגיש:** `src/test/rls-student-profiles.test.ts` — בדוק בעדכונים עתידיים של `src/lib/student-profiles.functions.ts` או `public.student_profiles`.
+- **תשתית AI:** `src/test/ai-gateway-breaker.test.ts` — בדיקה חיונית לשינויי תעריף/מכסה ב-`src/lib/ai-gateway.server.ts`.
+- **חישובים / תאריכים:** `src/test/grade-weighting.test.ts`, `src/test/hebrew-date.test.ts` — רגרסיות בממוצעים משוקללים או בלוח השנה העברי.
 
 **פערי schema prod↔repo:** נמצאו 6 טבלאות שנוצרו בעבר ידנית ב-SQL בלי מיגרציה בריפו — `curriculum_units`, `class_pacing_settings`, `academic_calendar_overrides`, `curriculum_history_snapshots`, `pacing_recalc_log`, `seating_wizard_prefs`. נוספה מיגרציית **baseline אידמפוטנטית** שמתעדת אותן (CREATE TABLE IF NOT EXISTS + GRANTs + RLS + policies בתוך `DO $$ IF NOT EXISTS`) וגם **מבטלת גישת anon** לשש הטבלאות (הן היו עם `GRANT SELECT` ל-anon, חסום בפועל ע"י RLS). אחרי המיגרציה אין פערי טבלאות בין prod לריפו.
