@@ -44,6 +44,7 @@ export const upsertStudent = createServerFn({ method: "POST" })
       class_id: z.string().uuid(),
       name: z.string().min(1).max(100),
       first_name: optText(60),
+      middle_name: optText(60),
       last_name: optText(60),
       national_id: optText(20),
       birth_date: optDate,
