@@ -1640,6 +1640,7 @@ export type Database = {
           display_name: string | null
           id: string
           onboarding_state: Json
+          theme_preference: string | null
           trial_ends_at: string | null
           trial_started_at: string | null
         }
@@ -1648,6 +1649,7 @@ export type Database = {
           display_name?: string | null
           id: string
           onboarding_state?: Json
+          theme_preference?: string | null
           trial_ends_at?: string | null
           trial_started_at?: string | null
         }
@@ -1656,6 +1658,7 @@ export type Database = {
           display_name?: string | null
           id?: string
           onboarding_state?: Json
+          theme_preference?: string | null
           trial_ends_at?: string | null
           trial_started_at?: string | null
         }
