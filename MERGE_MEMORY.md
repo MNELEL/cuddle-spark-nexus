@@ -303,3 +303,13 @@ Test suite ל-RLS ולהעתקת תלמידים — נבדק: אין תשתית 
 - `notifications` הגנרי — בוטל במכוון (12.0). מה שקיים הוא התראת ארכוב בלבד; פעמון גלובלי/סוגי התראות נוספים לא מומשו.
 - 10.2 — יומן צפיות מלא במידע רגיש: עדיין רק "מי עדכן אחרון", בלי audit של קריאות.
 - פערי סעיף 9 ללא שינוי: סנכרון Google Calendar, דוח תעודות חודשי מרוכז + מסך אישור, דשבורד מרוכז להתקדמות מורים, Google Drive תיקייה שלמה, שיתוף משאבים בין מוסדות, push/SMS, צ'אט צוות, Google Classroom, iOS+offline, 3D שולחנות מתקדם, Campaigns/Leaderboard.
+
+### 12.4 אימות אחרי הסרת מיגרציית `notifications` (9/8/2026)
+
+**טבלאות:** `public.class_notifications` קיימת; `public.notifications` **לא קיימת** ואין אליה אף הפניה בקוד (`rg` על `from("notifications")` — 0 תוצאות). 56 base tables ב-`public`.
+
+**הרשאות שנבדקו על `class_notifications`:** `authenticated` = SELECT/INSERT/UPDATE ✔, `service_role` = מלא ✔, `anon` = ללא הרשאה בכלל ✔. Policies: `class_notifications_recipient_select`, `class_notifications_recipient_update` בלבד (אין INSERT/DELETE ללקוח — נכתב רק ב-service role מתוך `setClassStatus`).
+
+**טסטים:** 16 קבצים / 89 טסטים עוברים, כולל `src/test/rls-class-notifications.test.ts` (5) ו-`src/test/notifications-flow.test.ts` (4, חדש) — טסט זרימה מקצה-לקצה שמשחזר בדיוק את השאילתות של `listUnreadClassNotifications` / `markNotificationRead`: סינון לפי `recipient_id`, סינון `read_at is null`, סימון כנקרא שמוציא מהרשימה, אי-אפשרות לסמן התראה של מישהו אחר, ווידוא שטבלת `notifications` אכן לא קיימת.
+
+**פערי schema prod↔repo:** נמצאו 6 טבלאות שנוצרו בעבר ידנית ב-SQL בלי מיגרציה בריפו — `curriculum_units`, `class_pacing_settings`, `academic_calendar_overrides`, `curriculum_history_snapshots`, `pacing_recalc_log`, `seating_wizard_prefs`. נוספה מיגרציית **baseline אידמפוטנטית** שמתעדת אותן (CREATE TABLE IF NOT EXISTS + GRANTs + RLS + policies בתוך `DO $$ IF NOT EXISTS`) וגם **מבטלת גישת anon** לשש הטבלאות (הן היו עם `GRANT SELECT` ל-anon, חסום בפועל ע"י RLS). אחרי המיגרציה אין פערי טבלאות בין prod לריפו.
