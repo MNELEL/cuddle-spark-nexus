@@ -99,6 +99,67 @@ export const listInstitutionClasses = createServerFn({ method: "POST" })
     }));
   });
 
+const attachClassesSchema = z.object({
+  user_id: z.string().uuid(),
+  institution_id: z.string().uuid(),
+  dry_run: z.boolean().optional(),
+});
+
+/**
+ * Links the teacher's existing active classes to an institution.
+ * With `dry_run` it only reports how many classes would be affected.
+ */
+export const attachTeacherClassesToInstitution = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => attachClassesSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await verifyAdmin(supabase, userId);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: classes, error } = await supabaseAdmin
+      .from("classes")
+      .select("id, name, status, institution_id")
+      .eq("owner_id", data.user_id);
+    if (error) throw new Error(error.message);
+
+    const pending = (classes ?? []).filter((c) => c.institution_id !== data.institution_id);
+    const archived = pending.filter((c) => c.status === "archived");
+    const attachable = pending.filter((c) => c.status !== "archived");
+
+    if (data.dry_run) {
+      return { attached: 0, attachable: attachable.length, skippedArchived: archived.length };
+    }
+    if (attachable.length === 0) {
+      return { attached: 0, attachable: 0, skippedArchived: archived.length };
+    }
+
+    const { error: updateError } = await supabaseAdmin
+      .from("classes")
+      .update({ institution_id: data.institution_id, updated_at: new Date().toISOString() })
+      .in("id", attachable.map((c) => c.id));
+    if (updateError) throw new Error(updateError.message);
+
+    const { logInfo } = await import("@/lib/logger.server");
+    await logInfo(`שויכו ${attachable.length} כיתות למוסד`, {
+      source: AUDIT_SOURCE_INSTITUTIONS,
+      userId,
+      context: {
+        action: "institution.attach_classes",
+        institution_id: data.institution_id,
+        teacher_id: data.user_id,
+        class_ids: attachable.map((c) => c.id),
+        skipped_archived: archived.length,
+      },
+    });
+
+    return {
+      attached: attachable.length,
+      attachable: attachable.length,
+      skippedArchived: archived.length,
+    };
+  });
+
 export const listRoleAuditLog = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
