@@ -115,3 +115,70 @@ export const resolveAccessRequest = createServerFn({ method: "POST" })
 
     return { ok: true as const };
   });
+
+const approveAndAssignSchema = z.object({
+  request_id: z.string().uuid(),
+  role: roleSchema,
+  institution_id: z.string().uuid().optional(),
+});
+
+/** Approve the request and assign the requested role in a single action. */
+export const approveAndAssignRole = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => approveAndAssignSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    const { data: adminRole, error: roleError } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "admin")
+      .maybeSingle();
+    if (roleError) throw new Error(roleError.message);
+    if (!adminRole) throw new Error("אין הרשאות מנהל");
+
+    const { data: request, error: requestError } = await supabase
+      .from("access_requests")
+      .select("id, user_id, requested_role, status")
+      .eq("id", data.request_id)
+      .single();
+    if (requestError) throw new Error(requestError.message);
+    if (request.status !== "pending") throw new Error("הבקשה כבר טופלה");
+
+    const { error: roleInsertError } = await supabase.from("user_roles").insert({
+      user_id: request.user_id,
+      role: data.role,
+      institution_id: data.institution_id ?? null,
+    });
+    if (roleInsertError) throw new Error(roleInsertError.message);
+
+    const { error: updateError } = await supabase
+      .from("access_requests")
+      .update({ status: "approved", reviewed_by: userId, reviewed_at: new Date().toISOString() })
+      .eq("id", data.request_id);
+    if (updateError) throw new Error(updateError.message);
+
+    const { logInfo } = await import("@/lib/logger.server");
+    await logInfo(`בקשת הרשאה אושרה ותפקיד ${data.role} שוייך`, {
+      source: AUDIT_SOURCE_ROLES,
+      userId,
+      context: {
+        action: "access_request.approve_and_assign",
+        request_id: data.request_id,
+        target_user_id: request.user_id,
+        role: data.role,
+        institution_id: data.institution_id ?? null,
+      },
+    });
+
+    return { ok: true as const };
+  });
+
+export const denyAccessRequest = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => resolveSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    if (data.status !== "denied") throw new Error("Invalid status");
+    return resolveAccessRequest({ data });
+  });
