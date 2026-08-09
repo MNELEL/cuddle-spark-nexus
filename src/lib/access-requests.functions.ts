@@ -175,10 +175,3 @@ export const approveAndAssignRole = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
-export const denyAccessRequest = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => resolveSchema.parse(d))
-  .handler(async ({ data, context }) => {
-    if (data.status !== "denied") throw new Error("Invalid status");
-    return resolveAccessRequest({ data });
-  });
