@@ -443,6 +443,29 @@ function UserManagementPage() {
           <CardDescription>בחר מוסד כדי לראות את הכיתות המשויכות אליו.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="rounded-lg border bg-muted/40 p-3 text-sm">
+            <p className="font-medium">איך משייכים כיתות, מלמדים וספריות?</p>
+            <ol className="mt-2 list-decimal space-y-1.5 pe-5 text-muted-foreground">
+              <li>
+                <span className="text-foreground">מלמד למוסד:</span> בכרטיס "הקצאת תפקיד" למטה — בוחרים משתמש,
+                תפקיד "מלמד" ואת המוסד. זה השיוך היחיד שנדרש.
+              </li>
+              <li>
+                <span className="text-foreground">כיתה למוסד:</span> אין צורך לשייך ידנית. כשמלמד פותח כיתה
+                חדשה ב-<Link to="/classes" className="text-primary underline-offset-2 hover:underline">מסך הכיתות</Link>,
+                הכיתה משויכת אוטומטית למוסד שבתפקיד שלו.
+              </li>
+              <li>
+                <span className="text-foreground">ספרייה:</span> חומרי ההוראה ב-
+                <Link to="/library" className="text-primary underline-offset-2 hover:underline">ספריית חומרי הוראה</Link>{" "}
+                שייכים למלמד, ומתחברים לכיתה כשמשבצים אותם בשיעור או בעלון השבועי.
+              </li>
+            </ol>
+            <p className="mt-2 text-xs text-muted-foreground">
+              כיתה שלא מופיעה כאן נוצרה לפני שהמלמד קיבל תפקיד במוסד — הקצאת התפקיד ולאחריה פתיחת כיתה חדשה
+              (או מעבר שנה) תשייך אותה.
+            </p>
+          </div>
           <div>
             <Label htmlFor="classes-institution-select">מוסד</Label>
             <Select value={classesInstitution} onValueChange={setClassesInstitution}>
