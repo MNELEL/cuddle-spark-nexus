@@ -2119,6 +2119,54 @@ export type Database = {
           },
         ]
       }
+      trial_extension_requests: {
+        Row: {
+          created_at: string
+          email: string | null
+          granted_days: number | null
+          id: string
+          institution_name: string | null
+          message: string | null
+          requested_days: number
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          granted_days?: number | null
+          id?: string
+          institution_name?: string | null
+          message?: string | null
+          requested_days?: number
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          granted_days?: number | null
+          id?: string
+          institution_name?: string | null
+          message?: string | null
+          requested_days?: number
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
