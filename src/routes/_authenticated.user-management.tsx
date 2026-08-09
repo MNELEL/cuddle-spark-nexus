@@ -219,14 +219,18 @@ function UserManagementPage() {
                   תפקיד הרצוי (מלמד, מזכירה, מנהל מוסד) ופרטי המוסד.
                 </li>
                 <li>
-                  <strong className="text-foreground">מנהל המערכת יבדוק ויאשר</strong> — לחיצה על
-                  "אישור ושיוך" תקצה לך את התפקיד באופן מיידי.
+                  <strong className="text-foreground">מנהל המערכת יבדוק ויאשר</strong> — הוא נכנס
+                  לעמוד זה, רואה בכרטיסייה "בקשות הרשאה" את כל הבקשות הממתינות, ולוחץ "אישור ושיוך".
                 </li>
                 <li>
                   <strong className="text-foreground">חזור לכאן</strong> — לאחר האישור, עמוד זה יוצג
                   לך עם הכלים המותאמים לתפקיד שלך.
                 </li>
               </ol>
+              <p className="mt-3 border-t pt-3 text-xs text-muted-foreground">
+                מנהל מערכת הוא משתמש עם תפקיד <strong>admin</strong> בטבלת התפקידים. בלחיצה על "אתחל מנהל מערכת ראשון"
+                (כאשר אין עדיין מנהל) או על ידי הקצאת תפקיד admin על ידי מנהל קיים.
+              </p>
             </div>
 
             <AccessRequestForm />
