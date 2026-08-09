@@ -388,7 +388,9 @@ function rowErrors(r: RosterStudentDraft): Map<FieldKey, string> {
 }
 function rowHasError(r: RosterStudentDraft): boolean { return rowErrors(r).size > 0; }
 function rowMissingCount(r: RosterStudentDraft): number {
-  return FIELD_KEYS.filter((k) => k !== "name" && !((r[k] as string | undefined) ?? "").trim()).length;
+  return FIELD_KEYS.filter(
+    (k) => k !== "first_name" && k !== "last_name" && !((r[k] as string | undefined) ?? "").trim(),
+  ).length;
 }
 function rowHasMissing(r: RosterStudentDraft): boolean { return rowMissingCount(r) > 0; }
 
