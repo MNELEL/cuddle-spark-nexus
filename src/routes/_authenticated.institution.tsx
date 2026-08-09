@@ -1,20 +1,36 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, ChevronLeft, Building2, Users, GraduationCap, Archive } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog";
+import { Search, ChevronLeft, Building2, Users, GraduationCap, Archive, UserPlus, Loader2 } from "lucide-react";
 import {
   getMyInstitution,
   getInstitutionOverview,
   listMyInstitutionClasses,
   listMyInstitutionAudit,
 } from "@/lib/institution-dashboard.functions";
+import {
+  listInstitutionTeachers,
+  inviteTeacherToInstitution,
+  removeTeacherFromInstitution,
+} from "@/lib/institution-teachers.functions";
 
 export const Route = createFileRoute("/_authenticated/institution")({
   component: InstitutionDashboardPage,
@@ -136,6 +152,13 @@ function InstitutionDashboardPage() {
         <p className="text-sm text-destructive">טעינת המדדים נכשלה. רענן את הדף.</p>
       )}
 
+      <Tabs defaultValue="classes" dir="rtl" className="space-y-6">
+        <TabsList aria-label="מדורי המוסד">
+          <TabsTrigger value="classes">כיתות</TabsTrigger>
+          <TabsTrigger value="teachers">מלמדים</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="classes" className="space-y-6">
       <Card className="rounded-2xl">
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle className="text-base">כיתות המוסד</CardTitle>
@@ -224,6 +247,185 @@ function InstitutionDashboardPage() {
           )}
         </CardContent>
       </Card>
+        </TabsContent>
+
+        <TabsContent value="teachers">
+          <TeachersTab />
+        </TabsContent>
+      </Tabs>
     </div>
+  );
+}
+
+function TeachersTab() {
+  const qc = useQueryClient();
+  const fetchTeachers = useServerFn(listInstitutionTeachers);
+  const invite = useServerFn(inviteTeacherToInstitution);
+  const remove = useServerFn(removeTeacherFromInstitution);
+
+  const [open, setOpen] = useState(false);
+  const [email, setEmail] = useState("");
+  const [emailError, setEmailError] = useState<string | null>(null);
+
+  const teachersQ = useQuery({
+    queryKey: ["institution-teachers"],
+    queryFn: () => fetchTeachers(),
+  });
+
+  const inviteM = useMutation({
+    mutationFn: (value: string) => invite({ data: { email: value } }),
+    onSuccess: () => {
+      toast.success("ההזמנה נשלחה במייל");
+      setOpen(false);
+      setEmail("");
+      setEmailError(null);
+      void qc.invalidateQueries({ queryKey: ["institution-teachers"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "שליחת ההזמנה נכשלה"),
+  });
+
+  const removeM = useMutation({
+    mutationFn: (userId: string) => remove({ data: { userId } }),
+    onSuccess: () => {
+      toast.success("המלמד הוסר מהמוסד");
+      void qc.invalidateQueries({ queryKey: ["institution-teachers"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "הסרת המלמד נכשלה"),
+  });
+
+  function submitInvite() {
+    const value = email.trim();
+    if (!value) { setEmailError("נדרשת כתובת מייל"); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value)) { setEmailError("כתובת מייל לא תקינה"); return; }
+    setEmailError(null);
+    inviteM.mutate(value);
+  }
+
+  const teachers = teachersQ.data ?? [];
+
+  return (
+    <Card className="rounded-2xl">
+      <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <CardTitle className="text-base">מלמדי המוסד</CardTitle>
+        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setEmailError(null); }}>
+          <DialogTrigger asChild>
+            <Button className="rounded-xl">
+              <UserPlus className="me-1 h-4 w-4" aria-hidden="true" /> הזמן מלמד
+            </Button>
+          </DialogTrigger>
+          <DialogContent dir="rtl">
+            <DialogHeader>
+              <DialogTitle>הזמנת מלמד למוסד</DialogTitle>
+              <DialogDescription>
+                תישלח הזמנה במייל. לאחר ההרשמה המלמד ישויך אוטומטית למוסד שלך.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2">
+              <Label htmlFor="invite-email">כתובת מייל</Label>
+              <Input
+                id="invite-email"
+                type="email"
+                dir="ltr"
+                maxLength={255}
+                className="rounded-xl"
+                placeholder="teacher@example.com"
+                value={email}
+                onChange={(e) => { setEmail(e.target.value); setEmailError(null); }}
+                onKeyDown={(e) => { if (e.key === "Enter") submitInvite(); }}
+                aria-invalid={Boolean(emailError)}
+                aria-describedby={emailError ? "invite-email-error" : undefined}
+              />
+              {emailError && (
+                <p id="invite-email-error" className="text-sm text-destructive">{emailError}</p>
+              )}
+            </div>
+            <DialogFooter>
+              <Button
+                className="rounded-xl"
+                onClick={submitInvite}
+                disabled={inviteM.isPending}
+              >
+                {inviteM.isPending && <Loader2 className="me-1 h-4 w-4 animate-spin" aria-hidden="true" />}
+                שלח הזמנה
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </CardHeader>
+      <CardContent>
+        {teachersQ.isLoading ? (
+          <div className="space-y-2" aria-busy="true" aria-label="טוען מלמדים">
+            {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-12 rounded-xl" />)}
+          </div>
+        ) : teachersQ.isError ? (
+          <p className="py-6 text-center text-sm text-destructive">טעינת המלמדים נכשלה. רענן את הדף.</p>
+        ) : teachers.length === 0 ? (
+          <p className="py-8 text-center text-sm text-muted-foreground">אין מלמדים משויכים למוסד זה עדיין.</p>
+        ) : (
+          <ul className="divide-y">
+            {teachers.map((t) => (
+              <li key={t.userId} className="py-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="truncate font-medium">{t.name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      <span className="font-mono-tabular">{t.classCount}</span> כיתות ·{" "}
+                      <span className="font-mono-tabular">{t.studentCount}</span> תלמידים
+                    </div>
+                  </div>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="sm" className="rounded-xl shrink-0 text-destructive">
+                        הסר מהמוסד
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent dir="rtl">
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>להסיר את {t.name} מהמוסד?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          החשבון והכיתות שלו יישארו כפי שהם — רק השיוך למוסד יוסר.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>ביטול</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => removeM.mutate(t.userId)}>הסר</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+                {t.style && (
+                  <Accordion type="single" collapsible>
+                    <AccordionItem value="style" className="border-0">
+                      <AccordionTrigger className="py-2 text-xs text-muted-foreground">
+                        פרופיל ההוראה
+                      </AccordionTrigger>
+                      <AccordionContent className="space-y-2 text-sm">
+                        {t.style.preferredSubjects.length > 0 && (
+                          <div className="flex flex-wrap items-center gap-1">
+                            <span className="text-xs text-muted-foreground">מקצועות מועדפים:</span>
+                            {t.style.preferredSubjects.map((s) => (
+                              <Badge key={s} variant="outline">{s}</Badge>
+                            ))}
+                          </div>
+                        )}
+                        <div className="text-xs text-muted-foreground">
+                          משאבים בספרייה: <span className="font-mono-tabular">{t.style.resourceCount}</span>
+                          {t.style.lastUpdatedAt && (
+                            <> · עודכן: {new Date(t.style.lastUpdatedAt).toLocaleDateString("he-IL")}</>
+                          )}
+                        </div>
+                        {t.style.lastAiSummary && (
+                          <p className="text-muted-foreground">{t.style.lastAiSummary}</p>
+                        )}
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
   );
 }
