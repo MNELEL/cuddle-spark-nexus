@@ -694,12 +694,12 @@ function ContactDetailsPanel({ classId, studentId }: Props) {
   const set = (k: keyof ContactForm, v: string) => setForm({ ...current, [k]: v });
 
   const errors: Partial<Record<keyof ContactForm, string>> = {
-    national_id: validateNationalId(current.national_id),
-    father_id: validateNationalId(current.father_id),
-    mother_id: validateNationalId(current.mother_id),
-    father_phone: validatePhone(current.father_phone),
-    mother_phone: validatePhone(current.mother_phone),
-    birth_date: validateBirthDate(current.birth_date),
+    national_id: validateNationalId(current.national_id) ?? undefined,
+    father_id: validateNationalId(current.father_id) ?? undefined,
+    mother_id: validateNationalId(current.mother_id) ?? undefined,
+    father_phone: validatePhone(current.father_phone) ?? undefined,
+    mother_phone: validatePhone(current.mother_phone) ?? undefined,
+    birth_date: validateBirthDate(current.birth_date) ?? undefined,
   };
   const hasErrors = Object.values(errors).some(Boolean);
 
