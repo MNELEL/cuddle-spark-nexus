@@ -147,7 +147,7 @@ function ExamGeneratorLanding() {
         <Link to="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" aria-hidden="true" /> חזרה לדף הבית
         </Link>
-        <Link to="/login">
+        <Link to="/login" search={{ next: "/classes" }}>
           <Button variant="outline" size="sm">התחברות</Button>
         </Link>
       </header>
@@ -165,7 +165,7 @@ function ExamGeneratorLanding() {
             וקבלו מבחן מוכן להדפסה עם מפתח תשובות. מותאם למקצועות קודש ולמקצועות חול.
           </p>
           <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-            <Link to="/login">
+            <Link to="/login" search={{ mode: "signup", next: "/classes" }}>
               <Button size="lg" className="gap-2 shadow-glow-primary">
                 התחילו ניסיון חינם <ArrowLeft className="h-4 w-4" aria-hidden="true" />
               </Button>
@@ -229,7 +229,7 @@ function ExamGeneratorLanding() {
             וכל ארגז הכלים של המלמד.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <Link to="/login">
+            <Link to="/login" search={{ mode: "signup", next: "/classes" }}>
               <Button size="lg" className="gap-2 shadow-glow-primary">
                 <Gift className="h-4 w-4" aria-hidden="true" /> הרשמה · חודש ניסיון חינם
               </Button>
