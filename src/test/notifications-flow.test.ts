@@ -121,4 +121,61 @@ describe.skipIf(!hasTestEnv)("flow: class_notifications end-to-end", () => {
     const stillUnread = await listUnread(other);
     expect(stillUnread.data).toHaveLength(1);
   });
+
+  it("recipient filter mismatch yields nothing, even for rows the user can read", async () => {
+    // owner asks for rows addressed to `other`: filter + RLS both exclude them
+    const mismatch = await owner.client
+      .from("class_notifications")
+      .select("id, recipient_id")
+      .eq("recipient_id", other.id)
+      .is("read_at", null);
+    expect(mismatch.error).toBeNull();
+    expect(mismatch.data ?? []).toHaveLength(0);
+
+    // and a completely unrelated recipient id returns nothing as well
+    const bogus = await owner.client
+      .from("class_notifications")
+      .select("id")
+      .eq("recipient_id", crypto.randomUUID());
+    expect(bogus.data ?? []).toHaveLength(0);
+
+    // without any recipient filter, RLS still limits the rows to the caller's own
+    const unfiltered = await owner.client.from("class_notifications").select("id, recipient_id");
+    expect(unfiltered.error).toBeNull();
+    expect(unfiltered.data?.length).toBeGreaterThan(0);
+    expect(unfiltered.data?.every((n) => n.recipient_id === owner.id)).toBe(true);
+  });
+
+  it("an institution_admin (principal) of the class's institution still only sees their own notifications", async () => {
+    // sanity: the principal really is scoped to the institution owning this class
+    const role = await principal.client
+      .from("user_roles")
+      .select("role, institution_id")
+      .eq("user_id", principal.id);
+    expect(role.data?.[0]).toMatchObject({ role: "principal", institution_id: institutionId });
+
+    const mine = await listUnread(principal);
+    expect(mine.error).toBeNull();
+    expect(mine.data ?? []).toHaveLength(0);
+
+    // cannot read the teacher's notifications, with or without a recipient filter
+    const spoof = await principal.client
+      .from("class_notifications")
+      .select("id")
+      .eq("recipient_id", owner.id);
+    expect(spoof.data ?? []).toHaveLength(0);
+
+    const all = await principal.client.from("class_notifications").select("id, recipient_id");
+    expect(all.error).toBeNull();
+    expect(all.data ?? []).toHaveLength(0);
+
+    // and cannot mark them read
+    const target = ids[0]!;
+    const upd = await principal.client
+      .from("class_notifications")
+      .update({ read_at: new Date().toISOString() })
+      .eq("id", target)
+      .select("id");
+    expect(upd.data ?? []).toHaveLength(0);
+  });
 });
