@@ -74,6 +74,7 @@ function IngestPage() {
   const search = useSearch({ from: "/_authenticated/ingest" });
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [classId, setClassId] = useState<string | undefined>(search.classId);
+  const [showManual, setShowManual] = useState(false);
   const listFn = useServerFn(listIngestJobs);
   const listClsFn = useServerFn(listClasses);
 
