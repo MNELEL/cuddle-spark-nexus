@@ -33,6 +33,8 @@ export type IngestJob = {
 
 export type RosterStudentDraft = {
   name: string;
+  first_name?: string;
+  last_name?: string;
   national_id?: string;
   birth_date?: string; // YYYY-MM-DD
   address?: string;
@@ -49,7 +51,7 @@ export type RosterStudentDraft = {
 export type RosterExtracted = { kind: "roster"; students: RosterStudentDraft[] };
 
 export const ROSTER_TARGET_FIELDS = [
-  "ignore", "name", "national_id", "birth_date", "address",
+  "ignore", "name", "first_name", "last_name", "national_id", "birth_date", "address",
   "father_name", "father_id", "father_phone",
   "mother_name", "mother_id", "mother_phone",
 ] as const;
