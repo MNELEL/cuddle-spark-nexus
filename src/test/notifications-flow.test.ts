@@ -2,8 +2,11 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   adminClient,
   createClassFor,
+  createInstitution,
   createTestUser,
+  deleteInstitution,
   deleteTestUser,
+  grantRole,
   hasTestEnv,
   type TestUser,
 } from "./helpers";
@@ -30,15 +33,24 @@ async function listUnread(user: TestUser) {
 describe.skipIf(!hasTestEnv)("flow: class_notifications end-to-end", () => {
   let owner: TestUser;
   let other: TestUser;
+  let principal: TestUser;
   let classId: string;
   let className: string;
+  let institutionId: string;
 
   beforeAll(async () => {
     owner = await createTestUser("notif-flow-owner");
     other = await createTestUser("notif-flow-other");
+    principal = await createTestUser("notif-flow-principal");
     const cls = await createClassFor(owner, "כיתה — זרימת התראות");
     classId = cls.id;
     className = cls.name;
+
+    // institution_admin (principal) scoped to the institution that owns the class
+    const inst = await createInstitution(`מוסד — זרימת התראות ${crypto.randomUUID()}`);
+    institutionId = inst.id;
+    await grantRole(principal, "principal", institutionId);
+    await adminClient().from("classes").update({ institution_id: institutionId }).eq("id", classId);
 
     const admin = adminClient();
     const rows = [
@@ -55,6 +67,8 @@ describe.skipIf(!hasTestEnv)("flow: class_notifications end-to-end", () => {
     if (ids.length) await adminClient().from("class_notifications").delete().in("id", ids);
     await deleteTestUser(owner);
     await deleteTestUser(other);
+    await deleteTestUser(principal);
+    await deleteInstitution(institutionId);
   });
 
   it("the generic `notifications` table no longer exists", async () => {
