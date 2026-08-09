@@ -266,6 +266,11 @@ function GroupMakerPage() {
                 גלו את הכיתה שלי
               </Button>
             </Link>
+            <Link to="/tools/exam-generator">
+              <Button size="lg" variant="outline" className="gap-2">
+                מחולל מבחנים AI
+              </Button>
+            </Link>
           </div>
         </div>
       </main>
