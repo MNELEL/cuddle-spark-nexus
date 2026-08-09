@@ -536,13 +536,13 @@ function UserManagementPage() {
         </CardContent>
       </Card>
 
+      <TrialApprovalsCard />
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <ScrollText className="h-5 w-5 text-primary" /> יומן שינויים
           </CardTitle>
-          <CardDescription>20 הפעולות האחרונות בניהול מוסדות ותפקידים.</CardDescription>
-        </CardHeader>
           <CardDescription>20 הפעולות האחרונות בניהול מוסדות ותפקידים.</CardDescription>
         </CardHeader>
         <CardContent>
