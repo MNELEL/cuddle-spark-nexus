@@ -14,6 +14,8 @@ export type RosterExistingRow = {
 
 export type RosterInputRow = {
   name: string;
+  first_name?: string | null;
+  last_name?: string | null;
   national_id?: string | null;
   birth_date?: string | null;
   address?: string | null;
@@ -61,10 +63,12 @@ export function buildMatchIndex(existing: RosterExistingRow[] | null | undefined
 export function studentFieldsFromRow(s: RosterInputRow): StudentFields {
   const fullName = normalizeName(s.name);
   const parts = fullName.split(" ").filter(Boolean);
+  const explicitFirst = normalizeName(s.first_name);
+  const explicitLast = normalizeName(s.last_name);
   return {
     name: fullName,
-    first_name: parts[0] ?? null,
-    last_name: parts.length > 1 ? parts.slice(1).join(" ") : null,
+    first_name: explicitFirst || parts[0] || null,
+    last_name: explicitLast || (parts.length > 1 ? parts.slice(1).join(" ") : null),
     national_id: s.national_id || null,
     birth_date: s.birth_date || null,
     address: s.address || null,
