@@ -99,31 +99,25 @@ function IngestPage() {
         onCreated={(id) => { setSelectedJobId(id); refetch(); }}
       />
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <UploadCard kind="roster" icon={<Users className="h-6 w-6" />}
-          title="רשימת תלמידים" desc="תמונה, PDF או Excel/CSV — עמודות טבלאיות ימופו אוטומטית לשדות המערכת עם אפשרות תיקון ידני"
-          accept="image/*,application/pdf,.csv,.xlsx,.xls,.txt"
-          onCreated={(id) => { setSelectedJobId(id); refetch(); }}
-          classes={classes as { id: string; name: string }[]}
-          classId={classId} setClassId={setClassId} requiresClass />
-        <UploadCard kind="resource" icon={<FileText className="h-6 w-6" />}
-          title="חומר לימוד" desc="דף עבודה, מערך שיעור, חידה, סיפור"
-          accept="image/*,application/pdf,.txt,.md,.docx"
-          onCreated={(id) => { setSelectedJobId(id); refetch(); }} />
-        <UploadCard kind="lesson_audio" icon={<Mic className="h-6 w-6" />}
-          title="הקלטת שיעור" desc="MP3, WAV, M4A, WEBM — עד 20MB"
-          accept="audio/*"
-          onCreated={(id) => { setSelectedJobId(id); refetch(); }}
-          classes={classes as { id: string; name: string }[]}
-          classId={classId} setClassId={setClassId} requiresClass />
+      <div className="space-y-3">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowManual((v) => !v)}
+          aria-expanded={showManual}
+        >
+          <Upload className="ms-1 h-4 w-4" />
+          {showManual ? "הסתר העלאה לפי סוג מדויק" : "העלאה לפי סוג מדויק (רשימה / חומר / הקלטה)"}
+        </Button>
+        {showManual && (
+          <DropZone
+            classes={classes as { id: string; name: string }[]}
+            classId={classId}
+            setClassId={setClassId}
+            onCreated={(id) => { setSelectedJobId(id); refetch(); }}
+          />
+        )}
       </div>
-
-      <DropZone
-        classes={classes as { id: string; name: string }[]}
-        classId={classId}
-        setClassId={setClassId}
-        onCreated={(id) => { setSelectedJobId(id); refetch(); }}
-      />
 
       {selectedJobId && (
         <JobDetail jobId={selectedJobId} classes={classes as { id: string; name: string }[]}
