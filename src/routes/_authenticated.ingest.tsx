@@ -463,6 +463,8 @@ function RosterPreview({ job, classes, preferredClassId, onDone }: {
     mutationFn: () => {
       const included = rows.filter((r) => r.include).map((r) => ({
         name: r.name,
+        first_name: r.first_name || null,
+        last_name: r.last_name || null,
         national_id: r.national_id || null,
         birth_date: r.birth_date || null,
         address: r.address || null,

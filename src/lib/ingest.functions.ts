@@ -33,6 +33,8 @@ export type IngestJob = {
 
 export type RosterStudentDraft = {
   name: string;
+  first_name?: string;
+  last_name?: string;
   national_id?: string;
   birth_date?: string; // YYYY-MM-DD
   address?: string;
@@ -49,7 +51,7 @@ export type RosterStudentDraft = {
 export type RosterExtracted = { kind: "roster"; students: RosterStudentDraft[] };
 
 export const ROSTER_TARGET_FIELDS = [
-  "ignore", "name", "national_id", "birth_date", "address",
+  "ignore", "name", "first_name", "last_name", "national_id", "birth_date", "address",
   "father_name", "father_id", "father_phone",
   "mother_name", "mother_id", "mother_phone",
 ] as const;
@@ -595,6 +597,8 @@ function guessFieldFromHeader(h: string): RosterTargetField {
   if (/אם|אמא|mother/i.test(s)) return "mother_name";
   if (/כתובת|רחוב|address/i.test(s)) return "address";
   if (/תאריך|לידה|birth/i.test(s)) return "birth_date";
+  if (/שם\s*פרטי|first\s*name/i.test(s)) return "first_name";
+  if (/שם\s*משפחה|משפחה|last\s*name|surname|family/i.test(s)) return "last_name";
   if (/שם|name/i.test(s)) return "name";
   return "ignore";
 }
@@ -612,10 +616,14 @@ export function applyRosterMapping(headers: string[], rows: string[][], mapping:
     return "";
   };
   return rows.map<RosterStudentDraft | null>((row) => {
-    const name = pick(row, "name");
+    const first = cleanStr(pick(row, "first_name"), 60) ?? "";
+    const last = cleanStr(pick(row, "last_name"), 60) ?? "";
+    const name = pick(row, "name") || [last, first].filter(Boolean).join(" ");
     if (!name) return null;
     const draft: RosterStudentDraft = {
       name: name.slice(0, 100),
+      first_name: first || undefined,
+      last_name: last || undefined,
       national_id: cleanStr(pick(row, "national_id"), 20),
       birth_date: normDate(pick(row, "birth_date")),
       address: cleanStr(pick(row, "address"), 200),
@@ -824,6 +832,8 @@ const rosterCommitSchema = z.object({
   class_id: uuid,
   students: z.array(z.object({
     name: z.string().min(1).max(100),
+    first_name: z.string().max(60).optional().nullable(),
+    last_name: z.string().max(60).optional().nullable(),
     national_id: z.string().max(20).optional().nullable(),
     birth_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
     address: z.string().max(200).optional().nullable(),
