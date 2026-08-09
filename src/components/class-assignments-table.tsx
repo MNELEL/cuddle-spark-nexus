@@ -104,11 +104,12 @@ export function ClassAssignmentsTable() {
         ) : rows.length === 0 ? (
           <p className="text-sm text-muted-foreground">אין כיתות להצגה.</p>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="max-h-[28rem] overflow-auto">
+            <p className="pb-2 text-xs text-muted-foreground font-mono-tabular">{rows.length} כיתות</p>
             <table className="w-full text-sm">
               <caption className="sr-only">טבלת שיוכי כיתות למוסד, למלמד ולספרייה</caption>
               <thead>
-                <tr className="border-b text-start text-xs text-muted-foreground">
+                <tr className="border-b bg-card text-start text-xs text-muted-foreground [&>th]:sticky [&>th]:top-0 [&>th]:bg-card">
                   <th scope="col" className="p-2 text-start">כיתה</th>
                   <th scope="col" className="p-2 text-start">מוסד</th>
                   <th scope="col" className="p-2 text-start">מלמד</th>
