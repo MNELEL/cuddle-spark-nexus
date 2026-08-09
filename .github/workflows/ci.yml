@@ -33,5 +33,13 @@ jobs:
       - name: Typecheck
         run: bunx tsgo --noEmit
 
+      # RLS + rollover coverage. Skips DB-backed suites when the secrets are absent.
+      - name: Run tests
+        run: bun run test
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
       - name: Production build
         run: bun run build
