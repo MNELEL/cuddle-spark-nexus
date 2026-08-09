@@ -19,6 +19,49 @@ function fmt(iso: string | null) {
   return new Date(iso).toLocaleDateString("he-IL", { day: "numeric", month: "long", year: "numeric" });
 }
 
+type LastReview = {
+  decision: "approved" | "rejected";
+  grantedDays: number | null;
+  reviewedAt: string | null;
+  reviewerName: string | null;
+};
+
+type StatusRow = {
+  endsAt: string | null;
+  active: boolean;
+  daysLeft: number;
+  lastReview: LastReview | null;
+};
+
+/** Compact one-line summary: status, end date, and the latest approval/rejection. */
+function TrialStatusSummary({ row }: { row: StatusRow }) {
+  const status = !row.endsAt ? "לא הופעל" : row.active ? `פעיל · ${row.daysLeft} ימים` : "פג";
+  const lr = row.lastReview;
+  const decision = lr
+    ? lr.decision === "approved"
+      ? `אושר${lr.grantedDays ? ` +${lr.grantedDays} ימים` : ""}`
+      : "נדחה"
+    : null;
+
+  return (
+    <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+      <span className="font-medium text-foreground">{status}</span>
+      <span aria-hidden="true">·</span>
+      <span>בתוקף עד {fmt(row.endsAt)}</span>
+      <span aria-hidden="true">·</span>
+      {lr ? (
+        <span>
+          {decision}
+          {lr.reviewerName ? ` ע"י ${lr.reviewerName}` : ""}
+          {lr.reviewedAt ? ` · ${fmt(lr.reviewedAt)}` : ""}
+        </span>
+      ) : (
+        <span>לא נבדק</span>
+      )}
+    </p>
+  );
+}
+
 /** Matches a row against a focus token (user id or email). */
 function isFocused(token: string | undefined, row: { userId: string; email: string | null }) {
   if (!token) return false;
@@ -99,10 +142,8 @@ function PendingTrialRequests({ highlightUser }: { highlightUser?: string }) {
                   <p className="truncate text-sm text-muted-foreground">{r.email}</p>
                   {r.institutionName && <p className="text-xs text-muted-foreground">מוסד: {r.institutionName}</p>}
                   {r.message && <p className="max-w-prose text-xs">{r.message}</p>}
-                  <p className="text-xs text-muted-foreground">
-                    נשלחה: {fmt(r.createdAt)} · בתוקף עד: {fmt(r.endsAt)}
-                    {r.active ? ` · נותרו ${r.daysLeft} ימים` : " · אינו פעיל"}
-                  </p>
+                  <p className="text-xs text-muted-foreground">נשלחה: {fmt(r.createdAt)}</p>
+                  <TrialStatusSummary row={r} />
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <Button size="sm" variant="outline" disabled={busy} onClick={() => act(r.id, "approve", 30)}>
@@ -220,7 +261,7 @@ export function TrialApprovalsCard({ initialSearch, highlightUser }: TrialApprov
                   <div className="min-w-0">
                     <p className="truncate font-medium">{r.displayName || r.email}</p>
                     <p className="truncate text-sm text-muted-foreground">{r.email}</p>
-                    <p className="text-xs text-muted-foreground">בתוקף עד: {fmt(r.endsAt)}</p>
+                    <TrialStatusSummary row={r} />
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     {r.active ? (
