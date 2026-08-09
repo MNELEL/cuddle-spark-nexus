@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getClass, getClassChain, setClassStatus } from "@/lib/classes.functions";
 import {
   listStudents, upsertStudent, deleteStudent,
@@ -414,7 +414,7 @@ function StudentsTab({
 
   const scoreOf = (id: string) =>
     scoreInputs
-      ? computeStudentScore(id, scoreInputs.grades, scoreInputs.attendance, scoreInputs.behavior)?.total ?? null
+      ? computeStudentScore(id, scoreInputs.grades, scoreInputs.attendance, scoreInputs.behavior)?.score ?? null
       : null;
   const sorted = useMemo(
     () => sortStudents(students, sortKey, scoreOf),
