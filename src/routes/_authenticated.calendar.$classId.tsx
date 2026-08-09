@@ -168,8 +168,28 @@ function CalendarPage() {
         map.set(k, arr);
       }
     }
+
+    // derived Hebrew birthdays (not stored) — merged as virtual events so the
+    // grid, the cake marker and the day dialog all show them
+    for (const s of students as { id: string; name: string; birth_date?: string | null }[]) {
+      for (const b of hebrewBirthdaysInRange(s.birth_date ?? null, gridFrom, gridTo)) {
+        const arr = map.get(b.iso) ?? [];
+        arr.push({
+          id: `hb:${s.id}:${b.iso}`,
+          class_id: classId,
+          title: `יום הולדת ל${s.name}${b.age != null ? ` · גיל ${b.age}` : ""}`,
+          type: "birthday",
+          date: b.iso,
+          end_date: null,
+          student_id: s.id,
+          notes: b.hebrewLabel ? `תאריך עברי: ${b.hebrewLabel}` : null,
+          color: null,
+        } as ClassEvent);
+        map.set(b.iso, arr);
+      }
+    }
     return map;
-  }, [events]);
+  }, [events, students, gridFrom, gridTo, classId]);
 
   const openDay = (iso: string) => { setDayOpen(iso); setEditing(null); };
   const openNew = (iso: string) => { setEditing({ id: "", class_id: classId, title: "", type: "other", date: iso, end_date: null, student_id: null, notes: null, color: null }); setFormOpen(true); };
