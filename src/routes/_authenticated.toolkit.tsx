@@ -24,9 +24,9 @@ const SECTION_IDS: ToolSection[] = ["tools", "sound", "motivation", "assess", "d
 
 export const Route = createFileRoute("/_authenticated/toolkit")({
   component: ToolkitPage,
-  validateSearch: (search: Record<string, unknown>): { section: ToolSection } => {
+  validateSearch: (search: Record<string, unknown>): { section?: ToolSection } => {
     const raw = String(search.section ?? "");
-    return { section: (SECTION_IDS as string[]).includes(raw) ? (raw as ToolSection) : "tools" };
+    return (SECTION_IDS as string[]).includes(raw) ? { section: raw as ToolSection } : {};
   },
   head: () => ({
     meta: [
@@ -41,7 +41,7 @@ export const Route = createFileRoute("/_authenticated/toolkit")({
 });
 
 function ToolkitPage() {
-  const { section } = Route.useSearch();
+  const { section = "tools" } = Route.useSearch();
   const { access } = useToolAccess();
   const navigate = useNavigate();
 
