@@ -6,18 +6,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AlertTriangle, CheckCircle2, Filter, EyeOff, Eye, Gauge } from "lucide-react";
 import type { RosterStudentDraft } from "@/lib/ingest.functions";
+import { joinName, splitFullName } from "@/lib/student-field-validation";
 
 /* ------- target fields ------- */
 
 export const FIELD_KEYS = [
-  "name", "first_name", "middle_name", "last_name", "national_id", "birth_date", "address",
+  "first_name", "middle_name", "last_name", "national_id", "birth_date", "address",
   "father_name", "father_id", "father_phone",
   "mother_name", "mother_id", "mother_phone",
 ] as const;
 export type FieldKey = typeof FIELD_KEYS[number];
 
 const FIELD_LABEL: Record<FieldKey, string> = {
-  name: "שם התלמיד",
   first_name: "שם פרטי",
   middle_name: "שם אמצעי / כינוי",
   last_name: "שם משפחה",
@@ -33,11 +33,14 @@ const FIELD_LABEL: Record<FieldKey, string> = {
 };
 
 const FIELD_GROUP: Record<FieldKey, "student" | "ids" | "address" | "father" | "mother"> = {
-  name: "student", first_name: "student", middle_name: "student", last_name: "student",
+  first_name: "student", middle_name: "student", last_name: "student",
   national_id: "ids", birth_date: "student", address: "address",
   father_name: "father", father_id: "ids", father_phone: "father",
   mother_name: "mother", mother_id: "ids", mother_phone: "mother",
 };
+
+/** columns that belong to the "שם התלמיד" name group */
+const NAME_KEYS: FieldKey[] = ["first_name", "middle_name", "last_name"];
 const GROUP_COLOR: Record<string, string> = {
   student: "bg-primary/10 text-primary",
   ids: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
@@ -50,9 +53,12 @@ const GROUP_COLOR: Record<string, string> = {
 
 function validate(key: FieldKey, v: string): { ok: true } | { ok: false; msg: string } {
   const val = (v ?? "").trim();
-  if (key === "name") {
-    if (!val) return { ok: false, msg: "שם התלמיד חובה" };
-    if (val.length < 2) return { ok: false, msg: "שם קצר מדי" };
+  if (key === "first_name") {
+    if (!val) return { ok: false, msg: "שם פרטי חובה" };
+    return { ok: true };
+  }
+  if (key === "last_name") {
+    if (!val) return { ok: false, msg: "שם משפחה חובה" };
     return { ok: true };
   }
   if (!val) return { ok: true }; // optional
