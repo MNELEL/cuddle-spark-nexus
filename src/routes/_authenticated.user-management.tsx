@@ -45,6 +45,7 @@ import {
 import { TrialApprovalsCard } from "@/components/trial-approvals-card";
 import { AccessRequestForm } from "@/components/access-request-form";
 import { AccessRequestsCard } from "@/components/access-requests-card";
+import { SystemAdminsCard } from "@/components/system-admins-card";
 
 const NO_INSTITUTION = "__none__";
 const INSTITUTIONS_PAGE_SIZE = 10;
@@ -150,6 +151,7 @@ function UserManagementPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users-with-roles"] });
       queryClient.invalidateQueries({ queryKey: ["role-audit-log"] });
+      queryClient.invalidateQueries({ queryKey: ["system-admins"] });
       setSelectedRole("");
       setSelectedInstitution(NO_INSTITUTION);
       toast.success("תפקיד הוקצה בהצלחה");
@@ -166,6 +168,7 @@ function UserManagementPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users-with-roles"] });
       queryClient.invalidateQueries({ queryKey: ["role-audit-log"] });
+      queryClient.invalidateQueries({ queryKey: ["system-admins"] });
       toast.success("תפקיד הוסר");
     },
     onError: (err) => {
@@ -181,6 +184,7 @@ function UserManagementPage() {
       if (res.ok) {
         toast.success(res.message);
         queryClient.invalidateQueries({ queryKey: ["can-manage-users"] });
+        queryClient.invalidateQueries({ queryKey: ["system-admins"] });
       } else {
         toast.info(res.message);
       }
@@ -211,6 +215,7 @@ function UserManagementPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            <SystemAdminsCard />
             <div className="rounded-lg border bg-muted/30 p-4">
               <h2 className="mb-3 font-display text-base font-semibold">אז מה עושים?</h2>
               <ol className="list-decimal space-y-2 pr-5 text-sm text-muted-foreground">
@@ -280,6 +285,7 @@ function UserManagementPage() {
           </Link>
         </div>
         <AccessRequestsCard canResolve={false} />
+        <SystemAdminsCard />
         <Card>
           <CardHeader>
             <CardTitle className="text-base">ניהול המוסד שלך</CardTitle>
@@ -341,6 +347,8 @@ function UserManagementPage() {
           <Button variant="outline"><ArrowLeft className="me-2 h-4 w-4" /> חזרה</Button>
         </Link>
       </div>
+
+      <SystemAdminsCard />
 
       <Card>
         <CardHeader>

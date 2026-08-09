@@ -45,6 +45,56 @@ export const isAdmin = createServerFn({ method: "GET" })
     return Boolean(data);
   });
 
+export type SystemAdmin = {
+  id: string;
+  email: string | null;
+  displayName: string;
+  assignedAt: string;
+  isMe: boolean;
+};
+
+/**
+ * Who currently holds the `admin` role, and when it was granted.
+ * Readable by any signed-in user: everyone needs to know whom to ask for
+ * approval. Only name/email/date are exposed.
+ */
+export const listSystemAdmins = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<SystemAdmin[]> => {
+    const { userId } = context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: roles, error } = await supabaseAdmin
+      .from("user_roles")
+      .select("user_id, created_at")
+      .eq("role", "admin")
+      .order("created_at", { ascending: true });
+    if (error) throw new Error(error.message);
+    if (!roles || roles.length === 0) return [];
+
+    const { data: users, error: usersError } = await supabaseAdmin.auth.admin.listUsers({
+      page: 1,
+      perPage: 1000,
+    });
+    if (usersError) throw new Error(usersError.message);
+
+    const byId = new Map((users.users ?? []).map((u) => [u.id, u]));
+
+    return roles.map((r) => {
+      const u = byId.get(r.user_id);
+      return {
+        id: r.user_id,
+        email: u?.email ?? null,
+        displayName:
+          (u?.user_metadata?.["display_name"] as string | undefined) ??
+          u?.email?.split("@")[0] ??
+          "משתמש",
+        assignedAt: r.created_at,
+        isMe: r.user_id === userId,
+      };
+    });
+  });
+
 export const listUsersWithRoles = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
