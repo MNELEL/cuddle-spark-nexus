@@ -21,6 +21,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { ClassTeacherName } from "@/components/class-teacher-name";
 import { ClassLibraryStatus } from "@/components/class-library-status";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowRight, Heart, Ban, MoveHorizontal, Pencil, Plus, Trash2, FolderOpen, FileText, Sparkles, Trophy, Users, Library, Monitor, Upload, Printer, Copy, Dices, Globe2, Award, ScanText, TrendingUp, CalendarDays, Wand2, MessageSquare, MoreHorizontal, LayoutGrid } from "lucide-react";
@@ -239,6 +240,13 @@ function ClassDetail() {
               <p className="mt-1 text-sm text-primary-foreground/85 font-mono-tabular">
                 {students.length} תלמידים · {relations.length} אילוצים
               </p>
+              <div className="mt-1">
+                <ClassTeacherName
+                  classId={classId}
+                  teacherName={cls?.teacher_name ?? null}
+                  readOnly={isArchived}
+                />
+              </div>
             </>
           )}
         </div>

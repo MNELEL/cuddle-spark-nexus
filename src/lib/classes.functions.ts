@@ -339,6 +339,7 @@ export const updateClass = createServerFn({ method: "POST" })
       grid_cols: z.number().int().min(1).max(20).optional(),
       grid_rows: z.number().int().min(1).max(20).optional(),
       academic_year: z.string().trim().max(30).optional(),
+      teacher_name: z.string().trim().max(80).optional(),
       room_objects: z.array(roomObjectSchema).max(60).optional(),
     }).parse(d),
   )

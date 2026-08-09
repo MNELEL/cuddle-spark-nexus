@@ -19,7 +19,9 @@ import {
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
-import { Search, ChevronLeft, Building2, Users, GraduationCap, Archive, UserPlus, Loader2 } from "lucide-react";
+import { InstitutionStaffCard } from "@/components/institution-staff-card";
+import { renameInstitutionTeacher } from "@/lib/institution-staff.functions";
+import { Search, ChevronLeft, Pencil, Building2, Users, GraduationCap, Archive, UserPlus, Loader2 } from "lucide-react";
 import {
   getMyInstitution,
   getInstitutionOverview,
@@ -156,6 +158,7 @@ function InstitutionDashboardPage() {
         <TabsList aria-label="מדורי המוסד">
           <TabsTrigger value="classes">כיתות</TabsTrigger>
           <TabsTrigger value="teachers">מלמדים</TabsTrigger>
+          <TabsTrigger value="staff">צוות ורבנים</TabsTrigger>
         </TabsList>
 
         <TabsContent value="classes" className="space-y-6">
@@ -210,11 +213,18 @@ function InstitutionDashboardPage() {
                       מלמד: {c.teacherName} · <span className="font-mono-tabular">{c.studentCount}</span> תלמידים
                     </div>
                   </div>
-                  <Button asChild variant="ghost" size="sm" className="rounded-xl shrink-0">
-                    <Link to="/classes/$classId" params={{ classId: c.id }}>
-                      צפייה <ChevronLeft className="ms-1 h-4 w-4" aria-hidden="true" />
-                    </Link>
-                  </Button>
+                  <div className="flex shrink-0 flex-wrap items-center gap-1">
+                    <Button asChild variant="ghost" size="sm" className="rounded-xl">
+                      <Link to="/weekly-schedule/$classId" params={{ classId: c.id }}>
+                        פגישות ומטלות
+                      </Link>
+                    </Button>
+                    <Button asChild variant="ghost" size="sm" className="rounded-xl">
+                      <Link to="/classes/$classId" params={{ classId: c.id }}>
+                        פרטים וקצב <ChevronLeft className="ms-1 h-4 w-4" aria-hidden="true" />
+                      </Link>
+                    </Button>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -252,6 +262,10 @@ function InstitutionDashboardPage() {
         <TabsContent value="teachers">
           <TeachersTab />
         </TabsContent>
+
+        <TabsContent value="staff">
+          <InstitutionStaffCard canEdit />
+        </TabsContent>
       </Tabs>
     </div>
   );
@@ -262,6 +276,8 @@ function TeachersTab() {
   const fetchTeachers = useServerFn(listInstitutionTeachers);
   const invite = useServerFn(inviteTeacherToInstitution);
   const remove = useServerFn(removeTeacherFromInstitution);
+  const rename = useServerFn(renameInstitutionTeacher);
+  const [renameTarget, setRenameTarget] = useState<{ userId: string; name: string } | null>(null);
 
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
@@ -291,6 +307,17 @@ function TeachersTab() {
       void qc.invalidateQueries({ queryKey: ["institution-teachers"] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "הסרת המלמד נכשלה"),
+  });
+
+  const renameM = useMutation({
+    mutationFn: (v: { userId: string; name: string }) => rename({ data: { teacherId: v.userId, name: v.name } }),
+    onSuccess: () => {
+      toast.success("שם המלמד עודכן");
+      setRenameTarget(null);
+      void qc.invalidateQueries({ queryKey: ["institution-teachers"] });
+      void qc.invalidateQueries({ queryKey: ["institution-classes"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "עדכון השם נכשל"),
   });
 
   function submitInvite() {
@@ -373,9 +400,18 @@ function TeachersTab() {
                       <span className="font-mono-tabular">{t.studentCount}</span> תלמידים
                     </div>
                   </div>
+                  <div className="flex shrink-0 items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="rounded-xl"
+                    onClick={() => setRenameTarget({ userId: t.userId, name: t.name })}
+                  >
+                    <Pencil className="me-1 h-3.5 w-3.5" aria-hidden="true" /> שינוי שם
+                  </Button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="sm" className="rounded-xl shrink-0 text-destructive">
+                      <Button variant="ghost" size="sm" className="rounded-xl text-destructive">
                         הסר מהמוסד
                       </Button>
                     </AlertDialogTrigger>
@@ -392,6 +428,7 @@ function TeachersTab() {
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
+                  </div>
                 </div>
                 {t.style && (
                   <Accordion type="single" collapsible>
@@ -426,6 +463,42 @@ function TeachersTab() {
           </ul>
         )}
       </CardContent>
+
+      <Dialog open={renameTarget !== null} onOpenChange={(o) => !o && setRenameTarget(null)}>
+        <DialogContent dir="rtl">
+          <DialogHeader>
+            <DialogTitle>שינוי שם המלמד</DialogTitle>
+            <DialogDescription>
+              השם יופיע בכל הכיתות של המלמד, בדוחות ובדשבורד המוסד.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="teacher-rename">שם מלא</Label>
+            <Input
+              id="teacher-rename"
+              className="rounded-xl"
+              maxLength={80}
+              value={renameTarget?.name ?? ""}
+              onChange={(e) => setRenameTarget((prev) => (prev ? { ...prev, name: e.target.value } : prev))}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" className="rounded-xl" onClick={() => setRenameTarget(null)}>ביטול</Button>
+            <Button
+              className="rounded-xl"
+              disabled={renameM.isPending}
+              onClick={() => {
+                if (!renameTarget) return;
+                if (renameTarget.name.trim().length < 2) return toast.error("נדרש שם מלא");
+                renameM.mutate({ userId: renameTarget.userId, name: renameTarget.name.trim() });
+              }}
+            >
+              {renameM.isPending && <Loader2 className="me-1 h-4 w-4 animate-spin" aria-hidden="true" />}
+              שמירה
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
