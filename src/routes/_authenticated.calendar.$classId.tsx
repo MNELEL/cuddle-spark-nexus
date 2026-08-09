@@ -11,6 +11,7 @@ import {
 } from "@/lib/class-events.functions";
 import { buildWeeklySummary } from "@/lib/ai-weekly-summary.functions";
 import { listStudents } from "@/lib/students.functions";
+import { hebrewBirthdaysInRange } from "@/lib/hebrew-date";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -384,10 +385,14 @@ function DayDialog({ open, onOpenChange, iso, events, onNew, onEdit, classId }: 
                   {e.notes && <div className="text-xs text-muted-foreground line-clamp-2">{e.notes}</div>}
                 </div>
               </div>
+              {e.id.startsWith("hb:") ? (
+                <Badge variant="secondary" className="shrink-0 text-[10px]">מחושב אוטומטית</Badge>
+              ) : (
               <div className="flex gap-1">
                 <Button variant="ghost" size="icon" aria-label="ערוך" onClick={() => onEdit(e)}><Pencil className="h-4 w-4" /></Button>
                 <Button variant="ghost" size="icon" aria-label="מחק" className="text-destructive" onClick={() => removeM.mutate(e.id)}><Trash2 className="h-4 w-4" /></Button>
               </div>
+              )}
             </div>
             );
           })}
