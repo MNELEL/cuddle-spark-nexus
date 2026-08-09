@@ -7,6 +7,7 @@ export type SoundPreference = {
   sound_id: string;
   enabled: boolean;
   volume: number;
+  duration_scale: number;
 };
 
 /** All event→sound mappings of the signed-in הרב. */
@@ -15,13 +16,14 @@ export const listSoundPreferences = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<SoundPreference[]> => {
     const { data, error } = await context.supabase
       .from("sound_preferences")
-      .select("event_key, sound_id, enabled, volume");
+      .select("event_key, sound_id, enabled, volume, duration_scale");
     if (error) throw new Error("טעינת העדפות הצלילים נכשלה");
     return (data ?? []).map((r) => ({
       event_key: r.event_key,
       sound_id: r.sound_id,
       enabled: r.enabled,
       volume: Number(r.volume),
+      duration_scale: Number(r.duration_scale ?? 1),
     }));
   });
 
@@ -30,9 +32,10 @@ export const saveSoundPreference = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({
     event_key: z.string().min(1).max(60),
-    sound_id: z.string().min(1).max(60),
+    sound_id: z.string().min(1).max(100),
     enabled: z.boolean().default(true),
     volume: z.number().min(0).max(1).default(0.6),
+    duration_scale: z.number().min(0.5).max(5).default(1),
   }).parse(d))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase

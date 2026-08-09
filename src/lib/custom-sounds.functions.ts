@@ -25,6 +25,23 @@ export const listCustomSounds = createServerFn({ method: "GET" })
     return data ?? [];
   });
 
+/** Uploaded sounds with short-lived playback URLs, ready for the client player. */
+export const listCustomSoundsWithUrls = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<Array<CustomSound & { url: string | null }>> => {
+    const { data, error } = await context.supabase
+      .from("custom_sounds")
+      .select("id, name, storage_path, mime_type, file_size")
+      .order("created_at", { ascending: false });
+    if (error) { console.error("[DB Error]", error); throw new Error("טעינת הצלילים האישיים נכשלה"); }
+    const rows = data ?? [];
+    if (rows.length === 0) return [];
+    const { data: signed } = await context.supabase.storage
+      .from(CUSTOM_SOUND_BUCKET)
+      .createSignedUrls(rows.map((r) => r.storage_path), 60 * 60);
+    return rows.map((r, i) => ({ ...r, url: signed?.[i]?.signedUrl ?? null }));
+  });
+
 export const createCustomSound = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({
