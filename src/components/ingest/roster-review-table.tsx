@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { AlertTriangle, CheckCircle2, Filter, EyeOff, Eye, Gauge } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Filter, EyeOff, Eye, Gauge, ArrowUp, ArrowDown, ArrowUpDown, X } from "lucide-react";
 import type { RosterStudentDraft } from "@/lib/ingest.functions";
 import { joinName, splitFullName } from "@/lib/student-field-validation";
 
@@ -113,6 +113,25 @@ export function RosterReviewTable({
   const [columns, setColumns] = useState<FieldKey[]>([...FIELD_KEYS]);
   const [filter, setFilter] = useState<"all" | "errors" | "missing">("all");
   const [threshold, setThreshold] = useState<number>(50);
+  /** per-name-field text filters */
+  const [nameFilters, setNameFilters] = useState<Record<string, string>>({
+    first_name: "", middle_name: "", last_name: "",
+  });
+  /** sorting by a single name field */
+  const [sort, setSort] = useState<{ key: FieldKey; dir: "asc" | "desc" } | null>(null);
+
+  function toggleSort(key: FieldKey) {
+    setSort((prev) =>
+      !prev || prev.key !== key
+        ? { key, dir: "asc" }
+        : prev.dir === "asc"
+          ? { key, dir: "desc" }
+          : null,
+    );
+  }
+  function clearNameFilters() {
+    setNameFilters({ first_name: "", middle_name: "", last_name: "" });
+  }
 
   function commit(next: Row[]) {
     setRows(next);
@@ -169,15 +188,34 @@ export function RosterReviewTable({
   }
 
   const visibleRows = useMemo(() => {
-    return rows
+    const activeFilters = NAME_KEYS.map((k) => [k, (nameFilters[k] ?? "").trim()] as const)
+      .filter(([, v]) => v.length > 0);
+    const list = rows
       .map((r, i) => ({ r, i }))
       .filter(({ r }) => {
         if (filter === "all") return true;
         if (filter === "errors") return rowHasError(r);
         if (filter === "missing") return rowHasMissing(r);
         return true;
+      })
+      .filter(({ r }) =>
+        activeFilters.every(([k, q]) =>
+          ((r[k] as string | undefined) ?? "").toLowerCase().includes(q.toLowerCase()),
+        ),
+      );
+    if (sort) {
+      const dir = sort.dir === "asc" ? 1 : -1;
+      list.sort((a, b) => {
+        const av = ((a.r[sort.key] as string | undefined) ?? "").trim();
+        const bv = ((b.r[sort.key] as string | undefined) ?? "").trim();
+        if (!av && !bv) return a.i - b.i;
+        if (!av) return 1; // empties always last
+        if (!bv) return -1;
+        return av.localeCompare(bv, "he") * dir;
       });
-  }, [rows, filter]);
+    }
+    return list;
+  }, [rows, filter, nameFilters, sort]);
 
   const stats = useMemo(() => {
     const included = rows.filter((r) => r.include).length;
@@ -207,6 +245,7 @@ export function RosterReviewTable({
             </Select>
           </div>
           <Badge variant="outline" className="gap-1"><CheckCircle2 className="h-3 w-3 text-emerald-600" />{stats.included} נבחרו</Badge>
+          <Badge variant="outline" className="gap-1">{visibleRows.length} מוצגות</Badge>
           <Badge variant="outline" className="gap-1"><AlertTriangle className="h-3 w-3 text-destructive" />{stats.withErrors} שגיאות</Badge>
           {stats.avgConf > 0 && (
             <Badge variant="secondary" className="gap-1"><Gauge className="h-3 w-3" />ביטחון ממוצע {stats.avgConf}%</Badge>
@@ -272,7 +311,17 @@ export function RosterReviewTable({
                       cells.push(
                         <th key={`g-${idx}`} colSpan={span}
                           className="p-1 text-center text-[11px] font-semibold text-primary bg-primary/10 border-x">
-                          שם התלמיד
+                          <span className="inline-flex items-center gap-1">
+                            שם התלמיד
+                            {(sort && NAME_KEYS.includes(sort.key)) ||
+                            NAME_KEYS.some((k) => (nameFilters[k] ?? "").trim()) ? (
+                              <Button size="sm" variant="ghost"
+                                className="h-5 px-1 text-[10px] font-normal"
+                                onClick={() => { setSort(null); clearNameFilters(); }}>
+                                <X className="h-3 w-3" />נקה סינון ומיון
+                              </Button>
+                            ) : null}
+                          </span>
                         </th>,
                       );
                       idx += span;
@@ -291,21 +340,58 @@ export function RosterReviewTable({
                 <th className="p-2 text-center w-24">ביטחון</th>
                 {columns.map((col, colIdx) => (
                   <th key={colIdx} className="p-1 min-w-[130px] text-start">
-                    <Select value={col} onValueChange={(v) => remapColumn(colIdx, v as FieldKey)}>
-                      <SelectTrigger className={`h-7 text-[11px] ${GROUP_COLOR[FIELD_GROUP[col]]}`}>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {FIELD_KEYS.map((k) => (
-                          <SelectItem key={k} value={k} className="text-xs">
-                            {FIELD_LABEL[k]}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="flex items-center gap-1">
+                      <Select value={col} onValueChange={(v) => remapColumn(colIdx, v as FieldKey)}>
+                        <SelectTrigger className={`h-7 flex-1 text-[11px] ${GROUP_COLOR[FIELD_GROUP[col]]}`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {FIELD_KEYS.map((k) => (
+                            <SelectItem key={k} value={k} className="text-xs">
+                              {FIELD_LABEL[k]}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {NAME_KEYS.includes(col) && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0"
+                              onClick={() => toggleSort(col)}
+                              aria-label={`מיין לפי ${FIELD_LABEL[col]}`}>
+                              {sort?.key === col
+                                ? sort.dir === "asc"
+                                  ? <ArrowUp className="h-3 w-3 text-primary" />
+                                  : <ArrowDown className="h-3 w-3 text-primary" />
+                                : <ArrowUpDown className="h-3 w-3 text-muted-foreground" />}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="text-xs">
+                            מיון לפי {FIELD_LABEL[col]} (א׳→ת׳ / ת׳→א׳ / ביטול)
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                    </div>
                   </th>
                 ))}
                 <th className="p-2 text-center w-24">סטטוס</th>
+              </tr>
+              <tr className="border-b bg-background/60">
+                <th className="p-1" colSpan={3} />
+                {columns.map((col, colIdx) => (
+                  <th key={`f-${colIdx}`} className="p-1">
+                    {NAME_KEYS.includes(col) ? (
+                      <Input
+                        value={nameFilters[col] ?? ""}
+                        onChange={(e) => setNameFilters((p) => ({ ...p, [col]: e.target.value }))}
+                        className="h-6 text-[11px]"
+                        placeholder={`סנן ${FIELD_LABEL[col]}`}
+                        aria-label={`סנן לפי ${FIELD_LABEL[col]}`}
+                      />
+                    ) : null}
+                  </th>
+                ))}
+                <th className="p-1" />
               </tr>
             </thead>
             <tbody>
