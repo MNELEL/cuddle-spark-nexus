@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CalendarClock, BadgeCheck, Mail } from "lucide-react";
-import { getMyTrialStatus } from "@/lib/trial.functions";
+import { getMyTrialStatus, listPendingTrialRequests } from "@/lib/trial.functions";
 import { isAdmin } from "@/lib/user-roles.functions";
 import { TrialExtensionRequestButton } from "@/components/trial-extension-request-button";
 
@@ -21,6 +21,7 @@ function formatDate(iso: string | null): string {
 export function SubscriptionStatusCard() {
   const fn = useServerFn(getMyTrialStatus);
   const adminFn = useServerFn(isAdmin);
+  const pendingFn = useServerFn(listPendingTrialRequests);
   const { data, isLoading, isError } = useQuery({
     queryKey: ["my-trial-status"],
     queryFn: () => fn(),
@@ -31,6 +32,13 @@ export function SubscriptionStatusCard() {
     queryFn: () => adminFn(),
     staleTime: 5 * 60_000,
   });
+  const { data: pendingRequests } = useQuery({
+    queryKey: ["pending-trial-requests"],
+    queryFn: () => pendingFn(),
+    enabled: !!viewerIsAdmin,
+    retry: false,
+  });
+  const pendingCount = pendingRequests?.length ?? 0;
 
   return (
     <Card>
@@ -88,6 +96,9 @@ export function SubscriptionStatusCard() {
                   <Button asChild size="sm">
                     <Link to="/user-management">
                       <BadgeCheck className="ms-1 h-4 w-4" /> אישור מנויים למשתמשים
+                      {pendingCount > 0 && (
+                        <Badge variant="destructive" className="ms-2">{pendingCount}</Badge>
+                      )}
                     </Link>
                   </Button>
                 )}
