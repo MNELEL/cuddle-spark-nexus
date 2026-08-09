@@ -67,9 +67,15 @@ function AuthLayout() {
   const pinRequired = Boolean(sec?.pin_enabled && sec?.has_pin);
   const needsPin = pinRequired && !unlocked;
 
-  // Drop any cached protected data while the app is locked.
+  // Cancel in-flight protected requests and drop cached protected data while locked.
   useEffect(() => {
     if (needsPin) {
+      void queryClient.cancelQueries({
+        predicate: (q) => {
+          const key = q.queryKey[0];
+          return key !== "app_security" && key !== "is-admin";
+        },
+      });
       queryClient.removeQueries({
         predicate: (q) => {
           const key = q.queryKey[0];
@@ -81,6 +87,16 @@ function AuthLayout() {
 
   if (loading || !user || sec === undefined || !tokenChecked) {
     return <div className="flex min-h-screen items-center justify-center text-muted-foreground">טוען...</div>;
+  }
+
+  // While locked, the protected tree (and the account chrome around it) is never
+  // mounted — only the lock screen renders, so no protected query can start.
+  if (needsPin) {
+    return (
+      <div className="min-h-screen bg-secondary/30">
+        <PinLockScreen onUnlock={() => setUnlocked(true)} />
+      </div>
+    );
   }
 
   return (
@@ -123,14 +139,9 @@ function AuthLayout() {
         </div>
       </header>
       <main className="container mx-auto px-3 py-6 sm:px-6">
-        {needsPin ? (
-          <div className="min-h-[40vh]" aria-hidden />
-        ) : (
-          <Outlet />
-        )}
+        <Outlet />
       </main>
-      {needsPin && <PinLockScreen onUnlock={() => setUnlocked(true)} />}
-      {!needsPin && <GlobalCommandPalette />}
+      <GlobalCommandPalette />
     </div>
   );
 }
