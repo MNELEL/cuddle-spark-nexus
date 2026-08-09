@@ -832,6 +832,8 @@ const rosterCommitSchema = z.object({
   class_id: uuid,
   students: z.array(z.object({
     name: z.string().min(1).max(100),
+    first_name: z.string().max(60).optional().nullable(),
+    last_name: z.string().max(60).optional().nullable(),
     national_id: z.string().max(20).optional().nullable(),
     birth_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
     address: z.string().max(200).optional().nullable(),
