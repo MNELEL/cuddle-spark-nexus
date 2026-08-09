@@ -352,6 +352,54 @@ export function ClassAssignmentsTable() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={bulkOpen} onOpenChange={setBulkOpen}>
+        <DialogContent dir="rtl">
+          <DialogHeader>
+            <DialogTitle>שיוך מחדש ל-{selected.length} כיתות</DialogTitle>
+            <DialogDescription>
+              כל הכיתות הנבחרות ישויכו למוסד שנבחר. העברת בעלות אפשרית רק למלמד המשויך לאותו מוסד.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="bulk-institution">מוסד</Label>
+              <select
+                id="bulk-institution"
+                value={bulkInstitution}
+                onChange={(e) => { setBulkInstitution(e.target.value); setBulkTeacher(""); }}
+                className="mt-1 h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+              >
+                <option value="">ללא מוסד</option>
+                {institutions.map((i) => (
+                  <option key={i.id} value={i.id}>{i.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <Label htmlFor="bulk-teacher">מלמד</Label>
+              <select
+                id="bulk-teacher"
+                value={bulkTeacher}
+                disabled={!bulkInstitution}
+                onChange={(e) => setBulkTeacher(e.target.value)}
+                className="mt-1 h-9 w-full rounded-md border border-input bg-background px-3 text-sm disabled:opacity-50"
+              >
+                <option value="">ללא שינוי בעלות</option>
+                {bulkTeachers.map((t) => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkOpen(false)}>ביטול</Button>
+            <Button onClick={() => bulkReassignM.mutate()} disabled={bulkReassignM.isPending}>
+              {bulkReassignM.isPending && <Loader2 className="ms-1 h-4 w-4 animate-spin" />} שמור לכל הנבחרות
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
