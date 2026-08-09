@@ -172,7 +172,9 @@ function LoginPage() {
     setErrorMsg(null);
     setSuccessMsg(null);
     const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: `${window.location.origin}${nextPath}`,
+      // Land back on the public /login route (protected routes can't complete the
+      // OAuth handshake); the session effect above then forwards to `next`.
+      redirect_uri: `${window.location.origin}/login?next=${encodeURIComponent(nextPath)}`,
     });
     if (result.error) {
       setErrorMsg("שגיאה בהתחברות עם Google");
@@ -181,7 +183,7 @@ function LoginPage() {
       return;
     }
     if (result.redirected) return;
-    navigate({ to: nextPath });
+    goNext();
   };
 
   const forgotPassword = async () => {
