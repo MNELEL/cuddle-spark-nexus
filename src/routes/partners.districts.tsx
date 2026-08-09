@@ -96,7 +96,7 @@ function DistrictsPage() {
             <Card key={title}>
               <CardHeader>
                 <Icon className="h-6 w-6 text-primary mb-1" />
-                <CardTitle>{title}</CardTitle>
+                <CardTitle as="h2">{title}</CardTitle>
               </CardHeader>
               <CardContent className="text-muted-foreground">{body}</CardContent>
             </Card>
@@ -108,9 +108,9 @@ function DistrictsPage() {
           <div className="grid md:grid-cols-3 gap-4">
             {timeline.map(({ phase, items }) => (
               <Card key={phase}>
-                <CardHeader>
-                  <CardTitle className="text-primary">{phase}</CardTitle>
-                </CardHeader>
+              <CardHeader>
+                <CardTitle as="h3" className="text-primary">{phase}</CardTitle>
+              </CardHeader>
                 <CardContent>
                   <ul className="space-y-2 text-sm">
                     {items.map((i) => (
