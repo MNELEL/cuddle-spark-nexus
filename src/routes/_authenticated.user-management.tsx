@@ -151,6 +151,7 @@ function UserManagementPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users-with-roles"] });
       queryClient.invalidateQueries({ queryKey: ["role-audit-log"] });
+      queryClient.invalidateQueries({ queryKey: ["system-admins"] });
       setSelectedRole("");
       setSelectedInstitution(NO_INSTITUTION);
       toast.success("תפקיד הוקצה בהצלחה");
@@ -167,6 +168,7 @@ function UserManagementPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users-with-roles"] });
       queryClient.invalidateQueries({ queryKey: ["role-audit-log"] });
+      queryClient.invalidateQueries({ queryKey: ["system-admins"] });
       toast.success("תפקיד הוסר");
     },
     onError: (err) => {
@@ -182,6 +184,7 @@ function UserManagementPage() {
       if (res.ok) {
         toast.success(res.message);
         queryClient.invalidateQueries({ queryKey: ["can-manage-users"] });
+        queryClient.invalidateQueries({ queryKey: ["system-admins"] });
       } else {
         toast.info(res.message);
       }
