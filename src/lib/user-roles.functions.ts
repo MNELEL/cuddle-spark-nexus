@@ -45,13 +45,6 @@ export const isAdmin = createServerFn({ method: "GET" })
     return Boolean(data);
   });
 
-export const listUsersWithRoles = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    void context;
-    return null;
-  });
-
 export type SystemAdmin = {
   id: string;
   email: string | null;
@@ -102,7 +95,7 @@ export const listSystemAdmins = createServerFn({ method: "GET" })
     });
   });
 
-export const listUsersWithRolesImpl = createServerFn({ method: "GET" })
+export const listUsersWithRoles = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
