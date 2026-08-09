@@ -231,6 +231,9 @@ function UserManagementPage() {
             </div>
             <p className="text-xs text-muted-foreground">
               כפתור האתחול פועל רק כאשר אין עדיין מנהל במערכת.
+              אחרי הלחיצה, החשבון שלך יקבל תפקיד מנהל מערכת באופן מיידי — בלי צורך באישור נוסף —
+              ותוכל לנהל משתמשים ותפקידים בעמוד זה. השינוי משפיע על הרשאות הניהול מיד,
+              אך לא על רשימות הכיתות או התלמידים הקיימות.
             </p>
             <Link to="/classes" className="inline-block text-sm text-primary hover:underline">
               <ArrowLeft className="me-1 inline h-4 w-4" /> חזרה לכיתות
