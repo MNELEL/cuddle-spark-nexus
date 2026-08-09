@@ -131,4 +131,40 @@ describe.skipIf(!hasTestEnv)("RLS: access_requests & user-management gating", ()
     expect(escalate.error).not.toBeNull();
     expect(escalate.data ?? []).toHaveLength(0);
   });
+
+  it("the requester may only acknowledge their own result", async () => {
+    const ack = await teacher.client
+      .from("access_requests")
+      .update({ seen_by_requester_at: new Date().toISOString() })
+      .eq("id", teacherRequestId)
+      .select();
+    expect(ack.error).toBeNull();
+    expect(ack.data).toHaveLength(1);
+    expect(ack.data![0]!.seen_by_requester_at).not.toBeNull();
+  });
+
+  it("the requester cannot change the decision fields", async () => {
+    const tamper = await teacher.client
+      .from("access_requests")
+      .update({ granted_role: "admin", review_note: "מזויף" })
+      .eq("id", teacherRequestId)
+      .select();
+    expect(tamper.error).not.toBeNull();
+
+    const row = await adminClient()
+      .from("access_requests")
+      .select("granted_role, review_note")
+      .eq("id", teacherRequestId)
+      .single();
+    expect(row.data!.granted_role).toBeNull();
+  });
+
+  it("a requester cannot acknowledge someone else's request", async () => {
+    const other = await otherTeacher.client
+      .from("access_requests")
+      .update({ seen_by_requester_at: new Date().toISOString() })
+      .eq("id", teacherRequestId)
+      .select();
+    expect(other.data ?? []).toHaveLength(0);
+  });
 });
