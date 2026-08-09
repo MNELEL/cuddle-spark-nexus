@@ -5,13 +5,102 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { BadgeCheck, Loader2, Search } from "lucide-react";
+import { BadgeCheck, Inbox, Loader2, Search } from "lucide-react";
 import { toast } from "sonner";
-import { listUserTrials, extendUserTrial } from "@/lib/trial.functions";
+import {
+  listUserTrials,
+  extendUserTrial,
+  listPendingTrialRequests,
+  reviewTrialRequest,
+} from "@/lib/trial.functions";
 
 function fmt(iso: string | null) {
   if (!iso) return "לא הוגדר";
   return new Date(iso).toLocaleDateString("he-IL", { day: "numeric", month: "long", year: "numeric" });
+}
+
+/** Pending self-service extension requests: approve (and extend) or reject in one click. */
+function PendingTrialRequests() {
+  const qc = useQueryClient();
+  const listPending = useServerFn(listPendingTrialRequests);
+  const review = useServerFn(reviewTrialRequest);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["pending-trial-requests"],
+    queryFn: () => listPending(),
+    retry: false,
+  });
+
+  const mutation = useMutation({
+    mutationFn: (v: { requestId: string; decision: "approve" | "reject"; days?: number }) =>
+      review({ data: v }),
+    onSuccess: (_res, v) => {
+      toast.success(v.decision === "approve" ? "הבקשה אושרה והגישה הוארכה" : "הבקשה נדחתה");
+      qc.invalidateQueries({ queryKey: ["pending-trial-requests"] });
+      qc.invalidateQueries({ queryKey: ["admin-user-trials"] });
+      qc.invalidateQueries({ queryKey: ["my-trial-status"] });
+    },
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : "עדכון הבקשה נכשל"),
+    onSettled: () => setBusyId(null),
+  });
+
+  function act(requestId: string, decision: "approve" | "reject", days?: number) {
+    setBusyId(requestId);
+    mutation.mutate({ requestId, decision, days });
+  }
+
+  if (isError) return null;
+
+  const rows = data ?? [];
+
+  return (
+    <div className="mb-6 rounded-lg border border-amber/40 bg-amber/5 p-4">
+      <div className="mb-3 flex items-center gap-2">
+        <Inbox className="h-4 w-4 text-amber" aria-hidden="true" />
+        <h3 className="font-display text-sm font-semibold">בקשות הארכה ממתינות</h3>
+        {rows.length > 0 && <Badge variant="destructive">{rows.length}</Badge>}
+      </div>
+
+      {isLoading ? (
+        <p className="text-sm text-muted-foreground">טוען בקשות...</p>
+      ) : rows.length === 0 ? (
+        <p className="text-sm text-muted-foreground">אין בקשות ממתינות.</p>
+      ) : (
+        <div className="divide-y divide-amber/20">
+          {rows.map((r) => {
+            const busy = busyId === r.id && mutation.isPending;
+            return (
+              <div key={r.id} className="flex flex-wrap items-start justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                <div className="min-w-0 space-y-1">
+                  <p className="truncate font-medium">{r.displayName || r.email}</p>
+                  <p className="truncate text-sm text-muted-foreground">{r.email}</p>
+                  {r.institutionName && <p className="text-xs text-muted-foreground">מוסד: {r.institutionName}</p>}
+                  {r.message && <p className="max-w-prose text-xs">{r.message}</p>}
+                  <p className="text-xs text-muted-foreground">
+                    נשלחה: {fmt(r.createdAt)} · בתוקף עד: {fmt(r.endsAt)}
+                    {r.active ? ` · נותרו ${r.daysLeft} ימים` : " · אינו פעיל"}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button size="sm" variant="outline" disabled={busy} onClick={() => act(r.id, "approve", 30)}>
+                    {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "אישור +30 יום"}
+                  </Button>
+                  <Button size="sm" disabled={busy} onClick={() => act(r.id, "approve", 365)}>
+                    {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "אישור לשנה"}
+                  </Button>
+                  <Button size="sm" variant="ghost" disabled={busy} onClick={() => act(r.id, "reject")}>
+                    דחייה
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 }
 
 /** Admin-only card: approve or extend users' access in one click. */
@@ -69,6 +158,7 @@ export function TrialApprovalsCard() {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        <PendingTrialRequests />
         {isLoading ? (
           <div className="py-8 text-center text-muted-foreground">טוען מצב מנויים...</div>
         ) : rows.length === 0 ? (
