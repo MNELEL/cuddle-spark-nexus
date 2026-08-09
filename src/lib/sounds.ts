@@ -103,31 +103,72 @@ export function setMasterVolume(v: number) {
 }
 
 /** Plays a sound from the library. `volume` is 0..1 and is scaled by the master volume. */
-export function playSound(id: string, volume = 1) {
+/* --------------------- uploaded (custom) sounds registry --------------------- */
+
+const customUrls = new Map<string, string>();
+
+/** Caches a signed playback URL for an uploaded sound so `playSound` can use it. */
+export function registerCustomSoundUrl(soundId: string, url: string) {
+  customUrls.set(soundId, url);
+}
+
+export function isCustomSound(soundId: string): boolean {
+  return soundId.startsWith("custom:");
+}
+
+/** Plays an uploaded audio file, repeating it `repeats` times to lengthen it. */
+function playCustom(url: string, gain: number, repeats: number) {
+  let left = Math.max(1, Math.round(repeats));
+  const audio = new Audio(url);
+  audio.volume = Math.min(1, Math.max(0, gain));
+  audio.addEventListener("ended", () => {
+    left -= 1;
+    if (left > 0) { audio.currentTime = 0; void audio.play().catch(() => {}); }
+  });
+  void audio.play().catch(() => { /* blocked until user interaction */ });
+}
+
+/**
+ * Plays a sound from the library, or an uploaded sound when `id` starts with `custom:`.
+ * `volume` is 0..1 and is scaled by the master volume.
+ * `durationScale` stretches built-in sounds (and repeats uploaded ones) — 1 = original length.
+ */
+export function playSound(id: string, volume = 1, durationScale = 1) {
   if (isMuted()) return;
-  const def = getSound(id);
-  if (!def) return;
   const gain = Math.min(1, Math.max(0, volume)) * getMasterVolume();
   if (gain <= 0) return;
+  const scale = Number.isFinite(durationScale) ? Math.min(5, Math.max(0.5, durationScale)) : 1;
+
+  if (isCustomSound(id)) {
+    const url = customUrls.get(id);
+    if (url) playCustom(url, gain, scale);
+    return;
+  }
+
+  const def = getSound(id);
+  if (!def) return;
   try {
     const ctx = getSharedAudioContext() ?? new AudioContext();
     ctx.resume?.().catch(() => {});
     const r = def.recipe;
     if (r.kind === "beep") {
-      tone(ctx, r.freq, r.duration, r.type ?? "sine", 0, gain);
+      tone(ctx, r.freq, r.duration * scale, r.type ?? "sine", 0, gain);
     } else if (r.kind === "chime") {
-      const gap = r.gap ?? 0.15;
-      r.notes.forEach((f, i) => tone(ctx, f, r.duration ?? 0.4, "sine", i * gap, gain));
+      const gap = (r.gap ?? 0.15) * scale;
+      r.notes.forEach((f, i) => tone(ctx, f, (r.duration ?? 0.4) * scale, "sine", i * gap, gain));
     } else if (r.kind === "arpeggio") {
+      const gap = r.gap * scale;
+      const repeats = Math.max(1, Math.round(r.repeats * scale));
       let step = 0;
-      for (let rep = 0; rep < r.repeats; rep++) {
+      for (let rep = 0; rep < repeats; rep++) {
         for (const f of r.notes) {
-          tone(ctx, f, Math.max(0.2, r.gap), "sine", step * r.gap, gain);
+          tone(ctx, f, Math.max(0.2, gap), "sine", step * gap, gain);
           step++;
         }
       }
     } else {
-      for (let i = 0; i < r.cycles; i++) {
+      const cycles = Math.max(1, Math.round(r.cycles * scale));
+      for (let i = 0; i < cycles; i++) {
         tone(ctx, 880, 0.18, "square", i * 0.45, gain);
         tone(ctx, 660, 0.18, "square", i * 0.45 + 0.22, gain);
       }
