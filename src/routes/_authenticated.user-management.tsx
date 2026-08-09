@@ -29,7 +29,6 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import {
-  isAdmin,
   canManageUsers,
   listUsersWithRoles,
   assignRole,
