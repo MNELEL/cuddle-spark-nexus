@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { CalendarClock, BadgeCheck, Mail } from "lucide-react";
 import { getMyTrialStatus, listPendingTrialRequests } from "@/lib/trial.functions";
 import { isAdmin } from "@/lib/user-roles.functions";
+import { useAuth } from "@/hooks/use-auth";
 import { TrialExtensionRequestButton } from "@/components/trial-extension-request-button";
 
 const ADMIN_EMAIL = "nm0527603669@gmail.com";
@@ -19,6 +20,7 @@ function formatDate(iso: string | null): string {
 
 /** Shows the signed-in user's free-trial / subscription state. */
 export function SubscriptionStatusCard() {
+  const { user } = useAuth();
   const fn = useServerFn(getMyTrialStatus);
   const adminFn = useServerFn(isAdmin);
   const pendingFn = useServerFn(listPendingTrialRequests);
@@ -94,7 +96,13 @@ export function SubscriptionStatusCard() {
                 </Button>
                 {viewerIsAdmin && (
                   <Button asChild size="sm">
-                    <Link to="/user-management">
+                    <Link
+                      to="/user-management"
+                      search={{
+                        focus: "trials" as const,
+                        trialUser: pendingCount > 0 ? undefined : user?.email ?? user?.id,
+                      }}
+                    >
                       <BadgeCheck className="ms-1 h-4 w-4" /> אישור מנויים למשתמשים
                       {pendingCount > 0 && (
                         <Badge variant="destructive" className="ms-2">{pendingCount}</Badge>
