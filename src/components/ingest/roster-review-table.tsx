@@ -245,6 +245,7 @@ export function RosterReviewTable({
             </Select>
           </div>
           <Badge variant="outline" className="gap-1"><CheckCircle2 className="h-3 w-3 text-emerald-600" />{stats.included} נבחרו</Badge>
+          <Badge variant="outline" className="gap-1">{visibleRows.length} מוצגות</Badge>
           <Badge variant="outline" className="gap-1"><AlertTriangle className="h-3 w-3 text-destructive" />{stats.withErrors} שגיאות</Badge>
           {stats.avgConf > 0 && (
             <Badge variant="secondary" className="gap-1"><Gauge className="h-3 w-3" />ביטחון ממוצע {stats.avgConf}%</Badge>
