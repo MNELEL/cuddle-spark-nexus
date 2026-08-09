@@ -121,6 +121,7 @@ function ToolkitPage() {
                 { to: "/parents/$classId", icon: Mail, label: "קשר עם הורים", desc: "מיילים ותקשורת עם ההורים" },
                 { to: "/share/$classId", icon: Globe2, label: "שיתוף וקישורים", desc: "קישורי צפייה להורים ולעמוד הכיתה" },
                 { to: "/calendar/$classId", icon: CalendarDays, label: "לוח אירועים", desc: "אירועי כיתה, מבחנים וימי הולדת" },
+                { to: "/student-view/$classId", icon: Globe2, label: "מצב תלמיד", desc: "המסך כפי שהתלמיד רואה אותו — לבדיקה לפני שיתוף" },
               ]}
             />
           </div>
@@ -130,6 +131,8 @@ function ToolkitPage() {
           <ToolLinkGrid
             items={[
               { to: "/settings", icon: Settings, label: "מרכז ההגדרות", desc: "אבטחה וקוד PIN, העדפות תזכורות, מיתוג המוסד ומצב המנוי" },
+              { to: "/theme-test", icon: Palette, label: "ערכות נושא", desc: "השוואת כל ערכות הנושא; הבחירה עצמה נמצאת בהגדרות ובאייקון הפלטה שבראש המסך" },
+              { to: "/sound-test", icon: Music, label: "בדיקת צלילים", desc: "השמעת כל הצלילים לבדיקת עוצמה ותקינות בדפדפן" },
             ]}
           />
         </TabsContent>
