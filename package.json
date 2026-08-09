@@ -12,6 +12,7 @@
     "format": "prettier --write .",
     "check:tanstack": "node scripts/check-tanstack-versions.mjs",
     "check:seo": "node scripts/check-seo-meta.mjs",
+    "check:routes": "node scripts/check-route-links.mjs",
     "test": "vitest run",
     "test:notifications": "vitest run src/test/notifications-flow.test.ts src/test/rls-class-notifications.test.ts",
     "test:watch": "vitest"

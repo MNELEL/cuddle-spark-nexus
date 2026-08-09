@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -14,12 +14,20 @@ import {
 import {
   Play, Pause, RotateCcw, Shuffle, ChevronRight, ChevronLeft, Mic, MicOff, Wrench, Settings, BellRing,
   Music, Trophy, Dices, ClipboardList, ScanText, Wand2, Award, TrendingUp, FileText, Palette, Mail,
-  Globe2, CalendarDays, LineChart, BookOpen, Library, MessageSquare, Sparkles,
+  Globe2, CalendarDays, LineChart, BookOpen, Library, MessageSquare, Sparkles, Building2, ShieldCheck,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToolAccess } from "@/hooks/use-tool-access";
+import { TOOLS, canUseTool, type ToolEntry, type ToolSection } from "@/lib/tool-registry";
+
+const SECTION_IDS: ToolSection[] = ["tools", "sound", "motivation", "assess", "docs", "settings"];
 
 export const Route = createFileRoute("/_authenticated/toolkit")({
   component: ToolkitPage,
+  validateSearch: (search: Record<string, unknown>): { section?: ToolSection } => {
+    const raw = String(search.section ?? "");
+    return (SECTION_IDS as string[]).includes(raw) ? { section: raw as ToolSection } : {};
+  },
   head: () => ({
     meta: [
       { title: "ארגז כלים לכיתה · הכיתה שלי" },
@@ -33,13 +41,28 @@ export const Route = createFileRoute("/_authenticated/toolkit")({
 });
 
 function ToolkitPage() {
+  const { section = "tools" } = Route.useSearch();
+  const { access } = useToolAccess();
+  const navigate = useNavigate();
+
+  /** Tools of a section the current user is actually allowed to open. */
+  function visible(sec: ToolSection, classScoped: boolean) {
+    return TOOLS.filter(
+      (t) => t.section === sec && Boolean(t.classScoped) === classScoped && canUseTool(t, access),
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">ארגז כלים לכיתה</h1>
         <p className="text-sm text-muted-foreground">כל הכלים במקום אחד — כלי שיעור, צלצולים, מוטיבציה ופרסים, הערכה, מסמכים והגדרות.</p>
       </div>
-      <Tabs defaultValue="tools" dir="rtl">
+      <Tabs
+        value={section}
+        onValueChange={(v) => navigate({ to: "/toolkit", search: { section: v as ToolSection }, replace: true })}
+        dir="rtl"
+      >
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="tools"><Wrench className="ms-1 h-4 w-4" aria-hidden /> כלים</TabsTrigger>
           <TabsTrigger value="sound"><BellRing className="ms-1 h-4 w-4" aria-hidden /> צלצולים וסאונד</TabsTrigger>
@@ -48,7 +71,8 @@ function ToolkitPage() {
           <TabsTrigger value="docs"><FileText className="ms-1 h-4 w-4" aria-hidden /> מסמכים ותבניות</TabsTrigger>
           <TabsTrigger value="settings"><Settings className="ms-1 h-4 w-4" aria-hidden /> הגדרות</TabsTrigger>
         </TabsList>
-        <TabsContent value="tools" className="mt-4">
+
+        <TabsContent value="tools" className="mt-4 space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <LessonTimer />
             <RandomPicker />
@@ -57,82 +81,36 @@ function ToolkitPage() {
             <RandomGroups />
             <QuickCheck />
           </div>
+          <ClassScopedTools title="כלים ברמת כיתה" items={visible("tools", true)} />
         </TabsContent>
 
         <TabsContent value="sound" className="mt-4">
-          <ToolLinkGrid
-            items={[
-              { to: "/bell-schedule", icon: BellRing, label: "לוח צלצולים", desc: "תזמון פעמוני שיעור והפסקות לאורך היום" },
-              { to: "/sound-board", icon: Music, label: "ניהול סאונד ואפקטים", desc: "ספריית צלילים לפי קטגוריה ומיפוי אירועים באפליקציה לצליל" },
-            ]}
-          />
+          <ToolLinkGrid items={visible("sound", false)} />
         </TabsContent>
 
         <TabsContent value="motivation" className="mt-4">
-          <ClassScopedTools
-            title="בחר כיתה כדי לפתוח את כלי המוטיבציה"
-            items={[
-              { to: "/gamification/$classId", icon: Trophy, label: "מבצעים וגמיפיקציה", desc: "נקודות, פרסים, מבצעים כיתתיים וטבלת מובילים" },
-              { to: "/raffle/$classId", icon: Dices, label: "הגרלות", desc: "גלגל מזל אינטראקטיבי להגרלת תלמידים ופרסים" },
-              { to: "/poll/$classId", icon: MessageSquare, label: "סקר כיתה חי", desc: "שאלה לכיתה עם תוצאות בזמן אמת" },
-            ]}
-          />
+          <ClassScopedTools title="בחר כיתה כדי לפתוח את כלי המוטיבציה" items={visible("motivation", true)} />
         </TabsContent>
 
         <TabsContent value="assess" className="mt-4">
           <div className="space-y-4">
-            <ToolLinkGrid
-              items={[
-                { to: "/questions", icon: ClipboardList, label: "מאגר שאלות", desc: "בנק שאלות לפי נושא ומקצוע" },
-                { to: "/insights", icon: LineChart, label: "תובנות", desc: "מגמות ציונים, נוכחות והתנהגות" },
-                { to: "/resources", icon: Library, label: "ספריית חומרי הוראה", desc: "מערכי שיעור, דפי עבודה ועזרים" },
-                { to: "/resources/generate", icon: Wand2, label: "מחולל סיכומים ומשימות", desc: "הפקת סיכום או מערך משימות מתוך חומר שבספרייה" },
-              ]}
-            />
-            <ClassScopedTools
-              title="כלים ברמת כיתה"
-              items={[
-                { to: "/exam-generator/$classId", icon: Wand2, label: "מחולל מבחנים AI", desc: "יצירת מבחן מותאם מהחומר שנלמד" },
-                { to: "/exam-scanner/$classId", icon: ScanText, label: "סורק מבחנים", desc: "ניקוד מבחנים סרוקים בעזרת AI" },
-                { to: "/analytics/$classId", icon: TrendingUp, label: "אנליטיקת כיתה", desc: "מגמות והתפלגות ציונים" },
-                { to: "/pedagogical/$classId", icon: Award, label: "דוח פדגוגי", desc: "תמונת מצב פדגוגית והפקת דוח" },
-              ]}
-            />
+            <ToolLinkGrid items={visible("assess", false)} />
+            <ClassScopedTools title="כלים ברמת כיתה" items={visible("assess", true)} />
           </div>
         </TabsContent>
 
         <TabsContent value="docs" className="mt-4">
           <div className="space-y-4">
-            <ToolLinkGrid
-              items={[
-                { to: "/settings/brand", icon: Palette, label: "תבנית ומיתוג המוסד", desc: "לוגו, שם מוסד וכותרת קבועה — מוטמעים בכל מסמך שמופק" },
-                { to: "/ingest", icon: FileText, label: "העלאה חכמה", desc: "העלאת קבצים ושיבוץ אוטומטי של הנתונים" },
-                { to: "/blog", icon: BookOpen, label: "מדריכים", desc: "מדריכים ותבניות מוכנות" },
-                { to: "/onboarding", icon: Sparkles, label: "המדריך החכם", desc: "שישה שלבים מהקמת הכיתה ועד הדוח הראשון להורים" },
-              ]}
-            />
-            <ClassScopedTools
-              title="הפקת מסמכים לכיתה"
-              items={[
-                { to: "/certificates/$classId", icon: Award, label: "תעודות", desc: "הפקת תעודות עם התבנית והלוגו של המוסד" },
-                { to: "/daily/$classId", icon: FileText, label: "סיכום יומי", desc: "דוח יומי להדפסה ולשליחה" },
-                { to: "/bulletins/$classId", icon: FileText, label: "עלון שבועי", desc: "עלון כיתתי עם סיכום, חידה ופעילויות" },
-                { to: "/reports/$classId", icon: FileText, label: "דוחות", desc: "דוחות מעקב והתקדמות" },
-                { to: "/parents/$classId", icon: Mail, label: "קשר עם הורים", desc: "מיילים ותקשורת עם ההורים" },
-                { to: "/share/$classId", icon: Globe2, label: "שיתוף וקישורים", desc: "קישורי צפייה להורים ולעמוד הכיתה" },
-                { to: "/calendar/$classId", icon: CalendarDays, label: "לוח אירועים", desc: "אירועי כיתה, מבחנים וימי הולדת" },
-                { to: "/student-view/$classId", icon: Globe2, label: "מצב תלמיד", desc: "המסך כפי שהתלמיד רואה אותו — לבדיקה לפני שיתוף" },
-              ]}
-            />
+            <ToolLinkGrid items={[...visible("docs", false), { to: "/blog", icon: "BookOpen", label: "מדריכים", desc: "מדריכים ותבניות מוכנות", section: "docs" as ToolSection, requires: "any" as const }]} />
+            <ClassScopedTools title="הפקת מסמכים לכיתה" items={visible("docs", true)} />
           </div>
         </TabsContent>
 
         <TabsContent value="settings" className="mt-4">
           <ToolLinkGrid
             items={[
-              { to: "/settings", icon: Settings, label: "מרכז ההגדרות", desc: "אבטחה וקוד PIN, העדפות תזכורות, מיתוג המוסד ומצב המנוי" },
-              { to: "/theme-test", icon: Palette, label: "ערכות נושא", desc: "השוואת כל ערכות הנושא; הבחירה עצמה נמצאת בהגדרות ובאייקון הפלטה שבראש המסך" },
-              { to: "/sound-test", icon: Music, label: "בדיקת צלילים", desc: "השמעת כל הצלילים לבדיקת עוצמה ותקינות בדפדפן" },
+              ...visible("settings", false),
+              { to: "/theme-test", icon: "Palette", label: "השוואת ערכות נושא", desc: "כל ערכות הנושא במסך אחד", section: "settings" as ToolSection, requires: "any" as const },
             ]}
           />
         </TabsContent>
@@ -142,9 +120,16 @@ function ToolkitPage() {
 }
 
 /* ---------- Tool link cards ---------- */
-type ToolLink = { to: string; icon: typeof Wrench; label: string; desc: string };
+const ICONS: Record<string, typeof Wrench> = {
+  BellRing, Music, CalendarDays, Globe2, Trophy, Dices, MessageSquare, ClipboardList, LineChart,
+  Library, Wand2, ScanText, TrendingUp, Award, Palette, FileText, Sparkles, Mail, Settings,
+  Building2, ShieldCheck, BookOpen, Wrench,
+};
 
-function ToolCardShell({ icon: Icon, label, desc }: { icon: typeof Wrench; label: string; desc: string }) {
+type ToolLink = Pick<ToolEntry, "to" | "icon" | "label" | "desc">;
+
+function ToolCardShell({ icon, label, desc }: { icon: string; label: string; desc: string }) {
+  const Icon = ICONS[icon] ?? Wrench;
   return (
     <div className="flex h-full items-start gap-3 rounded-xl border bg-card p-4 transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm motion-reduce:transition-none motion-reduce:hover:translate-y-0">
       <span className="rounded-lg bg-primary/10 p-2 text-primary"><Icon className="h-5 w-5" aria-hidden /></span>
@@ -157,6 +142,9 @@ function ToolCardShell({ icon: Icon, label, desc }: { icon: typeof Wrench; label
 }
 
 function ToolLinkGrid({ items }: { items: ToolLink[] }) {
+  if (items.length === 0) {
+    return <p className="py-6 text-center text-sm text-muted-foreground">אין כלים זמינים בקטגוריה הזו עבור ההרשאות שלך.</p>;
+  }
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {items.map((it) => (
@@ -173,6 +161,8 @@ function ClassScopedTools({ title, items }: { title: string; items: ToolLink[] }
   const { data: classes = [] } = useQuery({ queryKey: ["classes"], queryFn: () => list() });
   const [classId, setClassId] = useState<string>("");
   const active = classId || classes[0]?.id || "";
+
+  if (items.length === 0) return null;
 
   return (
     <Card>
