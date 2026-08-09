@@ -43,6 +43,12 @@ function LoginPage() {
   const search = useSearch({ from: "/login" });
   const resetExpired = search.reset === "expired";
   const nextPath = search.next ?? "/classes";
+  /**
+   * `next` may carry its own query string (e.g. "/classes?from=exam-generator").
+   * `navigate({ to })` treats the whole string as a pathname, so use `href`,
+   * which parses pathname + search and preserves those params.
+   */
+  const goNext = () => navigate({ href: nextPath });
   const [mode, setMode] = useState<"signin" | "signup">(search.mode === "signup" ? "signup" : "signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -93,7 +99,7 @@ function LoginPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) navigate({ to: nextPath });
+      if (session) goNext();
     });
   }, [navigate, nextPath]);
 
@@ -141,7 +147,7 @@ function LoginPage() {
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
         if (error) throw error;
-        navigate({ to: nextPath });
+        goNext();
       }
     } catch (err) {
       const raw = err instanceof Error ? err.message : "";
@@ -166,7 +172,9 @@ function LoginPage() {
     setErrorMsg(null);
     setSuccessMsg(null);
     const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: `${window.location.origin}${nextPath}`,
+      // Land back on the public /login route (protected routes can't complete the
+      // OAuth handshake); the session effect above then forwards to `next`.
+      redirect_uri: `${window.location.origin}/login?next=${encodeURIComponent(nextPath)}`,
     });
     if (result.error) {
       setErrorMsg("שגיאה בהתחברות עם Google");
@@ -175,7 +183,7 @@ function LoginPage() {
       return;
     }
     if (result.redirected) return;
-    navigate({ to: nextPath });
+    goNext();
   };
 
   const forgotPassword = async () => {
