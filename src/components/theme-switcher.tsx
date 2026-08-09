@@ -14,6 +14,7 @@ export function ThemeSwitcher() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="sm" title="ערכת נושא" aria-label="ערכת נושא">
           <Palette className="h-4 w-4" />
+          <span className="ms-1 hidden text-sm lg:inline">ערכת נושא</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">

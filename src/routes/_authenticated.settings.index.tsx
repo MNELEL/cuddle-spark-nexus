@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { SubscriptionStatusCard } from "@/components/subscription-status-card";
 import { ReminderPreferencesCard } from "@/components/reminder-preferences-card";
 import { SecuritySettings } from "@/components/security-settings";
+import { ThemePickerCard } from "@/components/theme-picker-card";
 import { useBrand } from "@/hooks/use-brand";
 import { isAdmin } from "@/lib/user-roles.functions";
 
@@ -42,6 +43,8 @@ function SettingsPage() {
       </div>
 
       <SubscriptionStatusCard />
+
+      <ThemePickerCard />
 
       <Card>
         <CardHeader>
