@@ -496,6 +496,70 @@ function StudentsTab({
   );
 }
 
+/* ---- compact personal details line on the student card ---- */
+
+function PhoneLink({ label, phone }: { label: string; phone: string }) {
+  const tel = phoneHref(phone);
+  const wa = whatsappHref(phone);
+  return (
+    <span className="inline-flex items-center gap-1">
+      <span className="text-muted-foreground">{label}:</span>
+      {tel ? (
+        <a href={`tel:${tel}`} className="font-mono-tabular hover:underline" onClick={(e) => e.stopPropagation()}>{phone}</a>
+      ) : (
+        <span className="font-mono-tabular">{phone}</span>
+      )}
+      {wa && (
+        <a href={wa} target="_blank" rel="noopener noreferrer" aria-label={`וואטסאפ ל${label}`} className="text-emerald-600 hover:underline" onClick={(e) => e.stopPropagation()}>
+          <MessageSquare className="h-3 w-3" />
+        </a>
+      )}
+    </span>
+  );
+}
+
+function StudentDetailsLine({ student }: { student: Student }) {
+  const bday = nextHebrewBirthday(student.birth_date);
+  const hebLabel = toHebrewDateLabel(student.birth_date);
+  const items: React.ReactNode[] = [];
+
+  if (student.national_id?.trim()) {
+    items.push(<span key="id"><span className="text-muted-foreground">ת.ז.:</span> <span className="font-mono-tabular">{student.national_id}</span></span>);
+  }
+  if (student.birth_date) {
+    items.push(
+      <span key="bd">
+        <span className="text-muted-foreground">לידה:</span>{" "}
+        <span className="font-mono-tabular">{student.birth_date}</span>
+        {hebLabel && <span> · {hebLabel}</span>}
+        {bday && <span className="text-amber-700 dark:text-amber-400"> · {daysUntilLabel(bday.daysUntil)}</span>}
+      </span>,
+    );
+  }
+  if (student.address?.trim()) {
+    items.push(<span key="addr"><span className="text-muted-foreground">כתובת:</span> {student.address}</span>);
+  }
+  if (student.father_name?.trim()) {
+    items.push(<span key="f"><span className="text-muted-foreground">אב:</span> {student.father_name}</span>);
+  }
+  if (student.father_phone?.trim()) {
+    items.push(<PhoneLink key="fp" label="טל׳ אב" phone={student.father_phone} />);
+  }
+  if (student.mother_name?.trim()) {
+    items.push(<span key="m"><span className="text-muted-foreground">אם:</span> {student.mother_name}</span>);
+  }
+  if (student.mother_phone?.trim()) {
+    items.push(<PhoneLink key="mp" label="טל׳ אם" phone={student.mother_phone} />);
+  }
+
+  if (items.length === 0) return null;
+  return (
+    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+      {items}
+    </div>
+  );
+}
+
 function StudentRow({
   student, onEdit, onOpenFile, scoreInputs,
 }: {
@@ -530,6 +594,7 @@ function StudentRow({
             {student.corner_pref && <Badge variant="secondary">פינה</Badge>}
           </div>
           {student.notes && <p className="mt-1 text-xs text-muted-foreground line-clamp-1">{student.notes}</p>}
+          <StudentDetailsLine student={student} />
         </div>
         <div className="flex gap-1">
           <Button variant="ghost" size="icon" aria-label={`פתח תיק תלמיד עבור ${student.name}`} onClick={onOpenFile} title="תיק תלמיד">
