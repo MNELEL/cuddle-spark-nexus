@@ -1,0 +1,56 @@
+name: Sync bun lockfile on Dependabot PRs
+
+# Dependabot opens PRs against package.json + package-lock.json (the npm
+# ecosystem). This repo installs with Bun in CI (`bun install --frozen-lockfile`),
+# so the text lockfile `bun.lock` must be regenerated in the same PR, otherwise
+# the build job fails on a stale/frozen lockfile.
+#
+# NOTE: bunfig.toml sets `minimumReleaseAge = 86400`. A version published less
+# than 24h ago is skipped by Bun, so the sync commit can lag by a day. If that
+# happens, re-run this workflow once the version is older than 24h.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+
+jobs:
+  sync-lockfile:
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]'
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      # Never emit the binary bun.lockb — the dependency scanner can only read
+      # the text lockfile.
+      - name: Regenerate text lockfile
+        run: bun install --save-text-lockfile
+
+      - name: Fail if a binary lockfile was produced
+        run: |
+          if [ -f bun.lockb ]; then
+            echo "::error::bun.lockb found. Only the text lockfile bun.lock is allowed."
+            exit 1
+          fi
+
+      - name: Commit lockfile changes
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- bun.lock; then
+            echo "bun.lock already in sync."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add bun.lock
+          git commit -m "chore(deps): sync bun.lock"
+          git push
