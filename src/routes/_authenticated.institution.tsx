@@ -156,6 +156,7 @@ function InstitutionDashboardPage() {
         <TabsList aria-label="מדורי המוסד">
           <TabsTrigger value="classes">כיתות</TabsTrigger>
           <TabsTrigger value="teachers">מלמדים</TabsTrigger>
+          <TabsTrigger value="staff">צוות ורבנים</TabsTrigger>
         </TabsList>
 
         <TabsContent value="classes" className="space-y-6">
@@ -210,11 +211,18 @@ function InstitutionDashboardPage() {
                       מלמד: {c.teacherName} · <span className="font-mono-tabular">{c.studentCount}</span> תלמידים
                     </div>
                   </div>
-                  <Button asChild variant="ghost" size="sm" className="rounded-xl shrink-0">
-                    <Link to="/classes/$classId" params={{ classId: c.id }}>
-                      צפייה <ChevronLeft className="ms-1 h-4 w-4" aria-hidden="true" />
-                    </Link>
-                  </Button>
+                  <div className="flex shrink-0 flex-wrap items-center gap-1">
+                    <Button asChild variant="ghost" size="sm" className="rounded-xl">
+                      <Link to="/weekly-schedule/$classId" params={{ classId: c.id }}>
+                        פגישות ומטלות
+                      </Link>
+                    </Button>
+                    <Button asChild variant="ghost" size="sm" className="rounded-xl">
+                      <Link to="/classes/$classId" params={{ classId: c.id }}>
+                        פרטים וקצב <ChevronLeft className="ms-1 h-4 w-4" aria-hidden="true" />
+                      </Link>
+                    </Button>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -251,6 +259,10 @@ function InstitutionDashboardPage() {
 
         <TabsContent value="teachers">
           <TeachersTab />
+        </TabsContent>
+
+        <TabsContent value="staff">
+          <InstitutionStaffCard canEdit />
         </TabsContent>
       </Tabs>
     </div>
