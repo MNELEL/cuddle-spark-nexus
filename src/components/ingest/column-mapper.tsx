@@ -8,6 +8,8 @@ import { ROSTER_TARGET_FIELDS, type RosterTargetField, type RosterTabular } from
 const FIELD_LABEL: Record<RosterTargetField, string> = {
   ignore: "— התעלם —",
   name: "שם התלמיד",
+  first_name: "שם פרטי (תלמיד)",
+  last_name: "שם משפחה (תלמיד)",
   national_id: "ת.ז. תלמיד",
   birth_date: "תאריך לידה",
   address: "כתובת",
