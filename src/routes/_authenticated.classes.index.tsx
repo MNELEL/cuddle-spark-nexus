@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { listClasses, deleteClass, setClassStatus } from "@/lib/classes.functions";
 import { getMyInstitution } from "@/lib/institution-dashboard.functions";
+import { listUnreadClassNotifications, markNotificationRead } from "@/lib/notifications.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -41,9 +42,20 @@ function ClassesPage() {
   const remove = useServerFn(deleteClass);
   const setStatus = useServerFn(setClassStatus);
   const fetchInstitution = useServerFn(getMyInstitution);
+  const fetchNotifications = useServerFn(listUnreadClassNotifications);
+  const markRead = useServerFn(markNotificationRead);
   const qc = useQueryClient();
   const [q, setQ] = useState("");
   const [statusFilter, setStatusFilter] = useState<"active" | "archived" | "all">("active");
+
+  const { data: notifications = [] } = useQuery({
+    queryKey: ["class-notifications"],
+    queryFn: () => fetchNotifications(),
+  });
+  const dismiss = useMutation({
+    mutationFn: (id: string) => markRead({ data: { id } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["class-notifications"] }),
+  });
 
   const { data: classes = [], isLoading } = useQuery({
     queryKey: ["classes"],
@@ -95,6 +107,32 @@ function ClassesPage() {
       </div>
 
       <OnboardingProgressCard />
+
+      {notifications.length > 0 && (
+        <div className="space-y-2" aria-live="polite">
+          {notifications.map((n) => (
+            <div
+              key={n.id}
+              className="flex items-center justify-between gap-3 rounded-xl border border-amber/40 bg-amber/10 px-4 py-3 text-sm"
+            >
+              <span className="flex min-w-0 items-center gap-2">
+                <Archive className="h-4 w-4 shrink-0 text-amber" aria-hidden="true" />
+                <span className="truncate">הכיתה ״{n.class_name}״ הועברה לארכיון</span>
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 shrink-0 p-0"
+                aria-label={`סגור התראה על הכיתה ${n.class_name}`}
+                disabled={dismiss.isPending}
+                onClick={() => dismiss.mutate(n.id)}
+              >
+                <X className="h-4 w-4" aria-hidden="true" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {institution && (
         <Card className="rounded-2xl border-primary/30 bg-primary/5">

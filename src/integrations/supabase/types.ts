@@ -478,6 +478,44 @@ export type Database = {
           },
         ]
       }
+      class_notifications: {
+        Row: {
+          class_id: string
+          class_name: string
+          created_at: string
+          id: string
+          read_at: string | null
+          recipient_id: string
+          type: string
+        }
+        Insert: {
+          class_id: string
+          class_name: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          recipient_id: string
+          type?: string
+        }
+        Update: {
+          class_id?: string
+          class_name?: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          recipient_id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_notifications_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       class_pacing_settings: {
         Row: {
           buffer_percent: number
@@ -1015,63 +1053,6 @@ export type Database = {
             columns: ["class_id"]
             isOneToOne: false
             referencedRelation: "classes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      notifications: {
-        Row: {
-          actor_id: string | null
-          body: string
-          class_id: string | null
-          created_at: string
-          id: string
-          institution_id: string | null
-          read_at: string | null
-          recipient_id: string
-          title: string
-          type: string
-          updated_at: string
-        }
-        Insert: {
-          actor_id?: string | null
-          body?: string
-          class_id?: string | null
-          created_at?: string
-          id?: string
-          institution_id?: string | null
-          read_at?: string | null
-          recipient_id: string
-          title: string
-          type: string
-          updated_at?: string
-        }
-        Update: {
-          actor_id?: string | null
-          body?: string
-          class_id?: string | null
-          created_at?: string
-          id?: string
-          institution_id?: string | null
-          read_at?: string | null
-          recipient_id?: string
-          title?: string
-          type?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "notifications_class_id_fkey"
-            columns: ["class_id"]
-            isOneToOne: false
-            referencedRelation: "classes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "notifications_institution_id_fkey"
-            columns: ["institution_id"]
-            isOneToOne: false
-            referencedRelation: "institutions"
             referencedColumns: ["id"]
           },
         ]
