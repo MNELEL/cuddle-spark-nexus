@@ -597,6 +597,8 @@ function guessFieldFromHeader(h: string): RosterTargetField {
   if (/אם|אמא|mother/i.test(s)) return "mother_name";
   if (/כתובת|רחוב|address/i.test(s)) return "address";
   if (/תאריך|לידה|birth/i.test(s)) return "birth_date";
+  if (/שם\s*פרטי|first\s*name/i.test(s)) return "first_name";
+  if (/שם\s*משפחה|משפחה|last\s*name|surname|family/i.test(s)) return "last_name";
   if (/שם|name/i.test(s)) return "name";
   return "ignore";
 }
@@ -614,10 +616,14 @@ export function applyRosterMapping(headers: string[], rows: string[][], mapping:
     return "";
   };
   return rows.map<RosterStudentDraft | null>((row) => {
-    const name = pick(row, "name");
+    const first = cleanStr(pick(row, "first_name"), 60) ?? "";
+    const last = cleanStr(pick(row, "last_name"), 60) ?? "";
+    const name = pick(row, "name") || [last, first].filter(Boolean).join(" ");
     if (!name) return null;
     const draft: RosterStudentDraft = {
       name: name.slice(0, 100),
+      first_name: first || undefined,
+      last_name: last || undefined,
       national_id: cleanStr(pick(row, "national_id"), 20),
       birth_date: normDate(pick(row, "birth_date")),
       address: cleanStr(pick(row, "address"), 200),
