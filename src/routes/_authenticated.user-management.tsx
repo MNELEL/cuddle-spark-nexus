@@ -457,7 +457,7 @@ function UserManagementPage() {
               </li>
               <li>
                 <span className="text-foreground">ספרייה:</span> חומרי ההוראה ב-
-                <Link to="/library" className="text-primary underline-offset-2 hover:underline">ספריית חומרי הוראה</Link>{" "}
+                <Link to="/resources" className="text-primary underline-offset-2 hover:underline">ספריית חומרי הוראה</Link>{" "}
                 שייכים למלמד, ומתחברים לכיתה כשמשבצים אותם בשיעור או בעלון השבועי.
               </li>
             </ol>
