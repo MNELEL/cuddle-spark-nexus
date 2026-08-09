@@ -96,7 +96,19 @@ export function RosterReviewTable({
   onChange: (rows: Row[], errorCount: number) => void;
 }) {
   const [rows, setRows] = useState<Row[]>(
-    initialRows.map((r) => ({ ...r, include: r.include !== false })),
+    initialRows.map((r) => {
+      const hasSplit = ((r.first_name ?? "") + (r.last_name ?? "")).trim().length > 0;
+      const split = hasSplit
+        ? { first_name: r.first_name ?? "", last_name: r.last_name ?? "" }
+        : splitFullName(r.name ?? "");
+      return {
+        ...r,
+        first_name: split.first_name,
+        last_name: split.last_name,
+        name: joinName(split.first_name, split.last_name),
+        include: r.include !== false,
+      };
+    }),
   );
   const [columns, setColumns] = useState<FieldKey[]>([...FIELD_KEYS]);
   const [filter, setFilter] = useState<"all" | "errors" | "missing">("all");
@@ -109,7 +121,14 @@ export function RosterReviewTable({
   }
 
   function updateCell(rowIdx: number, key: FieldKey, val: string) {
-    const next = rows.map((r, i) => (i === rowIdx ? { ...r, [key]: val } : r));
+    const next = rows.map((r, i) => {
+      if (i !== rowIdx) return r;
+      const updated = { ...r, [key]: val } as Row;
+      if (key === "first_name" || key === "last_name") {
+        updated.name = joinName(updated.first_name, updated.last_name);
+      }
+      return updated;
+    });
     commit(next);
   }
   function toggleInclude(rowIdx: number, include: boolean) {
@@ -141,7 +160,9 @@ export function RosterReviewTable({
     const nextRows = rows.map((r) => {
       const a = (r[oldKey] as string | undefined) ?? "";
       const b = (r[newKey] as string | undefined) ?? "";
-      return { ...r, [oldKey]: b, [newKey]: a } as Row;
+      const next = { ...r, [oldKey]: b, [newKey]: a } as Row;
+      next.name = joinName(next.first_name, next.last_name);
+      return next;
     });
     setColumns(nextCols);
     commit(nextRows);
