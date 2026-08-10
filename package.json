@@ -15,7 +15,8 @@
     "check:routes": "node scripts/check-route-links.mjs",
     "test": "vitest run",
     "test:notifications": "vitest run src/test/notifications-flow.test.ts src/test/rls-class-notifications.test.ts",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "check:grants": "node scripts/check-table-grants.mjs"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "1.51.1",
