@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { AUDIT_SOURCE_STUDENT_PROFILES } from "@/lib/audit-sources";
 
 const uuid = z.string().uuid();
 
@@ -58,19 +59,59 @@ export const upsertStudentProfile = createServerFn({ method: "POST" })
         { onConflict: "student_id" },
       );
     if (error) { console.error("[DB Error]", error); throw new Error("שמירת הפרופיל נכשלה. נסה שוב."); }
+
+    // Audit trail: writes to sensitive data are logged, reads are not.
+    const { data: cls } = await context.supabase
+      .from("classes")
+      .select("institution_id")
+      .eq("id", data.class_id)
+      .maybeSingle();
+    const { logInfo } = await import("@/lib/logger.server");
+    await logInfo("עודכן מידע רגיש לתלמיד", {
+      source: AUDIT_SOURCE_STUDENT_PROFILES,
+      userId: context.userId,
+      context: {
+        action: "student_profile.update",
+        student_id: data.student_id,
+        class_id: data.class_id,
+        institution_id: cls?.institution_id ?? null,
+        flag_count: data.sensitive_flags.length,
+      },
+    });
     return { ok: true };
   });
 
 /** All profiles of a class — used for the rollover preview and the handoff report. */
 export const listClassProfiles = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ classId: uuid }).parse(d))
+  .inputValidator((d) => z.object({ classId: uuid, forHandoffReport: z.boolean().optional() }).parse(d))
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase
       .from("student_profiles")
       .select("*, students(name)")
       .eq("class_id", data.classId);
     if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+
+    // Producing the handoff document exports sensitive data — worth an audit row.
+    if (data.forHandoffReport) {
+      const { data: cls } = await context.supabase
+        .from("classes")
+        .select("institution_id")
+        .eq("id", data.classId)
+        .maybeSingle();
+      const { logInfo } = await import("@/lib/logger.server");
+      await logInfo("הופק מסמך מסירה עם מידע רגיש", {
+        source: AUDIT_SOURCE_STUDENT_PROFILES,
+        userId: context.userId,
+        context: {
+          action: "student_profile.handoff_report",
+          class_id: data.classId,
+          institution_id: cls?.institution_id ?? null,
+          profile_count: (rows ?? []).length,
+        },
+      });
+    }
+
     return (rows ?? []).map((r) => ({
       student_id: r.student_id,
       student_name: (r as { students?: { name: string } | null }).students?.name ?? "",

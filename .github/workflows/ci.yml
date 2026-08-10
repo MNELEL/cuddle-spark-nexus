@@ -89,6 +89,13 @@ jobs:
       - name: Check TanStack version alignment
         run: bun run check:tanstack
 
+      # Navigation + SEO metadata guards (orphan routes, title/description drift).
+      - name: Check route-link coverage
+        run: bun run check:routes
+
+      - name: Check SEO metadata
+        run: bun run check:seo
+
       # Type-safety net: TanStack drift often surfaces first as type errors.
       - name: Typecheck
         run: bunx tsgo --noEmit
@@ -196,4 +203,79 @@ jobs:
         with:
           name: notifications-report-${{ github.sha }}
           path: notifications-report.json
+          retention-days: 30
+  # `student_profiles` holds the most sensitive rows in the product (diagnoses,
+  # family situation, incidents). Its RLS contract — anon never, owner full,
+  # unrelated teacher never, institution admin read-only — must be exercised on
+  # every PR, so this job REQUIRES credentials and fails rather than skipping.
+  # It also re-runs the grant/RLS audit against the live database.
+  student-profiles-guard:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Require database credentials
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+          MISSING=""
+          for var in SUPABASE_URL SUPABASE_PUBLISHABLE_KEY SUPABASE_SERVICE_ROLE_KEY; do
+            if [ -z "${!var:-}" ]; then MISSING="$MISSING $var"; fi
+          done
+          if [ -n "$MISSING" ]; then
+            echo "::error::Missing repository secrets:$MISSING. The student_profiles RLS tests cannot run, so this guard fails instead of skipping them."
+            exit 1
+          fi
+          echo "All database credentials present."
+
+      - name: Run student_profiles RLS tests
+        run: bun run test:student-profiles --reporter=json --outputFile=student-profiles-report.json
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Assert tests actually ran
+        run: |
+          set -euo pipefail
+          node -e '
+            const fs = require("fs");
+            const report = JSON.parse(fs.readFileSync("student-profiles-report.json", "utf8"));
+            const tests = (report.testResults ?? []).flatMap((f) => f.assertionResults ?? []);
+            const passed = tests.filter((t) => t.status === "passed").length;
+            const skipped = tests.filter((t) => t.status === "pending" || t.status === "skipped").length;
+            console.log(`passed=${passed} skipped=${skipped} total=${tests.length}`);
+            if (passed === 0) {
+              console.error("::error::No student_profiles tests ran — the sensitive-data boundary was not exercised.");
+              process.exit(1);
+            }
+            if (skipped > 0) {
+              console.error(`::error::${skipped} student_profiles test(s) were skipped. Every case must run.`);
+              process.exit(1);
+            }
+          '
+
+      # Anon grants / missing RLS / policyless tables, against the live database.
+      - name: Grant and RLS audit
+        run: bun run check:grants
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+
+      - name: Upload student_profiles test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: student-profiles-report-${{ github.sha }}
+          path: student-profiles-report.json
           retention-days: 30

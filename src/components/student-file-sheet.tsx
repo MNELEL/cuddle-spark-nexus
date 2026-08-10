@@ -125,7 +125,14 @@ function StudentProfilePanel({ classId, studentId }: Props) {
             <h3 className="font-display text-lg">מידע רגיש</h3>
             {profile?.updated_at && (
               <Badge variant="secondary" className="font-mono-tabular">
-                עודכן: {new Date(profile.updated_at).toLocaleDateString("he-IL")}
+                עודכן:{" "}
+                {new Date(profile.updated_at).toLocaleString("he-IL", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
               </Badge>
             )}
           </div>

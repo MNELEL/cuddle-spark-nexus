@@ -435,7 +435,7 @@ function StudentsTab({
   const profilesFn = useServerFn(listClassProfiles);
   const handoffM = useMutation({
     mutationFn: async () => {
-      const rows = await profilesFn({ data: { classId } });
+      const rows = await profilesFn({ data: { classId, forHandoffReport: true } });
       if (rows.length === 0) throw new Error("אין פרופילי תלמידים מתועדים");
       const blob = await buildHandoffPdfBlob("הכיתה", rows);
       downloadPdfBlob(blob, handoffPdfFilename("class"));
