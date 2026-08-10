@@ -16,7 +16,8 @@
     "test": "vitest run",
     "test:notifications": "vitest run src/test/notifications-flow.test.ts src/test/rls-class-notifications.test.ts",
     "test:watch": "vitest",
-    "check:grants": "node scripts/check-table-grants.mjs"
+    "check:grants": "node scripts/check-table-grants.mjs",
+    "test:student-profiles": "vitest run src/test/rls-student-profiles.test.ts"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "1.51.1",
