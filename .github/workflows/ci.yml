@@ -89,6 +89,13 @@ jobs:
       - name: Check TanStack version alignment
         run: bun run check:tanstack
 
+      # Navigation + SEO metadata guards (orphan routes, title/description drift).
+      - name: Check route-link coverage
+        run: bun run check:routes
+
+      - name: Check SEO metadata
+        run: bun run check:seo
+
       # Type-safety net: TanStack drift often surfaces first as type errors.
       - name: Typecheck
         run: bunx tsgo --noEmit
