@@ -28,6 +28,7 @@ interface SitemapEntry {
 const STATIC_ROUTES: string[] = [
   "/",
   "/privacy",
+  "/content-policy",
   "/support",
   "/blog",
   "/blog/ai-seating-arrangements-guide",
@@ -60,6 +61,7 @@ function hintsFor(path: string): { changefreq: SitemapEntry["changefreq"]; prior
   if (path === "/") return { changefreq: "weekly", priority: "1.0" };
   if (path === "/login") return { changefreq: "monthly", priority: "0.5" };
   if (path === "/privacy") return { changefreq: "yearly", priority: "0.3" };
+  if (path === "/content-policy") return { changefreq: "yearly", priority: "0.3" };
   if (path === "/support" || path === "/toolkit" || path === "/sound-board") {
     return { changefreq: "monthly", priority: "0.5" };
   }

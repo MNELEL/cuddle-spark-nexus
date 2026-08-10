@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as BlogRouteImport } from './routes/blog'
+import { Route as ContentPolicyRouteImport } from './routes/content-policy'
 import { Route as HelpRouteImport } from './routes/help'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as McpRouteImport } from './routes/mcp'
@@ -99,6 +100,11 @@ const AuthenticatedRoute = AuthenticatedRouteImport.update({
 const BlogRoute = BlogRouteImport.update({
   id: '/blog',
   path: '/blog',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContentPolicyRoute = ContentPolicyRouteImport.update({
+  id: '/content-policy',
+  path: '/content-policy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HelpRoute = HelpRouteImport.update({
@@ -515,6 +521,7 @@ const AuthenticatedClassesClassIdDisplayRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/blog': typeof BlogRouteWithChildren
+  '/content-policy': typeof ContentPolicyRoute
   '/help': typeof HelpRouteWithChildren
   '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
@@ -592,6 +599,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/content-policy': typeof ContentPolicyRoute
   '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
   '/partners': typeof PartnersRouteWithChildren
@@ -670,6 +678,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/blog': typeof BlogRouteWithChildren
+  '/content-policy': typeof ContentPolicyRoute
   '/help': typeof HelpRouteWithChildren
   '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
@@ -750,6 +759,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/blog'
+    | '/content-policy'
     | '/help'
     | '/login'
     | '/mcp'
@@ -827,6 +837,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/content-policy'
     | '/login'
     | '/mcp'
     | '/partners'
@@ -904,6 +915,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/blog'
+    | '/content-policy'
     | '/help'
     | '/login'
     | '/mcp'
@@ -984,6 +996,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   BlogRoute: typeof BlogRouteWithChildren
+  ContentPolicyRoute: typeof ContentPolicyRoute
   HelpRoute: typeof HelpRouteWithChildren
   LoginRoute: typeof LoginRoute
   McpRoute: typeof McpRoute
@@ -1025,6 +1038,13 @@ declare module '@tanstack/react-router' {
       path: '/blog'
       fullPath: '/blog'
       preLoaderRoute: typeof BlogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/content-policy': {
+      id: '/content-policy'
+      path: '/content-policy'
+      fullPath: '/content-policy'
+      preLoaderRoute: typeof ContentPolicyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/help': {
@@ -1748,6 +1768,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   BlogRoute: BlogRouteWithChildren,
+  ContentPolicyRoute: ContentPolicyRoute,
   HelpRoute: HelpRouteWithChildren,
   LoginRoute: LoginRoute,
   McpRoute: McpRoute,

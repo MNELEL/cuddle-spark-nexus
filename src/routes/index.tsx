@@ -296,6 +296,13 @@ function Index() {
 
         <footer className="mt-28 text-center text-xs text-muted-foreground">
           נבנה במיוחד עבור חדרים וישיבות, מלמדים ולרבנים · הכיתה שלי © {new Date().getFullYear()}
+          <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
+            <Link to="/content-policy" className="hover:text-foreground">מדיניות תוכן וסינון</Link>
+            <span aria-hidden="true">·</span>
+            <Link to="/privacy" className="hover:text-foreground">מדיניות פרטיות</Link>
+            <span aria-hidden="true">·</span>
+            <Link to="/support" className="hover:text-foreground">תמיכה</Link>
+          </div>
         </footer>
       </main>
     </div>
