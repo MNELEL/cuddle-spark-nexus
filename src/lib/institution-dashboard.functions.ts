@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { AUDIT_SOURCE_INSTITUTIONS, AUDIT_SOURCE_ROLES } from "@/lib/audit-sources";
+import { AUDIT_SOURCE_INSTITUTIONS, AUDIT_SOURCE_ROLES, AUDIT_SOURCE_STUDENT_PROFILES } from "@/lib/audit-sources";
 
 type InstitutionScope = { institutionId: string; role: "admin" | "principal" };
 
@@ -151,7 +151,7 @@ export const listMyInstitutionAudit = createServerFn({ method: "GET" })
     const { data, error } = await supabaseAdmin
       .from("app_logs")
       .select("id, message, context, source, created_at")
-      .in("source", [AUDIT_SOURCE_INSTITUTIONS, AUDIT_SOURCE_ROLES])
+      .in("source", [AUDIT_SOURCE_INSTITUTIONS, AUDIT_SOURCE_ROLES, AUDIT_SOURCE_STUDENT_PROFILES])
       .contains("context", { institution_id: scope.institutionId })
       .order("created_at", { ascending: false })
       .limit(20);

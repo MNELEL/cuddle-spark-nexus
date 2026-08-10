@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { AUDIT_SOURCE_INSTITUTIONS, AUDIT_SOURCE_ROLES } from "@/lib/audit-sources";
+import { AUDIT_SOURCE_INSTITUTIONS, AUDIT_SOURCE_ROLES, AUDIT_SOURCE_STUDENT_PROFILES } from "@/lib/audit-sources";
 
 async function verifyAdmin(supabase: SupabaseClient<Database>, userId: string) {
   const { data, error } = await supabase
@@ -171,7 +171,7 @@ export const listRoleAuditLog = createServerFn({ method: "GET" })
     const { data, error } = await supabaseAdmin
       .from("app_logs")
       .select("id, level, message, context, source, created_at")
-      .in("source", [AUDIT_SOURCE_INSTITUTIONS, AUDIT_SOURCE_ROLES])
+      .in("source", [AUDIT_SOURCE_INSTITUTIONS, AUDIT_SOURCE_ROLES, AUDIT_SOURCE_STUDENT_PROFILES])
       .order("created_at", { ascending: false })
       .limit(20);
     if (error) throw new Error(error.message);
