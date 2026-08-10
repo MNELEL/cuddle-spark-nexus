@@ -32,7 +32,15 @@ export async function buildHandoffPdfBlob(
   for (const p of profiles) {
     hd.section(p.student_name || "תלמיד");
     if (p.updated_at) {
-      hd.paragraph(`עודכן לאחרונה: ${new Date(p.updated_at).toLocaleDateString("he-IL")}`);
+      hd.paragraph(
+        `עודכן לאחרונה: ${new Date(p.updated_at).toLocaleString("he-IL", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })}`,
+      );
     }
     const labels = p.sensitive_flags
       .map((f) => sensitiveFlagLabel[f as SensitiveFlag] ?? f)
