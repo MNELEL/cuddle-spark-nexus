@@ -756,12 +756,14 @@ function AskLibraryPanel() {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState<string | null>(null);
   const [sources, setSources] = useState<{ id: string; title: string }[]>([]);
+  const [excerpts, setExcerpts] = useState<{ resource_id: string; title: string; text: string }[]>([]);
 
   const askMut = useMutation({
     mutationFn: (q: string) => ask({ data: { question: q } }),
     onSuccess: (res) => {
       setAnswer(res.answer);
       setSources(res.sources ?? []);
+      setExcerpts(res.excerpts ?? []);
     },
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "השאילתה נכשלה"),
   });
@@ -801,6 +803,22 @@ function AskLibraryPanel() {
           {answer && (
             <div className="rounded-lg border bg-muted/40 p-3">
               <div className="whitespace-pre-wrap text-sm">{answer}</div>
+              {excerpts.length > 0 && (
+                <div className="mt-3 space-y-2 border-t pt-2">
+                  <div className="text-xs text-muted-foreground">ציטוטים מהמסמכים המקוריים שלך:</div>
+                  {excerpts.map((ex, i) => (
+                    <div key={`${ex.resource_id}-${i}`} className="rounded-md border bg-background p-2">
+                      <Link to="/resources/$resourceId" params={{ resourceId: ex.resource_id }}
+                        className="text-xs font-medium underline-offset-2 hover:underline">
+                        {ex.title}
+                      </Link>
+                      <p className="mt-1 whitespace-pre-wrap text-[11px] leading-relaxed text-muted-foreground">
+                        {ex.text.slice(0, 400)}{ex.text.length > 400 ? "…" : ""}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
               {sources.length > 0 && (
                 <div className="mt-3 border-t pt-2">
                   <div className="mb-1 text-xs text-muted-foreground">מבוסס על:</div>
