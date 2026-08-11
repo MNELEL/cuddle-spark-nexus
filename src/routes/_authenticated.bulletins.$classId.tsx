@@ -15,13 +15,14 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import {
   listBulletins, generateBulletin, saveBulletin, deleteBulletin,
+  publishBulletin, unpublishBulletin, listBulletinVersions,
   type BulletinDraft, type StoredBulletin,
 } from "@/lib/bulletins.functions";
 import {
   suggestResourcesForBulletin, listBulletinResources, linkResourceToBulletin,
   generateQuizFromBulletin,
 } from "@/lib/bulletin-sync.functions";
-import { Library, Link2, Wand2 } from "lucide-react";
+import { Library, Link2, Wand2, Lock, Unlock, History, Send } from "lucide-react";
 import { buildBulletinPdf } from "@/lib/pdf/bulletin-pdf";
 import { downloadPdfBlob } from "@/lib/pdf/pdf-builder";
 import { PdfPreviewDialog } from "@/components/pdf/pdf-preview-dialog";
@@ -39,13 +40,17 @@ function weekAgoIso() {
   return d.toISOString().slice(0, 10);
 }
 
-type Editing = (BulletinDraft & { id?: string; startDate: string; endDate: string; notes: string }) | null;
+type Editing = (BulletinDraft & {
+  id?: string; startDate: string; endDate: string; notes: string;
+  status?: "draft" | "published";
+}) | null;
 
 function emptyDraft(): NonNullable<Editing> {
   return {
     title: "", digest_summary: "", study_points: [], recap_questions: [],
     weekly_riddle: "", weekly_riddle_answer: "", activities: [],
     startDate: weekAgoIso(), endDate: todayIso(), notes: "",
+    status: "draft",
   };
 }
 
@@ -58,6 +63,7 @@ function fromStored(b: StoredBulletin): NonNullable<Editing> {
     weekly_riddle: b.weekly_riddle, weekly_riddle_answer: b.weekly_riddle_answer,
     activities: b.activities ?? [],
     startDate: b.start_date, endDate: b.end_date, notes: b.notes ?? "",
+    status: b.status ?? "draft",
   };
 }
 
@@ -68,6 +74,8 @@ function BulletinsPage() {
   const gen = useServerFn(generateBulletin);
   const save = useServerFn(saveBulletin);
   const del = useServerFn(deleteBulletin);
+  const publish = useServerFn(publishBulletin);
+  const unpublish = useServerFn(unpublishBulletin);
   const getCls = useServerFn(getClass);
 
   const [editing, setEditing] = useState<Editing>(null);
@@ -139,6 +147,29 @@ function BulletinsPage() {
     },
   });
 
+  const publishMut = useMutation({
+    mutationFn: (id: string) => publish({ data: { id } }),
+    onSuccess: () => {
+      toast.success("העלון פורסם ונעול לעריכה");
+      setEditing((prev) => prev ? { ...prev, status: "published" } : prev);
+      qc.invalidateQueries({ queryKey: ["bulletins", classId] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
+  });
+
+  const unpublishMut = useMutation({
+    mutationFn: (id: string) => unpublish({ data: { id } }),
+    onSuccess: (_r, id) => {
+      toast.success("הנעילה שוחררה — ניתן לערוך");
+      setEditing((prev) => prev ? { ...prev, status: "draft" } : prev);
+      qc.invalidateQueries({ queryKey: ["bulletins", classId] });
+      qc.invalidateQueries({ queryKey: ["bulletin-versions", id] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
+  });
+
+  const locked = editing?.status === "published";
+
   function updateField<K extends keyof NonNullable<Editing>>(k: K, v: NonNullable<Editing>[K]) {
     setEditing((prev) => prev ? { ...prev, [k]: v } : prev);
   }
@@ -203,15 +234,32 @@ function BulletinsPage() {
             {/* Controls */}
             <Card className="print:hidden">
               <CardContent className="space-y-3 pt-4">
+                {locked && (
+                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber/40 bg-amber/5 p-3">
+                    <div className="flex items-center gap-2 text-sm font-medium">
+                      <Lock className="h-4 w-4 text-amber" aria-hidden="true" />
+                      העלון פורסם ונעול לעריכה
+                    </div>
+                    <Button size="sm" variant="outline" disabled={unpublishMut.isPending}
+                      onClick={() => {
+                        if (!editing.id) return;
+                        if (confirm("לשחרר את נעילת העלון לעריכה? הגרסה הנוכחית תישמר בהיסטוריה.")) {
+                          unpublishMut.mutate(editing.id);
+                        }
+                      }}>
+                      <Unlock className="ms-1 h-4 w-4" aria-hidden="true" /> שחרר נעילה לעריכה
+                    </Button>
+                  </div>
+                )}
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
                     <Label className="text-xs">מתאריך</Label>
-                    <Input type="date" value={editing.startDate}
+                    <Input type="date" value={editing.startDate} disabled={locked}
                       onChange={(e) => updateField("startDate", e.target.value)} />
                   </div>
                   <div>
                     <Label className="text-xs">עד תאריך</Label>
-                    <Input type="date" value={editing.endDate}
+                    <Input type="date" value={editing.endDate} disabled={locked}
                       onChange={(e) => updateField("endDate", e.target.value)} />
                   </div>
                 </div>
@@ -219,19 +267,28 @@ function BulletinsPage() {
                   <Label className="text-xs">תקציר שיעורים / הערות הרב (אופציונלי, יזין את ה-AI)</Label>
                   <Textarea
                     rows={3}
+                    disabled={locked}
                     placeholder='למשל: "השבוע למדנו דף ל"ב בברכות, הוספנו מסכת תפילין, היה מבחן בחומש שמות..."'
                     value={lessonNotes}
                     onChange={(e) => setLessonNotes(e.target.value)}
                   />
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Button onClick={() => generateMut.mutate()} disabled={generateMut.isPending}>
+                  <Button onClick={() => generateMut.mutate()} disabled={generateMut.isPending || locked}>
                     {generateMut.isPending ? <Loader2 className="ms-1 h-4 w-4 animate-spin" /> : <Sparkles className="ms-1 h-4 w-4" />}
                     {editing.title ? "צור מחדש עם AI" : "צור עלון עם AI"}
                   </Button>
-                  <Button variant="outline" onClick={() => saveMut.mutate()} disabled={saveMut.isPending || !editing.title}>
-                    <Save className="ms-1 h-4 w-4" /> שמור
-                  </Button>
+                  {!locked && (
+                    <Button variant="outline" onClick={() => saveMut.mutate()} disabled={saveMut.isPending || !editing.title}>
+                      <Save className="ms-1 h-4 w-4" /> שמור
+                    </Button>
+                  )}
+                  {!locked && editing.id && (
+                    <Button variant="outline" disabled={publishMut.isPending || !editing.title}
+                      onClick={() => editing.id && publishMut.mutate(editing.id)}>
+                      <Send className="ms-1 h-4 w-4" aria-hidden="true" /> פרסם
+                    </Button>
+                  )}
                   <Button variant="outline" onClick={() => window.print()}>
                     <Printer className="ms-1 h-4 w-4" /> הדפס / PDF
                   </Button>
