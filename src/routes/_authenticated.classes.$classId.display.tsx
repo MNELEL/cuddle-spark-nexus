@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getClass, type RoomObject } from "@/lib/classes.functions";
+import { useClassFallbackRedirect } from "@/hooks/use-class-fallback";
 import { ROOM_OBJECT_META } from "@/components/seating-grid";
 import { listStudents } from "@/lib/students.functions";
 import { listClassScoreInputs } from "@/lib/scoring.functions";
