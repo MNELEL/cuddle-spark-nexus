@@ -1,57 +1,61 @@
-# חיזוק אזור /settings — ארבעה שינויים
+# הרחבת העלון השבועי — תוכן מובנה ו-PDF משודרג
 
-מה נבדק בקוד לפני התוכנית (עובדות, לא הנחות):
-- `src/components/settings-tabs.tsx` — active state, `aria-current="page"` וניווט חצים RTL קיימים. **מחוץ להיקף, לא נוגעים.**
-- אין בפרויקט `@testing-library/react`, `jsdom` או Playwright (לא ב-`package.json` ולא בקונפיג של vitest). כל קבצי הטסט הם או RLS מול DB אמיתי או לוגיקה טהורה/קריאת קבצים.
-- `src/test/nav-settings.test.ts` קיים ובודק כבר את קישור ה-header ל-/settings, את הטאבים ואת ה-command palette — בקריאת קבצים (static), ללא render.
-- 404: קיים `notFoundComponent` אחד בלבד ב-`src/routes/__root.tsx`, עם טקסט באנגלית ("Page not found" / "Go home"). אין `notFoundComponent` ב-`_authenticated.tsx` ואין splat route תחת settings — ולכן `/settings/xyz` אכן מגיע ל-404 הגנרי באנגלית.
-- `logInfo` מ-`src/lib/logger.server.ts` כותב ל-`app_logs` (level/message/context/source/user_id) — אותו מנגנון שבו משתמשים `classes.functions.ts`, `access-requests`, `student-profiles`. אין צורך בטבלה חדשה.
-- `brand.functions.ts` (`saveBrand`, `saveInstitutionBrand` עם `canEdit` בשרת), `security.functions.ts` (`setPin`, `disablePin`), `reminder-preferences.functions.ts` (`saveReminderPreferences`) — לאף אחד מהם אין כרגע audit log.
+התוכנית מרחיבה את הפיצ׳ר הקיים בלבד. זרימת draft/publish/lock, סנכרון לספרייה (`bulletin-sync.functions.ts`) והיסטוריית הגרסאות לא נוגעים בהם.
 
-## 1. טסט כניסה ל-/settings — בלי תלות חדשה (החלטה ארכיטקטונית)
+## 1. סכימה (מיגרציה אחת, בלי טבלה חדשה)
 
-לא נוסיף `@testing-library/react` + `jsdom`. הסיבה: הסטאק הוא TanStack Start על Cloudflare Workers, וכל ראוט ההגדרות תלוי ב-router context, ב-server functions ובגייט `_authenticated` — render בתוך jsdom ידרוש mocking של כל השרשרת ויבדוק בעיקר את ה-mocks. אם בעתיד יידרש E2E אמיתי, הכלי הנכון הוא Playwright מול preview, וזו החלטה נפרדת (תלות + CI job) שכדאי לקחת בנפרד ולא כחלק מהשינוי הזה.
+הוספת שלוש עמודות ל-`public.weekly_bulletins` הקיימת:
 
-במקום זה מרחיבים את `src/test/nav-settings.test.ts` בשני כיוונים:
-- **שכבת חוזה (קריאת קבצים):** שקישור ה-header קיים, שהטאבים general/security/reminders/docs מרונדרים דרך `SettingsTabs`, ושכל טאב מחובר לרכיב אמיתי בעמוד.
-- **שכבת ריצה אמיתית (מול DB, בסגנון טסטי ה-RLS הקיימים):** משתמש טסט מ-`src/test/helpers.ts` (`createTestUser`), וקריאה לשאילתות ש-`getBrand`, `getMyTrialStatus`, `getSecurity` ו-`getReminderPreferences` מבצעים — כדי לוודא שהן מחזירות ברירת מחדל תקינה למשתמש חדש ולא זורקות. זה תופס את הכשל האמיתי של "מסך הגדרות ריק/שגיאה", בלי jsdom.
+- `torah_dvar_title text not null default ''`
+- `torah_dvar_body text not null default ''`
+- `study_schedule jsonb not null default '{}'::jsonb`
+- `honored_students jsonb not null default '[]'::jsonb`
 
-## 2. 404 ממותג בעברית לכל `/settings/*`
+`study_points` נשאר כמו שהוא — הוא מקור ה-fallback וגם מה שמזין את embedding/הצעות הספרייה, ולכן אין לו שינוי. אין GRANT/RLS חדשים (טבלה קיימת, מדיניות קיימת).
 
-- ראוט splat חדש `src/routes/_authenticated.settings.$.tsx` שתופס כל תת-נתיב לא מוכר תחת settings.
-- המסך: עברית RTL, טוקנים סמנטיים בלבד, כותרת "הדף לא נמצא באזור ההגדרות", הצגת הנתיב שהוקש, `SettingsTabs` למעלה כדי לא לאבד הקשר, וכפתור חזרה ל-/settings (+ קישור לדף הבית).
-- `/settings` ללא `tab` נשאר כמו שהוא (`validateSearch` → general). לא נוגעים.
+## 2. טיפוסים ושרת (`src/lib/bulletins.functions.ts`)
 
-## 3. Audit log על שינויי הגדרות
+- `BulletinDraft` יקבל:
+  - `torah_dvar_title: string`, `torah_dvar_body: string`
+  - `study_schedule: StudySchedule` — אובייקט עם מפתחות אופציונליים `gemara {daf, topic}`, `mishna {masechet, perek}`, `torah {parasha, pasuk_range}`, `navi {sefer, perek}`, `halacha {siman, seif}`; כל שדה טקסט עם ברירת מחדל `""`.
+  - `honored_students: { name: string; type: "vort" | "mazal_tov" | "other"; note: string }[]`
+- `saveBulletin`: ולידציית zod לשדות החדשים (אורכים סבירים, `type` enum) ושמירתם ב-row. שאר הפונקציה — כולל בדיקת ה-lock — ללא שינוי.
+- `generateBulletin`: הפרומפט יורחב כך שה-JSON כולל גם `torah_dvar_title`/`torah_dvar_body`/`study_schedule`/`honored_students` (honored נשאר ריק כברירת מחדל — AI לא ימציא שמות תלמידים), עם normalization מלא בקוד כמו שנעשה היום לשדות האחרים, כדי שעלונים ישנים ותשובות חסרות לא ישברו.
+- `unpublishBulletin`: ה-select של ה-snapshot יכלול את השדות החדשים (אחרת גרסאות ישמרו חלקיות). זה שינוי נקודתי בתוך המנגנון הקיים, לא שינוי בהתנהגותו.
 
-`logInfo` עם `source: "settings_update"` בכל הנקודות הבאות — הודעה בעברית, `userId`, ו-context רזה בלבד (איזה טאב, אילו שדות השתנו). בלי ערכים רגישים:
-- `saveBrand` — `{ tab: "brand", scope: "personal", fields: [...] }`
-- `saveInstitutionBrand` — `{ tab: "brand", scope: "institution", institutionId, fields: [...] }`
-- `setPin` / `disablePin` — `{ tab: "security", action: "pin_set" | "pin_disabled" }`. **אף פעם לא ה-PIN, לא hash ולא אורך.**
-- `saveReminderPreferences` — `{ tab: "reminders", fields: [...] }`
-- לוגיקת ההרשאות לא משתנה: `canEdit` של המוסד נשאר האכיפה היחידה, ושאר הטאבים נשארים "ההגדרות שלי" תחת גייט `_authenticated`. לא מוסיפים beforeLoad guard ולא נוגעים ב-RLS.
+תאימות לאחור: כל השדות החדשים עם ברירות מחדל, ולכן `p.$token.tsx`, `c.$slug.tsx`, `parents.functions.ts`, `public-class.functions.ts` ו-`text-export.ts` ממשיכים לעבוד ללא שינוי.
 
-## 4. Breadcrumbs רק ב-brand ו-theme
+## 3. טופס העריכה (`_authenticated.bulletins.$classId.tsx`)
 
-- רכיב קטן `src/components/settings-breadcrumb.tsx` (nav + `aria-label="מסלול ניווט"`, `aria-current="page"` על הפריט הנוכחי): `הגדרות` (Link ל-/settings) ‹ `מותג` / `ערכת נושא`.
-- נוסף ב-`_authenticated.settings.brand.tsx` וב-`_authenticated.settings.theme.tsx` בלבד, וגם במסך ה-404 החדש (`הגדרות ‹ לא נמצא`).
-- אין breadcrumb ב-`/settings/index` ואין לטאבים הפנימיים — כפילות מול `SettingsTabs`.
+- `emptyDraft`/`fromStored` יאתחלו את השדות החדשים.
+- שני שדות חדשים לדבר תורה (Input לכותרת, Textarea לגוף).
+- בלוק "הספק לימודי" — חמש שורות מקצוע עם שני Inputs כל אחת, בתוויות עבריות (גמרא: דף / נושא; משנה: מסכת / פרק; חומש: פרשה / פסוקים; נביא: ספר / פרק; הלכה: סימן / סעיף).
+- בלוק "יישר כח ומזל טוב" — רשימה דינמית (הוספה/מחיקה) עם שם, בורר סוג (ווארט / מזל טוב / אחר) והערה.
+- כל השדות החדשים `disabled` כשה-status הוא `published`, בהתאם לדפוס הקיים.
+- `cacheKey` של תצוגת ה-PDF ישאר `editing.id ?? 'new'`.
 
-## פרטים טכניים
+## 4. PDF (`src/lib/pdf/bulletin-pdf.ts`)
 
-| קובץ | שינוי |
-|---|---|
-| `src/routes/_authenticated.settings.$.tsx` | חדש — 404 ממותג ל-namespace ההגדרות |
-| `src/components/settings-breadcrumb.tsx` | חדש |
-| `src/routes/_authenticated.settings.brand.tsx` / `.theme.tsx` | הוספת breadcrumb |
-| `src/lib/brand.functions.ts` | `logInfo` ב-`saveBrand` + `saveInstitutionBrand` |
-| `src/lib/security.functions.ts` | `logInfo` ב-`setPin` + `disablePin` |
-| `src/lib/reminder-preferences.functions.ts` | `logInfo` ב-`saveReminderPreferences` |
-| `src/test/nav-settings.test.ts` | הרחבה: חוזה טאבים + טסט ריצה עם משתמש טסט |
-| `src/lib/tool-registry.ts` (אם נדרש) | רישום/פטור לראוט ה-splat כדי ש-`route-link-coverage` יישאר ירוק |
+מבנה עמודים מכוון, במקום זרימה אחת:
 
-- `logInfo` נטען דרך `await import("@/lib/logger.server")` בתוך ה-handler, כמו בשאר ה-functions, כדי לא לגרור מודול server-only ל-bundle של הקליינט.
-- אימות בסוף: `bun run test` + `node scripts/check-route-links.mjs`.
+```text
+עמוד 1 — שער:      לוגו + שם מוסד + כותרת העלון + טווח תאריכים + סיכום השבוע
+עמוד 2 — דבר תורה: מסגרת דקורטיבית + כותרת + גוף
+עמוד 3 — הספק:     טבלת "שורה למקצוע" + יישר כח/מזל טוב + פעילויות
+עמוד 4 — חזרה:     שאלות חזרה להורים + חידה שבועית ותשובה
+```
 
-## מחוץ להיקף
-active-tab state (קיים), ברירת המחדל של `?tab`, שינויי RLS על `brand_settings` ודומותיה, והוספת Playwright/jsdom.
+- הלוגו: `drawBrandHeader` כבר מצייר את הלוגו המוסדי כשקיים ב-brand; בשער נשתמש בו ונוסיף כותרת שער גדולה (`subtitle` עם טווח התאריכים) — בלי לשנות את ה-builder המשותף.
+- רקע דקורטיבי לעמוד דבר התורה: מסגרת מלבנית כפולה בגוני ה-brand (slate + amber) עם מילוי רך מאוד — מצוירת מקומית ב-`bulletin-pdf.ts`, לא ב-builder, כדי לא להשפיע על שאר המסמכים.
+- טבלת הספק: עמודות `מקצוע | פירוט`, שורה לכל מקצוע שיש בו תוכן. אם `study_schedule` ריק לגמרי — נפילה לטבלת `study_points` הקיימת (התנהגות היום).
+- יישר כח: טבלה `שם | סוג | הערה` (סוג מתורגם לעברית), מוצגת רק כשיש רשומות.
+- מעברי עמוד עם `hd.newPage()` בין הסקציות, ורק כשיש תוכן — עמוד לא ייווצר ריק. `drawFooter` הקיים ממשיך לספור עמודים.
+
+## 5. ייצוא טקסט
+
+`bulletinToMarkdown` ב-`src/lib/text-export.ts` יקבל שלוש סקציות אופציונליות חדשות (דבר תורה, הספק, יישר כח) באותו דפוס "לא מודפס כשריק", והבדיקות הקיימות ב-`src/test/text-export.test.ts` יתרחבו בהתאם — כולל שמירה על דטרמיניזם.
+
+## קבצים
+
+- מיגרציה: הוספת 4 עמודות ל-`weekly_bulletins`
+- עדכון: `src/lib/bulletins.functions.ts`, `src/routes/_authenticated.bulletins.$classId.tsx`, `src/lib/pdf/bulletin-pdf.ts`, `src/lib/text-export.ts`, `src/test/text-export.test.ts`
