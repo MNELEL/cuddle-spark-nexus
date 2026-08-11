@@ -42,6 +42,15 @@ export const setPin = createServerFn({ method: "POST" })
       .from("app_security")
       .upsert({ user_id: userId, pin_enabled: true, pin_hash: hash, pin_salt: salt });
     if (error) throw new Error(error.message);
+
+    // Audit only that the action happened — never the PIN, its hash, its salt
+    // or its length.
+    const { logInfo } = await import("@/lib/logger.server");
+    await logInfo("קוד אבטחה (PIN) הוגדר", {
+      source: "settings_update",
+      userId,
+      context: { tab: "security", action: "pin_set" },
+    });
     return { ok: true };
   });
 
@@ -53,6 +62,13 @@ export const disablePin = createServerFn({ method: "POST" })
       .from("app_security")
       .upsert({ user_id: userId, pin_enabled: false, pin_hash: null, pin_salt: null });
     if (error) throw new Error(error.message);
+
+    const { logInfo } = await import("@/lib/logger.server");
+    await logInfo("קוד אבטחה (PIN) בוטל", {
+      source: "settings_update",
+      userId,
+      context: { tab: "security", action: "pin_disabled" },
+    });
     return { ok: true };
   });
 
