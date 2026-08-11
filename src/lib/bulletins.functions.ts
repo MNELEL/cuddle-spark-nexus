@@ -27,10 +27,16 @@ export type StoredBulletin = BulletinDraft & {
   published_at: string | null;
 };
 
+export type BulletinSnapshot = BulletinDraft & {
+  notes: string;
+  start_date: string;
+  end_date: string;
+};
+
 export type BulletinVersion = {
   id: string;
   bulletin_id: string;
-  snapshot: Record<string, unknown>;
+  snapshot: BulletinSnapshot;
   created_at: string;
   created_by: string | null;
 };
