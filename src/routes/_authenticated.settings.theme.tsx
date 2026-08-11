@@ -1,4 +1,5 @@
 import { SettingsTabs } from "@/components/settings-tabs";
+import { SettingsBreadcrumb } from "@/components/settings-breadcrumb";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -62,6 +63,7 @@ function ThemeSettingsPage() {
 
   return (
     <div className="space-y-6">
+      <SettingsBreadcrumb current="ערכת נושא" />
       <SettingsTabs active="theme" />
       <div className="space-y-2">
         <Button asChild variant="ghost" size="sm" className="px-0">

@@ -208,6 +208,13 @@ export const saveBrand = createServerFn({ method: "POST" })
       .from("brand_settings")
       .upsert(row as never, { onConflict: "user_id" });
     if (error) { console.error("[brand]", error); throw new Error("שמירת המיתוג נכשלה"); }
+
+    const { logInfo } = await import("@/lib/logger.server");
+    await logInfo("הגדרות מיתוג אישיות עודכנו", {
+      source: "settings_update",
+      userId: context.userId,
+      context: { tab: "brand", scope: "personal", fields: Object.keys(data) },
+    });
     return { ok: true };
   });
 
@@ -272,5 +279,18 @@ export const saveInstitutionBrand = createServerFn({ method: "POST" })
       .from("brand_settings")
       .upsert(row as never, { onConflict: "institution_id" });
     if (error) { console.error("[brand]", error); throw new Error("שמירת מיתוג המוסד נכשלה"); }
+
+    const { logInfo } = await import("@/lib/logger.server");
+    await logInfo("הגדרות מיתוג המוסד עודכנו", {
+      source: "settings_update",
+      userId,
+      context: {
+        tab: "brand",
+        scope: "institution",
+        institutionId,
+        fields: Object.keys(rest),
+        lockedFields: locked_fields,
+      },
+    });
     return { ok: true };
   });

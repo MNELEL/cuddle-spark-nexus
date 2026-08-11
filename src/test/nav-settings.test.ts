@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
+import { createTestUser, deleteTestUser, hasTestEnv, type TestUser } from "./helpers";
 
 const read = (p: string) => readFileSync(p, "utf8");
 
@@ -74,5 +75,141 @@ describe("settings navigation", () => {
     expect(hook).toContain("replace: true");
     expect(read("src/routes/_authenticated.classes.$classId.tsx")).toContain("useClassFallbackRedirect");
     expect(read("src/routes/_authenticated.classes.$classId.display.tsx")).toContain("useClassFallbackRedirect");
+  });
+});
+
+/* ---------------- Contract: settings area structure ---------------- */
+
+describe("settings area contract", () => {
+  const settings = read("src/routes/_authenticated.settings.index.tsx");
+  const tabs = read("src/components/settings-tabs.tsx");
+
+  it("every declared tab is rendered by a real component in the settings page", () => {
+    // general / security / reminders / docs must each map to actual content.
+    expect(settings).toContain('tab === "general"');
+    expect(settings).toContain('tab === "security"');
+    expect(settings).toContain('tab === "reminders"');
+    expect(settings).toContain('tab === "docs"');
+    expect(settings).toContain("<SecuritySettings");
+    expect(settings).toContain("<ReminderPreferencesCard");
+    expect(settings).toContain("<SubscriptionStatusCard");
+  });
+
+  it("brand and theme are separate routes, not search tabs", () => {
+    expect(tabs).toContain('to: "/settings/brand"');
+    expect(tabs).toContain('to: "/settings/theme"');
+    // The tab ids used in ?tab= never include brand/theme.
+    expect(settings).toContain('TAB_IDS: SettingsTabId[] = ["general", "security", "reminders", "docs"]');
+  });
+
+  it("unknown /settings/* sub-paths get a branded Hebrew not-found screen", () => {
+    const notFound = read("src/routes/_authenticated.settings.$.tsx");
+    expect(notFound).toContain('createFileRoute("/_authenticated/settings/$")');
+    expect(notFound).toContain("הדף לא נמצא באזור ההגדרות");
+    expect(notFound).toContain('to="/settings"');
+    expect(notFound).toContain("SettingsBreadcrumb");
+  });
+
+  it("breadcrumbs exist only on the brand and theme sub-routes", () => {
+    expect(read("src/routes/_authenticated.settings.brand.tsx")).toContain('<SettingsBreadcrumb current="מותג" />');
+    expect(read("src/routes/_authenticated.settings.theme.tsx")).toContain('<SettingsBreadcrumb current="ערכת נושא" />');
+    // /settings itself is the area home — no breadcrumb above itself.
+    expect(settings).not.toContain("SettingsBreadcrumb");
+  });
+
+  it("settings mutations are audited through logInfo with a dedicated source", () => {
+    const brand = read("src/lib/brand.functions.ts");
+    const security = read("src/lib/security.functions.ts");
+    const reminders = read("src/lib/reminder-preferences.functions.ts");
+    for (const [name, src] of [["brand", brand], ["security", security], ["reminders", reminders]] as const) {
+      expect(src, `${name} missing audit log`).toContain('source: "settings_update"');
+      expect(src, `${name} must lazy-import the server-only logger`).toContain(
+        'await import("@/lib/logger.server")',
+      );
+    }
+    // The PIN itself (or its hash/salt) must never reach the audit log.
+    const pinLogs = security.match(/logInfo\([\s\S]*?\}\);/g) ?? [];
+    expect(pinLogs.length).toBe(2);
+    for (const block of pinLogs) {
+      expect(block).not.toMatch(/data\.pin|pin_hash|pin_salt|\bhash\b|\bsalt\b/);
+    }
+  });
+});
+
+/* ---------------- Runtime: settings reads work for a fresh user ---------------- */
+
+describe.skipIf(!hasTestEnv)("settings reads for a fresh user", () => {
+  let user: TestUser;
+
+  beforeAll(async () => {
+    user = await createTestUser("settings-reads");
+  });
+
+  afterAll(async () => {
+    await deleteTestUser(user);
+  });
+
+  it("brand settings read returns no row instead of erroring (getBrand)", async () => {
+    const { data, error } = await user.client
+      .from("brand_settings")
+      .select("school_name, logo_data_url, primary_color, theme")
+      .eq("user_id", user.id)
+      .eq("scope", "user")
+      .maybeSingle();
+    expect(error).toBeNull();
+    expect(data).toBeNull();
+  });
+
+  it("security read returns a disabled PIN (getSecurity)", async () => {
+    const { data, error } = await user.client
+      .from("app_security")
+      .select("pin_enabled, pin_hash")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    expect(error).toBeNull();
+    expect(Boolean(data?.pin_enabled)).toBe(false);
+    expect(Boolean(data?.pin_hash)).toBe(false);
+  });
+
+  it("reminder preferences read falls back to defaults (getReminderPreferences)", async () => {
+    const { data, error } = await user.client
+      .from("reminder_preferences")
+      .select("user_id,types_enabled,lead_time_minutes")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    expect(error).toBeNull();
+    expect(data).toBeNull(); // the server fn substitutes the 30-minute defaults
+  });
+
+  it("trial status read finds the user's own profile (getMyTrialStatus)", async () => {
+    const { data, error } = await user.client
+      .from("profiles")
+      .select("trial_started_at, trial_ends_at")
+      .eq("id", user.id)
+      .maybeSingle();
+    expect(error).toBeNull();
+    // A profile row must exist for the settings screen to render a trial state.
+    expect(data).not.toBeNull();
+  });
+
+  it("saving reminder preferences round-trips under RLS", async () => {
+    const { error } = await user.client
+      .from("reminder_preferences")
+      .upsert(
+        {
+          user_id: user.id,
+          types_enabled: { lessons: true, assignments: false, messages: true },
+          lead_time_minutes: 45,
+        },
+        { onConflict: "user_id" },
+      );
+    expect(error).toBeNull();
+
+    const { data } = await user.client
+      .from("reminder_preferences")
+      .select("lead_time_minutes")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    expect(data?.lead_time_minutes).toBe(45);
   });
 });
