@@ -103,6 +103,7 @@ function BrandSettingsPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-5">
+      <SettingsTabs active="brand" />
       <div>
         <h1 className="font-display text-3xl font-bold">מיתוג המוסד</h1>
         <p className="text-sm text-muted-foreground">
