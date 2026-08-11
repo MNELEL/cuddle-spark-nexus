@@ -481,6 +481,7 @@ function CertificatesPage() {
   };
 
   const list = Object.values(rows);
+  const [previewRow, setPreviewRow] = useState<StudentRow | null>(null);
 
   return (
     <div className="mx-auto max-w-6xl space-y-5">
@@ -595,6 +596,7 @@ function CertificatesPage() {
                 onPersistConducts={() => persistRow(row.id)}
                 onOcrPhoto={(f) => applyOcrToRow(row.id, f)}
                 onExport={() => buildForStudent(row, isCorrection ? "correction" : "regular")}
+                onPreview={() => setPreviewRow(row)}
                 onSaveNotes={() => persistNote(row.id)}
                 onSuggestNotes={() => openSuggest(row.id)}
                 showWeighted={showWeighted}
