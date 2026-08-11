@@ -363,6 +363,16 @@ function BulletinsPage() {
                 )}
               </CardContent>
             </Card>
+
+            <PdfPreviewDialog
+              open={previewOpen}
+              onOpenChange={setPreviewOpen}
+              title="תצוגה מקדימה של העלון"
+              buildPdf={() => buildBulletinPdf({ bulletin: editing, className: cls?.name ?? "כיתה" })}
+              buildText={() => bulletinToMarkdown(editing, cls?.name ?? "כיתה")}
+              textFilename={`עלון_${editing.startDate}.md`}
+              textMime="text/markdown"
+            />
           </div>
         )}
       </div>
