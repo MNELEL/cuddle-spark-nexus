@@ -16,12 +16,15 @@ import { toast } from "sonner";
 import {
   listBulletins, generateBulletin, saveBulletin, deleteBulletin,
   publishBulletin, unpublishBulletin, listBulletinVersions,
+  normalizeExtras,
   type BulletinDraft, type StoredBulletin, type BulletinSnapshot,
+  type StudySchedule, type HonoredStudent, type SpecialNotice,
 } from "@/lib/bulletins.functions";
 import {
   suggestResourcesForBulletin, listBulletinResources, linkResourceToBulletin,
-  generateQuizFromBulletin,
+  generateQuizFromBulletin, generateQuizFromSchedule,
 } from "@/lib/bulletin-sync.functions";
+import { BulletinImportQuestionsDialog } from "@/components/bulletin-import-questions-dialog";
 import { Library, Link2, Wand2, Lock, Unlock, History, Send } from "lucide-react";
 import { buildBulletinPdf } from "@/lib/pdf/bulletin-pdf";
 import { downloadPdfBlob } from "@/lib/pdf/pdf-builder";
@@ -51,6 +54,7 @@ function emptyDraft(): NonNullable<Editing> {
     weekly_riddle: "", weekly_riddle_answer: "", activities: [],
     startDate: weekAgoIso(), endDate: todayIso(), notes: "",
     status: "draft",
+    ...normalizeExtras(null),
   };
 }
 
@@ -64,8 +68,26 @@ function fromStored(b: StoredBulletin): NonNullable<Editing> {
     activities: b.activities ?? [],
     startDate: b.start_date, endDate: b.end_date, notes: b.notes ?? "",
     status: b.status ?? "draft",
+    ...normalizeExtras(b),
   };
 }
+
+/** מקצועות ההספק השבועי — סדר קבוע לתצוגה ולתוויות השדות. */
+const SCHEDULE_ROWS = [
+  { key: "gemara", label: "גמרא", a: ["daf", "דף"], b: ["topic", "נושא"] },
+  { key: "mishna", label: "משנה", a: ["masechet", "מסכת"], b: ["perek", "פרק"] },
+  { key: "torah", label: "חומש", a: ["parasha", "פרשה"], b: ["pasuk_range", "פסוקים"] },
+  { key: "navi", label: "נביא", a: ["sefer", "ספר"], b: ["perek", "פרק"] },
+  { key: "halacha", label: "הלכה", a: ["siman", "סימן"], b: ["seif", "סעיף"] },
+] as const;
+
+type ScheduleKey = (typeof SCHEDULE_ROWS)[number]["key"];
+
+const HONOR_TYPES: { value: HonoredStudent["type"]; label: string }[] = [
+  { value: "vort", label: "ווארט / דבר תורה" },
+  { value: "mazal_tov", label: "מזל טוב" },
+  { value: "other", label: "יישר כח" },
+];
 
 function BulletinsPage() {
   const { classId } = Route.useParams();
