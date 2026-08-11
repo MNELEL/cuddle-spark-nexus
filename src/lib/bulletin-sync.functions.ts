@@ -122,12 +122,53 @@ export const listScheduleResources = createServerFn({ method: "POST" })
     const list = (rows ?? []) as unknown as Array<{
       id: string; title: string; subject: string; resource_type: string; tags: string[]; updated_at: string;
     }>;
+    if (!list.length) return [];
+
+    // בדיקת עקביות: האם החומר מקושר גם לעלונים אחרים (למשל אחרי שכפול או ייבוא)
+    const { data: allLinks } = await context.supabase
+      .from("bulletin_resources").select("bulletin_id,resource_id").in("resource_id", list.map((r) => r.id));
+    const linkRows = (allLinks ?? []) as { bulletin_id: string; resource_id: string }[];
+    const otherIds = [...new Set(linkRows.map((l) => l.bulletin_id).filter((id) => id !== data.bulletin_id))];
+    const titles = new Map<string, string>();
+    if (otherIds.length) {
+      const { data: buls } = await context.supabase
+        .from("weekly_bulletins").select("id,title,start_date").in("id", otherIds);
+      for (const b of (buls ?? []) as { id: string; title: string; start_date: string }[]) {
+        titles.set(b.id, `${b.title} (${b.start_date})`);
+      }
+    }
+
     return list.map((r) => {
       // המקצוע נשמר גם בעמודת subject וגם בתגיות — נגזור את מפתח ההספק ממנו.
       const key = (Object.keys(SCHEDULE_SUBJECTS) as ScheduleKey[])
         .find((k) => SCHEDULE_SUBJECTS[k].label === r.subject || r.tags?.includes(SCHEDULE_SUBJECTS[k].label));
-      return { ...r, schedule_key: key ?? null, linked: true };
+      const others = linkRows
+        .filter((l) => l.resource_id === r.id && l.bulletin_id !== data.bulletin_id)
+        .map((l) => ({ id: l.bulletin_id, title: titles.get(l.bulletin_id) ?? "עלון אחר" }));
+      return { ...r, schedule_key: key ?? null, linked: true, other_bulletins: others };
     });
+  });
+
+/**
+ * העברת הקישור של חומר לעלון הנוכחי בלבד — מסיר קישורים לעלונים אחרים,
+ * לתיקון מצב שבו אותו חומר מופיע בכמה עלונים.
+ */
+export const reassignResourceToBulletin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ bulletin_id: uuid, resource_id: uuid }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { error: delErr } = await context.supabase
+      .from("bulletin_resources")
+      .delete()
+      .eq("resource_id", data.resource_id)
+      .neq("bulletin_id", data.bulletin_id);
+    if (delErr) { console.error("[DB]", delErr); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    const { error } = await context.supabase
+      .from("bulletin_resources")
+      .upsert({ bulletin_id: data.bulletin_id, resource_id: data.resource_id, owner_id: context.userId } as never,
+        { onConflict: "bulletin_id,resource_id" });
+    if (error) { console.error("[DB]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    return { ok: true };
   });
 
 /** Generate a question bank resource for the week's study points. */
