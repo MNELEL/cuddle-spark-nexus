@@ -15,13 +15,14 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import {
   listBulletins, generateBulletin, saveBulletin, deleteBulletin,
-  type BulletinDraft, type StoredBulletin,
+  publishBulletin, unpublishBulletin, listBulletinVersions,
+  type BulletinDraft, type StoredBulletin, type BulletinSnapshot,
 } from "@/lib/bulletins.functions";
 import {
   suggestResourcesForBulletin, listBulletinResources, linkResourceToBulletin,
   generateQuizFromBulletin,
 } from "@/lib/bulletin-sync.functions";
-import { Library, Link2, Wand2 } from "lucide-react";
+import { Library, Link2, Wand2, Lock, Unlock, History, Send } from "lucide-react";
 import { buildBulletinPdf } from "@/lib/pdf/bulletin-pdf";
 import { downloadPdfBlob } from "@/lib/pdf/pdf-builder";
 import { PdfPreviewDialog } from "@/components/pdf/pdf-preview-dialog";
@@ -39,13 +40,17 @@ function weekAgoIso() {
   return d.toISOString().slice(0, 10);
 }
 
-type Editing = (BulletinDraft & { id?: string; startDate: string; endDate: string; notes: string }) | null;
+type Editing = (BulletinDraft & {
+  id?: string; startDate: string; endDate: string; notes: string;
+  status?: "draft" | "published";
+}) | null;
 
 function emptyDraft(): NonNullable<Editing> {
   return {
     title: "", digest_summary: "", study_points: [], recap_questions: [],
     weekly_riddle: "", weekly_riddle_answer: "", activities: [],
     startDate: weekAgoIso(), endDate: todayIso(), notes: "",
+    status: "draft",
   };
 }
 
@@ -58,6 +63,7 @@ function fromStored(b: StoredBulletin): NonNullable<Editing> {
     weekly_riddle: b.weekly_riddle, weekly_riddle_answer: b.weekly_riddle_answer,
     activities: b.activities ?? [],
     startDate: b.start_date, endDate: b.end_date, notes: b.notes ?? "",
+    status: b.status ?? "draft",
   };
 }
 
@@ -68,6 +74,8 @@ function BulletinsPage() {
   const gen = useServerFn(generateBulletin);
   const save = useServerFn(saveBulletin);
   const del = useServerFn(deleteBulletin);
+  const publish = useServerFn(publishBulletin);
+  const unpublish = useServerFn(unpublishBulletin);
   const getCls = useServerFn(getClass);
 
   const [editing, setEditing] = useState<Editing>(null);
@@ -139,6 +147,29 @@ function BulletinsPage() {
     },
   });
 
+  const publishMut = useMutation({
+    mutationFn: (id: string) => publish({ data: { id } }),
+    onSuccess: () => {
+      toast.success("העלון פורסם ונעול לעריכה");
+      setEditing((prev) => prev ? { ...prev, status: "published" } : prev);
+      qc.invalidateQueries({ queryKey: ["bulletins", classId] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
+  });
+
+  const unpublishMut = useMutation({
+    mutationFn: (id: string) => unpublish({ data: { id } }),
+    onSuccess: (_r, id) => {
+      toast.success("הנעילה שוחררה — ניתן לערוך");
+      setEditing((prev) => prev ? { ...prev, status: "draft" } : prev);
+      qc.invalidateQueries({ queryKey: ["bulletins", classId] });
+      qc.invalidateQueries({ queryKey: ["bulletin-versions", id] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
+  });
+
+  const locked = editing?.status === "published";
+
   function updateField<K extends keyof NonNullable<Editing>>(k: K, v: NonNullable<Editing>[K]) {
     setEditing((prev) => prev ? { ...prev, [k]: v } : prev);
   }
@@ -203,15 +234,32 @@ function BulletinsPage() {
             {/* Controls */}
             <Card className="print:hidden">
               <CardContent className="space-y-3 pt-4">
+                {locked && (
+                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber/40 bg-amber/5 p-3">
+                    <div className="flex items-center gap-2 text-sm font-medium">
+                      <Lock className="h-4 w-4 text-amber" aria-hidden="true" />
+                      העלון פורסם ונעול לעריכה
+                    </div>
+                    <Button size="sm" variant="outline" disabled={unpublishMut.isPending}
+                      onClick={() => {
+                        if (!editing.id) return;
+                        if (confirm("לשחרר את נעילת העלון לעריכה? הגרסה הנוכחית תישמר בהיסטוריה.")) {
+                          unpublishMut.mutate(editing.id);
+                        }
+                      }}>
+                      <Unlock className="ms-1 h-4 w-4" aria-hidden="true" /> שחרר נעילה לעריכה
+                    </Button>
+                  </div>
+                )}
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
                     <Label className="text-xs">מתאריך</Label>
-                    <Input type="date" value={editing.startDate}
+                    <Input type="date" value={editing.startDate} disabled={locked}
                       onChange={(e) => updateField("startDate", e.target.value)} />
                   </div>
                   <div>
                     <Label className="text-xs">עד תאריך</Label>
-                    <Input type="date" value={editing.endDate}
+                    <Input type="date" value={editing.endDate} disabled={locked}
                       onChange={(e) => updateField("endDate", e.target.value)} />
                   </div>
                 </div>
@@ -219,19 +267,28 @@ function BulletinsPage() {
                   <Label className="text-xs">תקציר שיעורים / הערות הרב (אופציונלי, יזין את ה-AI)</Label>
                   <Textarea
                     rows={3}
+                    disabled={locked}
                     placeholder='למשל: "השבוע למדנו דף ל"ב בברכות, הוספנו מסכת תפילין, היה מבחן בחומש שמות..."'
                     value={lessonNotes}
                     onChange={(e) => setLessonNotes(e.target.value)}
                   />
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Button onClick={() => generateMut.mutate()} disabled={generateMut.isPending}>
+                  <Button onClick={() => generateMut.mutate()} disabled={generateMut.isPending || locked}>
                     {generateMut.isPending ? <Loader2 className="ms-1 h-4 w-4 animate-spin" /> : <Sparkles className="ms-1 h-4 w-4" />}
                     {editing.title ? "צור מחדש עם AI" : "צור עלון עם AI"}
                   </Button>
-                  <Button variant="outline" onClick={() => saveMut.mutate()} disabled={saveMut.isPending || !editing.title}>
-                    <Save className="ms-1 h-4 w-4" /> שמור
-                  </Button>
+                  {!locked && (
+                    <Button variant="outline" onClick={() => saveMut.mutate()} disabled={saveMut.isPending || !editing.title}>
+                      <Save className="ms-1 h-4 w-4" /> שמור
+                    </Button>
+                  )}
+                  {!locked && editing.id && (
+                    <Button variant="outline" disabled={publishMut.isPending || !editing.title}
+                      onClick={() => editing.id && publishMut.mutate(editing.id)}>
+                      <Send className="ms-1 h-4 w-4" aria-hidden="true" /> פרסם
+                    </Button>
+                  )}
                   <Button variant="outline" onClick={() => window.print()}>
                     <Printer className="ms-1 h-4 w-4" /> הדפס / PDF
                   </Button>
@@ -258,6 +315,7 @@ function BulletinsPage() {
                   <Input
                     className="!text-2xl !font-bold border-0 focus-visible:ring-0 px-0 print:!border-0"
                     value={editing.title}
+                    disabled={locked}
                     placeholder="כותרת העלון…"
                     onChange={(e) => updateField("title", e.target.value)}
                   />
@@ -272,6 +330,7 @@ function BulletinsPage() {
                   <h2 className="mb-2 text-lg font-semibold text-primary">סיכום השבוע</h2>
                   <Textarea
                     rows={6}
+                    disabled={locked}
                     className="border-0 px-0 focus-visible:ring-0 print:border-0"
                     value={editing.digest_summary}
                     onChange={(e) => updateField("digest_summary", e.target.value)}
@@ -282,6 +341,7 @@ function BulletinsPage() {
                   <h2 className="mb-2 text-lg font-semibold text-primary">נקודות לימוד</h2>
                   <Textarea
                     rows={4}
+                    disabled={locked}
                     className="border-0 px-0 focus-visible:ring-0 print:border-0"
                     placeholder="נקודה אחת בשורה…"
                     value={editing.study_points.join("\n")}
@@ -303,6 +363,7 @@ function BulletinsPage() {
                         <Input
                           className="!font-medium border-0 focus-visible:ring-0 px-0"
                           value={q.question}
+                          disabled={locked}
                           onChange={(e) => {
                             const arr = [...editing.recap_questions];
                             arr[i] = { ...arr[i], question: e.target.value };
@@ -313,6 +374,7 @@ function BulletinsPage() {
                         <Input
                           className="!text-sm !text-muted-foreground border-0 focus-visible:ring-0 px-0"
                           value={q.answer}
+                          disabled={locked}
                           onChange={(e) => {
                             const arr = [...editing.recap_questions];
                             arr[i] = { ...arr[i], answer: e.target.value };
@@ -323,6 +385,7 @@ function BulletinsPage() {
                       </div>
                     ))}
                     <Button variant="outline" size="sm" className="print:hidden"
+                      disabled={locked}
                       onClick={() => updateField("recap_questions",
                         [...editing.recap_questions, { question: "", answer: "" }])}>
                       <Plus className="ms-1 h-4 w-4" /> הוסף שאלה
@@ -336,12 +399,14 @@ function BulletinsPage() {
                     className="mt-2 !font-semibold border-0 focus-visible:ring-0 px-0"
                     placeholder="חידה…"
                     value={editing.weekly_riddle}
+                    disabled={locked}
                     onChange={(e) => updateField("weekly_riddle", e.target.value)}
                   />
                   <Input
                     className="mt-1 !text-sm !text-muted-foreground border-0 focus-visible:ring-0 px-0"
                     placeholder="תשובה (בעמוד הבא של העלון)…"
                     value={editing.weekly_riddle_answer}
+                    disabled={locked}
                     onChange={(e) => updateField("weekly_riddle_answer", e.target.value)}
                   />
                 </section>
@@ -350,6 +415,7 @@ function BulletinsPage() {
                   <h2 className="mb-2 text-lg font-semibold text-primary">פעילויות ויוזמות</h2>
                   <Textarea
                     rows={3}
+                    disabled={locked}
                     className="border-0 px-0 focus-visible:ring-0 print:border-0"
                     placeholder="פעילות אחת בשורה…"
                     value={editing.activities.join("\n")}
@@ -359,7 +425,28 @@ function BulletinsPage() {
                 </section>
 
                 {editing.id && (
-                  <BulletinSyncPanel bulletinId={editing.id} classId={classId} />
+                  <>
+                    <BulletinSyncPanel bulletinId={editing.id} classId={classId} />
+                    <BulletinVersionsPanel
+                      bulletinId={editing.id}
+                      onLoad={(snap) => {
+                        setEditing((prev) => prev ? {
+                          ...prev,
+                          title: snap.title,
+                          digest_summary: snap.digest_summary,
+                          study_points: snap.study_points ?? [],
+                          recap_questions: snap.recap_questions ?? [],
+                          weekly_riddle: snap.weekly_riddle,
+                          weekly_riddle_answer: snap.weekly_riddle_answer,
+                          activities: snap.activities ?? [],
+                          notes: snap.notes ?? "",
+                          startDate: snap.start_date ?? prev.startDate,
+                          endDate: snap.end_date ?? prev.endDate,
+                        } : prev);
+                        toast.success("הגרסה נטענה לטופס — לא נשמרה עדיין");
+                      }}
+                    />
+                  </>
                 )}
               </CardContent>
             </Card>
@@ -378,6 +465,48 @@ function BulletinsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+/** Version history of a bulletin — clicking a version loads it into the form (no auto-save). */
+function BulletinVersionsPanel({
+  bulletinId, onLoad,
+}: { bulletinId: string; onLoad: (snapshot: BulletinSnapshot) => void }) {
+  const listVersions = useServerFn(listBulletinVersions);
+  const { data: versions = [], isLoading } = useQuery({
+    queryKey: ["bulletin-versions", bulletinId],
+    queryFn: () => listVersions({ data: { bulletinId } }),
+  });
+
+  return (
+    <section className="print:hidden space-y-2 rounded-xl border bg-muted/20 p-4">
+      <div className="flex items-center gap-2">
+        <History className="h-4 w-4 text-amber" aria-hidden="true" />
+        <h3 className="font-semibold">היסטוריית גרסאות</h3>
+      </div>
+      {isLoading && <div className="text-sm text-muted-foreground">טוען…</div>}
+      {!isLoading && versions.length === 0 && (
+        <div className="text-sm text-muted-foreground">
+          אין עדיין גרסאות קודמות. גרסה נשמרת בכל שחרור נעילה של עלון שפורסם.
+        </div>
+      )}
+      <ul className="space-y-1">
+        {versions.map((v) => (
+          <li key={v.id}>
+            <button
+              type="button"
+              onClick={() => onLoad(v.snapshot)}
+              className="min-h-9 w-full rounded-md border bg-card px-3 py-2 text-right text-sm transition hover:border-amber/40 focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <span className="font-medium">{v.snapshot?.title || "(ללא כותרת)"}</span>
+              <span className="ms-2 text-xs text-muted-foreground">
+                נשמר: {new Date(v.created_at).toLocaleString("he-IL")}
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
