@@ -303,9 +303,9 @@ export const getClass = createServerFn({ method: "POST" })
       .from("classes")
       .select("*")
       .eq("id", data.id)
-      .single();
+      .maybeSingle();
     if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
-    return row;
+    return row ?? null;
   });
 
 export const ROOM_OBJECT_TYPES = [
