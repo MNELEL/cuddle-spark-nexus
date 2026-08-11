@@ -315,6 +315,7 @@ function BulletinsPage() {
                   <Input
                     className="!text-2xl !font-bold border-0 focus-visible:ring-0 px-0 print:!border-0"
                     value={editing.title}
+                    disabled={locked}
                     placeholder="כותרת העלון…"
                     onChange={(e) => updateField("title", e.target.value)}
                   />
@@ -329,6 +330,7 @@ function BulletinsPage() {
                   <h2 className="mb-2 text-lg font-semibold text-primary">סיכום השבוע</h2>
                   <Textarea
                     rows={6}
+                    disabled={locked}
                     className="border-0 px-0 focus-visible:ring-0 print:border-0"
                     value={editing.digest_summary}
                     onChange={(e) => updateField("digest_summary", e.target.value)}
@@ -339,6 +341,7 @@ function BulletinsPage() {
                   <h2 className="mb-2 text-lg font-semibold text-primary">נקודות לימוד</h2>
                   <Textarea
                     rows={4}
+                    disabled={locked}
                     className="border-0 px-0 focus-visible:ring-0 print:border-0"
                     placeholder="נקודה אחת בשורה…"
                     value={editing.study_points.join("\n")}
@@ -360,6 +363,7 @@ function BulletinsPage() {
                         <Input
                           className="!font-medium border-0 focus-visible:ring-0 px-0"
                           value={q.question}
+                          disabled={locked}
                           onChange={(e) => {
                             const arr = [...editing.recap_questions];
                             arr[i] = { ...arr[i], question: e.target.value };
@@ -370,6 +374,7 @@ function BulletinsPage() {
                         <Input
                           className="!text-sm !text-muted-foreground border-0 focus-visible:ring-0 px-0"
                           value={q.answer}
+                          disabled={locked}
                           onChange={(e) => {
                             const arr = [...editing.recap_questions];
                             arr[i] = { ...arr[i], answer: e.target.value };
@@ -380,6 +385,7 @@ function BulletinsPage() {
                       </div>
                     ))}
                     <Button variant="outline" size="sm" className="print:hidden"
+                      disabled={locked}
                       onClick={() => updateField("recap_questions",
                         [...editing.recap_questions, { question: "", answer: "" }])}>
                       <Plus className="ms-1 h-4 w-4" /> הוסף שאלה
@@ -393,12 +399,14 @@ function BulletinsPage() {
                     className="mt-2 !font-semibold border-0 focus-visible:ring-0 px-0"
                     placeholder="חידה…"
                     value={editing.weekly_riddle}
+                    disabled={locked}
                     onChange={(e) => updateField("weekly_riddle", e.target.value)}
                   />
                   <Input
                     className="mt-1 !text-sm !text-muted-foreground border-0 focus-visible:ring-0 px-0"
                     placeholder="תשובה (בעמוד הבא של העלון)…"
                     value={editing.weekly_riddle_answer}
+                    disabled={locked}
                     onChange={(e) => updateField("weekly_riddle_answer", e.target.value)}
                   />
                 </section>
@@ -407,6 +415,7 @@ function BulletinsPage() {
                   <h2 className="mb-2 text-lg font-semibold text-primary">פעילויות ויוזמות</h2>
                   <Textarea
                     rows={3}
+                    disabled={locked}
                     className="border-0 px-0 focus-visible:ring-0 print:border-0"
                     placeholder="פעילות אחת בשורה…"
                     value={editing.activities.join("\n")}
@@ -416,7 +425,28 @@ function BulletinsPage() {
                 </section>
 
                 {editing.id && (
-                  <BulletinSyncPanel bulletinId={editing.id} classId={classId} />
+                  <>
+                    <BulletinSyncPanel bulletinId={editing.id} classId={classId} />
+                    <BulletinVersionsPanel
+                      bulletinId={editing.id}
+                      onLoad={(snap) => {
+                        setEditing((prev) => prev ? {
+                          ...prev,
+                          title: snap.title,
+                          digest_summary: snap.digest_summary,
+                          study_points: snap.study_points ?? [],
+                          recap_questions: snap.recap_questions ?? [],
+                          weekly_riddle: snap.weekly_riddle,
+                          weekly_riddle_answer: snap.weekly_riddle_answer,
+                          activities: snap.activities ?? [],
+                          notes: snap.notes ?? "",
+                          startDate: snap.start_date ?? prev.startDate,
+                          endDate: snap.end_date ?? prev.endDate,
+                        } : prev);
+                        toast.success("הגרסה נטענה לטופס — לא נשמרה עדיין");
+                      }}
+                    />
+                  </>
                 )}
               </CardContent>
             </Card>
