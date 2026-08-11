@@ -22,10 +22,10 @@ import {
 } from "@/lib/bulletins.functions";
 import {
   suggestResourcesForBulletin, listBulletinResources, linkResourceToBulletin,
-  generateQuizFromBulletin, generateQuizFromSchedule,
+  generateQuizFromBulletin, generateQuizFromSchedule, listScheduleResources,
 } from "@/lib/bulletin-sync.functions";
 import { BulletinImportQuestionsDialog } from "@/components/bulletin-import-questions-dialog";
-import { Library, Link2, Wand2, Lock, Unlock, History, Send } from "lucide-react";
+import { Library, Link2, Wand2, Lock, Unlock, History, Send, ExternalLink, GripVertical, ArrowUp, ArrowDown } from "lucide-react";
 import { buildBulletinPdf } from "@/lib/pdf/bulletin-pdf";
 import { downloadPdfBlob } from "@/lib/pdf/pdf-builder";
 import { PdfPreviewDialog } from "@/components/pdf/pdf-preview-dialog";
@@ -104,7 +104,9 @@ function BulletinsPage() {
   const [lessonNotes, setLessonNotes] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
   const genFromSchedule = useServerFn(generateQuizFromSchedule);
+  const listSchedRes = useServerFn(listScheduleResources);
 
   const { data: bulletins, isLoading } = useQuery({
     queryKey: ["bulletins", classId],
@@ -207,9 +209,19 @@ function BulletinsPage() {
     onSuccess: () => {
       toast.success("דף שאלות נוצר בספרייה ושויך לעלון");
       qc.invalidateQueries({ queryKey: ["teaching-resources"] });
-      if (editing?.id) qc.invalidateQueries({ queryKey: ["bulletin-linked", editing.id] });
+      if (editing?.id) {
+        qc.invalidateQueries({ queryKey: ["bulletin-linked", editing.id] });
+        qc.invalidateQueries({ queryKey: ["bulletin-schedule-resources", editing.id] });
+      }
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
+  });
+
+  /** חומרים שנוצרו אוטומטית מההספק — כדי להציג קישור לעריכה ולאישור הקשר לעלון. */
+  const { data: scheduleResources = [] } = useQuery({
+    queryKey: ["bulletin-schedule-resources", editing?.id ?? ""],
+    queryFn: () => listSchedRes({ data: { bulletin_id: editing!.id! } }),
+    enabled: !!editing?.id,
   });
 
   function updateField<K extends keyof NonNullable<Editing>>(k: K, v: NonNullable<Editing>[K]) {
@@ -222,6 +234,18 @@ function BulletinsPage() {
       const current = (prev.study_schedule ?? {}) as Record<string, Record<string, string>>;
       const row = { ...(current[key] ?? {}), [field]: value };
       return { ...prev, study_schedule: { ...current, [key]: row } as StudySchedule };
+    });
+  }
+
+  /** סידור מחדש של ההודעות המיוחדות — הסדר בטופס הוא הסדר בעלון. */
+  function moveNotice(from: number, to: number) {
+    setEditing((prev) => {
+      if (!prev) return prev;
+      if (to < 0 || to >= prev.special_notices.length || from === to) return prev;
+      const arr = [...prev.special_notices];
+      const [item] = arr.splice(from, 1);
+      arr.splice(to, 0, item!);
+      return { ...prev, special_notices: arr };
     });
   }
 
