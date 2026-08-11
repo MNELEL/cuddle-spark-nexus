@@ -2939,7 +2939,7 @@ export type Database = {
     Functions: {
       export_my_data: { Args: never; Returns: Json }
       match_resource_chunks: {
-        Args: { match_count?: number; owner: string; query_embedding: string }
+        Args: { match_count?: number; query_embedding: string }
         Returns: {
           chunk_index: number
           content: string
