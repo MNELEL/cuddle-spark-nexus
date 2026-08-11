@@ -39,7 +39,7 @@ export function pickRuns(manifest) {
   return [...byUrl.values()];
 }
 
-export function buildSummary({ manifest, assertions = [], thresholds }) {
+export function buildSummary({ manifest, assertions = [], thresholds, label = "" }) {
   const runs = pickRuns(manifest);
   const rows = runs.map((run) => {
     const path = new URL(run.url).pathname || "/";
@@ -74,7 +74,7 @@ export function buildSummary({ manifest, assertions = [], thresholds }) {
   ).join(" · ");
 
   const lines = [
-    "## 🔎 Lighthouse",
+    `## 🔎 Lighthouse${label ? ` — ${label}` : ""}`,
     "",
     `Thresholds: ${thresholdLine}. Scores are the median of the configured runs against a production build served by workerd.`,
     "",
@@ -108,8 +108,8 @@ export function buildSummary({ manifest, assertions = [], thresholds }) {
   return { markdown: lines.join("\n"), rows, failures };
 }
 
-function readJson(file) {
-  const path = resolve(LHCI_DIR, file);
+function readJson(file, dir = LHCI_DIR) {
+  const path = resolve(dir, file);
   if (!existsSync(path)) return null;
   try {
     return JSON.parse(readFileSync(path, "utf8"));
@@ -118,22 +118,26 @@ function readJson(file) {
   }
 }
 
-export function summaryFromDisk(thresholds) {
-  const manifest = readJson("manifest.json");
+export function summaryFromDisk(thresholds, { dir = LHCI_DIR, label = "" } = {}) {
+  const manifest = readJson("manifest.json", dir);
   if (!manifest || !manifest.length) {
     return {
-      markdown: "## 🔎 Lighthouse\n\nNo Lighthouse results were produced — the collection step failed before any page was audited.\n",
+      markdown: `## 🔎 Lighthouse${label ? ` — ${label}` : ""}\n\nNo Lighthouse results were produced — the collection step failed before any page was audited.\n`,
       rows: [],
       failures: [],
     };
   }
-  const assertions = readJson("assertion-results.json") ?? [];
-  return buildSummary({ manifest, assertions, thresholds });
+  const assertions = readJson("assertion-results.json", dir) ?? [];
+  return buildSummary({ manifest, assertions, thresholds, label });
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const { thresholds } = await import("../lighthouserc.cjs").then((m) => m.default ?? m);
-  const { markdown, failures } = summaryFromDisk(thresholds);
+  const configFile = process.env.LHCI_CONFIG || "../lighthouserc.cjs";
+  const cfg = await import(configFile).then((m) => m.default ?? m);
+  const { markdown, failures } = summaryFromDisk(cfg.thresholds, {
+    dir: process.env.LHCI_DIR || cfg.lhciDir,
+    label: cfg.label,
+  });
   process.stdout.write(`${markdown}\n`);
   if (failures.length) process.exitCode = 1;
 }
