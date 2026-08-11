@@ -389,6 +389,60 @@ function BulletinsPage() {
                 </section>
 
                 <section>
+                  <h2 className="mb-2 text-lg font-semibold text-primary">דבר תורה</h2>
+                  <Input
+                    className="!font-semibold border-0 focus-visible:ring-0 px-0"
+                    placeholder="כותרת דבר התורה…"
+                    value={editing.torah_dvar_title}
+                    disabled={locked}
+                    onChange={(e) => updateField("torah_dvar_title", e.target.value)}
+                  />
+                  <Textarea
+                    rows={7}
+                    disabled={locked}
+                    className="mt-1 border-0 px-0 focus-visible:ring-0 print:border-0"
+                    placeholder="דבר תורה מורחב לעלון…"
+                    value={editing.torah_dvar_body}
+                    onChange={(e) => updateField("torah_dvar_body", e.target.value)}
+                  />
+                </section>
+
+                <section>
+                  <h2 className="mb-2 text-lg font-semibold text-primary">ההספק הלימודי</h2>
+                  <div className="space-y-2">
+                    {SCHEDULE_ROWS.map((row) => {
+                      const cur = ((editing.study_schedule ?? {}) as Record<string, Record<string, string>>)[row.key] ?? {};
+                      return (
+                        <div key={row.key} className="grid items-center gap-2 rounded-lg border p-2 sm:grid-cols-[80px_1fr_1fr_auto]">
+                          <div className="text-sm font-medium">{row.label}</div>
+                          <Input
+                            placeholder={row.a[1]} disabled={locked}
+                            value={cur[row.a[0]] ?? ""}
+                            onChange={(e) => updateSchedule(row.key, row.a[0], e.target.value)}
+                          />
+                          <Input
+                            placeholder={row.b[1]} disabled={locked}
+                            value={cur[row.b[0]] ?? ""}
+                            onChange={(e) => updateSchedule(row.key, row.b[0], e.target.value)}
+                          />
+                          <Button
+                            size="sm" variant="outline" className="print:hidden"
+                            disabled={!editing.id || scheduleQuizMut.isPending}
+                            title="צור דף שאלות חזרה בספרייה לפי ההספק במקצוע הזה"
+                            onClick={() => scheduleQuizMut.mutate(row.key)}
+                          >
+                            <Wand2 className="ms-1 h-3 w-3" aria-hidden="true" /> צור חומר
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground print:hidden">
+                    שמור את העלון כדי לאפשר יצירת חומר לפי ההספק.
+                  </p>
+                </section>
+
+                <section>
                   <h2 className="mb-2 text-lg font-semibold text-primary">נקודות לימוד</h2>
                   <Textarea
                     rows={4}
@@ -435,12 +489,20 @@ function BulletinsPage() {
                         />
                       </div>
                     ))}
-                    <Button variant="outline" size="sm" className="print:hidden"
-                      disabled={locked}
-                      onClick={() => updateField("recap_questions",
-                        [...editing.recap_questions, { question: "", answer: "" }])}>
-                      <Plus className="ms-1 h-4 w-4" /> הוסף שאלה
-                    </Button>
+                    <div className="flex flex-wrap gap-2 print:hidden">
+                      <Button variant="outline" size="sm"
+                        disabled={locked}
+                        onClick={() => updateField("recap_questions",
+                          [...editing.recap_questions, { question: "", answer: "" }])}>
+                        <Plus className="ms-1 h-4 w-4" /> הוסף שאלה
+                      </Button>
+                      <Button variant="outline" size="sm"
+                        disabled={locked || !editing.id}
+                        title={editing.id ? undefined : "שמור את העלון כדי לייבא שאלות"}
+                        onClick={() => setImportOpen(true)}>
+                        <Library className="ms-1 h-4 w-4" aria-hidden="true" /> ייבא משאלות קיימות בספרייה
+                      </Button>
+                    </div>
                   </div>
                 </section>
 
@@ -475,6 +537,92 @@ function BulletinsPage() {
                   />
                 </section>
 
+                <section>
+                  <h2 className="mb-2 text-lg font-semibold text-primary">יישר כח ומזל טוב</h2>
+                  <div className="space-y-2">
+                    {editing.honored_students.map((h, i) => (
+                      <div key={i} className="grid gap-2 rounded-lg border p-2 sm:grid-cols-[1fr_160px_1fr_auto]">
+                        <Input
+                          placeholder="שם התלמיד…" value={h.name} disabled={locked}
+                          onChange={(e) => {
+                            const arr = [...editing.honored_students];
+                            arr[i] = { ...arr[i], name: e.target.value };
+                            updateField("honored_students", arr);
+                          }}
+                        />
+                        <select
+                          className="h-9 rounded-md border bg-background px-2 text-sm"
+                          value={h.type} disabled={locked}
+                          aria-label="סוג ההוקרה"
+                          onChange={(e) => {
+                            const arr = [...editing.honored_students];
+                            arr[i] = { ...arr[i], type: e.target.value as HonoredStudent["type"] };
+                            updateField("honored_students", arr);
+                          }}
+                        >
+                          {HONOR_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+                        </select>
+                        <Input
+                          placeholder="הערה (אופציונלי)…" value={h.note} disabled={locked}
+                          onChange={(e) => {
+                            const arr = [...editing.honored_students];
+                            arr[i] = { ...arr[i], note: e.target.value };
+                            updateField("honored_students", arr);
+                          }}
+                        />
+                        <Button variant="ghost" size="sm" className="text-destructive print:hidden" disabled={locked}
+                          onClick={() => updateField("honored_students",
+                            editing.honored_students.filter((_, j) => j !== i))}>
+                          <Trash2 className="h-4 w-4" aria-hidden="true" />
+                        </Button>
+                      </div>
+                    ))}
+                    <Button variant="outline" size="sm" className="print:hidden" disabled={locked}
+                      onClick={() => updateField("honored_students",
+                        [...editing.honored_students, { name: "", type: "other" as const, note: "" }])}>
+                      <Plus className="ms-1 h-4 w-4" /> הוסף תלמיד
+                    </Button>
+                  </div>
+                </section>
+
+                <section>
+                  <h2 className="mb-2 text-lg font-semibold text-primary">הודעות מיוחדות</h2>
+                  <div className="space-y-2">
+                    {editing.special_notices.map((n, i) => (
+                      <div key={i} className="space-y-1 rounded-lg border p-2">
+                        <div className="flex items-center gap-2">
+                          <Input
+                            className="!font-medium" placeholder="כותרת ההודעה…" value={n.title} disabled={locked}
+                            onChange={(e) => {
+                              const arr = [...editing.special_notices];
+                              arr[i] = { ...arr[i], title: e.target.value };
+                              updateField("special_notices", arr);
+                            }}
+                          />
+                          <Button variant="ghost" size="sm" className="text-destructive print:hidden" disabled={locked}
+                            onClick={() => updateField("special_notices",
+                              editing.special_notices.filter((_, j) => j !== i))}>
+                            <Trash2 className="h-4 w-4" aria-hidden="true" />
+                          </Button>
+                        </div>
+                        <Textarea
+                          rows={2} placeholder="תוכן ההודעה…" value={n.body} disabled={locked}
+                          onChange={(e) => {
+                            const arr = [...editing.special_notices];
+                            arr[i] = { ...arr[i], body: e.target.value };
+                            updateField("special_notices", arr);
+                          }}
+                        />
+                      </div>
+                    ))}
+                    <Button variant="outline" size="sm" className="print:hidden" disabled={locked}
+                      onClick={() => updateField("special_notices",
+                        [...editing.special_notices, { title: "", body: "" } as SpecialNotice])}>
+                      <Plus className="ms-1 h-4 w-4" /> הוסף הודעה מיוחדת
+                    </Button>
+                  </div>
+                </section>
+
                 {editing.id && (
                   <>
                     <BulletinSyncPanel bulletinId={editing.id} classId={classId} />
@@ -493,6 +641,7 @@ function BulletinsPage() {
                           notes: snap.notes ?? "",
                           startDate: snap.start_date ?? prev.startDate,
                           endDate: snap.end_date ?? prev.endDate,
+                          ...normalizeExtras(snap),
                         } : prev);
                         toast.success("הגרסה נטענה לטופס — לא נשמרה עדיין");
                       }}
@@ -512,6 +661,15 @@ function BulletinsPage() {
               textFilename={`עלון_${editing.startDate}.md`}
               textMime="text/markdown"
             />
+
+            {editing.id && (
+              <BulletinImportQuestionsDialog
+                open={importOpen}
+                onOpenChange={setImportOpen}
+                bulletinId={editing.id}
+                onImport={(qs) => updateField("recap_questions", [...editing.recap_questions, ...qs])}
+              />
+            )}
           </div>
         )}
       </div>
