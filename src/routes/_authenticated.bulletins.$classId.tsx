@@ -23,6 +23,7 @@ import {
 import {
   suggestResourcesForBulletin, listBulletinResources, linkResourceToBulletin,
   generateQuizFromBulletin, generateQuizFromSchedule, listScheduleResources,
+  reassignResourceToBulletin,
 } from "@/lib/bulletin-sync.functions";
 import { BulletinImportQuestionsDialog } from "@/components/bulletin-import-questions-dialog";
 import { Library, Link2, Wand2, Lock, Unlock, History, Send, ExternalLink, GripVertical, ArrowUp, ArrowDown } from "lucide-react";
@@ -107,6 +108,23 @@ function BulletinsPage() {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const genFromSchedule = useServerFn(generateQuizFromSchedule);
   const listSchedRes = useServerFn(listScheduleResources);
+  const reassignRes = useServerFn(reassignResourceToBulletin);
+
+  /** תיקון עקביות: העברת חומר שמקושר גם לעלון אחר אל העלון הנוכחי בלבד. */
+  const reassignMut = useMutation({
+    mutationFn: (resourceId: string) => {
+      if (!editing?.id) throw new Error("שמור את העלון קודם");
+      return reassignRes({ data: { bulletin_id: editing.id, resource_id: resourceId } });
+    },
+    onSuccess: () => {
+      toast.success("הקישור עודכן — החומר משויך כעת לעלון הזה בלבד");
+      if (editing?.id) {
+        qc.invalidateQueries({ queryKey: ["bulletin-schedule-resources", editing.id] });
+        qc.invalidateQueries({ queryKey: ["bulletin-linked", editing.id] });
+      }
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
+  });
 
   const { data: bulletins, isLoading } = useQuery({
     queryKey: ["bulletins", classId],
@@ -463,8 +481,11 @@ function BulletinsPage() {
                           {generated.length > 0 && (
                             <div className="mt-2 space-y-1 print:hidden">
                               {generated.map((r) => (
-                                <div key={r.id} className="flex flex-wrap items-center gap-2 rounded-md bg-muted/40 px-2 py-1 text-xs">
-                                  <Badge variant="outline" className="border-amber text-amber">מקושר לעלון</Badge>
+                                <div key={r.id} className="rounded-md bg-muted/40 px-2 py-1 text-xs">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                  {r.other_bulletins.length > 0
+                                    ? <Badge variant="destructive">מקושר גם לעלון אחר</Badge>
+                                    : <Badge variant="outline" className="border-amber text-amber">מקושר לעלון</Badge>}
                                   <Link
                                     to="/resources/$resourceId" params={{ resourceId: r.id }}
                                     className="font-medium hover:underline"
@@ -477,6 +498,22 @@ function BulletinsPage() {
                                   >
                                     <ExternalLink className="h-3 w-3" aria-hidden="true" /> פתח לעריכה
                                   </Link>
+                                  </div>
+                                  {r.other_bulletins.length > 0 && (
+                                    <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+                                      <span>
+                                        אזהרה: החומר משויך גם ל{r.other_bulletins.length > 1 ? "-" : ""}
+                                        {r.other_bulletins.map((b) => b.title).join(", ")}.
+                                      </span>
+                                      <Button
+                                        size="sm" variant="outline" className="h-6 px-2 text-[11px]"
+                                        disabled={reassignMut.isPending}
+                                        onClick={() => reassignMut.mutate(r.id)}
+                                      >
+                                        עדכן קישור לעלון הזה
+                                      </Button>
+                                    </div>
+                                  )}
                                 </div>
                               ))}
                             </div>
