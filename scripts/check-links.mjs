@@ -45,6 +45,20 @@ const ALLOWED_HOSTS = [
   "api.whatsapp.com",
   "wa.me",
   "tanstack.com",
+  "js.hcaptcha.com",
+  "api.hcaptcha.com",
+  "hcaptcha.com",
+  "api.resend.com",
+  "ai.gateway.lovable.dev",
+  "storage.googleapis.com",
+];
+
+/** XML/SVG namespace identifiers — not navigable links. */
+const NAMESPACE_URLS = [
+  "http://www.w3.org/",
+  "https://www.w3.org/",
+  "http://www.sitemaps.org/",
+  "https://www.sitemaps.org/",
 ];
 
 /** Substrings that must never appear inside a URL. */
@@ -117,6 +131,8 @@ export function extractLinks(text) {
     const value = raw.trim();
     if (!value) return;
     if (IGNORED_PREFIXES.some((p) => value.startsWith(p))) return;
+    if (value.includes("${")) return; // runtime-built URL
+    if (NAMESPACE_URLS.some((n) => value.startsWith(n))) return;
     if (/^https?:\/\//.test(value)) {
       external.add(value.replace(/[.,);'"]+$/, ""));
       return;
