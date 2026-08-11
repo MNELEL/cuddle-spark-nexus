@@ -43,7 +43,13 @@ export async function indexResourceChunks(
     await supabase.from("resource_chunks").delete().eq("resource_id", resourceId);
     if (pieces.length === 0) return { chunks: 0 };
 
-    const rows: { resource_id: string; owner_id: string; chunk_index: number; content: string; embedding: string | null }[] = [];
+    const rows: {
+      resource_id: string;
+      owner_id: string;
+      chunk_index: number;
+      content: string;
+      embedding: string | null;
+    }[] = [];
     for (let idx = 0; idx < pieces.length; idx++) {
       const vec = await embedText(pieces[idx]!);
       rows.push({
