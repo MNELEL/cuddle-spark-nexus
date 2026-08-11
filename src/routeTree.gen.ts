@@ -28,6 +28,7 @@ import { Route as ToolsRouteImport } from './routes/tools'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as AuthenticatedBellScheduleRouteImport } from './routes/_authenticated.bell-schedule'
+import { Route as AuthenticatedContactSheetRouteImport } from './routes/_authenticated.contact-sheet'
 import { Route as AuthenticatedIngestRouteImport } from './routes/_authenticated.ingest'
 import { Route as AuthenticatedInsightsRouteImport } from './routes/_authenticated.insights'
 import { Route as AuthenticatedInstitutionRouteImport } from './routes/_authenticated.institution'
@@ -187,6 +188,12 @@ const AuthenticatedBellScheduleRoute =
   AuthenticatedBellScheduleRouteImport.update({
     id: '/bell-schedule',
     path: '/bell-schedule',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedContactSheetRoute =
+  AuthenticatedContactSheetRouteImport.update({
+    id: '/contact-sheet',
+    path: '/contact-sheet',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedIngestRoute = AuthenticatedIngestRouteImport.update({
@@ -563,6 +570,7 @@ export interface FileRoutesByFullPath {
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/bell-schedule': typeof AuthenticatedBellScheduleRoute
+  '/contact-sheet': typeof AuthenticatedContactSheetRoute
   '/ingest': typeof AuthenticatedIngestRoute
   '/insights': typeof AuthenticatedInsightsRoute
   '/institution': typeof AuthenticatedInstitutionRoute
@@ -642,6 +650,7 @@ export interface FileRoutesByTo {
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/bell-schedule': typeof AuthenticatedBellScheduleRoute
+  '/contact-sheet': typeof AuthenticatedContactSheetRoute
   '/ingest': typeof AuthenticatedIngestRoute
   '/insights': typeof AuthenticatedInsightsRoute
   '/institution': typeof AuthenticatedInstitutionRoute
@@ -726,6 +735,7 @@ export interface FileRoutesById {
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_authenticated/bell-schedule': typeof AuthenticatedBellScheduleRoute
+  '/_authenticated/contact-sheet': typeof AuthenticatedContactSheetRoute
   '/_authenticated/ingest': typeof AuthenticatedIngestRoute
   '/_authenticated/insights': typeof AuthenticatedInsightsRoute
   '/_authenticated/institution': typeof AuthenticatedInstitutionRoute
@@ -811,6 +821,7 @@ export interface FileRouteTypes {
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/bell-schedule'
+    | '/contact-sheet'
     | '/ingest'
     | '/insights'
     | '/institution'
@@ -890,6 +901,7 @@ export interface FileRouteTypes {
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/bell-schedule'
+    | '/contact-sheet'
     | '/ingest'
     | '/insights'
     | '/institution'
@@ -973,6 +985,7 @@ export interface FileRouteTypes {
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/_authenticated/bell-schedule'
+    | '/_authenticated/contact-sheet'
     | '/_authenticated/ingest'
     | '/_authenticated/insights'
     | '/_authenticated/institution'
@@ -1196,6 +1209,13 @@ declare module '@tanstack/react-router' {
       path: '/bell-schedule'
       fullPath: '/bell-schedule'
       preLoaderRoute: typeof AuthenticatedBellScheduleRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/contact-sheet': {
+      id: '/_authenticated/contact-sheet'
+      path: '/contact-sheet'
+      fullPath: '/contact-sheet'
+      preLoaderRoute: typeof AuthenticatedContactSheetRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/ingest': {
@@ -1659,6 +1679,7 @@ const AuthenticatedClassesClassIdRouteWithChildren =
 
 interface AuthenticatedRouteChildren {
   AuthenticatedBellScheduleRoute: typeof AuthenticatedBellScheduleRoute
+  AuthenticatedContactSheetRoute: typeof AuthenticatedContactSheetRoute
   AuthenticatedIngestRoute: typeof AuthenticatedIngestRoute
   AuthenticatedInsightsRoute: typeof AuthenticatedInsightsRoute
   AuthenticatedInstitutionRoute: typeof AuthenticatedInstitutionRoute
@@ -1698,6 +1719,7 @@ interface AuthenticatedRouteChildren {
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedBellScheduleRoute: AuthenticatedBellScheduleRoute,
+  AuthenticatedContactSheetRoute: AuthenticatedContactSheetRoute,
   AuthenticatedIngestRoute: AuthenticatedIngestRoute,
   AuthenticatedInsightsRoute: AuthenticatedInsightsRoute,
   AuthenticatedInstitutionRoute: AuthenticatedInstitutionRoute,
