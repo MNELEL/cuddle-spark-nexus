@@ -507,6 +507,7 @@ function ResourcePreview({ job, onDone }: { job: IngestJob; onDone: () => void }
       subject: form.subject, grade_level: form.grade_level,
       resource_type: form.resource_type, tags: form.tags,
       body: form.body, questions: form.questions,
+      original_text: form.original_text ?? "",
     }}),
     onSuccess: () => { toast.success("החומר נוסף לספרייה"); onDone(); },
     onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
