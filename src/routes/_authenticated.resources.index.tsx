@@ -20,6 +20,10 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { KODESH_SUBJECTS } from "@/lib/kodesh-subjects";
 import {
@@ -127,6 +131,7 @@ function ResourcesPage() {
   const [view, setView] = useState<"items" | "ask">("items");
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [tasksOpen, setTasksOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const viewKeys = useTablistKeys(VIEW_TABS, view, setView);
   const categoryKeys = useTablistKeys(CATEGORY_IDS, category, setCategory);
