@@ -20,6 +20,9 @@ import { getClass, updateClass, type RoomObject, type RoomObjectType, ROOM_OBJEC
 import { listGroups } from "@/lib/groups.functions";
 import { computeViolations, type ScoringStudent, type ScoringRelation } from "@/lib/seating-logic";
 import { SeatingSnapshots } from "@/components/seating-snapshots";
+import { Classroom3D } from "@/components/classroom-3d";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Box } from "lucide-react";
 import { SeatingWizardModal } from "@/components/SeatingWizardModal";
 
 type Student = {
@@ -721,6 +724,27 @@ export function SeatingGrid({ classId }: { classId: string }) {
               updateClassFn({ data: { id: classId, grid_rows: r, grid_cols: c } })
                 .then(() => qc.invalidateQueries({ queryKey: ["class", classId] }))
             } />
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button size="sm" variant="ghost" aria-label="תצוגת מבטים תלת־ממדית">
+                  <Box className="ms-1 h-4 w-4" /> מבטים
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-4xl" dir="rtl">
+                <DialogHeader>
+                  <DialogTitle>מבטי הכיתה בתלת־ממד</DialogTitle>
+                </DialogHeader>
+                <Classroom3D
+                  rows={rows}
+                  cols={cols}
+                  hidden={[...hiddenSet]}
+                  objects={roomObjects.map((o) => ({ row: o.row, col: o.col, type: o.type }))}
+                  seats={students
+                    .filter((st) => st.seat_row !== null && st.seat_col !== null)
+                    .map((st) => ({ row: st.seat_row as number, col: st.seat_col as number, name: st.name }))}
+                />
+              </DialogContent>
+            </Dialog>
             <SeatingSnapshots classId={classId} />
           </div>
         </div>
