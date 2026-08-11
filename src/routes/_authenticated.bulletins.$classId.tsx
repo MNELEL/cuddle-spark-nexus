@@ -103,6 +103,8 @@ function BulletinsPage() {
   const [editing, setEditing] = useState<Editing>(null);
   const [lessonNotes, setLessonNotes] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const genFromSchedule = useServerFn(generateQuizFromSchedule);
 
   const { data: bulletins, isLoading } = useQuery({
     queryKey: ["bulletins", classId],
@@ -151,6 +153,11 @@ function BulletinsPage() {
         study_points: editing.study_points, recap_questions: editing.recap_questions,
         weekly_riddle: editing.weekly_riddle, weekly_riddle_answer: editing.weekly_riddle_answer,
         activities: editing.activities, notes: editing.notes,
+        torah_dvar_title: editing.torah_dvar_title,
+        torah_dvar_body: editing.torah_dvar_body,
+        study_schedule: editing.study_schedule,
+        honored_students: editing.honored_students,
+        special_notices: editing.special_notices,
       } });
     },
     onSuccess: () => {
@@ -192,8 +199,30 @@ function BulletinsPage() {
 
   const locked = editing?.status === "published";
 
+  const scheduleQuizMut = useMutation({
+    mutationFn: (subject: ScheduleKey) => {
+      if (!editing?.id) throw new Error("שמור את העלון לפני יצירת חומר");
+      return genFromSchedule({ data: { bulletin_id: editing.id, subject } });
+    },
+    onSuccess: () => {
+      toast.success("דף שאלות נוצר בספרייה ושויך לעלון");
+      qc.invalidateQueries({ queryKey: ["teaching-resources"] });
+      if (editing?.id) qc.invalidateQueries({ queryKey: ["bulletin-linked", editing.id] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
+  });
+
   function updateField<K extends keyof NonNullable<Editing>>(k: K, v: NonNullable<Editing>[K]) {
     setEditing((prev) => prev ? { ...prev, [k]: v } : prev);
+  }
+
+  function updateSchedule(key: ScheduleKey, field: string, value: string) {
+    setEditing((prev) => {
+      if (!prev) return prev;
+      const current = (prev.study_schedule ?? {}) as Record<string, Record<string, string>>;
+      const row = { ...(current[key] ?? {}), [field]: value };
+      return { ...prev, study_schedule: { ...current, [key]: row } as StudySchedule };
+    });
   }
 
   return (
