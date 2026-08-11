@@ -79,6 +79,7 @@ export const MAP_SECTIONS: MapSection[] = [
       { to: "/settings", label: "מרכז ההגדרות", sub: "קוד PIN, העדפות תזכורות ומצב המנוי — הכול במקום אחד" },
       { to: "/settings/brand", label: "מיתוג המוסד", sub: "לוגו, שם וכותרת שמוטמעים בכל מסמך שמופק מהמערכת" },
       { to: "/settings/theme", label: "ערכת נושא", sub: "בחירת מראה למערכת — נשמרת ומופיעה בכל המכשירים" },
+      { to: "/contact-sheet", label: "דף קשר של המוסד", sub: "הנהלה, צוות, ספקים, בריאות וחירום — תבנית מוכנה והפקה ל-PDF" },
       { to: "/onboarding", label: "המדריך החכם", sub: "שישה שלבים מהקמת כיתה ועד הדוח הראשון להורים" },
       { to: "/institution", label: "לוח המוסד", sub: "ניהול כיתות, מלמדים וצוות המוסד", adminOnly: true },
       { to: "/user-management", label: "ניהול משתמשים והרשאות", sub: "בקשות גישה, הרשאות, מוסדות ותקופות ניסיון", adminOnly: true },

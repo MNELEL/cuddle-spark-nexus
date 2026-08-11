@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as BlogRouteImport } from './routes/blog'
+import { Route as ContactRouteImport } from './routes/contact'
 import { Route as ContentPolicyRouteImport } from './routes/content-policy'
 import { Route as HelpRouteImport } from './routes/help'
 import { Route as LoginRouteImport } from './routes/login'
@@ -105,6 +106,11 @@ const AuthenticatedRoute = AuthenticatedRouteImport.update({
 const BlogRoute = BlogRouteImport.update({
   id: '/blog',
   path: '/blog',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContentPolicyRoute = ContentPolicyRouteImport.update({
@@ -554,6 +560,7 @@ const AuthenticatedClassesClassIdDisplayRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/blog': typeof BlogRouteWithChildren
+  '/contact': typeof ContactRoute
   '/content-policy': typeof ContentPolicyRoute
   '/help': typeof HelpRouteWithChildren
   '/login': typeof LoginRoute
@@ -637,6 +644,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/contact': typeof ContactRoute
   '/content-policy': typeof ContentPolicyRoute
   '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
@@ -719,6 +727,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/blog': typeof BlogRouteWithChildren
+  '/contact': typeof ContactRoute
   '/content-policy': typeof ContentPolicyRoute
   '/help': typeof HelpRouteWithChildren
   '/login': typeof LoginRoute
@@ -805,6 +814,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/blog'
+    | '/contact'
     | '/content-policy'
     | '/help'
     | '/login'
@@ -888,6 +898,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/contact'
     | '/content-policy'
     | '/login'
     | '/mcp'
@@ -969,6 +980,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/blog'
+    | '/contact'
     | '/content-policy'
     | '/help'
     | '/login'
@@ -1055,6 +1067,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   BlogRoute: typeof BlogRouteWithChildren
+  ContactRoute: typeof ContactRoute
   ContentPolicyRoute: typeof ContentPolicyRoute
   HelpRoute: typeof HelpRouteWithChildren
   LoginRoute: typeof LoginRoute
@@ -1097,6 +1110,13 @@ declare module '@tanstack/react-router' {
       path: '/blog'
       fullPath: '/blog'
       preLoaderRoute: typeof BlogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/content-policy': {
@@ -1873,6 +1893,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   BlogRoute: BlogRouteWithChildren,
+  ContactRoute: ContactRoute,
   ContentPolicyRoute: ContentPolicyRoute,
   HelpRoute: HelpRouteWithChildren,
   LoginRoute: LoginRoute,
