@@ -74,6 +74,8 @@ export type ResourceExtracted = {
   resource_type: string;
   tags: string[];
   body: string;
+  /** תמלול/OCR מדויק של המסמך — כפי שהוא, בלי שכתוב. */
+  original_text: string;
   questions: { q: string; a?: string }[];
 };
 export type LessonExtracted = {
