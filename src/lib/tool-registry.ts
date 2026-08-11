@@ -87,6 +87,7 @@ export const TOOLS: ToolEntry[] = [
 /** Routes reachable from the app without a toolkit card (nav, class screens, details). */
 export const NAV_EXEMPT_ROUTES = [
   "/toolkit",
+  "/settings/$",
   "/classes",
   "/classes/$classId",
   "/classes/$classId/display",
