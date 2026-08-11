@@ -258,7 +258,7 @@ function UserManagementPage() {
 
             <div className="grid gap-3 sm:grid-cols-2">
               <Button asChild variant="outline">
-                <a href="mailto:support@classalign.studio?subject=בקשת%20הרשאות%20לניהול%20משתמשים">
+                <a href="mailto:nm0527603669@gmail.com?subject=בקשת%20הרשאות%20לניהול%20משתמשים">
                   יצירת קשר עם מנהל המערכת
                 </a>
               </Button>

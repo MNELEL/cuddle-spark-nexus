@@ -32,7 +32,7 @@ function ContentPolicyPage() {
         <section className="prose prose-sm mt-6 max-w-none space-y-4 text-foreground">
           <h2 className="font-display text-xl font-semibold">נושא האתר</h2>
           <p>
-            "הכיתה שלי" (ClassAlign Studio) הוא כלי ניהול כיתה שנבנה במיוחד עבור תלמודי תורה, חיידרים
+            "הכיתה שלי" הוא כלי ניהול כיתה שנבנה במיוחד עבור תלמודי תורה, חיידרים
             ובתי ספר. האתר מיועד למלמדים, לרבנים ולהנהלות מוסדות, ומשמש לעבודה פדגוגית שוטפת בלבד:
           </p>
           <ul>

@@ -7,53 +7,53 @@ const TITLE = "ClassDojo מול הכיתה שלי — השוואה למלמדי�
 const DESCRIPTION =
   "ClassDojo מול הכיתה שלי: השוואה למלמדים בתלמודי תורה וחיידרים — עברית, מקצועות קודש, פרטיות ודו״חות פדגוגיים.";
 
-type Row = { feature: string; classdojo: string; classalign: string };
+type Row = { feature: string; classdojo: string; hakita: string };
 
 const ROWS: Row[] = [
   {
     feature: "שפת ממשק וכיוון קריאה",
     classdojo: "אנגלית ברירת מחדל, תרגום חלקי לעברית, לא באמת RTL",
-    classalign: "עברית מלאה ו-RTL מקצה לקצה, גופן Heebo מותאם",
+    hakita: "עברית מלאה ו-RTL מקצה לקצה, גופן Heebo מותאם",
   },
   {
     feature: "מונחים חינוכיים",
     classdojo: "\"Teacher\", \"Student\", \"Class\" — כלליים",
-    classalign: "\"הרב\", \"המלמד\", \"חיידר\", \"תלמיד\", \"פרשת שבוע\"",
+    hakita: "\"הרב\", \"המלמד\", \"חיידר\", \"תלמיד\", \"פרשת שבוע\"",
   },
   {
     feature: "מקצועות ברירת מחדל",
     classdojo: "מתמטיקה, אנגלית, מדעים",
-    classalign: "גמרא, משנה, חומש, נביא, הלכה, מוסר, תפילה, פרשת שבוע",
+    hakita: "גמרא, משנה, חומש, נביא, הלכה, מוסר, תפילה, פרשת שבוע",
   },
   {
     feature: "מודל הפרסום להורים",
     classdojo: "פיד חברתי ציבורי (סטוריז, לייקים, תגובות)",
-    classalign: "דו״ח פדגוגי פרטי — PDF שנשלח להורה בלבד",
+    hakita: "דו״ח פדגוגי פרטי — PDF שנשלח להורה בלבד",
   },
   {
     feature: "התנהגות ונקודות",
     classdojo: "נקודות פומביות מול הכיתה, אווטארים",
-    classalign: "מעקב פרטי למלמד, אפשרות הצגה קבוצתית לפי בחירה",
+    hakita: "מעקב פרטי למלמד, אפשרות הצגה קבוצתית לפי בחירה",
   },
   {
     feature: "פרטיות התלמידים",
     classdojo: "שרתי ארה\"ב, פיצ׳רים חברתיים דורשים תמונה/אווטאר",
-    classalign: "מינימום נתונים, שמות פנימיים, ללא תמונות תלמידים בברירת מחדל",
+    hakita: "מינימום נתונים, שמות פנימיים, ללא תמונות תלמידים בברירת מחדל",
   },
   {
     feature: "כלים ייעודיים לחיידר",
     classdojo: "אין",
-    classalign: "מחולל קבוצות, גלגל הגרלה, סאונדים, מבחנים אוטומטיים מהשיעור",
+    hakita: "מחולל קבוצות, גלגל הגרלה, סאונדים, מבחנים אוטומטיים מהשיעור",
   },
   {
     feature: "ייצוא PDF ודו״חות",
     classdojo: "מוגבל למנוי בתשלום",
-    classalign: "ייצוא רשימות, ציונים, סיכומי שיעור ותעודות ב-PDF כברירת מחדל",
+    hakita: "ייצוא רשימות, ציונים, סיכומי שיעור ותעודות ב-PDF כברירת מחדל",
   },
   {
     feature: "עלות למלמד בודד",
     classdojo: "חינמי עם פרסום; פיצ׳רים עיקריים בתשלום",
-    classalign: "מסלול חינמי מלא לכיתה אחת, ללא פרסום",
+    hakita: "מסלול חינמי מלא לכיתה אחת, ללא פרסום",
   },
 ];
 
@@ -123,7 +123,7 @@ function Article() {
                   <tr key={r.feature} className={i % 2 === 0 ? "bg-background" : "bg-card/30"}>
                     <td className="px-4 py-3 font-medium align-top">{r.feature}</td>
                     <td className="px-4 py-3 text-muted-foreground align-top">{r.classdojo}</td>
-                    <td className="px-4 py-3 text-muted-foreground align-top">{r.classalign}</td>
+                    <td className="px-4 py-3 text-muted-foreground align-top">{r.hakita}</td>
                   </tr>
                 ))}
               </tbody>
