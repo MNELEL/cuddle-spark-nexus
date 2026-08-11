@@ -4,6 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { recomputeStyleProfileFor, buildStyleContextString } from "./teacher-style.functions";
 import { callLovableAI } from "./ai-gateway.server";
 import { embedText } from "./embeddings.server";
+import { indexResourceChunks } from "./resource-chunks.server";
 
 const uuid = z.string().uuid();
 
@@ -38,6 +39,12 @@ export const RESOURCE_TYPE_LABELS: Record<ResourceType, string> = {
 export type ResourceContent = {
   /** Free-form text body (markdown-ish). */
   body?: string;
+  /** תמלול/OCR מדויק של המסמך שהועלה — כפי שהוא, בלי שכתוב. */
+  original_text?: string;
+  /** מאיפה הגיע החומר: העלאת קובץ, הקלטת שיעור, או יצירה. */
+  source_kind?: "upload" | "lesson_audio" | "generated";
+  /** כשהחומר נוצר מתמלול שיעור. */
+  lesson_transcript_id?: string;
   /** For worksheet / question_bank / riddle. */
   questions?: { q: string; a?: string }[];
   /** Optional bullet list (e.g. steps for activity / lesson plan). */
@@ -198,9 +205,13 @@ export const listResourceQuestions = createServerFn({ method: "POST" })
 
 const contentSchema = z.object({
   body: z.string().max(20000).optional(),
+  original_text: z.string().max(200000).optional(),
+  source_kind: z.enum(["upload", "lesson_audio", "generated"]).optional(),
+  lesson_transcript_id: uuid.optional(),
   questions: z.array(z.object({ q: z.string().min(1).max(500), a: z.string().max(2000).optional() })).max(50).optional(),
   steps: z.array(z.string().min(1).max(500)).max(50).optional(),
   materials: z.array(z.string().min(1).max(200)).max(30).optional(),
+  source_resource_id: uuid.optional(),
 }).partial();
 
 export const upsertResource = createServerFn({ method: "POST" })
@@ -227,6 +238,10 @@ export const upsertResource = createServerFn({ method: "POST" })
       const { error } = await context.supabase.from("teaching_resources").update(rest as never).eq("id", id);
       if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
       void recomputeStyleProfileFor(context.supabase, context.userId).catch((e) => console.error("[Style trigger]", e));
+      const src = data.content?.original_text ?? "";
+      if (src.trim()) {
+        await indexResourceChunks(context.supabase, context.userId, id, src);
+      }
       return { id };
     }
     const insertRow = { ...data, owner_id: context.userId } as never;
@@ -234,6 +249,10 @@ export const upsertResource = createServerFn({ method: "POST" })
       .from("teaching_resources").insert(insertRow).select("id").single() as unknown as { data: { id: string } | null; error: { message: string } | null };
     if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     void recomputeStyleProfileFor(context.supabase, context.userId).catch((e) => console.error("[Style trigger]", e));
+    const srcNew = data.content?.original_text ?? "";
+    if (srcNew.trim() && ins?.id) {
+      await indexResourceChunks(context.supabase, context.userId, ins.id, srcNew);
+    }
     return { id: ins!.id };
   });
 
