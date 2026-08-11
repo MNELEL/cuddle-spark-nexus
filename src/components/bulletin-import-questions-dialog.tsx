@@ -1,18 +1,20 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Library, Check } from "lucide-react";
+import { Loader2, Library, Check, Search, Sparkles, ListChecks, X } from "lucide-react";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import {
   suggestResourcesForBulletin, listQuestionsFromResource,
 } from "@/lib/bulletin-sync.functions";
+import { listResources, RESOURCE_TYPE_LABELS } from "@/lib/teaching-resources.functions";
 import type { QuizQuestion } from "@/lib/bulletins.functions";
 
 type Props = {
@@ -23,18 +25,49 @@ type Props = {
   onImport: (questions: QuizQuestion[]) => void;
 };
 
+/** סוגי החומרים שנושאים שאלות חזרה — הסינון בדיאלוג. */
+const TYPE_FILTERS = [
+  { value: "all", label: "הכל" },
+  { value: "question_bank", label: RESOURCE_TYPE_LABELS.question_bank },
+  { value: "worksheet", label: RESOURCE_TYPE_LABELS.worksheet },
+] as const;
+
+type TypeFilter = (typeof TYPE_FILTERS)[number]["value"];
+
 /** ייבוא שאלות חזרה מחומרים קיימים בספריית החומרים אל תוך העלון. */
 export function BulletinImportQuestionsDialog({ open, onOpenChange, bulletinId, onImport }: Props) {
   const suggest = useServerFn(suggestResourcesForBulletin);
+  const search = useServerFn(listResources);
   const listQuestions = useServerFn(listQuestionsFromResource);
   const [resourceId, setResourceId] = useState<string | null>(null);
   const [picked, setPicked] = useState<Record<string, boolean>>({});
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+  const [term, setTerm] = useState("");
+  const [questionTerm, setQuestionTerm] = useState("");
 
-  const { data: resources = [], isFetching: loadingResources } = useQuery({
+  const { data: suggested = [], isFetching: loadingSuggested } = useQuery({
     queryKey: ["bulletin-import-suggest", bulletinId],
     queryFn: () => suggest({ data: { bulletin_id: bulletinId, limit: 12 } }),
-    enabled: open,
+    enabled: open && term.trim().length === 0,
   });
+
+  const { data: searched = [], isFetching: loadingSearched } = useQuery({
+    queryKey: ["bulletin-import-search", term.trim(), typeFilter],
+    queryFn: () => search({ data: {
+      search: term.trim(),
+      ...(typeFilter === "all" ? {} : { resource_type: typeFilter }),
+    } }),
+    enabled: open && term.trim().length > 0,
+  });
+
+  const isSearching = term.trim().length > 0;
+  const loadingResources = isSearching ? loadingSearched : loadingSuggested;
+  const resources = useMemo(() => {
+    const rows = isSearching
+      ? searched.map((r) => ({ id: r.id, title: r.title, resource_type: r.resource_type, subject: r.subject }))
+      : suggested.map((r) => ({ id: r.id, title: r.title, resource_type: r.resource_type, subject: r.subject }));
+    return typeFilter === "all" ? rows : rows.filter((r) => r.resource_type === typeFilter);
+  }, [isSearching, searched, suggested, typeFilter]);
 
   const { data: loaded, isFetching: loadingQuestions } = useQuery({
     queryKey: ["bulletin-import-questions", resourceId],
@@ -42,13 +75,30 @@ export function BulletinImportQuestionsDialog({ open, onOpenChange, bulletinId, 
     enabled: open && !!resourceId,
   });
 
-  const questions = loaded?.questions ?? [];
-  const selected = useMemo(
-    () => questions.filter((_q, i) => picked[String(i)]),
-    [questions, picked],
-  );
+  const allQuestions = loaded?.questions ?? [];
+  /** שומרים את האינדקס המקורי כדי שהסימון ישרוד סינון טקסט. */
+  const questions = useMemo(() => {
+    const t = questionTerm.trim();
+    const indexed = allQuestions.map((q, i) => ({ ...q, i }));
+    if (!t) return indexed;
+    return indexed.filter((q) => `${q.question} ${q.answer}`.includes(t));
+  }, [allQuestions, questionTerm]);
 
-  const reset = () => { setResourceId(null); setPicked({}); };
+  const selected = useMemo(
+    () => allQuestions.filter((_q, i) => picked[String(i)]).map((q) => ({ question: q.question, answer: q.answer })),
+    [allQuestions, picked],
+  );
+  const allVisiblePicked = questions.length > 0 && questions.every((q) => picked[String(q.i)]);
+
+  const reset = () => { setResourceId(null); setPicked({}); setQuestionTerm(""); };
+
+  const toggleAllVisible = () => {
+    setPicked((p) => {
+      const next = { ...p };
+      for (const q of questions) next[String(q.i)] = !allVisiblePicked;
+      return next;
+    });
+  };
 
   return (
     <Dialog
@@ -62,12 +112,40 @@ export function BulletinImportQuestionsDialog({ open, onOpenChange, bulletinId, 
             ייבוא שאלות מהספרייה
           </DialogTitle>
           <DialogDescription>
-            בחר חומר מהספרייה, ואז סמן אילו שאלות להוסיף לשאלות החזרה של העלון.
+            סנן לפי סוג, חפש בטקסט, ובחר כמה שאלות בבת אחת להוספה לשאלות החזרה של העלון.
           </DialogDescription>
         </DialogHeader>
 
         {!resourceId ? (
           <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative flex-1 min-w-[180px]">
+                <Search className="pointer-events-none absolute end-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+                <Input
+                  className="pe-8"
+                  placeholder="חיפוש חומר בספרייה…"
+                  value={term}
+                  onChange={(e) => setTerm(e.target.value)}
+                />
+              </div>
+              <div className="flex gap-1" role="group" aria-label="סינון לפי סוג">
+                {TYPE_FILTERS.map((t) => (
+                  <Button
+                    key={t.value}
+                    size="sm"
+                    variant={typeFilter === t.value ? "default" : "outline"}
+                    onClick={() => setTypeFilter(t.value)}
+                  >
+                    {t.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              {isSearching
+                ? <><Search className="h-3 w-3" aria-hidden="true" /> תוצאות חיפוש בספרייה</>
+                : <><Sparkles className="h-3 w-3 text-amber" aria-hidden="true" /> הצעות מתאימות לתוכן העלון</>}
+            </div>
             {loadingResources && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> טוען חומרים…
@@ -75,7 +153,7 @@ export function BulletinImportQuestionsDialog({ open, onOpenChange, bulletinId, 
             )}
             {!loadingResources && resources.length === 0 && (
               <div className="text-sm text-muted-foreground">
-                לא נמצאו חומרים מתאימים. הוסף נקודות לימוד או הספק לימודי לעלון ושמור אותו.
+                לא נמצאו חומרים מתאימים. נסה לשנות את הסינון או את מילות החיפוש.
               </div>
             )}
             <ScrollArea className="max-h-72">
@@ -84,12 +162,13 @@ export function BulletinImportQuestionsDialog({ open, onOpenChange, bulletinId, 
                   <li key={r.id}>
                     <button
                       type="button"
-                      onClick={() => { setResourceId(r.id); setPicked({}); }}
+                      onClick={() => { setResourceId(r.id); setPicked({}); setQuestionTerm(""); }}
                       className="min-h-9 w-full rounded-md border bg-card px-3 py-2 text-right text-sm transition hover:border-amber/40 focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       <span className="font-medium">{r.title}</span>
                       <span className="ms-2 text-xs text-muted-foreground">
-                        {r.resource_type}{r.subject ? ` · ${r.subject}` : ""}
+                        {RESOURCE_TYPE_LABELS[r.resource_type as keyof typeof RESOURCE_TYPE_LABELS] ?? r.resource_type}
+                        {r.subject ? ` · ${r.subject}` : ""}
                       </span>
                     </button>
                   </li>
@@ -103,24 +182,46 @@ export function BulletinImportQuestionsDialog({ open, onOpenChange, bulletinId, 
               <div className="text-sm font-medium">{loaded?.title || "חומר"}</div>
               <Button size="sm" variant="ghost" onClick={reset}>בחר חומר אחר</Button>
             </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative flex-1 min-w-[160px]">
+                <Search className="pointer-events-none absolute end-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+                <Input
+                  className="pe-8"
+                  placeholder="סינון שאלות לפי טקסט…"
+                  value={questionTerm}
+                  onChange={(e) => setQuestionTerm(e.target.value)}
+                />
+              </div>
+              <Button size="sm" variant="outline" disabled={questions.length === 0} onClick={toggleAllVisible}>
+                <ListChecks className="ms-1 h-4 w-4" aria-hidden="true" />
+                {allVisiblePicked ? "בטל סימון הכל" : "סמן הכל"}
+              </Button>
+              {selected.length > 0 && (
+                <Button size="sm" variant="ghost" onClick={() => setPicked({})}>
+                  <X className="ms-1 h-4 w-4" aria-hidden="true" /> נקה בחירה
+                </Button>
+              )}
+            </div>
             {loadingQuestions && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> טוען שאלות…
               </div>
             )}
             {!loadingQuestions && questions.length === 0 && (
-              <div className="text-sm text-muted-foreground">בחומר הזה אין שאלות לייבוא.</div>
+              <div className="text-sm text-muted-foreground">
+                {allQuestions.length === 0 ? "בחומר הזה אין שאלות לייבוא." : "אין שאלות שמתאימות לסינון."}
+              </div>
             )}
             <ScrollArea className="max-h-72">
               <ul className="space-y-2 pe-2">
-                {questions.map((q, i) => (
-                  <li key={i} className="flex items-start gap-2 rounded-md border p-2">
+                {questions.map((q) => (
+                  <li key={q.i} className="flex items-start gap-2 rounded-md border p-2">
                     <Checkbox
-                      id={`q-${i}`}
-                      checked={!!picked[String(i)]}
-                      onCheckedChange={(v) => setPicked((p) => ({ ...p, [String(i)]: !!v }))}
+                      id={`q-${q.i}`}
+                      checked={!!picked[String(q.i)]}
+                      onCheckedChange={(v) => setPicked((p) => ({ ...p, [String(q.i)]: !!v }))}
                     />
-                    <Label htmlFor={`q-${i}`} className="flex-1 cursor-pointer text-sm font-normal">
+                    <Label htmlFor={`q-${q.i}`} className="flex-1 cursor-pointer text-sm font-normal">
                       <span className="font-medium">{q.question}</span>
                       {q.answer && (
                         <span className="mt-1 block text-xs text-muted-foreground">{q.answer}</span>
@@ -134,6 +235,11 @@ export function BulletinImportQuestionsDialog({ open, onOpenChange, bulletinId, 
         )}
 
         <DialogFooter>
+          {selected.length > 0 && (
+            <span className="me-auto self-center text-xs text-muted-foreground">
+              נבחרו {selected.length} שאלות
+            </span>
+          )}
           <Button
             disabled={selected.length === 0}
             onClick={() => {
