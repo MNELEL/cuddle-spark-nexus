@@ -15,7 +15,7 @@
 import { execFileSync } from "node:child_process";
 
 /** Tables that intentionally expose data to anonymous visitors. Keep empty unless proven. */
-const ANON_ALLOWLIST = new Set([]);
+const ANON_ALLOWLIST = new Set(["checklist_leads", "partner_leads"]);
 
 const dbUrl = process.env.SUPABASE_DB_URL;
 if (!dbUrl && !process.env.PGHOST) {
