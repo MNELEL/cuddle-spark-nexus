@@ -368,6 +368,7 @@ function BulletinsPage() {
               open={previewOpen}
               onOpenChange={setPreviewOpen}
               title="תצוגה מקדימה של העלון"
+              cacheKey={editing.id ?? "new"}
               buildPdf={() => buildBulletinPdf({ bulletin: editing, className: cls?.name ?? "כיתה" })}
               buildText={() => bulletinToMarkdown(editing, cls?.name ?? "כיתה")}
               textFilename={`עלון_${editing.startDate}.md`}
