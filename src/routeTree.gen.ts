@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as BlogRouteImport } from './routes/blog'
+import { Route as ContactRouteImport } from './routes/contact'
 import { Route as ContentPolicyRouteImport } from './routes/content-policy'
 import { Route as HelpRouteImport } from './routes/help'
 import { Route as LoginRouteImport } from './routes/login'
@@ -28,6 +29,7 @@ import { Route as ToolsRouteImport } from './routes/tools'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as AuthenticatedBellScheduleRouteImport } from './routes/_authenticated.bell-schedule'
+import { Route as AuthenticatedContactSheetRouteImport } from './routes/_authenticated.contact-sheet'
 import { Route as AuthenticatedIngestRouteImport } from './routes/_authenticated.ingest'
 import { Route as AuthenticatedInsightsRouteImport } from './routes/_authenticated.insights'
 import { Route as AuthenticatedInstitutionRouteImport } from './routes/_authenticated.institution'
@@ -104,6 +106,11 @@ const AuthenticatedRoute = AuthenticatedRouteImport.update({
 const BlogRoute = BlogRouteImport.update({
   id: '/blog',
   path: '/blog',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContentPolicyRoute = ContentPolicyRouteImport.update({
@@ -187,6 +194,12 @@ const AuthenticatedBellScheduleRoute =
   AuthenticatedBellScheduleRouteImport.update({
     id: '/bell-schedule',
     path: '/bell-schedule',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedContactSheetRoute =
+  AuthenticatedContactSheetRouteImport.update({
+    id: '/contact-sheet',
+    path: '/contact-sheet',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedIngestRoute = AuthenticatedIngestRouteImport.update({
@@ -547,6 +560,7 @@ const AuthenticatedClassesClassIdDisplayRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/blog': typeof BlogRouteWithChildren
+  '/contact': typeof ContactRoute
   '/content-policy': typeof ContentPolicyRoute
   '/help': typeof HelpRouteWithChildren
   '/login': typeof LoginRoute
@@ -563,6 +577,7 @@ export interface FileRoutesByFullPath {
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/bell-schedule': typeof AuthenticatedBellScheduleRoute
+  '/contact-sheet': typeof AuthenticatedContactSheetRoute
   '/ingest': typeof AuthenticatedIngestRoute
   '/insights': typeof AuthenticatedInsightsRoute
   '/institution': typeof AuthenticatedInstitutionRoute
@@ -629,6 +644,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/contact': typeof ContactRoute
   '/content-policy': typeof ContentPolicyRoute
   '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
@@ -642,6 +658,7 @@ export interface FileRoutesByTo {
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/bell-schedule': typeof AuthenticatedBellScheduleRoute
+  '/contact-sheet': typeof AuthenticatedContactSheetRoute
   '/ingest': typeof AuthenticatedIngestRoute
   '/insights': typeof AuthenticatedInsightsRoute
   '/institution': typeof AuthenticatedInstitutionRoute
@@ -710,6 +727,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/blog': typeof BlogRouteWithChildren
+  '/contact': typeof ContactRoute
   '/content-policy': typeof ContentPolicyRoute
   '/help': typeof HelpRouteWithChildren
   '/login': typeof LoginRoute
@@ -726,6 +744,7 @@ export interface FileRoutesById {
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_authenticated/bell-schedule': typeof AuthenticatedBellScheduleRoute
+  '/_authenticated/contact-sheet': typeof AuthenticatedContactSheetRoute
   '/_authenticated/ingest': typeof AuthenticatedIngestRoute
   '/_authenticated/insights': typeof AuthenticatedInsightsRoute
   '/_authenticated/institution': typeof AuthenticatedInstitutionRoute
@@ -795,6 +814,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/blog'
+    | '/contact'
     | '/content-policy'
     | '/help'
     | '/login'
@@ -811,6 +831,7 @@ export interface FileRouteTypes {
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/bell-schedule'
+    | '/contact-sheet'
     | '/ingest'
     | '/insights'
     | '/institution'
@@ -877,6 +898,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/contact'
     | '/content-policy'
     | '/login'
     | '/mcp'
@@ -890,6 +912,7 @@ export interface FileRouteTypes {
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/bell-schedule'
+    | '/contact-sheet'
     | '/ingest'
     | '/insights'
     | '/institution'
@@ -957,6 +980,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/blog'
+    | '/contact'
     | '/content-policy'
     | '/help'
     | '/login'
@@ -973,6 +997,7 @@ export interface FileRouteTypes {
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/_authenticated/bell-schedule'
+    | '/_authenticated/contact-sheet'
     | '/_authenticated/ingest'
     | '/_authenticated/insights'
     | '/_authenticated/institution'
@@ -1042,6 +1067,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   BlogRoute: typeof BlogRouteWithChildren
+  ContactRoute: typeof ContactRoute
   ContentPolicyRoute: typeof ContentPolicyRoute
   HelpRoute: typeof HelpRouteWithChildren
   LoginRoute: typeof LoginRoute
@@ -1084,6 +1110,13 @@ declare module '@tanstack/react-router' {
       path: '/blog'
       fullPath: '/blog'
       preLoaderRoute: typeof BlogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/content-policy': {
@@ -1196,6 +1229,13 @@ declare module '@tanstack/react-router' {
       path: '/bell-schedule'
       fullPath: '/bell-schedule'
       preLoaderRoute: typeof AuthenticatedBellScheduleRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/contact-sheet': {
+      id: '/_authenticated/contact-sheet'
+      path: '/contact-sheet'
+      fullPath: '/contact-sheet'
+      preLoaderRoute: typeof AuthenticatedContactSheetRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/ingest': {
@@ -1659,6 +1699,7 @@ const AuthenticatedClassesClassIdRouteWithChildren =
 
 interface AuthenticatedRouteChildren {
   AuthenticatedBellScheduleRoute: typeof AuthenticatedBellScheduleRoute
+  AuthenticatedContactSheetRoute: typeof AuthenticatedContactSheetRoute
   AuthenticatedIngestRoute: typeof AuthenticatedIngestRoute
   AuthenticatedInsightsRoute: typeof AuthenticatedInsightsRoute
   AuthenticatedInstitutionRoute: typeof AuthenticatedInstitutionRoute
@@ -1698,6 +1739,7 @@ interface AuthenticatedRouteChildren {
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedBellScheduleRoute: AuthenticatedBellScheduleRoute,
+  AuthenticatedContactSheetRoute: AuthenticatedContactSheetRoute,
   AuthenticatedIngestRoute: AuthenticatedIngestRoute,
   AuthenticatedInsightsRoute: AuthenticatedInsightsRoute,
   AuthenticatedInstitutionRoute: AuthenticatedInstitutionRoute,
@@ -1851,6 +1893,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   BlogRoute: BlogRouteWithChildren,
+  ContactRoute: ContactRoute,
   ContentPolicyRoute: ContentPolicyRoute,
   HelpRoute: HelpRouteWithChildren,
   LoginRoute: LoginRoute,
