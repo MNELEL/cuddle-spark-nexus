@@ -481,7 +481,9 @@ function CertificatesPage() {
   };
 
   const list = Object.values(rows);
-  const [previewRow, setPreviewRow] = useState<StudentRow | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  // Kept after close so buildPdf/buildText stay valid during dialog cleanup.
+  const [previewData, setPreviewData] = useState<{ row: StudentRow } | null>(null);
 
   return (
     <div className="mx-auto max-w-6xl space-y-5">
@@ -596,7 +598,7 @@ function CertificatesPage() {
                 onPersistConducts={() => persistRow(row.id)}
                 onOcrPhoto={(f) => applyOcrToRow(row.id, f)}
                 onExport={() => buildForStudent(row, isCorrection ? "correction" : "regular")}
-                onPreview={() => setPreviewRow(row)}
+                onPreview={() => { setPreviewData({ row }); setPreviewOpen(true); }}
                 onSaveNotes={() => persistNote(row.id)}
                 onSuggestNotes={() => openSuggest(row.id)}
                 showWeighted={showWeighted}
@@ -662,21 +664,25 @@ function CertificatesPage() {
         </DialogContent>
       </Dialog>
 
-      {previewRow && (
-        <PdfPreviewDialog
-          open={!!previewRow}
-          onOpenChange={(v) => { if (!v) setPreviewRow(null); }}
-          title={`תעודה · ${previewRow.name}`}
-          cacheKey={previewRow.id}
-          buildPdf={() => blobForStudent(previewRow, isCorrection ? "correction" : "regular")}
-          buildText={() => certificateToText(previewRow, {
+      <PdfPreviewDialog
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        title={previewData ? `תעודה · ${previewData.row.name}` : "תעודה"}
+        cacheKey={previewData?.row.id}
+        buildPdf={async () => {
+          if (!previewData) throw new Error("לא נבחר תלמיד לתצוגה מקדימה");
+          return blobForStudent(previewData.row, isCorrection ? "correction" : "regular");
+        }}
+        buildText={() => {
+          if (!previewData) return "";
+          return certificateToText(previewData.row, {
             className: cls?.name ?? "כיתה",
             period: `${period.label} – ${academicYear}`,
             schoolName: schoolName || "מוסד חינוכי",
-          })}
-          textFilename={`תעודה_${previewRow.name}.txt`}
-        />
-      )}
+          });
+        }}
+        textFilename={previewData ? `תעודה_${previewData.row.name}.txt` : "תעודה.txt"}
+      />
     </div>
   );
 }
