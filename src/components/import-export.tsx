@@ -115,7 +115,7 @@ export function ImportExportBar({ classId }: { classId: string }) {
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "סידור");
-    XLSX.writeFile(wb, `${cls.name}-סידור.xlsx`);
+    XLSX.writeFile(wb, `${cls?.name ?? "כיתה"}-סידור.xlsx`);
   };
 
   const exportPDF = async () => {

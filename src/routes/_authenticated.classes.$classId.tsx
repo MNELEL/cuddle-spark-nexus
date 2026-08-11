@@ -194,7 +194,7 @@ function ClassDetail() {
   const isArchived = (cls as { status?: string } | undefined)?.status === "archived";
   const academicYear = (cls as { academic_year?: string | null } | undefined)?.academic_year ?? null;
 
-  if (!validClass) {
+  if (!validClass || (!clsLoading && !cls)) {
     return (
       <div className="mx-auto max-w-lg py-16 text-center">
         <h1 className="font-display text-2xl font-bold">כיתה לא נמצאה</h1>
