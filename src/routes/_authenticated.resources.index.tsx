@@ -685,12 +685,21 @@ function ResourceCard({
   onToggleFavorite: () => void;
 }) {
   return (
-    <div className="group rounded-xl border bg-card p-4 text-right transition hover:border-amber/40 hover:shadow-md">
+    <div
+      role="button"
+      tabIndex={0}
+      aria-label={`פתח את "${resource.title}"`}
+      onClick={onView}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onView(); }
+      }}
+      className="group cursor-pointer rounded-xl border bg-card p-4 text-right transition hover:border-amber/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
       <div className="flex items-start justify-between gap-2">
         <div className="line-clamp-2 font-semibold">{resource.title}</div>
         <button
           type="button"
-          onClick={onToggleFavorite}
+          onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
           aria-pressed={resource.is_favorite}
           aria-label={resource.is_favorite ? `הסר את "${resource.title}" מהמועדפים` : `הוסף את "${resource.title}" למועדפים`}
           className="flex min-h-9 min-w-9 shrink-0 items-center justify-center rounded-md transition hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -728,13 +737,10 @@ function ResourceCard({
         </div>
       )}
       <div className="mt-3 flex gap-2">
-        <Button size="sm" variant="outline" className="flex-1" onClick={onView} aria-label={`פתח את "${resource.title}"`}>
-          <Eye className="ms-1 h-4 w-4" /> פתח
-        </Button>
-        <Button size="sm" variant="ghost" onClick={onEdit} aria-label={`ערוך את "${resource.title}"`}>
+        <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); onEdit(); }} aria-label={`ערוך את "${resource.title}"`}>
           <Pencil className="ms-1 h-4 w-4" /> ערוך
         </Button>
-        <Button size="sm" variant="ghost" onClick={() => onVariant(resource)}
+        <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); onVariant(resource); }}
           title="צור וריאציה עם AI מפריט זה" aria-label={`צור וריאציה עם AI מ-"${resource.title}"`}>
           <Sparkles className="h-4 w-4 text-amber" />
         </Button>
