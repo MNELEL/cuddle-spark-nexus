@@ -465,6 +465,8 @@ export const generateResourceWithAI = createServerFn({ method: "POST" })
 export type LibraryAnswer = {
   answer: string;
   sources: { id: string; title: string; resource_type: ResourceType }[];
+  /** ציטוטים מדויקים מתוך המסמכים המקוריים שנשענו עליהם. */
+  excerpts?: { resource_id: string; title: string; text: string }[];
 };
 
 type CtxRow = {
@@ -480,16 +482,28 @@ export const askLibrary = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ question: z.string().min(3).max(500) }).parse(d))
   .handler(async ({ data, context }): Promise<LibraryAnswer> => {
     let rows: CtxRow[] = [];
+    let chunks: { resource_id: string; content: string }[] = [];
 
     // Semantic retrieval first (falls back to recent/text search).
     const vec = await embedText(data.question);
     if (vec) {
+      // Verbatim excerpts from the uploaded documents themselves.
+      const { data: cm, error: cErr } = await context.supabase.rpc("match_resource_chunks", {
+        query_embedding: vec as unknown as never,
+        match_count: 8,
+      });
+      if (cErr) console.error("[match_resource_chunks]", cErr);
+      chunks = ((cm ?? []) as { resource_id: string; content: string }[]).slice(0, 8);
+
       const { data: matches } = await context.supabase.rpc("match_resources", {
         query_embedding: vec as unknown as never,
         owner: context.userId,
         match_count: 8,
       });
-      const ids = ((matches ?? []) as { id: string }[]).map((m) => m.id);
+      const ids = Array.from(new Set([
+        ...((matches ?? []) as { id: string }[]).map((m) => m.id),
+        ...chunks.map((c) => c.resource_id),
+      ]));
       if (ids.length > 0) {
         const { data: r } = await context.supabase
           .from("teaching_resources").select(CTX_COLS).in("id", ids);
@@ -525,6 +539,20 @@ export const askLibrary = createServerFn({ method: "POST" })
       })
       .join("\n---\n");
 
+    const titleById = new Map(rows.map((r) => [r.id, r.title]));
+    const excerpts = chunks
+      .filter((c) => titleById.has(c.resource_id))
+      .map((c) => ({
+        resource_id: c.resource_id,
+        title: titleById.get(c.resource_id) ?? "",
+        text: c.content.slice(0, 1200),
+      }));
+    const quotes = excerpts.length
+      ? `\n\nציטוטים מדויקים מתוך המסמכים המקוריים (השתמש בהם כמקור אמת):\n${
+          excerpts.map((e, i) => `[מקור ${i + 1} — ${e.title}]\n${e.text}`).join("\n---\n")
+        }`
+      : "";
+
     const answer = await callLovableAI({
       messages: [
         {
@@ -532,9 +560,10 @@ export const askLibrary = createServerFn({ method: "POST" })
           content: `אתה עוזר של רב/מלמד בתלמוד תורה. ענה בעברית מכובדת, בקצרה ולעניין, על בסיס החומרים שבספרייה של הרב בלבד.
 אם התשובה אינה נמצאת בחומרים — אמור זאת בפירוש והצע איזה חומר כדאי ליצור.
 כשאתה מסתמך על חומר, ציין את שמו במפורש. אל תמציא חומרים שאינם ברשימה.
+כשיש ציטוט מדויק מהמסמך המקורי — העדף אותו על פני התקציר, וצטט את הלשון המקורית.
 
 חומרי הספרייה:
-${ctx}`,
+${ctx}${quotes}`,
         },
         { role: "user", content: data.question },
       ],
@@ -543,5 +572,6 @@ ${ctx}`,
     return {
       answer: answer.trim() || "לא הצלחתי לנסח תשובה. נסה לנסח את השאלה מחדש.",
       sources: rows.map((r) => ({ id: r.id, title: r.title, resource_type: r.resource_type })),
+      excerpts,
     };
   });
