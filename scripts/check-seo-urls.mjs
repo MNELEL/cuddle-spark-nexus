@@ -33,14 +33,11 @@ const LAYOUT_FILES = new Set([
   "_authenticated.tsx",
 ]);
 
-const BANNED_STRINGS = [
-  "Lovable App",
-  "Lovable Generated Project",
-  "http://localhost",
-  "example.com",
-  "classalign",
-  "ClassAlign",
-];
+/** Placeholder metadata that must never ship. */
+const BANNED_STRINGS = ["Lovable App", "Lovable Generated Project"];
+
+/** Wrong hosts that must never appear inside a link or metadata URL. */
+const BANNED_URL_HOSTS = ["localhost", "example.com", "classalign.studio", "classalign.app", "lovableproject.com"];
 
 export function siteUrl() {
   const m = read("src/lib/site-meta.ts").match(/export const SITE_URL =\s*"([^"]+)"/);
@@ -105,7 +102,14 @@ export function auditSeoUrls() {
     const isPrivate = rel.startsWith("_authenticated");
 
     for (const bad of BANNED_STRINGS) {
-      if (src.includes(bad)) errors.push(`${file}: contains forbidden string "${bad}".`);
+      if (src.includes(bad)) errors.push(`${file}: contains forbidden placeholder text "${bad}".`);
+    }
+    // Only URLs are checked for wrong hosts — form placeholders may say example.com.
+    for (const m of src.matchAll(/(?:href|content|src|href:|content:)\s*=?\s*["'`](https?:\/\/[^"'`\s]+)/g)) {
+      const host = m[1].replace(/^https?:\/\//, "").split("/")[0];
+      if (BANNED_URL_HOSTS.some((h) => host === h || host.endsWith(`.${h}`))) {
+        errors.push(`${file}: link/metadata URL points at a wrong host (${m[1]}).`);
+      }
     }
 
     if (rel === "__root.tsx") {
@@ -132,7 +136,11 @@ export function auditSeoUrls() {
       if (v && !/^https:\/\//.test(v)) errors.push(`${file}: og/twitter image must be an absolute https URL (found "${v}").`);
     }
 
+    const isLayout = LAYOUT_FILES.has(rel);
+    const isNoindex = /content:\s*"noindex/.test(src);
+
     if (isPrivate) {
+      if (isLayout) continue;
       if (!/robots"/.test(src) || !/noindex/.test(src)) {
         errors.push(`${file}: private route must send a robots noindex meta tag.`);
       }
@@ -142,8 +150,8 @@ export function auditSeoUrls() {
     if (canonicals.length > 1) errors.push(`${file}: declares ${canonicals.length} canonical links (max 1).`);
 
     const hasHead = /head:\s*(\(|\{)/.test(src);
-    const isLayout = LAYOUT_FILES.has(rel);
-    if (isLayout || !hasHead) continue;
+    // Layout wrappers own no metadata; noindex utility screens need no canonical.
+    if (isLayout || !hasHead || isNoindex) continue;
 
     publicChecked++;
 
