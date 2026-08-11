@@ -299,7 +299,7 @@ export const unpublishBulletin = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: row, error: readErr } = await context.supabase
       .from("weekly_bulletins")
-      .select("title,digest_summary,study_points,recap_questions,weekly_riddle,weekly_riddle_answer,activities,notes,start_date,end_date")
+      .select("title,digest_summary,study_points,recap_questions,weekly_riddle,weekly_riddle_answer,activities,notes,start_date,end_date,torah_dvar_title,torah_dvar_body,study_schedule,honored_students,special_notices")
       .eq("id", data.id)
       .maybeSingle();
     if (readErr) { console.error("[DB Error]", readErr); throw new Error("הפעולה נכשלה. נסה שוב."); }
