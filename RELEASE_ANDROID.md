@@ -1,4 +1,4 @@
-# הוצאת ClassAlign Studio ל-Google Play
+# הוצאת "הכיתה שלי" ל-Google Play
 
 TanStack Start רץ SSR, אז עבור עטיפת Capacitor אנו אורזים את ה-build הסטטי של הצד-לקוח (`dist/client`).
 השלבים הבאים מבוצעים **במחשב המקומי שלך** עם Android Studio מותקן.
@@ -10,7 +10,7 @@ TanStack Start רץ SSR, אז עבור עטיפת Capacitor אנו אורזים 
 
 ## 1. שכפל מ-GitHub
 ```bash
-git clone <your-repo-url> classalign && cd classalign
+git clone <your-repo-url> hakita-sheli && cd hakita-sheli
 bun install
 ```
 
