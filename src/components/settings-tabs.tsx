@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Palette, ShieldCheck, BellRing, FileText, Sliders } from "lucide-react";
 
@@ -21,6 +22,26 @@ const TABS: {
 
 export function SettingsTabs({ active }: { active?: SettingsTabId | "brand" | "theme" }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const navRef = useRef<HTMLElement | null>(null);
+
+  /** Arrow keys move focus between tabs (Home/End jump to the edges). */
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    const keys = ["ArrowRight", "ArrowLeft", "Home", "End"];
+    if (!keys.includes(e.key)) return;
+    const items = Array.from(
+      navRef.current?.querySelectorAll<HTMLAnchorElement>("[data-settings-tab]") ?? [],
+    );
+    if (items.length === 0) return;
+    const idx = items.findIndex((el) => el === document.activeElement);
+    // RTL: ArrowLeft advances, ArrowRight goes back.
+    const step = e.key === "ArrowLeft" ? 1 : e.key === "ArrowRight" ? -1 : 0;
+    let next = idx < 0 ? 0 : (idx + step + items.length) % items.length;
+    if (e.key === "Home") next = 0;
+    if (e.key === "End") next = items.length - 1;
+    e.preventDefault();
+    items[next]?.focus();
+  };
+
   const current =
     active ??
     (pathname.startsWith("/settings/brand")
@@ -30,7 +51,12 @@ export function SettingsTabs({ active }: { active?: SettingsTabId | "brand" | "t
         : "general");
 
   return (
-    <nav aria-label="ניווט בהגדרות" className="mb-4 flex flex-wrap gap-1 rounded-lg border bg-card p-1">
+    <nav
+      ref={navRef}
+      aria-label="ניווט בהגדרות"
+      onKeyDown={onKeyDown}
+      className="mb-4 flex flex-wrap gap-1 rounded-lg border bg-card p-1"
+    >
       {TABS.map((t) => {
         const isActive = current === t.id;
         return (
@@ -40,7 +66,7 @@ export function SettingsTabs({ active }: { active?: SettingsTabId | "brand" | "t
             search={t.tab ? { tab: t.tab } : undefined}
             aria-current={isActive ? "page" : undefined}
             data-settings-tab={t.id}
-            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
               isActive
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:bg-accent hover:text-foreground"
