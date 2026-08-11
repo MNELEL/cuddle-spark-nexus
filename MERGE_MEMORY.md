@@ -343,3 +343,10 @@ Test suite ל-RLS ולהעתקת תלמידים — נבדק: אין תשתית 
 - **נכשל ולא מדלג:** אם אחד מ-`SUPABASE_URL` / `SUPABASE_PUBLISHABLE_KEY` / `SUPABASE_SERVICE_ROLE_KEY` חסר — ה-job נכשל עם שגיאה מפורשת. הסיבה: הסוויטות משתמשות ב-`describe.skipIf(!hasTestEnv)`, ולכן בלי הסודות הריצה הייתה יורקת ירוק גם אם הסינון נשבר.
 - אחרי הריצה נבדק דוח ה-JSON: אם `passed === 0` או שיש טסט שדולג — ה-job נכשל. הדוח נשמר כ-artifact (`notifications-report-<sha>`, 30 יום).
 - ה-job `build` ממשיך להריץ את כל הסוויטה; `notifications-guard` הוא סיגנל נוסף וממוקד לגבול הפרטיות של ההתראות.
+
+#### 12.4.4 ביטול גישת anon לכל טבלאות public (11/8/2026)
+
+- **מיגרציה:** `REVOKE ALL ... FROM anon` על 43 טבלאות ב-public (`classes`, `user_roles`, `institutions`, `student_documents`, `parent_communications`, `discipline_events` ועוד). RLS הגן עליהן בפועל, אז זו הגנת-עומק ולא סגירת פרצה. השורש הוא `ALTER DEFAULT PRIVILEGES` בבעלות `supabase_admin` שלא ניתן לשינוי מ-`postgres` — לכן הפתרון הוא REVOKE נקודתי, וכל טבלה חדשה עשויה להיווצר שוב עם anon עד שהאודיט יתפוס אותה.
+- **חריגים מכוונים:** `checklist_leads`, `partner_leads` — טפסי לידים ציבוריים ש-server functions שולחות דרך ה-publishable client (תפקיד anon). הן קיבלו `GRANT INSERT` בלבד (בלי SELECT) והן ב-`ANON_ALLOWLIST` של `scripts/check-table-grants.mjs`.
+- **תיקון באודיט עצמו:** הסקריפט קרא `information_schema.role_table_grants`, שמציג רק grants שהתפקיד המחובר רשאי לראות — ולכן החזיר "נקי" גם כשהיו 43 grants. הוא קורא כעת את ה-ACL ישירות מ-`pg_class` דרך `aclexplode`. אין להחזיר את השאילתה הקודמת.
+- **דגל לא-חוקי:** `src/test/rollover-copy.test.ts` השתמש ב-`"health"` שאינו ב-`SENSITIVE_FLAGS`; הוחלף ל-`"allergy"` (התלמיד בטסט נושא דגל רפואי).

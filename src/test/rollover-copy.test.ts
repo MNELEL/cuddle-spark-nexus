@@ -41,7 +41,7 @@ describe.skipIf(!hasTestEnv)("rollover: student + profile copy", () => {
     const profile = await teacher.client.from("student_profiles").insert({
       student_id: studentId,
       class_id: parentClassId,
-      sensitive_flags: ["health", "family"],
+      sensitive_flags: ["allergy", "family"],
       handoff_notes: "הערת מסירה",
     });
     if (profile.error) throw profile.error;
@@ -95,7 +95,7 @@ describe.skipIf(!hasTestEnv)("rollover: student + profile copy", () => {
       .select("sensitive_flags")
       .single();
     expect(copiedProfile.error).toBeNull();
-    expect(copiedProfile.data?.sensitive_flags).toEqual(["health", "family"]);
+    expect(copiedProfile.data?.sensitive_flags).toEqual(["allergy", "family"]);
   });
 
   it("archives the parent class when rollover requests it", async () => {
