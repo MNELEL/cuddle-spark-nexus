@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Home, School, Building2 } from "lucide-react";
+import { Home, School, Building2, Map } from "lucide-react";
 import { isAdmin } from "@/lib/user-roles.functions";
 
 /**
@@ -22,6 +22,7 @@ export function HomeQuickNav() {
     <nav aria-label="ניווט חזרה" className="flex items-center gap-1">
       <Link to="/" className={item} data-quick-nav="home"><Home className="h-3.5 w-3.5" />בית</Link>
       <Link to="/classes" className={item} data-quick-nav="classes"><School className="h-3.5 w-3.5" />הכיתה שלי</Link>
+      <Link to="/map" className={item} data-quick-nav="map"><Map className="h-3.5 w-3.5" />מפת המערכת</Link>
       {adminFlag && (
         <Link to="/institution" className={item} data-quick-nav="institution">
           <Building2 className="h-3.5 w-3.5" />דשבורד המוסד
