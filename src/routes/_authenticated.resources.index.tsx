@@ -888,6 +888,8 @@ function ResourceViewerDialog({
   };
 
   const empty = !c.body && !c.questions?.length && !c.steps?.length && !c.materials?.length;
+  const hasOriginal = Boolean(c.original_text && c.original_text.trim());
+  const [showOriginal, setShowOriginal] = useState(false);
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
@@ -920,6 +922,30 @@ function ResourceViewerDialog({
           )}
           {c.body && (
             <div className="whitespace-pre-wrap rounded-lg border bg-muted/20 p-3 text-sm leading-relaxed">{c.body}</div>
+          )}
+          {hasOriginal && (
+            <div className="rounded-lg border">
+              <button
+                type="button"
+                className="flex w-full items-center justify-between px-3 py-2 text-sm font-medium"
+                aria-expanded={showOriginal}
+                onClick={() => setShowOriginal((v) => !v)}
+              >
+                <span className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  המקור המלא כפי שהועלה
+                  {c.source_kind === "lesson_audio" && (
+                    <Badge variant="secondary" className="text-[10px]">תמלול שיעור</Badge>
+                  )}
+                </span>
+                {showOriginal ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </button>
+              {showOriginal && (
+                <div className="max-h-80 overflow-y-auto whitespace-pre-wrap border-t bg-muted/10 p-3 text-sm leading-relaxed">
+                  {c.original_text}
+                </div>
+              )}
+            </div>
           )}
           {c.materials && c.materials.length > 0 && (
             <div>
