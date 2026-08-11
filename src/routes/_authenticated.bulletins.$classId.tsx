@@ -468,6 +468,48 @@ function BulletinsPage() {
   );
 }
 
+/** Version history of a bulletin — clicking a version loads it into the form (no auto-save). */
+function BulletinVersionsPanel({
+  bulletinId, onLoad,
+}: { bulletinId: string; onLoad: (snapshot: BulletinSnapshot) => void }) {
+  const listVersions = useServerFn(listBulletinVersions);
+  const { data: versions = [], isLoading } = useQuery({
+    queryKey: ["bulletin-versions", bulletinId],
+    queryFn: () => listVersions({ data: { bulletinId } }),
+  });
+
+  return (
+    <section className="print:hidden space-y-2 rounded-xl border bg-muted/20 p-4">
+      <div className="flex items-center gap-2">
+        <History className="h-4 w-4 text-amber" aria-hidden="true" />
+        <h3 className="font-semibold">היסטוריית גרסאות</h3>
+      </div>
+      {isLoading && <div className="text-sm text-muted-foreground">טוען…</div>}
+      {!isLoading && versions.length === 0 && (
+        <div className="text-sm text-muted-foreground">
+          אין עדיין גרסאות קודמות. גרסה נשמרת בכל שחרור נעילה של עלון שפורסם.
+        </div>
+      )}
+      <ul className="space-y-1">
+        {versions.map((v) => (
+          <li key={v.id}>
+            <button
+              type="button"
+              onClick={() => onLoad(v.snapshot)}
+              className="min-h-9 w-full rounded-md border bg-card px-3 py-2 text-right text-sm transition hover:border-amber/40 focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <span className="font-medium">{v.snapshot?.title || "(ללא כותרת)"}</span>
+              <span className="ms-2 text-xs text-muted-foreground">
+                נשמר: {new Date(v.created_at).toLocaleString("he-IL")}
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 function BulletinSyncPanel({ bulletinId, classId: _classId }: { bulletinId: string; classId: string }) {
   const qc = useQueryClient();
   const suggest = useServerFn(suggestResourcesForBulletin);
