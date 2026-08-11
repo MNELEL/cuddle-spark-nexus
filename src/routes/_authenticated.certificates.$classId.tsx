@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
-import { ArrowRight, Award, Download, Plus, Settings, Sparkles, Trash2, Users } from "lucide-react";
+import { ArrowRight, Award, Download, Eye, Plus, Settings, Sparkles, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { getClass } from "@/lib/classes.functions";
@@ -44,6 +44,8 @@ import {
   type CertificateSubject,
 } from "@/lib/pdf/certificate-pdf";
 import { downloadPdfBlob } from "@/lib/pdf/pdf-builder";
+import { PdfPreviewDialog } from "@/components/pdf/pdf-preview-dialog";
+import { certificateToText } from "@/lib/text-export";
 
 export const Route = createFileRoute("/_authenticated/certificates/$classId")({
   component: CertificatesPage,
@@ -412,7 +414,7 @@ function CertificatesPage() {
     override: Partial<Pick<StudentRow, "teacherNote" | "principalNote">>,
   ) => persistRow(id, override);
 
-  const buildForStudent = async (row: StudentRow, kind: "regular" | "correction" = "regular") => {
+  const blobForStudent = async (row: StudentRow, kind: "regular" | "correction" = "regular") => {
     setPdfBrand({
       schoolName: brand.school_name || schoolName || "מוסד חינוכי",
       headerLine: brand.header_line,
@@ -438,7 +440,12 @@ function CertificatesPage() {
       issueDate: new Date().toISOString().slice(0, 10),
       type: kind,
     });
-    downloadPdfBlob(blob, certificateFilename(row.name, period.label));
+    return { blob, filename: certificateFilename(row.name, period.label) };
+  };
+
+  const buildForStudent = async (row: StudentRow, kind: "regular" | "correction" = "regular") => {
+    const { blob, filename } = await blobForStudent(row, kind);
+    downloadPdfBlob(blob, filename);
   };
 
   const generateAll = async () => {
@@ -474,6 +481,7 @@ function CertificatesPage() {
   };
 
   const list = Object.values(rows);
+  const [previewRow, setPreviewRow] = useState<StudentRow | null>(null);
 
   return (
     <div className="mx-auto max-w-6xl space-y-5">
@@ -588,6 +596,7 @@ function CertificatesPage() {
                 onPersistConducts={() => persistRow(row.id)}
                 onOcrPhoto={(f) => applyOcrToRow(row.id, f)}
                 onExport={() => buildForStudent(row, isCorrection ? "correction" : "regular")}
+                onPreview={() => setPreviewRow(row)}
                 onSaveNotes={() => persistNote(row.id)}
                 onSuggestNotes={() => openSuggest(row.id)}
                 showWeighted={showWeighted}
@@ -652,12 +661,27 @@ function CertificatesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {previewRow && (
+        <PdfPreviewDialog
+          open={!!previewRow}
+          onOpenChange={(v) => { if (!v) setPreviewRow(null); }}
+          title={`תעודה · ${previewRow.name}`}
+          buildPdf={() => blobForStudent(previewRow, isCorrection ? "correction" : "regular")}
+          buildText={() => certificateToText(previewRow, {
+            className: cls?.name ?? "כיתה",
+            period: `${period.label} – ${academicYear}`,
+            schoolName: schoolName || "מוסד חינוכי",
+          })}
+          textFilename={`תעודה_${previewRow.name}.txt`}
+        />
+      )}
     </div>
   );
 }
 
 function StudentCertCard({
-  row, onPatch, onPatchSubject, onAddSubject, onRemoveSubject, onPatchConduct, onAddConduct, onRemoveConduct, onPersistConducts, onOcrPhoto, onExport, onSaveNotes, onSuggestNotes, showWeighted,
+  row, onPatch, onPatchSubject, onAddSubject, onRemoveSubject, onPatchConduct, onAddConduct, onRemoveConduct, onPersistConducts, onOcrPhoto, onExport, onPreview, onSaveNotes, onSuggestNotes, showWeighted,
 }: {
   row: StudentRow;
   showWeighted?: boolean;
@@ -671,6 +695,7 @@ function StudentCertCard({
   onPersistConducts: () => void;
   onOcrPhoto: (f: File) => void;
   onExport: () => void;
+  onPreview: () => void;
   onSaveNotes: () => void;
   onSuggestNotes: () => void;
 }) {
@@ -691,6 +716,9 @@ function StudentCertCard({
               buttonLabel="העלה צילום תעודה"
               onFile={(f: File) => onOcrPhoto(f)}
             />
+            <Button size="sm" variant="outline" onClick={onPreview}>
+              <Eye className="ms-1 h-4 w-4" /> תצוגה מקדימה
+            </Button>
             <Button size="sm" onClick={onExport}>
               <Download className="ms-1 h-4 w-4" /> הפק תעודה
             </Button>

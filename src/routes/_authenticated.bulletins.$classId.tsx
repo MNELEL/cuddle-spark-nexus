@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import {
-  ArrowRight, Sparkles, Loader2, Save, Trash2, Printer, Plus, FileText, FileDown,
+  ArrowRight, Sparkles, Loader2, Save, Trash2, Printer, Plus, FileText, FileDown, Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +24,8 @@ import {
 import { Library, Link2, Wand2 } from "lucide-react";
 import { buildBulletinPdf } from "@/lib/pdf/bulletin-pdf";
 import { downloadPdfBlob } from "@/lib/pdf/pdf-builder";
+import { PdfPreviewDialog } from "@/components/pdf/pdf-preview-dialog";
+import { bulletinToMarkdown } from "@/lib/text-export";
 import { getClass } from "@/lib/classes.functions";
 
 export const Route = createFileRoute("/_authenticated/bulletins/$classId")({
@@ -70,6 +72,7 @@ function BulletinsPage() {
 
   const [editing, setEditing] = useState<Editing>(null);
   const [lessonNotes, setLessonNotes] = useState("");
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const { data: bulletins, isLoading } = useQuery({
     queryKey: ["bulletins", classId],
@@ -235,6 +238,9 @@ function BulletinsPage() {
                   <Button variant="outline" onClick={onPdf} disabled={!editing.title}>
                     <FileDown className="ms-1 h-4 w-4" /> הורד PDF
                   </Button>
+                  <Button variant="outline" onClick={() => setPreviewOpen(true)} disabled={!editing.title}>
+                    <Eye className="ms-1 h-4 w-4" /> תצוגה מקדימה
+                  </Button>
                   {editing.id && (
                     <Button variant="ghost" className="text-destructive ms-auto"
                       onClick={() => { if (confirm("למחוק את העלון?")) deleteMut.mutate(editing.id!); }}>
@@ -357,6 +363,16 @@ function BulletinsPage() {
                 )}
               </CardContent>
             </Card>
+
+            <PdfPreviewDialog
+              open={previewOpen}
+              onOpenChange={setPreviewOpen}
+              title="תצוגה מקדימה של העלון"
+              buildPdf={() => buildBulletinPdf({ bulletin: editing, className: cls?.name ?? "כיתה" })}
+              buildText={() => bulletinToMarkdown(editing, cls?.name ?? "כיתה")}
+              textFilename={`עלון_${editing.startDate}.md`}
+              textMime="text/markdown"
+            />
           </div>
         )}
       </div>
