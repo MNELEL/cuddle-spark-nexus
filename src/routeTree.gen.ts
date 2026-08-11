@@ -40,6 +40,7 @@ import { Route as AuthenticatedSoundBoardRouteImport } from './routes/_authentic
 import { Route as AuthenticatedSoundTestRouteImport } from './routes/_authenticated.sound-test'
 import { Route as AuthenticatedToolkitRouteImport } from './routes/_authenticated.toolkit'
 import { Route as AuthenticatedUserManagementRouteImport } from './routes/_authenticated.user-management'
+import { Route as AuthenticatedWeeklySheetRouteImport } from './routes/_authenticated.weekly-sheet'
 import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as BlogAiSeatingArrangementsGuideRouteImport } from './routes/blog.ai-seating-arrangements-guide'
 import { Route as BlogClassdojoComparisonRouteImport } from './routes/blog.classdojo-comparison'
@@ -252,6 +253,12 @@ const AuthenticatedUserManagementRoute =
   AuthenticatedUserManagementRouteImport.update({
     id: '/user-management',
     path: '/user-management',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedWeeklySheetRoute =
+  AuthenticatedWeeklySheetRouteImport.update({
+    id: '/weekly-sheet',
+    path: '/weekly-sheet',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const BlogIndexRoute = BlogIndexRouteImport.update({
@@ -588,6 +595,7 @@ export interface FileRoutesByFullPath {
   '/sound-test': typeof AuthenticatedSoundTestRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
   '/user-management': typeof AuthenticatedUserManagementRoute
+  '/weekly-sheet': typeof AuthenticatedWeeklySheetRoute
   '/blog/ai-seating-arrangements-guide': typeof BlogAiSeatingArrangementsGuideRoute
   '/blog/classdojo-comparison': typeof BlogClassdojoComparisonRoute
   '/blog/classroom-management-strategies': typeof BlogClassroomManagementStrategiesRouteWithChildren
@@ -669,6 +677,7 @@ export interface FileRoutesByTo {
   '/sound-test': typeof AuthenticatedSoundTestRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
   '/user-management': typeof AuthenticatedUserManagementRoute
+  '/weekly-sheet': typeof AuthenticatedWeeklySheetRoute
   '/blog/ai-seating-arrangements-guide': typeof BlogAiSeatingArrangementsGuideRoute
   '/blog/classdojo-comparison': typeof BlogClassdojoComparisonRoute
   '/blog/classroom-tools-teachers': typeof BlogClassroomToolsTeachersRoute
@@ -755,6 +764,7 @@ export interface FileRoutesById {
   '/_authenticated/sound-test': typeof AuthenticatedSoundTestRoute
   '/_authenticated/toolkit': typeof AuthenticatedToolkitRoute
   '/_authenticated/user-management': typeof AuthenticatedUserManagementRoute
+  '/_authenticated/weekly-sheet': typeof AuthenticatedWeeklySheetRoute
   '/blog/ai-seating-arrangements-guide': typeof BlogAiSeatingArrangementsGuideRoute
   '/blog/classdojo-comparison': typeof BlogClassdojoComparisonRoute
   '/blog/classroom-management-strategies': typeof BlogClassroomManagementStrategiesRouteWithChildren
@@ -842,6 +852,7 @@ export interface FileRouteTypes {
     | '/sound-test'
     | '/toolkit'
     | '/user-management'
+    | '/weekly-sheet'
     | '/blog/ai-seating-arrangements-guide'
     | '/blog/classdojo-comparison'
     | '/blog/classroom-management-strategies'
@@ -923,6 +934,7 @@ export interface FileRouteTypes {
     | '/sound-test'
     | '/toolkit'
     | '/user-management'
+    | '/weekly-sheet'
     | '/blog/ai-seating-arrangements-guide'
     | '/blog/classdojo-comparison'
     | '/blog/classroom-tools-teachers'
@@ -1008,6 +1020,7 @@ export interface FileRouteTypes {
     | '/_authenticated/sound-test'
     | '/_authenticated/toolkit'
     | '/_authenticated/user-management'
+    | '/_authenticated/weekly-sheet'
     | '/blog/ai-seating-arrangements-guide'
     | '/blog/classdojo-comparison'
     | '/blog/classroom-management-strategies'
@@ -1306,6 +1319,13 @@ declare module '@tanstack/react-router' {
       path: '/user-management'
       fullPath: '/user-management'
       preLoaderRoute: typeof AuthenticatedUserManagementRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/weekly-sheet': {
+      id: '/_authenticated/weekly-sheet'
+      path: '/weekly-sheet'
+      fullPath: '/weekly-sheet'
+      preLoaderRoute: typeof AuthenticatedWeeklySheetRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/blog/': {
@@ -1710,6 +1730,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedSoundTestRoute: typeof AuthenticatedSoundTestRoute
   AuthenticatedToolkitRoute: typeof AuthenticatedToolkitRoute
   AuthenticatedUserManagementRoute: typeof AuthenticatedUserManagementRoute
+  AuthenticatedWeeklySheetRoute: typeof AuthenticatedWeeklySheetRoute
   AuthenticatedAnalyticsClassIdRoute: typeof AuthenticatedAnalyticsClassIdRoute
   AuthenticatedBulletinsClassIdRoute: typeof AuthenticatedBulletinsClassIdRoute
   AuthenticatedCalendarClassIdRoute: typeof AuthenticatedCalendarClassIdRoute
@@ -1750,6 +1771,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSoundTestRoute: AuthenticatedSoundTestRoute,
   AuthenticatedToolkitRoute: AuthenticatedToolkitRoute,
   AuthenticatedUserManagementRoute: AuthenticatedUserManagementRoute,
+  AuthenticatedWeeklySheetRoute: AuthenticatedWeeklySheetRoute,
   AuthenticatedAnalyticsClassIdRoute: AuthenticatedAnalyticsClassIdRoute,
   AuthenticatedBulletinsClassIdRoute: AuthenticatedBulletinsClassIdRoute,
   AuthenticatedCalendarClassIdRoute: AuthenticatedCalendarClassIdRoute,
