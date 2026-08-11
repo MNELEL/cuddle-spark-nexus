@@ -1,4 +1,5 @@
 import { SettingsTabs } from "@/components/settings-tabs";
+import { SettingsBreadcrumb } from "@/components/settings-breadcrumb";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -103,6 +104,7 @@ function BrandSettingsPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-5">
+      <SettingsBreadcrumb current="מותג" />
       <SettingsTabs active="brand" />
       <div>
         <h1 className="font-display text-3xl font-bold">מיתוג המוסד</h1>
