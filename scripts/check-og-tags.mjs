@@ -212,6 +212,9 @@ export function auditOgTags() {
   }
 
   const assets = auditOgAssets();
+  // Asset pointers are the real share images; resolve them to absolute URLs so
+  // the --remote pass can verify their true pixel dimensions.
+  for (const url of assets.urls) images.add(`${site}${url}`);
   return {
     problems: [...problems, ...assets.problems],
     routeCount,
