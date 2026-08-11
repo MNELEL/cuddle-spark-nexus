@@ -68,6 +68,7 @@ export const TOOLS: ToolEntry[] = [
   // --- docs ---
   { to: "/settings/brand", section: "docs", requires: "any", icon: "Palette", label: "תבנית ומיתוג המוסד", desc: "לוגו, שם מוסד וכותרת קבועה — מוטמעים בכל מסמך שמופק" },
   { to: "/contact-sheet", section: "docs", requires: "any", icon: "Contact", label: "דף קשר", desc: "אנשי קשר, צוות וספקים — עם תבנית מוכנה והפקה ל-PDF" },
+  { to: "/weekly-sheet", section: "docs", requires: "any", icon: "Mail", label: "דף קשר שבועי להורים", desc: "הספק החומר לפי מקצועות, מבחנים והודעות — שער, עמוד הספק ודף חתימת הורים" },
   { to: "/ingest", section: "docs", requires: "any", icon: "FileText", label: "העלאה חכמה", desc: "העלאת קבצים ושיבוץ אוטומטי של הנתונים" },
   { to: "/onboarding", section: "docs", requires: "any", icon: "Sparkles", label: "המדריך החכם", desc: "שישה שלבים מהקמת הכיתה ועד הדוח הראשון להורים" },
   { to: "/certificates/$classId", section: "docs", requires: "classes", classScoped: true, icon: "Award", label: "תעודות", desc: "הפקת תעודות עם התבנית והלוגו של המוסד" },
