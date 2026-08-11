@@ -6,6 +6,70 @@ import { callLovableAI } from "./ai-gateway.server";
 const DateStr = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
 export type QuizQuestion = { question: string; answer: string };
+
+/** מקצועות ההספק השבועי — מפתחות קבועים עם שני שדות פירוט כל אחד. */
+export type StudySchedule = {
+  gemara?: { daf: string; topic: string };
+  mishna?: { masechet: string; perek: string };
+  torah?: { parasha: string; pasuk_range: string };
+  navi?: { sefer: string; perek: string };
+  halacha?: { siman: string; seif: string };
+};
+
+export type HonoredStudent = { name: string; type: "vort" | "mazal_tov" | "other"; note: string };
+export type SpecialNotice = { title: string; body: string };
+
+const txt = z.string().max(200).default("");
+const StudyScheduleSchema = z.object({
+  gemara: z.object({ daf: txt, topic: txt }).optional(),
+  mishna: z.object({ masechet: txt, perek: txt }).optional(),
+  torah: z.object({ parasha: txt, pasuk_range: txt }).optional(),
+  navi: z.object({ sefer: txt, perek: txt }).optional(),
+  halacha: z.object({ siman: txt, seif: txt }).optional(),
+}).default({});
+
+const HonoredSchema = z.array(z.object({
+  name: z.string().max(200).default(""),
+  type: z.enum(["vort", "mazal_tov", "other"]).default("other"),
+  note: z.string().max(500).default(""),
+})).max(40).default([]);
+
+const NoticesSchema = z.array(z.object({
+  title: z.string().max(200).default(""),
+  body: z.string().max(2000).default(""),
+})).max(20).default([]);
+
+export type BulletinExtras = Pick<
+  BulletinDraft,
+  "torah_dvar_title" | "torah_dvar_body" | "study_schedule" | "honored_students" | "special_notices"
+>;
+
+/** ברירות מחדל לשדות התוכן המורחבים — שומר תאימות לעלונים ישנים ולתשובות AI חסרות. */
+export function normalizeExtras(row: unknown): BulletinExtras {
+  const r = (row ?? {}) as Record<string, unknown>;
+  const honored = Array.isArray(r["honored_students"]) ? (r["honored_students"] as HonoredStudent[]) : [];
+  const notices = Array.isArray(r["special_notices"]) ? (r["special_notices"] as SpecialNotice[]) : [];
+  const sched = r["study_schedule"];
+  return {
+    torah_dvar_title: typeof r["torah_dvar_title"] === "string" ? (r["torah_dvar_title"] as string) : "",
+    torah_dvar_body: typeof r["torah_dvar_body"] === "string" ? (r["torah_dvar_body"] as string) : "",
+    study_schedule: (sched && typeof sched === "object" && !Array.isArray(sched) ? sched : {}) as StudySchedule,
+    honored_students: honored
+      .filter((h) => h && typeof h.name === "string" && h.name.trim())
+      .map((h) => ({
+        name: String(h.name),
+        type: h.type === "vort" || h.type === "mazal_tov" ? h.type : "other",
+        note: typeof h.note === "string" ? h.note : "",
+      })),
+    special_notices: notices
+      .filter((n) => n && (n.title || n.body))
+      .map((n) => ({
+        title: typeof n.title === "string" ? n.title : "",
+        body: typeof n.body === "string" ? n.body : "",
+      })),
+  };
+}
+
 export type BulletinDraft = {
   title: string;
   digest_summary: string;
@@ -14,6 +78,11 @@ export type BulletinDraft = {
   weekly_riddle: string;
   weekly_riddle_answer: string;
   activities: string[];
+  torah_dvar_title: string;
+  torah_dvar_body: string;
+  study_schedule: StudySchedule;
+  honored_students: HonoredStudent[];
+  special_notices: SpecialNotice[];
 };
 
 export type StoredBulletin = BulletinDraft & {
