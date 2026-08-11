@@ -53,7 +53,8 @@ function DisplayMode() {
   const listS = useServerFn(listStudents);
   const listScores = useServerFn(listClassScoreInputs);
 
-  const { data: cls } = useQuery({ queryKey: ["class", classId], queryFn: () => getC({ data: { id: classId } }) });
+  const { data: cls, isLoading: clsLoading } = useQuery({ queryKey: ["class", classId], queryFn: () => getC({ data: { id: classId } }) });
+  useClassFallbackRedirect(!clsLoading && !cls);
   const { data: students = [] } = useQuery({
     queryKey: ["students", classId],
     queryFn: () => listS({ data: { classId } }),
