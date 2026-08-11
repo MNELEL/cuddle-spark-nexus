@@ -15,6 +15,8 @@
     "check:seo:urls": "node scripts/check-seo-urls.mjs",
     "check:routes": "node scripts/check-route-links.mjs",
     "check:links": "node scripts/check-links.mjs",
+    "check:og": "node scripts/check-og-tags.mjs",
+    "check:og:remote": "node scripts/check-og-tags.mjs --remote",
     "check:links:external": "node scripts/check-links.mjs --external",
     "test": "vitest run",
     "test:notifications": "vitest run src/test/notifications-flow.test.ts src/test/rls-class-notifications.test.ts",
