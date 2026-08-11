@@ -422,10 +422,22 @@ function ResourcesPage() {
 
       <div className="grid gap-4 lg:grid-cols-[260px_1fr]">
         {/* Filters */}
-        <Card className="h-fit">
+        <Card className="h-fit lg:col-start-1">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm">סינון</CardTitle>
+            <button
+              type="button"
+              className="flex w-full items-center justify-between text-sm font-medium"
+              aria-expanded={filtersOpen}
+              onClick={() => setFiltersOpen((v) => !v)}
+            >
+              <span className="flex items-center gap-2">
+                <Search className="h-4 w-4" /> סינון מתקדם
+                {hasActiveFilters && <Badge variant="secondary" className="text-[10px]">פעיל</Badge>}
+              </span>
+              {filtersOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </button>
           </CardHeader>
+          {filtersOpen && (
           <CardContent className="space-y-3">
             <div>
               <Label className="text-xs">חיפוש</Label>
@@ -536,13 +548,16 @@ function ResourcesPage() {
               <X className="ms-1 h-3 w-3" /> נקה סינון
             </Button>
           </CardContent>
+          )}
         </Card>
 
-        <Card className="lg:col-start-1">
-          <CardContent className="pt-4">
-            <TopicTreeFilter value={filters.topicIds} onChange={(ids) => patch({ topicIds: ids })} />
-          </CardContent>
-        </Card>
+        {filtersOpen && (
+          <Card className="lg:col-start-1">
+            <CardContent className="pt-4">
+              <TopicTreeFilter value={filters.topicIds} onChange={(ids) => patch({ topicIds: ids })} />
+            </CardContent>
+          </Card>
+        )}
 
         {/* Grid */}
         <div className="space-y-3 lg:col-start-2 lg:row-start-1 lg:row-span-2">
