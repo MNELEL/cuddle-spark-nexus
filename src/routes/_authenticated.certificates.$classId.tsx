@@ -661,6 +661,21 @@ function CertificatesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {previewRow && (
+        <PdfPreviewDialog
+          open={!!previewRow}
+          onOpenChange={(v) => { if (!v) setPreviewRow(null); }}
+          title={`תעודה · ${previewRow.name}`}
+          buildPdf={() => blobForStudent(previewRow, isCorrection ? "correction" : "regular")}
+          buildText={() => certificateToText(previewRow, {
+            className: cls?.name ?? "כיתה",
+            period: `${period.label} – ${academicYear}`,
+            schoolName: schoolName || "מוסד חינוכי",
+          })}
+          textFilename={`תעודה_${previewRow.name}.txt`}
+        />
+      )}
     </div>
   );
 }
