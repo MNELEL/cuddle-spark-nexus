@@ -2764,14 +2764,19 @@ export type Database = {
           digest_summary: string
           embedding: string | null
           end_date: string
+          honored_students: Json
           id: string
           notes: string
           published_at: string | null
           recap_questions: Json
+          special_notices: Json
           start_date: string
           status: string
           study_points: Json
+          study_schedule: Json
           title: string
+          torah_dvar_body: string
+          torah_dvar_title: string
           weekly_riddle: string
           weekly_riddle_answer: string
         }
@@ -2782,14 +2787,19 @@ export type Database = {
           digest_summary?: string
           embedding?: string | null
           end_date: string
+          honored_students?: Json
           id?: string
           notes?: string
           published_at?: string | null
           recap_questions?: Json
+          special_notices?: Json
           start_date: string
           status?: string
           study_points?: Json
+          study_schedule?: Json
           title?: string
+          torah_dvar_body?: string
+          torah_dvar_title?: string
           weekly_riddle?: string
           weekly_riddle_answer?: string
         }
@@ -2800,14 +2810,19 @@ export type Database = {
           digest_summary?: string
           embedding?: string | null
           end_date?: string
+          honored_students?: Json
           id?: string
           notes?: string
           published_at?: string | null
           recap_questions?: Json
+          special_notices?: Json
           start_date?: string
           status?: string
           study_points?: Json
+          study_schedule?: Json
           title?: string
+          torah_dvar_body?: string
+          torah_dvar_title?: string
           weekly_riddle?: string
           weekly_riddle_answer?: string
         }

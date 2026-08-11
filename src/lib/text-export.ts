@@ -1,5 +1,20 @@
 import type { BulletinDraft } from "@/lib/bulletins.functions";
 
+/** תוויות מקצועות ההספק לייצוא טקסטואלי. */
+const SCHEDULE_ROWS = [
+  { key: "gemara", label: "גמרא", fields: [["daf", "דף"], ["topic", "נושא"]] },
+  { key: "mishna", label: "משנה", fields: [["masechet", "מסכת"], ["perek", "פרק"]] },
+  { key: "torah", label: "חומש", fields: [["parasha", "פרשה"], ["pasuk_range", "פסוקים"]] },
+  { key: "navi", label: "נביא", fields: [["sefer", "ספר"], ["perek", "פרק"]] },
+  { key: "halacha", label: "הלכה", fields: [["siman", "סימן"], ["seif", "סעיף"]] },
+] as const;
+
+const HONOR_LABELS: Record<string, string> = {
+  vort: "ווארט / דבר תורה",
+  mazal_tov: "מזל טוב",
+  other: "יישר כח",
+};
+
 /** Minimal shape needed for a plain-text certificate export. */
 export type CertificateTextRow = {
   name: string;
@@ -32,6 +47,29 @@ export function bulletinToMarkdown(
     lines.push("## סיכום השבוע", "", bulletin.digest_summary.trim(), "");
   }
 
+  if (bulletin.torah_dvar_title?.trim() || bulletin.torah_dvar_body?.trim()) {
+    lines.push(`## ${bulletin.torah_dvar_title?.trim() || "דבר תורה"}`, "");
+    if (bulletin.torah_dvar_body?.trim()) lines.push(bulletin.torah_dvar_body.trim(), "");
+  }
+
+  const schedule = (bulletin.study_schedule ?? {}) as Record<string, Record<string, string> | undefined>;
+  const scheduleLines: string[] = [];
+  for (const def of SCHEDULE_ROWS) {
+    const row = schedule[def.key];
+    if (!row) continue;
+    const detail = def.fields
+      .map(([f, label]) => {
+        const v = (row[f] ?? "").trim();
+        return v ? `${label}: ${v}` : "";
+      })
+      .filter(Boolean)
+      .join(", ");
+    if (detail) scheduleLines.push(`- **${def.label}** — ${detail}`);
+  }
+  if (scheduleLines.length) {
+    lines.push("## ההספק הלימודי", "", ...scheduleLines, "");
+  }
+
   if (bulletin.study_points?.length) {
     lines.push("## נקודות לימוד", "");
     for (const p of bulletin.study_points) lines.push(`- ${p}`);
@@ -58,6 +96,25 @@ export function bulletinToMarkdown(
     lines.push("## פעילויות ויוזמות", "");
     for (const a of bulletin.activities) lines.push(`- ${a}`);
     lines.push("");
+  }
+
+  const honored = (bulletin.honored_students ?? []).filter((h) => h?.name?.trim());
+  if (honored.length) {
+    lines.push("## יישר כח ומזל טוב", "");
+    for (const h of honored) {
+      const label = HONOR_LABELS[h.type] ?? HONOR_LABELS["other"];
+      lines.push(`- ${h.name} — ${label}${h.note?.trim() ? `: ${h.note.trim()}` : ""}`);
+    }
+    lines.push("");
+  }
+
+  const notices = (bulletin.special_notices ?? []).filter((n) => n?.title?.trim() || n?.body?.trim());
+  if (notices.length) {
+    lines.push("## הודעות מיוחדות", "");
+    for (const n of notices) {
+      if (n.title?.trim()) lines.push(`### ${n.title.trim()}`, "");
+      if (n.body?.trim()) lines.push(n.body.trim(), "");
+    }
   }
 
   return lines.join("\n");
