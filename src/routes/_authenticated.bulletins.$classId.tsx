@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import {
   listBulletins, generateBulletin, saveBulletin, deleteBulletin,
   publishBulletin, unpublishBulletin, listBulletinVersions,
-  type BulletinDraft, type StoredBulletin,
+  type BulletinDraft, type StoredBulletin, type BulletinSnapshot,
 } from "@/lib/bulletins.functions";
 import {
   suggestResourcesForBulletin, listBulletinResources, linkResourceToBulletin,
