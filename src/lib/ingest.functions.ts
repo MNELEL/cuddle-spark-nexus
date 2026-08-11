@@ -687,11 +687,13 @@ export const remapRosterTabular = createServerFn({ method: "POST" })
 async function analyzeResource(b64: string, mime: string, apiKey: string): Promise<ResourceExtracted> {
   const system = `אתה עוזר של רב/מלמד בתלמוד תורה חרדי. נתח את החומר המצורף וסווג אותו כחומר לימוד:
 - זהה כותרת, תיאור קצר (1-2 משפטים), מקצוע (גמרא/משנה/חומש/נביא/הלכה/מוסר/תפילה/פרשת שבוע), כיתה (א-ח), סוג (worksheet/question_bank/riddle/story/song/game/visual_aid/lesson_plan/activity/other), תגיות.
-- שכתב את התוכן כ-body מסודר וחלץ שאלות אם יש.
+- original_text: העתק את **כל** הטקסט של המסמך כפי שהוא, מדויק ומלא, ללא שכתוב, ללא קיצור וללא הוספות. שמור על סדר השורות והפסקאות. אם המסמך תמונה או סרוק — בצע OCR מדויק.
+- body: גרסה מסודרת/מתומצתת של התוכן (זה השדה היחיד שמותר לשכתב בו).
+- חלץ שאלות אם יש.
 השתמש במונחים "הרב", "המלמד", "התלמידים".
 
 החזר JSON תקין בלבד:
-{"title":"","description":"","subject":"","grade_level":"","resource_type":"worksheet","tags":[],"body":"","questions":[{"q":"","a":""}]}`;
+{"title":"","description":"","subject":"","grade_level":"","resource_type":"worksheet","tags":[],"original_text":"","body":"","questions":[{"q":"","a":""}]}`;
 
   const isImage = mime.startsWith("image/");
   const isPdf = mime === "application/pdf";
@@ -718,6 +720,7 @@ async function analyzeResource(b64: string, mime: string, apiKey: string): Promi
     resource_type: String(p.resource_type ?? "worksheet").slice(0, 40),
     tags: Array.isArray(p.tags) ? p.tags.map((t) => String(t).slice(0, 40)).slice(0, 20) : [],
     body: String(p.body ?? "").slice(0, 20000),
+    original_text: String(p.original_text ?? "").slice(0, 200000),
     questions: Array.isArray(p.questions)
       ? p.questions.filter((q) => q && q.q).map((q) => ({
           q: String(q.q).slice(0, 500),
