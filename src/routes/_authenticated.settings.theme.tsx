@@ -32,7 +32,7 @@ const SWATCHES: Record<ThemeName, string[]> = {
   minimal: ["#000000", "#666666", "#ffffff"],
   kitsch: ["#ec4899", "#fbcfe8", "#fff1f7"],
   mono: ["#04150c", "#22c55e", "#0a2415"],
-  classalign: ["#14b8a6", "#f97316", "#ecfeff"],
+  hakita: ["#14b8a6", "#f97316", "#ecfeff"],
   "hakita-sheli": ["#2b2118", "#b08d57", "#f6efe2"],
 };
 
