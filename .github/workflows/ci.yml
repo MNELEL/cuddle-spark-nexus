@@ -305,8 +305,9 @@ jobs:
 
   # Lighthouse against a production build served by the real workerd runtime.
   # Fails the PR when Performance / Accessibility / Best Practices / SEO drop
-  # below the thresholds in lighthouserc.cjs, and posts the score table as a
-  # PR comment plus a job summary.
+  # below the thresholds in lighthouserc.cjs (desktop) or lighthouserc.mobile.cjs
+  # (throttled slow-4G mobile), and posts both score tables as a PR comment plus
+  # a job summary.
   lighthouse:
     runs-on: ubuntu-latest
     permissions:
@@ -339,5 +340,6 @@ jobs:
           name: lighthouse-${{ github.sha }}
           path: |
             lighthouse-summary.md
+            lighthouse-summary-mobile.md
             .lighthouseci/
           retention-days: 30
