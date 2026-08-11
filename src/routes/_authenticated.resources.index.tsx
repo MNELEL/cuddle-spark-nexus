@@ -30,6 +30,7 @@ import {
   listResources, upsertResource, deleteResource, generateResourceWithAI,
   listCollections, upsertCollection, deleteCollection, toggleCollectionItem,
   listCollectionItems, toggleResourceFavorite, askLibrary,
+  getResourceSignedUrl,
   RESOURCE_TYPES, RESOURCE_TYPE_LABELS,
   DIFFICULTIES, DIFFICULTY_LABELS,
   type ResourceRow, type ResourceContent, type ResourceType,
@@ -890,6 +891,16 @@ function ResourceViewerDialog({
   const empty = !c.body && !c.questions?.length && !c.steps?.length && !c.materials?.length;
   const hasOriginal = Boolean(c.original_text && c.original_text.trim());
   const [showOriginal, setShowOriginal] = useState(false);
+  const signUrl = useServerFn(getResourceSignedUrl);
+  const openOriginalFile = async () => {
+    if (!resource.file_path) return;
+    try {
+      const { url } = await signUrl({ data: { file_path: resource.file_path } });
+      window.open(url, "_blank", "noopener");
+    } catch {
+      toast.error("לא הצלחנו לפתוח את הקובץ המקורי");
+    }
+  };
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
@@ -946,6 +957,11 @@ function ResourceViewerDialog({
                 </div>
               )}
             </div>
+          )}
+          {resource.file_path && (
+            <Button variant="outline" size="sm" onClick={openOriginalFile}>
+              <Download className="ms-1 h-4 w-4" /> הורד את הקובץ המקורי
+            </Button>
           )}
           {c.materials && c.materials.length > 0 && (
             <div>
