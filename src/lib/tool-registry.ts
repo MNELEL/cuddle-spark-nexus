@@ -78,6 +78,7 @@ export const TOOLS: ToolEntry[] = [
   { to: "/calendar/$classId", section: "docs", requires: "classes", classScoped: true, icon: "CalendarDays", label: "לוח אירועים", desc: "אירועי כיתה, מבחנים וימי הולדת" },
 
   // --- settings ---
+  { to: "/map", section: "settings", requires: "any", icon: "Map", label: "מפת המערכת", desc: "כל המסכים והכלים בעברית, בלחיצה אחת — מותאם לכיתה שלך" },
   { to: "/settings", section: "settings", requires: "any", icon: "Settings", label: "מרכז ההגדרות", desc: "אבטחה וקוד PIN, העדפות תזכורות, מיתוג המוסד ומצב המנוי" },
   { to: "/settings/theme", section: "settings", requires: "any", icon: "Palette", label: "ערכות נושא", desc: "תצוגה מקדימה ושמירה של ערכת הנושא — חלה בכל המכשירים" },
   { to: "/institution", section: "settings", requires: "admin_or_principal", icon: "Building2", label: "לוח המוסד", desc: "כיתות, מלמדים, צוות ונתוני המוסד" },
