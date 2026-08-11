@@ -241,15 +241,39 @@ function ResourcesPage() {
               חזרה לכיתות <ArrowRight className="ms-1 h-4 w-4" />
             </Link>
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setCollOpen(true)}>
+          <Button variant="ghost" size="sm" onClick={() => setCollOpen(true)}>
             <FolderPlus className="ms-1 h-4 w-4" /> אוספים ({collections.length})
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setEditing({})}>
-            <Plus className="ms-1 h-4 w-4" /> חדש
-          </Button>
-          <Button size="sm" onClick={() => setAiOpen(true)}>
-            <Sparkles className="ms-1 h-4 w-4" /> צור עם AI
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm">
+                <Plus className="ms-1 h-4 w-4" /> הוסף חומר
+                <ChevronDown className="ms-1 h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" dir="rtl" className="w-64">
+              <DropdownMenuLabel>הוספה לספרייה</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => setEditing({})}>
+                <FileText className="ms-1 h-4 w-4" /> כתיבה ידנית
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setAiOpen(true)}>
+                <Sparkles className="ms-1 h-4 w-4 text-amber" /> יצירה עם AI
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/ingest">
+                  <Download className="ms-1 h-4 w-4" /> העלאת מסמך או הקלטה
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>הפקה מחומר קיים</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => setSummaryOpen(true)}>
+                <FileText className="ms-1 h-4 w-4" /> מחולל סיכום
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTasksOpen(true)}>
+                <ListChecks className="ms-1 h-4 w-4" /> מחולל משימות
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -283,34 +307,6 @@ function ResourcesPage() {
 
       {view === "items" && (
       <>
-      {/* מחוללים פדגוגיים מתוך הספרייה */}
-      <div className="grid gap-3 sm:grid-cols-2">
-        <button
-          type="button"
-          onClick={() => setSummaryOpen(true)}
-          className="rounded-xl border bg-card p-4 text-right transition hover:border-primary/50 hover:shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <div className="flex items-center gap-2 font-semibold">
-            <FileText className="h-4 w-4 text-amber" aria-hidden /> מחולל סיכום מותאם
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            בוחרים חומר מהספרייה, רמת תלמידים והיקף — ומקבלים סיכום בסגנון האישי שלך.
-          </p>
-        </button>
-        <button
-          type="button"
-          onClick={() => setTasksOpen(true)}
-          className="rounded-xl border bg-card p-4 text-right transition hover:border-primary/50 hover:shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <div className="flex items-center gap-2 font-semibold">
-            <ListChecks className="h-4 w-4 text-amber" aria-hidden /> מחולל משימות
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            שאלות ומשימות מחומר קיים או מנושא חופשי, לפי רמת קושי וכמות.
-          </p>
-        </button>
-      </div>
-
       {/* קטגוריות ראשיות */}
       <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="קטגוריות ספרייה">
         {LIBRARY_CATEGORIES.map((c) => {
