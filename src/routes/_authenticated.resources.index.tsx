@@ -251,7 +251,7 @@ function ResourcesPage() {
                 <ChevronDown className="ms-1 h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" dir="rtl" className="w-64">
+            <DropdownMenuContent align="end" className="w-64 text-right">
               <DropdownMenuLabel>הוספה לספרייה</DropdownMenuLabel>
               <DropdownMenuItem onClick={() => setEditing({})}>
                 <FileText className="ms-1 h-4 w-4" /> כתיבה ידנית
