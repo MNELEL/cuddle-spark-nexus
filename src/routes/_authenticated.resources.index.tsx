@@ -20,12 +20,17 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { KODESH_SUBJECTS } from "@/lib/kodesh-subjects";
 import {
   listResources, upsertResource, deleteResource, generateResourceWithAI,
   listCollections, upsertCollection, deleteCollection, toggleCollectionItem,
   listCollectionItems, toggleResourceFavorite, askLibrary,
+  getResourceSignedUrl,
   RESOURCE_TYPES, RESOURCE_TYPE_LABELS,
   DIFFICULTIES, DIFFICULTY_LABELS,
   type ResourceRow, type ResourceContent, type ResourceType,
@@ -127,6 +132,7 @@ function ResourcesPage() {
   const [view, setView] = useState<"items" | "ask">("items");
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [tasksOpen, setTasksOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const viewKeys = useTablistKeys(VIEW_TABS, view, setView);
   const categoryKeys = useTablistKeys(CATEGORY_IDS, category, setCategory);
@@ -236,15 +242,39 @@ function ResourcesPage() {
               חזרה לכיתות <ArrowRight className="ms-1 h-4 w-4" />
             </Link>
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setCollOpen(true)}>
+          <Button variant="ghost" size="sm" onClick={() => setCollOpen(true)}>
             <FolderPlus className="ms-1 h-4 w-4" /> אוספים ({collections.length})
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setEditing({})}>
-            <Plus className="ms-1 h-4 w-4" /> חדש
-          </Button>
-          <Button size="sm" onClick={() => setAiOpen(true)}>
-            <Sparkles className="ms-1 h-4 w-4" /> צור עם AI
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm">
+                <Plus className="ms-1 h-4 w-4" /> הוסף חומר
+                <ChevronDown className="ms-1 h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64 text-right">
+              <DropdownMenuLabel>הוספה לספרייה</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => setEditing({})}>
+                <FileText className="ms-1 h-4 w-4" /> כתיבה ידנית
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setAiOpen(true)}>
+                <Sparkles className="ms-1 h-4 w-4 text-amber" /> יצירה עם AI
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/ingest">
+                  <Download className="ms-1 h-4 w-4" /> העלאת מסמך או הקלטה
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>הפקה מחומר קיים</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => setSummaryOpen(true)}>
+                <FileText className="ms-1 h-4 w-4" /> מחולל סיכום
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTasksOpen(true)}>
+                <ListChecks className="ms-1 h-4 w-4" /> מחולל משימות
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -278,34 +308,6 @@ function ResourcesPage() {
 
       {view === "items" && (
       <>
-      {/* מחוללים פדגוגיים מתוך הספרייה */}
-      <div className="grid gap-3 sm:grid-cols-2">
-        <button
-          type="button"
-          onClick={() => setSummaryOpen(true)}
-          className="rounded-xl border bg-card p-4 text-right transition hover:border-primary/50 hover:shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <div className="flex items-center gap-2 font-semibold">
-            <FileText className="h-4 w-4 text-amber" aria-hidden /> מחולל סיכום מותאם
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            בוחרים חומר מהספרייה, רמת תלמידים והיקף — ומקבלים סיכום בסגנון האישי שלך.
-          </p>
-        </button>
-        <button
-          type="button"
-          onClick={() => setTasksOpen(true)}
-          className="rounded-xl border bg-card p-4 text-right transition hover:border-primary/50 hover:shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <div className="flex items-center gap-2 font-semibold">
-            <ListChecks className="h-4 w-4 text-amber" aria-hidden /> מחולל משימות
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            שאלות ומשימות מחומר קיים או מנושא חופשי, לפי רמת קושי וכמות.
-          </p>
-        </button>
-      </div>
-
       {/* קטגוריות ראשיות */}
       <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="קטגוריות ספרייה">
         {LIBRARY_CATEGORIES.map((c) => {
@@ -421,10 +423,22 @@ function ResourcesPage() {
 
       <div className="grid gap-4 lg:grid-cols-[260px_1fr]">
         {/* Filters */}
-        <Card className="h-fit">
+        <Card className="h-fit lg:col-start-1">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm">סינון</CardTitle>
+            <button
+              type="button"
+              className="flex w-full items-center justify-between text-sm font-medium"
+              aria-expanded={filtersOpen}
+              onClick={() => setFiltersOpen((v) => !v)}
+            >
+              <span className="flex items-center gap-2">
+                <Search className="h-4 w-4" /> סינון מתקדם
+                {hasActiveFilters && <Badge variant="secondary" className="text-[10px]">פעיל</Badge>}
+              </span>
+              {filtersOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </button>
           </CardHeader>
+          {filtersOpen && (
           <CardContent className="space-y-3">
             <div>
               <Label className="text-xs">חיפוש</Label>
@@ -535,13 +549,16 @@ function ResourcesPage() {
               <X className="ms-1 h-3 w-3" /> נקה סינון
             </Button>
           </CardContent>
+          )}
         </Card>
 
-        <Card className="lg:col-start-1">
-          <CardContent className="pt-4">
-            <TopicTreeFilter value={filters.topicIds} onChange={(ids) => patch({ topicIds: ids })} />
-          </CardContent>
-        </Card>
+        {filtersOpen && (
+          <Card className="lg:col-start-1">
+            <CardContent className="pt-4">
+              <TopicTreeFilter value={filters.topicIds} onChange={(ids) => patch({ topicIds: ids })} />
+            </CardContent>
+          </Card>
+        )}
 
         {/* Grid */}
         <div className="space-y-3 lg:col-start-2 lg:row-start-1 lg:row-span-2">
@@ -669,12 +686,21 @@ function ResourceCard({
   onToggleFavorite: () => void;
 }) {
   return (
-    <div className="group rounded-xl border bg-card p-4 text-right transition hover:border-amber/40 hover:shadow-md">
+    <div
+      role="button"
+      tabIndex={0}
+      aria-label={`פתח את "${resource.title}"`}
+      onClick={onView}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onView(); }
+      }}
+      className="group cursor-pointer rounded-xl border bg-card p-4 text-right transition hover:border-amber/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
       <div className="flex items-start justify-between gap-2">
         <div className="line-clamp-2 font-semibold">{resource.title}</div>
         <button
           type="button"
-          onClick={onToggleFavorite}
+          onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
           aria-pressed={resource.is_favorite}
           aria-label={resource.is_favorite ? `הסר את "${resource.title}" מהמועדפים` : `הוסף את "${resource.title}" למועדפים`}
           className="flex min-h-9 min-w-9 shrink-0 items-center justify-center rounded-md transition hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -712,13 +738,10 @@ function ResourceCard({
         </div>
       )}
       <div className="mt-3 flex gap-2">
-        <Button size="sm" variant="outline" className="flex-1" onClick={onView} aria-label={`פתח את "${resource.title}"`}>
-          <Eye className="ms-1 h-4 w-4" /> פתח
-        </Button>
-        <Button size="sm" variant="ghost" onClick={onEdit} aria-label={`ערוך את "${resource.title}"`}>
+        <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); onEdit(); }} aria-label={`ערוך את "${resource.title}"`}>
           <Pencil className="ms-1 h-4 w-4" /> ערוך
         </Button>
-        <Button size="sm" variant="ghost" onClick={() => onVariant(resource)}
+        <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); onVariant(resource); }}
           title="צור וריאציה עם AI מפריט זה" aria-label={`צור וריאציה עם AI מ-"${resource.title}"`}>
           <Sparkles className="h-4 w-4 text-amber" />
         </Button>
@@ -734,12 +757,14 @@ function AskLibraryPanel() {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState<string | null>(null);
   const [sources, setSources] = useState<{ id: string; title: string }[]>([]);
+  const [excerpts, setExcerpts] = useState<{ resource_id: string; title: string; text: string }[]>([]);
 
   const askMut = useMutation({
     mutationFn: (q: string) => ask({ data: { question: q } }),
     onSuccess: (res) => {
       setAnswer(res.answer);
       setSources(res.sources ?? []);
+      setExcerpts(res.excerpts ?? []);
     },
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "השאילתה נכשלה"),
   });
@@ -779,6 +804,22 @@ function AskLibraryPanel() {
           {answer && (
             <div className="rounded-lg border bg-muted/40 p-3">
               <div className="whitespace-pre-wrap text-sm">{answer}</div>
+              {excerpts.length > 0 && (
+                <div className="mt-3 space-y-2 border-t pt-2">
+                  <div className="text-xs text-muted-foreground">ציטוטים מהמסמכים המקוריים שלך:</div>
+                  {excerpts.map((ex, i) => (
+                    <div key={`${ex.resource_id}-${i}`} className="rounded-md border bg-background p-2">
+                      <Link to="/resources/$resourceId" params={{ resourceId: ex.resource_id }}
+                        className="text-xs font-medium underline-offset-2 hover:underline">
+                        {ex.title}
+                      </Link>
+                      <p className="mt-1 whitespace-pre-wrap text-[11px] leading-relaxed text-muted-foreground">
+                        {ex.text.slice(0, 400)}{ex.text.length > 400 ? "…" : ""}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
               {sources.length > 0 && (
                 <div className="mt-3 border-t pt-2">
                   <div className="mb-1 text-xs text-muted-foreground">מבוסס על:</div>
@@ -848,6 +889,18 @@ function ResourceViewerDialog({
   };
 
   const empty = !c.body && !c.questions?.length && !c.steps?.length && !c.materials?.length;
+  const hasOriginal = Boolean(c.original_text && c.original_text.trim());
+  const [showOriginal, setShowOriginal] = useState(false);
+  const signUrl = useServerFn(getResourceSignedUrl);
+  const openOriginalFile = async () => {
+    if (!resource.file_path) return;
+    try {
+      const { url } = await signUrl({ data: { file_path: resource.file_path } });
+      window.open(url, "_blank", "noopener");
+    } catch {
+      toast.error("לא הצלחנו לפתוח את הקובץ המקורי");
+    }
+  };
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
@@ -880,6 +933,35 @@ function ResourceViewerDialog({
           )}
           {c.body && (
             <div className="whitespace-pre-wrap rounded-lg border bg-muted/20 p-3 text-sm leading-relaxed">{c.body}</div>
+          )}
+          {hasOriginal && (
+            <div className="rounded-lg border">
+              <button
+                type="button"
+                className="flex w-full items-center justify-between px-3 py-2 text-sm font-medium"
+                aria-expanded={showOriginal}
+                onClick={() => setShowOriginal((v) => !v)}
+              >
+                <span className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  המקור המלא כפי שהועלה
+                  {c.source_kind === "lesson_audio" && (
+                    <Badge variant="secondary" className="text-[10px]">תמלול שיעור</Badge>
+                  )}
+                </span>
+                {showOriginal ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </button>
+              {showOriginal && (
+                <div className="max-h-80 overflow-y-auto whitespace-pre-wrap border-t bg-muted/10 p-3 text-sm leading-relaxed">
+                  {c.original_text}
+                </div>
+              )}
+            </div>
+          )}
+          {resource.file_path && (
+            <Button variant="outline" size="sm" onClick={openOriginalFile}>
+              <Download className="ms-1 h-4 w-4" /> הורד את הקובץ המקורי
+            </Button>
           )}
           {c.materials && c.materials.length > 0 && (
             <div>

@@ -507,6 +507,7 @@ function ResourcePreview({ job, onDone }: { job: IngestJob; onDone: () => void }
       subject: form.subject, grade_level: form.grade_level,
       resource_type: form.resource_type, tags: form.tags,
       body: form.body, questions: form.questions,
+      original_text: form.original_text ?? "",
     }}),
     onSuccess: () => { toast.success("החומר נוסף לספרייה"); onDone(); },
     onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
@@ -523,7 +524,19 @@ function ResourcePreview({ job, onDone }: { job: IngestJob; onDone: () => void }
           <div><Label>סוג</Label><Input value={form.resource_type} onChange={(e) => setForm({ ...form, resource_type: e.target.value })} /></div>
         </div>
         <div><Label>תיאור</Label><Textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
-        <div><Label>תוכן</Label><Textarea rows={6} value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} /></div>
+        <div>
+          <Label>הטקסט המקורי של המסמך (נשמר כפי שהוא)</Label>
+          <Textarea
+            rows={8}
+            value={form.original_text ?? ""}
+            onChange={(e) => setForm({ ...form, original_text: e.target.value })}
+            placeholder="הטקסט המדויק שזוהה במסמך"
+          />
+          <p className="mt-1 text-xs text-muted-foreground">
+            הקובץ המקורי נשמר בספרייה להורדה, והטקסט הזה משמש את מנוע ה-AI כדי לצטט מהחומר שלך.
+          </p>
+        </div>
+        <div><Label>גרסה מסודרת (סיכום / עיבוד)</Label><Textarea rows={5} value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} /></div>
         {form.questions.length > 0 && (
           <div>
             <Label>שאלות ({form.questions.length})</Label>

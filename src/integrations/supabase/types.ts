@@ -1774,6 +1774,47 @@ export type Database = {
         }
         Relationships: []
       }
+      resource_chunks: {
+        Row: {
+          chunk_index: number
+          content: string
+          created_at: string
+          embedding: string | null
+          id: string
+          owner_id: string
+          resource_id: string
+          updated_at: string
+        }
+        Insert: {
+          chunk_index?: number
+          content: string
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          owner_id: string
+          resource_id: string
+          updated_at?: string
+        }
+        Update: {
+          chunk_index?: number
+          content?: string
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          owner_id?: string
+          resource_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resource_chunks_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "teaching_resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       resource_collection_items: {
         Row: {
           added_at: string
@@ -2897,6 +2938,15 @@ export type Database = {
     }
     Functions: {
       export_my_data: { Args: never; Returns: Json }
+      match_resource_chunks: {
+        Args: { match_count?: number; query_embedding: string }
+        Returns: {
+          chunk_index: number
+          content: string
+          resource_id: string
+          similarity: number
+        }[]
+      }
       match_resources: {
         Args: {
           exclude_id?: string
