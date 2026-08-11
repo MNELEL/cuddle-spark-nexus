@@ -126,7 +126,7 @@ function checkImageGeometry(tags, label, problems) {
       add(`og:image ratio ${ratio.toFixed(2)}:1 is outside the 1.91:1 range crawlers crop to`);
     }
   }
-  if (!tags["og:image:alt"]) add("og:image is set but og:image:alt is missing");
+  if (tags["og:image:alt"] === undefined) add("og:image is set but og:image:alt is missing");
   if (tags["twitter:image"] === undefined) add("og:image is set but twitter:image is missing");
   else if (image && tags["twitter:image"] && tags["twitter:image"] !== image) {
     add("twitter:image does not match og:image (crawlers would show two different previews)");
@@ -174,6 +174,7 @@ export function auditOgTags() {
 
   const sharedHelpers = {
     "blogPostHead(": read(join(ROOT, "src", "lib", "blog-seo.ts")),
+    "socialImageMeta(": read(join(ROOT, "src", "lib", "social-meta.ts")),
   };
 
   for (const file of routeFiles()) {
@@ -188,6 +189,8 @@ export function auditOgTags() {
     const consts = fileConsts(text, site);
     const tags = extractMeta(text, consts);
     const label = `src/routes/${file}`;
+    if (/name:\s*"robots",\s*content:\s*"noindex/.test(text)) continue; // never shared socially
+
     const add = (reason) => problems.push({ file: label, reason });
 
     for (const key of ["og:title", "og:description", "og:type", "og:url", "twitter:card"]) {
