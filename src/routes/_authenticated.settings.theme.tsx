@@ -1,3 +1,4 @@
+import { SettingsTabs } from "@/components/settings-tabs";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
