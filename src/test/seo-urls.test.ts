@@ -80,7 +80,9 @@ describe("sitemap and robots", () => {
     for (const p of ["/classes", "/reports", "/share/", "/p/"]) {
       expect(robots).toContain(`Disallow: ${p}`);
     }
-    expect(sitemap).not.toMatch(/"\/settings"/);
-    expect(sitemap).not.toMatch(/"\/login"/);
+    const staticRoutes = sitemap.match(/const STATIC_ROUTES: string\[\] = \[([\s\S]*?)\];/)?.[1] ?? "";
+    expect(staticRoutes).not.toMatch(/"\/settings"/);
+    expect(staticRoutes).not.toMatch(/"\/login"/);
+    expect(staticRoutes).not.toMatch(/"\/reset-password"/);
   });
 });
