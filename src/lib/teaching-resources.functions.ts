@@ -82,6 +82,9 @@ export const listResources = createServerFn({ method: "POST" })
       collection_id: uuid.optional(),
       favorites_only: z.boolean().optional(),
       difficulty: z.enum(DIFFICULTIES).optional(),
+      /** דפדוף — לשמירת מהירות כשיש הרבה פריטים בספרייה. */
+      limit: z.number().int().min(1).max(200).optional(),
+      offset: z.number().int().min(0).optional(),
     }).parse(d),
   )
   .handler(async ({ data, context }): Promise<ResourceRow[]> => {
@@ -107,7 +110,12 @@ export const listResources = createServerFn({ method: "POST" })
       const s = data.search.replace(/[%,]/g, " ");
       q = q.or(`title.ilike.%${s}%,description.ilike.%${s}%`);
     }
-    const { data: rows, error } = await q.order("updated_at", { ascending: false });
+    q = q.order("updated_at", { ascending: false });
+    if (data.limit !== undefined) {
+      const from = data.offset ?? 0;
+      q = q.range(from, from + data.limit - 1);
+    }
+    const { data: rows, error } = await q;
     if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return (rows ?? []) as ResourceRow[];
   });

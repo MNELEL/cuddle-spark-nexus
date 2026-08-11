@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Library, Check, Search, Sparkles, ListChecks, X } from "lucide-react";
+import { Loader2, Library, Check, Search, Sparkles, ListChecks, X, Eye, ChevronDown, ArrowRight } from "lucide-react";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
@@ -34,6 +34,9 @@ const TYPE_FILTERS = [
 
 type TypeFilter = (typeof TYPE_FILTERS)[number]["value"];
 
+/** גודל דף בטעינה מדורגת של חומרי הספרייה. */
+const PAGE_SIZE = 20;
+
 /** ייבוא שאלות חזרה מחומרים קיימים בספריית החומרים אל תוך העלון. */
 export function BulletinImportQuestionsDialog({ open, onOpenChange, bulletinId, onImport }: Props) {
   const suggest = useServerFn(suggestResourcesForBulletin);
@@ -43,25 +46,40 @@ export function BulletinImportQuestionsDialog({ open, onOpenChange, bulletinId, 
   const [picked, setPicked] = useState<Record<string, boolean>>({});
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [term, setTerm] = useState("");
+  /** מונח חיפוש מושהה (debounce) — לא שולחים בקשה על כל הקשה. */
+  const [debounced, setDebounced] = useState("");
+  const [pages, setPages] = useState(1);
   const [questionTerm, setQuestionTerm] = useState("");
+  const [previewing, setPreviewing] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => { setDebounced(term.trim()); setPages(1); }, 300);
+    return () => clearTimeout(t);
+  }, [term]);
+
+  useEffect(() => { setPages(1); }, [typeFilter]);
 
   const { data: suggested = [], isFetching: loadingSuggested } = useQuery({
     queryKey: ["bulletin-import-suggest", bulletinId],
     queryFn: () => suggest({ data: { bulletin_id: bulletinId, limit: 12 } }),
-    enabled: open && term.trim().length === 0,
+    enabled: open && debounced.length === 0,
   });
 
   const { data: searched = [], isFetching: loadingSearched } = useQuery({
-    queryKey: ["bulletin-import-search", term.trim(), typeFilter],
+    queryKey: ["bulletin-import-search", debounced, typeFilter, pages],
     queryFn: () => search({ data: {
-      search: term.trim(),
+      search: debounced,
       ...(typeFilter === "all" ? {} : { resource_type: typeFilter }),
+      limit: pages * PAGE_SIZE,
+      offset: 0,
     } }),
-    enabled: open && term.trim().length > 0,
+    enabled: open && debounced.length > 0,
+    placeholderData: (prev) => prev,
   });
 
-  const isSearching = term.trim().length > 0;
+  const isSearching = debounced.length > 0;
   const loadingResources = isSearching ? loadingSearched : loadingSuggested;
+  const canLoadMore = isSearching && searched.length >= pages * PAGE_SIZE;
   const resources = useMemo(() => {
     const rows = isSearching
       ? searched.map((r) => ({ id: r.id, title: r.title, resource_type: r.resource_type, subject: r.subject }))
@@ -90,7 +108,7 @@ export function BulletinImportQuestionsDialog({ open, onOpenChange, bulletinId, 
   );
   const allVisiblePicked = questions.length > 0 && questions.every((q) => picked[String(q.i)]);
 
-  const reset = () => { setResourceId(null); setPicked({}); setQuestionTerm(""); };
+  const reset = () => { setResourceId(null); setPicked({}); setQuestionTerm(""); setPreviewing(false); };
 
   const toggleAllVisible = () => {
     setPicked((p) => {
@@ -116,7 +134,24 @@ export function BulletinImportQuestionsDialog({ open, onOpenChange, bulletinId, 
           </DialogDescription>
         </DialogHeader>
 
-        {!resourceId ? (
+        {previewing ? (
+          <div className="space-y-2">
+            <div className="rounded-lg border bg-muted/30 p-3 text-sm">
+              ייובאו <strong>{selected.length}</strong> שאלות מהחומר "{loaded?.title || "חומר"}"
+              והן יתווספו לסוף בלוק "שאלות חזרה" בעלון, בסדר שמוצג כאן.
+            </div>
+            <ScrollArea className="max-h-72">
+              <ol className="space-y-2 pe-2">
+                {selected.map((q, i) => (
+                  <li key={i} className="rounded-md border bg-card p-2 text-sm">
+                    <div className="font-medium">{i + 1}. {q.question}</div>
+                    {q.answer && <div className="mt-1 text-xs text-muted-foreground">תשובה: {q.answer}</div>}
+                  </li>
+                ))}
+              </ol>
+            </ScrollArea>
+          </div>
+        ) : !resourceId ? (
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
               <div className="relative flex-1 min-w-[180px]">
@@ -146,7 +181,7 @@ export function BulletinImportQuestionsDialog({ open, onOpenChange, bulletinId, 
                 ? <><Search className="h-3 w-3" aria-hidden="true" /> תוצאות חיפוש בספרייה</>
                 : <><Sparkles className="h-3 w-3 text-amber" aria-hidden="true" /> הצעות מתאימות לתוכן העלון</>}
             </div>
-            {loadingResources && (
+            {loadingResources && resources.length === 0 && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> טוען חומרים…
               </div>
@@ -175,6 +210,17 @@ export function BulletinImportQuestionsDialog({ open, onOpenChange, bulletinId, 
                 ))}
               </ul>
             </ScrollArea>
+            {canLoadMore && (
+              <Button
+                size="sm" variant="outline" className="w-full"
+                disabled={loadingSearched}
+                onClick={() => setPages((p) => p + 1)}
+              >
+                {loadingSearched
+                  ? <><Loader2 className="ms-1 h-4 w-4 animate-spin" aria-hidden="true" /> טוען…</>
+                  : <><ChevronDown className="ms-1 h-4 w-4" aria-hidden="true" /> טען עוד חומרים</>}
+              </Button>
+            )}
           </div>
         ) : (
           <div className="space-y-2">
@@ -240,6 +286,17 @@ export function BulletinImportQuestionsDialog({ open, onOpenChange, bulletinId, 
               נבחרו {selected.length} שאלות
             </span>
           )}
+          {previewing && (
+            <Button variant="outline" onClick={() => setPreviewing(false)}>
+              <ArrowRight className="ms-1 h-4 w-4" aria-hidden="true" /> חזור לבחירה
+            </Button>
+          )}
+          {!previewing ? (
+            <Button variant="outline" disabled={selected.length === 0} onClick={() => setPreviewing(true)}>
+              <Eye className="ms-1 h-4 w-4" aria-hidden="true" />
+              תצוגה מקדימה {selected.length > 0 ? `(${selected.length})` : ""}
+            </Button>
+          ) : null}
           <Button
             disabled={selected.length === 0}
             onClick={() => {
