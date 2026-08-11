@@ -50,9 +50,10 @@ export function SmartUpload({
   const [dragOver, setDragOver] = useState(false);
   const blocked = busy || disabled;
 
-  function accepted(file: File): boolean {
+  /** בודק התאמה של קובץ בודד. quiet=true — בלי הודעה פרטנית (לבחירת תיקייה שלמה). */
+  function accepted(file: File, quiet = false): boolean {
     if (file.size > maxSizeMb * 1024 * 1024) {
-      toast.error(`הקובץ "${file.name}" גדול מ-${maxSizeMb}MB`);
+      if (!quiet) toast.error(`הקובץ "${file.name}" גדול מ-${maxSizeMb}MB`);
       return false;
     }
     const rules = accept.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
@@ -65,19 +66,27 @@ export function SmartUpload({
       if (r.endsWith("/*")) return type.startsWith(r.slice(0, -1));
       return type === r;
     });
-    if (!ok) toast.error(`סוג הקובץ "${file.name}" אינו נתמך`);
+    if (!ok && !quiet) toast.error(`סוג הקובץ "${file.name}" אינו נתמך`);
     return ok;
   }
 
-  async function handleFiles(files: FileList | File[] | null) {
+  async function handleFiles(files: FileList | File[] | null, fromFolder = false) {
     if (!files) return;
     const all = Array.from(files);
     if (all.length === 0) {
       toast.error("לא נבחר קובץ. נסה שוב.");
       return;
     }
-    const list = all.filter(accepted);
-    if (list.length === 0) return; // accepted() כבר הציג הודעה על הסיבה
+    // בבחירת תיקייה שלמה מסננים בשקט ומדווחים סיכום אחד, כדי לא להציף בהודעות
+    const list = all.filter((f) => accepted(f, fromFolder));
+    if (list.length === 0) {
+      if (fromFolder) toast.error("לא נמצאו בתיקייה קבצים נתמכים להעלאה");
+      return; // accepted() כבר הציג הודעה על הסיבה
+    }
+    const skipped = all.length - list.length;
+    if (fromFolder && skipped > 0) {
+      toast.info(`מעלה ${list.length} קבצים · ${skipped} דולגו (סוג או גודל לא נתמכים)`);
+    }
     for (const f of multiple ? list : [list[0]!]) {
       await onFile(f);
     }
@@ -104,7 +113,7 @@ export function SmartUpload({
           multiple
           // non-standard attributes for folder selection
           {...{ webkitdirectory: "", directory: "" }}
-          onChange={(e) => { const f = Array.from(e.target.files ?? []); e.currentTarget.value = ""; void handleFiles(f); }}
+          onChange={(e) => { const f = Array.from(e.target.files ?? []); e.currentTarget.value = ""; void handleFiles(f, true); }}
         />
       )}
     </>
