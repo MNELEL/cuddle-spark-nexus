@@ -16,6 +16,8 @@
     "check:routes": "node scripts/check-route-links.mjs",
     "check:links": "node scripts/check-links.mjs",
     "check:og": "node scripts/check-og-tags.mjs",
+    "lighthouse": "node scripts/lighthouse.mjs",
+    "lighthouse:built": "node scripts/lighthouse.mjs --skip-build",
     "check:og:remote": "node scripts/check-og-tags.mjs --remote",
     "check:links:external": "node scripts/check-links.mjs --external",
     "test": "vitest run",
@@ -94,6 +96,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
+    "@lhci/cli": "^0.15.1",
     "@lovable.dev/vite-tanstack-config": "2.9.1",
     "@types/node": "^26.1.1",
     "@types/react": "^19.2.17",
