@@ -54,7 +54,7 @@ function SoundBoardPage() {
         <div>
           <h1 className="text-2xl font-bold">ניהול סאונד ואפקטים</h1>
           <p className="text-sm text-muted-foreground">
-            ספריית צלילים לכיתה, ומיפוי אירועים באפליקציה לצליל — כך שכל הענקת נקודות, תג או סיום טיימר יישמעו כמו שהרב בחר.
+            ספריית צלילים לכיתה, ומיפוי אירועים במערכת לצליל — כך שכל הענקת נקודות, תג או סיום טיימר יישמעו כמו שהרב בחר.
           </p>
         </div>
         <Button asChild variant="outline">
@@ -76,7 +76,7 @@ function SoundBoardPage() {
               id="mute-all"
               checked={muted}
               onCheckedChange={(v) => { setMuted(v); setMutedState(v); }}
-              aria-label="השתקת כל הצלילים באפליקציה"
+              aria-label="השתקת כל הצלילים במערכת"
             />
           </div>
           <div className="flex min-w-56 items-center gap-3">

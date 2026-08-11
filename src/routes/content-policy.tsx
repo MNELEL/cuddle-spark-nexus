@@ -26,7 +26,7 @@ function ContentPolicyPage() {
         <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">← חזרה לעמוד הבית</Link>
         <h1 className="mt-3 font-display text-3xl font-bold">מדיניות תוכן וסינון</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          עדכון אחרון: 10 באוגוסט 2026 · עמוד זה נכתב ומתוחזק על-ידי בעל האפליקציה "הכיתה שלי".
+          עדכון אחרון: 10 באוגוסט 2026 · עמוד זה נכתב ומתוחזק על-ידי בעל המערכת "הכיתה שלי".
         </p>
 
         <section className="prose prose-sm mt-6 max-w-none space-y-4 text-foreground">

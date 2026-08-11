@@ -21,7 +21,7 @@ function PrivacyPage() {
       <main className="container mx-auto max-w-3xl px-4 py-10 sm:px-6">
         <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">← חזרה לעמוד הבית</Link>
         <h1 className="mt-3 font-display text-3xl font-bold">מדיניות פרטיות</h1>
-        <p className="mt-1 text-sm text-muted-foreground">עדכון אחרון: 21 ביוני 2026 · עמוד זה נכתב ומתוחזק על-ידי בעל האפליקציה הכיתה שלי.</p>
+        <p className="mt-1 text-sm text-muted-foreground">עדכון אחרון: 21 ביוני 2026 · עמוד זה נכתב ומתוחזק על-ידי בעל המערכת הכיתה שלי.</p>
 
         <section className="prose prose-sm mt-6 max-w-none space-y-4 text-foreground">
           <h2 className="font-display text-xl font-semibold">מי אנחנו</h2>
@@ -47,12 +47,12 @@ function PrivacyPage() {
           <h2 className="font-display text-xl font-semibold">שיתוף עם צד שלישי</h2>
           <p>
             איננו מוכרים מידע. שיתוף מתבצע רק לקבלני שירות הכרחיים (אחסון בענן, ספק AI ליצירת טיוטות).
-            תוכן שאתה מייצא ושולח (למשל מייל להורים) יוצא מהאפליקציה לפי בחירתך בלבד.
+            תוכן שאתה מייצא ושולח (למשל מייל להורים) יוצא מהמערכת לפי בחירתך בלבד.
           </p>
 
           <h2 className="font-display text-xl font-semibold">זכויותיך</h2>
           <p>
-            אתה רשאי לצפות, לעדכן או למחוק את הנתונים שלך בכל עת מתוך האפליקציה, או על-ידי בקשה
+            אתה רשאי לצפות, לעדכן או למחוק את הנתונים שלך בכל עת מתוך המערכת, או על-ידי בקשה
             לדוא"ל התמיכה.
           </p>
 

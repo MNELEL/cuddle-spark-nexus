@@ -27,7 +27,7 @@ export function ThemePickerCard() {
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-sm text-muted-foreground">
-          בחירת המראה של האפליקציה — מוחלת מיד על כל המסכים במכשיר הזה. לשמירה לחשבון (ולהחלה בכל מכשיר) יש מסך ערכות נושא מלא עם תצוגה מקדימה.
+          בחירת המראה של המערכת — מוחלת מיד על כל המסכים במכשיר הזה. לשמירה לחשבון (ולהחלה בכל מכשיר) יש מסך ערכות נושא מלא עם תצוגה מקדימה.
         </p>
         <div className="grid gap-2 sm:grid-cols-2">
           {THEMES.map((t) => {

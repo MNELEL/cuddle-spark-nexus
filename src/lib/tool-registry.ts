@@ -43,7 +43,7 @@ export type ToolEntry = {
 export const TOOLS: ToolEntry[] = [
   // --- sound ---
   { to: "/bell-schedule", section: "sound", requires: "any", icon: "BellRing", label: "לוח צלצולים", desc: "תזמון פעמוני שיעור והפסקות לאורך היום" },
-  { to: "/sound-board", section: "sound", requires: "any", icon: "Music", label: "ניהול סאונד ואפקטים", desc: "ספריית צלילים לפי קטגוריה ומיפוי אירועים באפליקציה לצליל" },
+  { to: "/sound-board", section: "sound", requires: "any", icon: "Music", label: "ניהול סאונד ואפקטים", desc: "ספריית צלילים לפי קטגוריה ומיפוי אירועים במערכת לצליל" },
   { to: "/sound-test", section: "sound", requires: "any", icon: "Music", label: "בדיקת צלילים", desc: "השמעת כל הצלילים לבדיקת עוצמה ותקינות בדפדפן" },
 
   // --- tools ---

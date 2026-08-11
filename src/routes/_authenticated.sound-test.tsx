@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_authenticated/sound-test")({
   head: () => ({
     meta: [
       { title: "בדיקת צלילי אירועים · הכיתה שלי" },
-      { name: "description", content: "מסך בדיקה להשמעת דוגמת צליל לכל אירוע באפליקציה — סיום טיימר, הענקת תג ומעבר שיעור — עם סטטוס מוכנות." },
+      { name: "description", content: "מסך בדיקה להשמעת דוגמת צליל לכל אירוע במערכת — סיום טיימר, הענקת תג ומעבר שיעור — עם סטטוס מוכנות." },
       { property: "og:title", content: "בדיקת צלילי אירועים · הכיתה שלי" },
       { property: "og:description", content: "השמעת דוגמה לכל אירוע צליל וסטטוס מוכנות." },
       { name: "robots", content: "noindex" },
@@ -38,7 +38,7 @@ function SoundTestPage() {
       <div>
         <h1 className="font-display text-2xl font-bold">בדיקת צלילי אירועים</h1>
         <p className="text-sm text-muted-foreground">
-          כאן אפשר להשמיע דוגמה לכל אירוע באפליקציה בדיוק כפי שהוא יישמע בפועל, ולראות אם הוא מוכן להשמעה.
+          כאן אפשר להשמיע דוגמה לכל אירוע במערכת בדיוק כפי שהוא יישמע בפועל, ולראות אם הוא מוכן להשמעה.
         </p>
       </div>
 
