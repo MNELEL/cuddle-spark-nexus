@@ -666,7 +666,7 @@ function CertificatesPage() {
 }
 
 function StudentCertCard({
-  row, onPatch, onPatchSubject, onAddSubject, onRemoveSubject, onPatchConduct, onAddConduct, onRemoveConduct, onPersistConducts, onOcrPhoto, onExport, onSaveNotes, onSuggestNotes, showWeighted,
+  row, onPatch, onPatchSubject, onAddSubject, onRemoveSubject, onPatchConduct, onAddConduct, onRemoveConduct, onPersistConducts, onOcrPhoto, onExport, onPreview, onSaveNotes, onSuggestNotes, showWeighted,
 }: {
   row: StudentRow;
   showWeighted?: boolean;
@@ -680,6 +680,7 @@ function StudentCertCard({
   onPersistConducts: () => void;
   onOcrPhoto: (f: File) => void;
   onExport: () => void;
+  onPreview: () => void;
   onSaveNotes: () => void;
   onSuggestNotes: () => void;
 }) {
@@ -700,6 +701,9 @@ function StudentCertCard({
               buttonLabel="העלה צילום תעודה"
               onFile={(f: File) => onOcrPhoto(f)}
             />
+            <Button size="sm" variant="outline" onClick={onPreview}>
+              <Eye className="ms-1 h-4 w-4" /> תצוגה מקדימה
+            </Button>
             <Button size="sm" onClick={onExport}>
               <Download className="ms-1 h-4 w-4" /> הפק תעודה
             </Button>
