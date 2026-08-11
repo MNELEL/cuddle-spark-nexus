@@ -203,11 +203,32 @@ export function auditLinks() {
   return { problems, externalUrls: [...externalUrls], fileCount, linkCount, routeCount: routes.length };
 }
 
+/**
+ * Hosts whose URLs are API endpoints / preconnect origins, not pages: a live
+ * GET legitimately answers 401/404/405, so the network pass skips them.
+ */
+const NON_PAGE_HOSTS = [
+  "fonts.googleapis.com",
+  "fonts.gstatic.com",
+  "ai.gateway.lovable.dev",
+  "api.resend.com",
+  "api.hcaptcha.com",
+  "js.hcaptcha.com",
+  "api.whatsapp.com",
+];
+
 /** Live check of external URLs (opt-in, network required). */
 async function checkExternal(urls) {
   const dead = [];
+  const pages = urls.filter((url) => {
+    try {
+      return !NON_PAGE_HOSTS.includes(new URL(url).hostname);
+    } catch {
+      return false;
+    }
+  });
   await Promise.all(
-    urls.map(async (url) => {
+    pages.map(async (url) => {
       try {
         let res = await fetch(url, { method: "HEAD", redirect: "follow" });
         if (res.status === 405 || res.status === 403) {
@@ -233,7 +254,7 @@ if (isMain) {
 
   let dead = [];
   if (process.argv.includes("--external")) {
-    console.log(`… checking ${externalUrls.length} external URL(s) over the network`);
+    console.log(`… checking external URL(s) over the network`);
     dead = await checkExternal(externalUrls);
     for (const d of dead) console.error(`✗ unreachable: ${d.url} (${d.status})`);
   }
