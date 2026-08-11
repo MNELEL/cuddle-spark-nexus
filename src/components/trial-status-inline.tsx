@@ -46,7 +46,7 @@ export function TrialStatusInline({ continueTo }: { continueTo: string }) {
           </p>
           <p className="mt-1 text-muted-foreground">כל הכלים והתוכן פתוחים לך בתקופה זו.</p>
           <Button size="sm" className="mt-3" onClick={() => navigate({ href: continueTo })}>
-            המשך לאפליקציה
+            המשך למערכת
           </Button>
         </>
       ) : (

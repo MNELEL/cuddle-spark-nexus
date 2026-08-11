@@ -268,20 +268,20 @@ function Index() {
                 <Wrench className="h-5 w-5" aria-hidden="true" />
               </div>
               <h3 className="mt-5 font-display text-lg font-bold">כלים חינמיים למלמד</h3>
-              <p className="mt-1 text-xs font-medium text-primary">נדרש רישום במייל · חודש ניסיון חינם</p>
+              <p className="mt-1 text-xs font-medium text-primary">ללא רישום · והמערכת המלאה בחודש ניסיון חינם</p>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                 מחולל קבוצות והגרלת תלמיד לשימוש מיידי. עם רישום במייל נפתחים גם הכלים המלאים —
                 הגרלות, לוח צלצולים, מבצעים ודוחות — חודש ניסיון חינם.
               </p>
               <div className="mt-5 flex flex-wrap items-center gap-2">
-                <Link to="/tools/group-maker">
+                <Link to="/tools">
                   <Button className="gap-2 shadow-glow-primary">
                     לכניסה לכלים החינמיים <ArrowLeft className="h-4 w-4" aria-hidden="true" />
                   </Button>
                 </Link>
-                <Link to="/tools/exam-generator">
+                <Link to="/tools/group-maker">
                   <Button variant="outline" className="gap-2">
-                    מחולל מבחנים AI
+                    מחולל קבוצות
                   </Button>
                 </Link>
                 <Link to="/login">

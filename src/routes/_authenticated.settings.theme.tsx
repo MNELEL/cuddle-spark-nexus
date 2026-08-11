@@ -16,7 +16,7 @@ export const Route = createFileRoute("/_authenticated/settings/theme")({
   head: () => ({
     meta: [
       { title: "ערכות נושא · הכיתה שלי" },
-      { name: "description", content: "בחירת ערכת נושא לאפליקציה עם תצוגה מקדימה ושמירה לחשבון — המראה נשמר ומוחל בכל מכשיר." },
+      { name: "description", content: "בחירת ערכת נושא למערכת עם תצוגה מקדימה ושמירה לחשבון — המראה נשמר ומוחל בכל מכשיר." },
       { property: "og:title", content: "ערכות נושא · הכיתה שלי" },
       { property: "og:description", content: "תצוגה מקדימה של ערכות הנושא ושמירת המראה לחשבון." },
       { property: "og:type", content: "website" },
@@ -71,7 +71,7 @@ function ThemeSettingsPage() {
           <Palette className="h-6 w-6 text-primary" aria-hidden /> ערכות נושא
         </h1>
         <p className="text-sm text-muted-foreground">
-          בחירת המראה של האפליקציה. הבחירה מוצגת מיד בתצוגה המקדימה, ושמירה מחילה אותה על כל המסכים ובכל מכשיר שבו תתחברו.
+          בחירת המראה של המערכת. הבחירה מוצגת מיד בתצוגה המקדימה, ושמירה מחילה אותה על כל המסכים ובכל מכשיר שבו תתחברו.
         </p>
       </div>
 
@@ -159,7 +159,7 @@ function ThemePreview({ theme }: { theme: ThemeName }) {
       </div>
       <div className="space-y-3 bg-secondary/30 p-4">
         <h2 className="text-lg font-bold">כיתה א׳ — גמרא</h2>
-        <p className="text-sm text-muted-foreground">כך ייראו הכותרות, הכרטיסים והכפתורים באפליקציה.</p>
+        <p className="text-sm text-muted-foreground">כך ייראו הכותרות, הכרטיסים והכפתורים במערכת.</p>
         <div className="grid gap-3 sm:grid-cols-2">
           {["ממוצע כיתה", "נקודות השבוע"].map((label, i) => (
             <div key={label} className="rounded-lg border bg-card p-3">

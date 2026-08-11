@@ -102,7 +102,7 @@ export function SecuritySettings() {
             <div className="flex min-w-0 items-center gap-2">
               <Lock className="h-4 w-4 shrink-0 text-amber" />
               <div className="min-w-0 text-sm leading-tight">
-                <div className="truncate font-medium">דרוש PIN לכניסה לאפליקציה</div>
+                <div className="truncate font-medium">דרוש PIN לכניסה למערכת</div>
                 <div className="truncate text-xs text-muted-foreground">
                   {enabled ? "מופעל — תידרש הזנת PIN בכל פתיחה" : "מכובה — כניסה ישירה לאחר התחברות"}
                 </div>

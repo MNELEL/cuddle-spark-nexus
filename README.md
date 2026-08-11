@@ -1,4 +1,4 @@
-# הכיתה שלי — ClassPro Studio
+# הכיתה שלי — מערכת ניהול כיתה (TanStack Start)
 
 ## TanStack package versions (compatibility)
 

@@ -44,11 +44,13 @@ export const submitChecklistLead = createServerFn({ method: "POST" })
     });
     if (!verdict.ok) {
       console.warn("[checklist_leads] anti-spam rejected", verdict.reason);
-      throw new Error(
+      const message =
         verdict.reason === "captcha_missing" || verdict.reason === "captcha_failed"
           ? "אימות אנטי-ספאם נכשל. רענן את הדף ונסה שוב."
-          : "הבקשה נחסמה. ודא שמילאת את כל השדות ונסה שוב.",
-      );
+          : verdict.reason === "too_fast"
+            ? "הטופס נשלח מהר מדי. המתן שנייה ולחץ שוב על ההורדה."
+            : "הבקשה נחסמה. ודא שמילאת את כל השדות ונסה שוב.";
+      throw new Error(message);
     }
 
     const supabase = makePublicClient();

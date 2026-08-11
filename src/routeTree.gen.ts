@@ -57,6 +57,7 @@ import { Route as ParentsGuideSlugRouteImport } from './routes/parents-guide.$sl
 import { Route as PartnersCaseStudiesRouteImport } from './routes/partners.case-studies'
 import { Route as PartnersDistrictsRouteImport } from './routes/partners.districts'
 import { Route as PartnersSchoolsRouteImport } from './routes/partners.schools'
+import { Route as ToolsIndexRouteImport } from './routes/tools.index'
 import { Route as ToolsExamGeneratorRouteImport } from './routes/tools.exam-generator'
 import { Route as ToolsGroupMakerRouteImport } from './routes/tools.group-maker'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
@@ -85,6 +86,7 @@ import { Route as AuthenticatedSettingsThemeRouteImport } from './routes/_authen
 import { Route as AuthenticatedShareClassIdRouteImport } from './routes/_authenticated.share.$classId'
 import { Route as AuthenticatedStudentViewClassIdRouteImport } from './routes/_authenticated.student-view.$classId'
 import { Route as AuthenticatedWeeklyScheduleClassIdRouteImport } from './routes/_authenticated.weekly-schedule.$classId'
+import { Route as BlogClassroomManagementStrategiesIndexRouteImport } from './routes/blog.classroom-management-strategies.index'
 import { Route as BlogClassroomManagementStrategiesChecklistRouteImport } from './routes/blog.classroom-management-strategies.checklist'
 import { Route as AuthenticatedClassesClassIdDisplayRouteImport } from './routes/_authenticated.classes.$classId.display'
 
@@ -340,6 +342,11 @@ const PartnersSchoolsRoute = PartnersSchoolsRouteImport.update({
   path: '/schools',
   getParentRoute: () => PartnersRoute,
 } as any)
+const ToolsIndexRoute = ToolsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ToolsRoute,
+} as any)
 const ToolsExamGeneratorRoute = ToolsExamGeneratorRouteImport.update({
   id: '/exam-generator',
   path: '/exam-generator',
@@ -505,6 +512,12 @@ const AuthenticatedWeeklyScheduleClassIdRoute =
     path: '/weekly-schedule/$classId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const BlogClassroomManagementStrategiesIndexRoute =
+  BlogClassroomManagementStrategiesIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => BlogClassroomManagementStrategiesRoute,
+  } as any)
 const BlogClassroomManagementStrategiesChecklistRoute =
   BlogClassroomManagementStrategiesChecklistRouteImport.update({
     id: '/checklist',
@@ -568,6 +581,7 @@ export interface FileRoutesByFullPath {
   '/blog/': typeof BlogIndexRoute
   '/help/': typeof HelpIndexRoute
   '/parents-guide/': typeof ParentsGuideIndexRoute
+  '/tools/': typeof ToolsIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/analytics/$classId': typeof AuthenticatedAnalyticsClassIdRoute
@@ -595,6 +609,7 @@ export interface FileRoutesByFullPath {
   '/classes/': typeof AuthenticatedClassesIndexRoute
   '/resources/': typeof AuthenticatedResourcesIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
+  '/blog/classroom-management-strategies/': typeof BlogClassroomManagementStrategiesIndexRoute
   '/classes/$classId/display': typeof AuthenticatedClassesClassIdDisplayRoute
 }
 export interface FileRoutesByTo {
@@ -609,7 +624,6 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
   '/theme-test': typeof ThemeTestRoute
-  '/tools': typeof ToolsRouteWithChildren
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/bell-schedule': typeof AuthenticatedBellScheduleRoute
@@ -624,7 +638,6 @@ export interface FileRoutesByTo {
   '/user-management': typeof AuthenticatedUserManagementRoute
   '/blog/ai-seating-arrangements-guide': typeof BlogAiSeatingArrangementsGuideRoute
   '/blog/classdojo-comparison': typeof BlogClassdojoComparisonRoute
-  '/blog/classroom-management-strategies': typeof BlogClassroomManagementStrategiesRouteWithChildren
   '/blog/classroom-tools-teachers': typeof BlogClassroomToolsTeachersRoute
   '/blog/digital-hall-pass-guide': typeof BlogDigitalHallPassGuideRoute
   '/blog/free-tools-comparison': typeof BlogFreeToolsComparisonRoute
@@ -644,6 +657,7 @@ export interface FileRoutesByTo {
   '/blog': typeof BlogIndexRoute
   '/help': typeof HelpIndexRoute
   '/parents-guide': typeof ParentsGuideIndexRoute
+  '/tools': typeof ToolsIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/analytics/$classId': typeof AuthenticatedAnalyticsClassIdRoute
@@ -671,6 +685,7 @@ export interface FileRoutesByTo {
   '/classes': typeof AuthenticatedClassesIndexRoute
   '/resources': typeof AuthenticatedResourcesIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
+  '/blog/classroom-management-strategies': typeof BlogClassroomManagementStrategiesIndexRoute
   '/classes/$classId/display': typeof AuthenticatedClassesClassIdDisplayRoute
 }
 export interface FileRoutesById {
@@ -725,6 +740,7 @@ export interface FileRoutesById {
   '/blog/': typeof BlogIndexRoute
   '/help/': typeof HelpIndexRoute
   '/parents-guide/': typeof ParentsGuideIndexRoute
+  '/tools/': typeof ToolsIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/_authenticated/analytics/$classId': typeof AuthenticatedAnalyticsClassIdRoute
@@ -752,6 +768,7 @@ export interface FileRoutesById {
   '/_authenticated/classes/': typeof AuthenticatedClassesIndexRoute
   '/_authenticated/resources/': typeof AuthenticatedResourcesIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
+  '/blog/classroom-management-strategies/': typeof BlogClassroomManagementStrategiesIndexRoute
   '/_authenticated/classes/$classId/display': typeof AuthenticatedClassesClassIdDisplayRoute
 }
 export interface FileRouteTypes {
@@ -806,6 +823,7 @@ export interface FileRouteTypes {
     | '/blog/'
     | '/help/'
     | '/parents-guide/'
+    | '/tools/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/analytics/$classId'
@@ -833,6 +851,7 @@ export interface FileRouteTypes {
     | '/classes/'
     | '/resources/'
     | '/settings/'
+    | '/blog/classroom-management-strategies/'
     | '/classes/$classId/display'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -847,7 +866,6 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/support'
     | '/theme-test'
-    | '/tools'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/bell-schedule'
@@ -862,7 +880,6 @@ export interface FileRouteTypes {
     | '/user-management'
     | '/blog/ai-seating-arrangements-guide'
     | '/blog/classdojo-comparison'
-    | '/blog/classroom-management-strategies'
     | '/blog/classroom-tools-teachers'
     | '/blog/digital-hall-pass-guide'
     | '/blog/free-tools-comparison'
@@ -882,6 +899,7 @@ export interface FileRouteTypes {
     | '/blog'
     | '/help'
     | '/parents-guide'
+    | '/tools'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/analytics/$classId'
@@ -909,6 +927,7 @@ export interface FileRouteTypes {
     | '/classes'
     | '/resources'
     | '/settings'
+    | '/blog/classroom-management-strategies'
     | '/classes/$classId/display'
   id:
     | '__root__'
@@ -962,6 +981,7 @@ export interface FileRouteTypes {
     | '/blog/'
     | '/help/'
     | '/parents-guide/'
+    | '/tools/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/_authenticated/analytics/$classId'
@@ -989,6 +1009,7 @@ export interface FileRouteTypes {
     | '/_authenticated/classes/'
     | '/_authenticated/resources/'
     | '/_authenticated/settings/'
+    | '/blog/classroom-management-strategies/'
     | '/_authenticated/classes/$classId/display'
   fileRoutesById: FileRoutesById
 }
@@ -1355,6 +1376,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PartnersSchoolsRouteImport
       parentRoute: typeof PartnersRoute
     }
+    '/tools/': {
+      id: '/tools/'
+      path: '/'
+      fullPath: '/tools/'
+      preLoaderRoute: typeof ToolsIndexRouteImport
+      parentRoute: typeof ToolsRoute
+    }
     '/tools/exam-generator': {
       id: '/tools/exam-generator'
       path: '/exam-generator'
@@ -1551,6 +1579,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWeeklyScheduleClassIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/blog/classroom-management-strategies/': {
+      id: '/blog/classroom-management-strategies/'
+      path: '/'
+      fullPath: '/blog/classroom-management-strategies/'
+      preLoaderRoute: typeof BlogClassroomManagementStrategiesIndexRouteImport
+      parentRoute: typeof BlogClassroomManagementStrategiesRoute
+    }
     '/blog/classroom-management-strategies/checklist': {
       id: '/blog/classroom-management-strategies/checklist'
       path: '/checklist'
@@ -1666,12 +1701,15 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 
 interface BlogClassroomManagementStrategiesRouteChildren {
   BlogClassroomManagementStrategiesChecklistRoute: typeof BlogClassroomManagementStrategiesChecklistRoute
+  BlogClassroomManagementStrategiesIndexRoute: typeof BlogClassroomManagementStrategiesIndexRoute
 }
 
 const BlogClassroomManagementStrategiesRouteChildren: BlogClassroomManagementStrategiesRouteChildren =
   {
     BlogClassroomManagementStrategiesChecklistRoute:
       BlogClassroomManagementStrategiesChecklistRoute,
+    BlogClassroomManagementStrategiesIndexRoute:
+      BlogClassroomManagementStrategiesIndexRoute,
   }
 
 const BlogClassroomManagementStrategiesRouteWithChildren =
@@ -1755,11 +1793,13 @@ const PartnersRouteWithChildren = PartnersRoute._addFileChildren(
 interface ToolsRouteChildren {
   ToolsExamGeneratorRoute: typeof ToolsExamGeneratorRoute
   ToolsGroupMakerRoute: typeof ToolsGroupMakerRoute
+  ToolsIndexRoute: typeof ToolsIndexRoute
 }
 
 const ToolsRouteChildren: ToolsRouteChildren = {
   ToolsExamGeneratorRoute: ToolsExamGeneratorRoute,
   ToolsGroupMakerRoute: ToolsGroupMakerRoute,
+  ToolsIndexRoute: ToolsIndexRoute,
 }
 
 const ToolsRouteWithChildren = ToolsRoute._addFileChildren(ToolsRouteChildren)

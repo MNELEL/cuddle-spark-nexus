@@ -48,6 +48,7 @@ const STATIC_ROUTES: string[] = [
   "/partners/case-studies",
   "/partners/districts",
   "/partners/schools",
+  "/tools",
   "/tools/exam-generator",
   "/tools/group-maker",
 ];
