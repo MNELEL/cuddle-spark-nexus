@@ -48,7 +48,7 @@ describe("Lighthouse CI configuration", () => {
       { url: "http://x/", isRepresentativeRun: true, summary: { seo: 1 } },
     ]);
     expect(runs).toHaveLength(1);
-    expect(runs[0].summary.seo).toBe(1);
+    expect(runs[0]?.summary?.seo).toBe(1);
   });
 
   it("marks passing, near-miss and failing scores distinctly", () => {
