@@ -99,6 +99,17 @@ jobs:
       - name: Check SEO URLs (canonical, og:url, sitemap, robots)
         run: bun run check:seo:urls
 
+      # Scans every page and document for broken internal links, disallowed
+      # hosts, http:// links and stale/preview domains.
+      - name: Check all links (pages + documents)
+        run: bun run check:links
+
+      # Opt-in network pass: verifies external URLs still respond. Non-blocking
+      # because third-party outages are outside our control.
+      - name: Check external links respond
+        continue-on-error: true
+        run: bun run check:links:external
+
       # Type-safety net: TanStack drift often surfaces first as type errors.
       - name: Typecheck
         run: bunx tsgo --noEmit
