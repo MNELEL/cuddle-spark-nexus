@@ -1,3 +1,4 @@
+import { socialImageMeta } from "@/lib/social-meta";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { FaqSection, faqJsonLd, type FaqItem } from "@/components/faq-section";
 
@@ -155,7 +156,7 @@ export const Route = createFileRoute("/partners/case-studies")({
       { property: "og:description", content: DESCRIPTION },
       { property: "og:type", content: "website" },
       { property: "og:url", content: URL },
-      { name: "twitter:card", content: "summary_large_image" },
+      ...socialImageMeta(),
     ],
     links: [{ rel: "canonical", href: URL }],
     scripts: [

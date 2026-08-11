@@ -1,3 +1,4 @@
+import { socialImageMeta } from "@/lib/social-meta";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ export const Route = createFileRoute("/tools/group-maker")({
       { property: "og:url", content: URL_SELF },
       { name: "twitter:title", content: "מחולל קבוצות אקראי · הכיתה שלי" },
       { name: "twitter:description", content: "כלי חינמי לחלוקת תלמידים לקבוצות ולהגרלת שם — ללא הרשמה." },
+      ...socialImageMeta(),
     ],
     links: [{ rel: "canonical", href: URL_SELF }],
     scripts: [

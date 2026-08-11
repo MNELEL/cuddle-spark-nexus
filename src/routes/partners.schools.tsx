@@ -1,3 +1,4 @@
+import { socialImageMeta } from "@/lib/social-meta";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,6 +44,7 @@ export const Route = createFileRoute("/partners/schools")({
       { property: "og:description", content: "רישיון מוסדי כולל הדרכה, תבניות ותמיכה טכנית לאורך שנת הלימודים." },
       { property: "og:type", content: "website" },
       { property: "og:url", content: URL_SELF },
+      ...socialImageMeta(),
     ],
     links: [{ rel: "canonical", href: URL_SELF }],
     scripts: [faqJsonLd(FAQ)],

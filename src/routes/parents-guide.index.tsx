@@ -1,3 +1,4 @@
+import { socialImageMeta } from "@/lib/social-meta";
 import { createFileRoute, Link } from "@tanstack/react-router";
 
 const BASE = "https://hakitasheli.lovable.app";
@@ -39,7 +40,7 @@ export const Route = createFileRoute("/parents-guide/")({
       { property: "og:description", content: DESCRIPTION },
       { property: "og:type", content: "website" },
       { property: "og:url", content: URL },
-      { name: "twitter:card", content: "summary_large_image" },
+      ...socialImageMeta(),
     ],
     links: [{ rel: "canonical", href: URL }],
     scripts: [

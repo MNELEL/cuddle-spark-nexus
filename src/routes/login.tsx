@@ -1,3 +1,4 @@
+import { socialImageMeta } from "@/lib/social-meta";
 import { createFileRoute, useNavigate, Link, useSearch } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,6 +34,8 @@ export const Route = createFileRoute("/login")({
       { property: "og:title", content: "כניסה למערכת · הכיתה שלי" },
       { property: "og:description", content: "התחבר ל-״הכיתה שלי״ — סטודיו לניהול כיתה תורנית בעברית מלאה." },
       { property: "og:url", content: "https://hakitasheli.lovable.app/login" },
+      { property: "og:type", content: "website" },
+      ...socialImageMeta(),
     ],
     links: [{ rel: "canonical", href: "https://hakitasheli.lovable.app/login" }],
   }),
