@@ -899,6 +899,59 @@ export type Database = {
           },
         ]
       }
+      contact_entries: {
+        Row: {
+          category: string
+          class_id: string | null
+          created_at: string
+          email: string
+          id: string
+          name: string
+          notes: string
+          owner_id: string
+          phone: string
+          role: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          class_id?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          name: string
+          notes?: string
+          owner_id: string
+          phone?: string
+          role?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          class_id?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          notes?: string
+          owner_id?: string
+          phone?: string
+          role?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_entries_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       curriculum_history_snapshots: {
         Row: {
           class_id: string
