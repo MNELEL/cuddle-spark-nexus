@@ -667,6 +667,7 @@ function CertificatesPage() {
           open={!!previewRow}
           onOpenChange={(v) => { if (!v) setPreviewRow(null); }}
           title={`תעודה · ${previewRow.name}`}
+          cacheKey={previewRow.id}
           buildPdf={() => blobForStudent(previewRow, isCorrection ? "correction" : "regular")}
           buildText={() => certificateToText(previewRow, {
             className: cls?.name ?? "כיתה",
