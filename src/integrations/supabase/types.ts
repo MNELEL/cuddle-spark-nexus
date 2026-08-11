@@ -2724,6 +2724,38 @@ export type Database = {
           },
         ]
       }
+      weekly_bulletin_versions: {
+        Row: {
+          bulletin_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          snapshot: Json
+        }
+        Insert: {
+          bulletin_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          snapshot: Json
+        }
+        Update: {
+          bulletin_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          snapshot?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekly_bulletin_versions_bulletin_id_fkey"
+            columns: ["bulletin_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_bulletins"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       weekly_bulletins: {
         Row: {
           activities: Json
@@ -2734,8 +2766,10 @@ export type Database = {
           end_date: string
           id: string
           notes: string
+          published_at: string | null
           recap_questions: Json
           start_date: string
+          status: string
           study_points: Json
           title: string
           weekly_riddle: string
@@ -2750,8 +2784,10 @@ export type Database = {
           end_date: string
           id?: string
           notes?: string
+          published_at?: string | null
           recap_questions?: Json
           start_date: string
+          status?: string
           study_points?: Json
           title?: string
           weekly_riddle?: string
@@ -2766,8 +2802,10 @@ export type Database = {
           end_date?: string
           id?: string
           notes?: string
+          published_at?: string | null
           recap_questions?: Json
           start_date?: string
+          status?: string
           study_points?: Json
           title?: string
           weekly_riddle?: string
