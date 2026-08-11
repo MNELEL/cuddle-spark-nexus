@@ -42,5 +42,19 @@ export const saveReminderPreferences = createServerFn({ method: "POST" })
       .from("reminder_preferences")
       .upsert({ user_id: context.userId, ...data }, { onConflict: "user_id" });
     if (error) { console.error("[DB Error]", error); throw new Error("שמירה נכשלה"); }
+
+    const { logInfo } = await import("@/lib/logger.server");
+    await logInfo("העדפות תזכורות עודכנו", {
+      source: "settings_update",
+      userId: context.userId,
+      context: {
+        tab: "reminders",
+        fields: ["types_enabled", "lead_time_minutes"],
+        enabledTypes: Object.entries(data.types_enabled)
+          .filter(([, on]) => on)
+          .map(([k]) => k),
+        lead_time_minutes: data.lead_time_minutes,
+      },
+    });
     return { ok: true };
   });
