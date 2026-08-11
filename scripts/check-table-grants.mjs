@@ -30,11 +30,17 @@ function q(sql) {
   return out.split("\n").filter(Boolean).map((l) => l.split("\t"));
 }
 
+// Read the ACL straight off pg_class: information_schema.role_table_grants only
+// shows grants the *connected* role may see, so a restricted auditing role would
+// report a clean sheet even when anon grants exist.
 const anonGrants = q(`
-  SELECT table_name, string_agg(DISTINCT privilege_type, ',' ORDER BY privilege_type)
-  FROM information_schema.role_table_grants
-  WHERE grantee = 'anon' AND table_schema = 'public'
-  GROUP BY table_name ORDER BY table_name`);
+  SELECT c.relname, string_agg(DISTINCT a.privilege_type, ',' ORDER BY a.privilege_type)
+  FROM pg_class c
+  JOIN pg_namespace n ON n.oid = c.relnamespace
+  CROSS JOIN LATERAL aclexplode(c.relacl) a
+  WHERE n.nspname = 'public' AND c.relkind = 'r'
+    AND a.grantee = 'anon'::regrole::oid
+  GROUP BY c.relname ORDER BY c.relname`);
 
 const noRls = q(`
   SELECT c.relname FROM pg_class c
