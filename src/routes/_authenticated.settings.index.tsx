@@ -8,11 +8,20 @@ import { SubscriptionStatusCard } from "@/components/subscription-status-card";
 import { ReminderPreferencesCard } from "@/components/reminder-preferences-card";
 import { SecuritySettings } from "@/components/security-settings";
 import { ThemePickerCard } from "@/components/theme-picker-card";
+import { SettingsTabs, type SettingsTabId } from "@/components/settings-tabs";
+import { HomeQuickNav } from "@/components/home-quick-nav";
+import { TOOLS } from "@/lib/tool-registry";
 import { useBrand } from "@/hooks/use-brand";
 import { isAdmin } from "@/lib/user-roles.functions";
 
+const TAB_IDS: SettingsTabId[] = ["general", "security", "reminders", "docs"];
+
 export const Route = createFileRoute("/_authenticated/settings/")({
   component: SettingsPage,
+  validateSearch: (search: Record<string, unknown>): { tab?: SettingsTabId } => {
+    const raw = String(search.tab ?? "");
+    return (TAB_IDS as string[]).includes(raw) ? { tab: raw as SettingsTabId } : {};
+  },
   head: () => ({
     meta: [
       { title: "הגדרות · הכיתה שלי" },
@@ -24,6 +33,7 @@ export const Route = createFileRoute("/_authenticated/settings/")({
 
 function SettingsPage() {
   const { brand } = useBrand();
+  const { tab = "general" } = Route.useSearch();
   const isAdminFn = useServerFn(isAdmin);
   const { data: viewerIsAdmin } = useQuery({
     queryKey: ["is-admin"],
@@ -40,12 +50,19 @@ function SettingsPage() {
         <p className="text-sm text-muted-foreground">
           כל ההגדרות האישיות והמוסדיות במקום אחד — מיתוג, אבטחה, תזכורות ומצב המנוי.
         </p>
+        <div className="mt-2"><HomeQuickNav /></div>
       </div>
 
-      <SubscriptionStatusCard />
+      <SettingsTabs active={tab} />
 
-      <ThemePickerCard />
+      {tab === "general" && (
+        <>
+          <SubscriptionStatusCard />
+          <ThemePickerCard />
+        </>
+      )}
 
+      {tab === "general" && (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
@@ -79,10 +96,29 @@ function SettingsPage() {
           </Button>
         </CardContent>
       </Card>
+      )}
 
-      <ReminderPreferencesCard />
+      {tab === "reminders" && <ReminderPreferencesCard />}
 
-      <SecuritySettings />
+      {tab === "security" && <SecuritySettings />}
+
+      {tab === "docs" && (
+        <Card>
+          <CardHeader><CardTitle className="text-base">מסמכים ותבניות</CardTitle></CardHeader>
+          <CardContent className="grid gap-2 sm:grid-cols-2">
+            {TOOLS.filter((t) => t.section === "docs").map((t) => (
+              <Link
+                key={t.to}
+                to={t.classScoped ? "/classes" : (t.to as never)}
+                className="rounded-md border p-3 text-sm hover:bg-accent"
+              >
+                <div className="font-medium">{t.label}</div>
+                <div className="text-xs text-muted-foreground">{t.desc}</div>
+              </Link>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader><CardTitle className="text-base">קישורים נוספים</CardTitle></CardHeader>
