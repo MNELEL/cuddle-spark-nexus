@@ -15,6 +15,7 @@ import { GlobalCommandPalette } from "@/components/global-command-palette";
 import { ThemeSync } from "@/components/theme-sync";
 import { ToolBreadcrumbs } from "@/components/tool-breadcrumbs";
 import { ToolAccessGuard } from "@/components/tool-access-guard";
+import { HomeQuickNav } from "@/components/home-quick-nav";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthLayout,
@@ -142,6 +143,7 @@ function AuthLayout() {
         </div>
       </header>
       <main className="container mx-auto px-3 py-6 sm:px-6">
+        <div className="mb-3"><HomeQuickNav /></div>
         <ToolBreadcrumbs />
         <ToolAccessGuard>
           <Outlet />

@@ -1,3 +1,4 @@
+import { SettingsTabs } from "@/components/settings-tabs";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -61,6 +62,7 @@ function ThemeSettingsPage() {
 
   return (
     <div className="space-y-6">
+      <SettingsTabs active="theme" />
       <div className="space-y-2">
         <Button asChild variant="ghost" size="sm" className="px-0">
           <Link to="/settings"><ArrowRight className="ms-1 h-4 w-4" aria-hidden /> חזרה למרכז ההגדרות</Link>

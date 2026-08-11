@@ -25,7 +25,7 @@ export function SeatingSnapshots({ classId }: { classId: string }) {
     mutationFn: (n: string) => saveFn({ data: { class_id: classId, name: n } }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["seating-configs", classId] });
-      setName(""); toast.success("המבט נשמר");
+      setName(""); toast.success("הסידור נשמר");
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
   });
@@ -46,18 +46,18 @@ export function SeatingSnapshots({ classId }: { classId: string }) {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button size="sm" variant="ghost"><Camera className="ms-1 h-4 w-4" /> מבטים</Button>
+        <Button size="sm" variant="ghost"><Camera className="ms-1 h-4 w-4" /> סידורים שמורים</Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 space-y-3">
-        <div className="text-xs font-semibold">שמירת מבט נוכחי</div>
+        <div className="text-xs font-semibold">שמירת הסידור הנוכחי</div>
         <div className="flex gap-2">
           <Input placeholder='שם (למשל: "תחילת שנה")' value={name} onChange={(e) => setName(e.target.value)} />
           <Button size="sm" disabled={!name.trim() || saveM.isPending} onClick={() => saveM.mutate(name.trim())}>שמור</Button>
         </div>
         <div className="border-t pt-2">
-          <div className="mb-1 text-xs font-semibold">מבטים שמורים ({configs.length})</div>
+          <div className="mb-1 text-xs font-semibold">סידורים שמורים ({configs.length})</div>
           {configs.length === 0 ? (
-            <p className="py-2 text-center text-xs text-muted-foreground">אין מבטים שמורים</p>
+            <p className="py-2 text-center text-xs text-muted-foreground">אין סידורים שמורים</p>
           ) : (
             <ul className="max-h-56 space-y-1 overflow-auto">
               {configs.map((c) => (
