@@ -1021,6 +1021,35 @@ export const commitLessonAudio = createServerFn({ method: "POST" })
       } as never).select("id").single();
     if (error) { console.error("[DB]", error); throw new Error("הפעולה נכשלה."); }
 
+    const transcriptId = (ins as { id: string }).id;
+
+    // Keep the real transcript in the library as-is (not only the AI questions).
+    if (data.transcript.trim().length > 40) {
+      const { data: tr, error: trErr } = await context.supabase
+        .from("teaching_resources").insert({
+          owner_id: context.userId,
+          title: `תמלול שיעור — ${data.title}`,
+          description: data.summary.slice(0, 2000),
+          subject: "",
+          grade_level: "",
+          resource_type: "summary",
+          tags: ["תמלול", "מהקלטה"],
+          content: {
+            body: data.summary,
+            original_text: data.transcript,
+            source_kind: "lesson_audio",
+            lesson_transcript_id: transcriptId,
+          },
+          ai_generated: false,
+          source_prompt: "מקור: הקלטת שיעור (תמלול מלא)",
+        } as never).select("id").single();
+      if (trErr) console.error("[DB transcript resource]", trErr);
+      else {
+        const { indexResourceChunks } = await import("./resource-chunks.server");
+        await indexResourceChunks(context.supabase, context.userId, (tr as { id: string }).id, data.transcript);
+      }
+    }
+
     // If exam questions were kept, save them as a question-bank teaching resource.
     let questionBankId: string | null = null;
     if (data.save_as_resource && data.exam_questions.length > 0) {
