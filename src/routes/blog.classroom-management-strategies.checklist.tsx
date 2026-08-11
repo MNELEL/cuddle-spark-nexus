@@ -102,6 +102,12 @@ function ChecklistPage() {
     setStatus("loading");
     setErrorMsg("");
     try {
+      // The server rejects submissions faster than 2s as bot traffic; a very fast
+      // typist (or autofill) would otherwise get blocked for no reason.
+      const elapsed = Date.now() - mountedAtRef.current;
+      if (elapsed < 2300) {
+        await new Promise((r) => setTimeout(r, 2300 - elapsed));
+      }
       await submit({
         data: {
           full_name: fullName.trim(),
