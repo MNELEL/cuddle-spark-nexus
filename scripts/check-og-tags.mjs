@@ -72,8 +72,8 @@ function routeFiles() {
 /** In-file `const X = "..."` / template values, so `${URL}` can be resolved. */
 function fileConsts(text, site) {
   const consts = { SITE_URL: site };
-  for (const m of text.matchAll(/^const (\w+)\s*=\s*"([^"]*)"/gm)) consts[m[1]] = m[2];
-  for (const m of text.matchAll(/^const (\w+)\s*=\s*`([^`]*)`/gm)) consts[m[1]] = m[2];
+  for (const m of text.matchAll(/^(?:export )?const (\w+)\s*=\s*"([^"]*)"/gm)) consts[m[1]] = m[2];
+  for (const m of text.matchAll(/^(?:export )?const (\w+)\s*=\s*`([^`]*)`/gm)) consts[m[1]] = m[2];
   for (let i = 0; i < 3; i += 1) {
     for (const [k, v] of Object.entries(consts)) {
       consts[k] = v.replace(/\$\{(\w+)\}/g, (all, name) => consts[name] ?? all);
