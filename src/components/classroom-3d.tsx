@@ -36,9 +36,9 @@ const GAP = 14;
 
 export function Classroom3D({ rows, cols, seats, objects = [], hidden = [] }: Props) {
   const [preset, setPreset] = useState<PresetId>("teacher");
-  const [rotX, setRotX] = useState(PRESETS.teacher.rotX);
-  const [rotY, setRotY] = useState(PRESETS.teacher.rotY);
-  const [zoom, setZoom] = useState(1);
+  const [rotX, setRotX] = useState<number>(PRESETS.teacher.rotX);
+  const [rotY, setRotY] = useState<number>(PRESETS.teacher.rotY);
+  const [zoom, setZoom] = useState<number>(1);
   const drag = useRef<{ x: number; y: number; rx: number; ry: number } | null>(null);
 
   const applyPreset = (id: PresetId) => {
