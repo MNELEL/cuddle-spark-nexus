@@ -42,6 +42,7 @@ const STATIC_ROUTES: string[] = [
   "/blog/progress-tracking-guide",
   "/blog/torah-study-reward-charts",
   "/blog/weekly-report-template",
+  "/contact",
   "/help",
   "/parents-guide",
   "/partners",
@@ -72,6 +73,7 @@ function hintsFor(path: string): { changefreq: SitemapEntry["changefreq"]; prior
   if (path.startsWith("/help/")) return { changefreq: "monthly", priority: "0.7" };
   if (path === "/parents-guide") return { changefreq: "monthly", priority: "0.8" };
   if (path.startsWith("/parents-guide/")) return { changefreq: "monthly", priority: "0.7" };
+  if (path === "/contact") return { changefreq: "yearly", priority: "0.6" };
   if (path === "/partners") return { changefreq: "monthly", priority: "0.8" };
   if (path.startsWith("/partners/")) return { changefreq: "monthly", priority: "0.7" };
   if (path.startsWith("/tools/")) return { changefreq: "monthly", priority: "0.7" };
