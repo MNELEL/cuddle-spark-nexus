@@ -17,6 +17,8 @@
     "check:links": "node scripts/check-links.mjs",
     "check:og": "node scripts/check-og-tags.mjs",
     "lighthouse": "node scripts/lighthouse.mjs",
+    "lighthouse:desktop": "node scripts/lighthouse.mjs --profile desktop",
+    "lighthouse:mobile": "node scripts/lighthouse.mjs --profile mobile",
     "lighthouse:built": "node scripts/lighthouse.mjs --skip-build",
     "check:og:remote": "node scripts/check-og-tags.mjs --remote",
     "check:links:external": "node scripts/check-links.mjs --external",
