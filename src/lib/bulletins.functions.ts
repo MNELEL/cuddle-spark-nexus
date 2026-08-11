@@ -23,6 +23,16 @@ export type StoredBulletin = BulletinDraft & {
   end_date: string;
   notes: string;
   created_at: string;
+  status: "draft" | "published";
+  published_at: string | null;
+};
+
+export type BulletinVersion = {
+  id: string;
+  bulletin_id: string;
+  snapshot: Record<string, unknown>;
+  created_at: string;
+  created_by: string | null;
 };
 
 /** List all bulletins of a class (most recent first). */
@@ -151,6 +161,13 @@ export const saveBulletin = createServerFn({ method: "POST" })
       notes: data.notes,
     };
     if (data.id) {
+      // Published bulletins are locked: the teacher must unlock before editing.
+      const { data: current, error: readErr } = await context.supabase
+        .from("weekly_bulletins").select("status").eq("id", data.id).maybeSingle();
+      if (readErr) { console.error("[DB Error]", readErr); throw new Error("הפעולה נכשלה. נסה שוב."); }
+      if ((current as { status?: string } | null)?.status === "published") {
+        throw new Error("העלון פורסם ונעול לעריכה — שחרר נעילה כדי לערוך");
+      }
       const { error } = await context.supabase.from("weekly_bulletins").update(row).eq("id", data.id);
       if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
       return { id: data.id };
@@ -169,4 +186,57 @@ export const deleteBulletin = createServerFn({ method: "POST" })
     const { error } = await context.supabase.from("weekly_bulletins").delete().eq("id", data.id);
     if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return { ok: true };
+  });
+
+/** Publish a bulletin — locks it for editing. */
+export const publishBulletin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("weekly_bulletins")
+      .update({ status: "published", published_at: new Date().toISOString() } as never)
+      .eq("id", data.id);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    return { ok: true };
+  });
+
+/** Unlock a published bulletin, snapshotting the current state into version history. */
+export const unpublishBulletin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: row, error: readErr } = await context.supabase
+      .from("weekly_bulletins")
+      .select("title,digest_summary,study_points,recap_questions,weekly_riddle,weekly_riddle_answer,activities,notes,start_date,end_date")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (readErr) { console.error("[DB Error]", readErr); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    if (!row) throw new Error("העלון לא נמצא");
+
+    const { error: insErr } = await context.supabase
+      .from("weekly_bulletin_versions")
+      .insert({ bulletin_id: data.id, snapshot: row as never, created_by: context.userId } as never);
+    if (insErr) { console.error("[DB Error]", insErr); throw new Error("הפעולה נכשלה. נסה שוב."); }
+
+    const { error } = await context.supabase
+      .from("weekly_bulletins")
+      .update({ status: "draft" } as never)
+      .eq("id", data.id);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    return { ok: true };
+  });
+
+/** List saved version snapshots of a bulletin (newest first). */
+export const listBulletinVersions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ bulletinId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }): Promise<BulletinVersion[]> => {
+    const { data: rows, error } = await context.supabase
+      .from("weekly_bulletin_versions")
+      .select("*")
+      .eq("bulletin_id", data.bulletinId)
+      .order("created_at", { ascending: false });
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    return (rows ?? []) as unknown as BulletinVersion[];
   });
