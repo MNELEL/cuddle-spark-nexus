@@ -1,3 +1,4 @@
+import { socialImageMeta } from "@/lib/social-meta";
 import { createFileRoute, Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/privacy")({
@@ -10,6 +11,7 @@ export const Route = createFileRoute("/privacy")({
       { property: "og:description", content: "מדיניות הפרטיות של הכיתה שלי — איזה מידע נאסף, איך הוא נשמר ומה הזכויות שלך." },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://hakitasheli.lovable.app/privacy" },
+      ...socialImageMeta(),
     ],
     links: [{ rel: "canonical", href: "https://hakitasheli.lovable.app/privacy" }],
   }),

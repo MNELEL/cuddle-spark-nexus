@@ -1,3 +1,4 @@
+import { socialImageMeta } from "@/lib/social-meta";
 import { createFileRoute, Link } from "@tanstack/react-router";
 
 const TITLE = "מדיניות תוכן וסינון — הכיתה שלי";
@@ -14,6 +15,7 @@ export const Route = createFileRoute("/content-policy")({
       { property: "og:description", content: DESC },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://hakitasheli.lovable.app/content-policy" },
+      ...socialImageMeta(),
     ],
     links: [{ rel: "canonical", href: "https://hakitasheli.lovable.app/content-policy" }],
   }),

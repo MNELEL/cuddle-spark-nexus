@@ -1,5 +1,6 @@
 import { SeatFillGrid } from "@/components/seat-fill-grid";
 import { TorahLogo } from "@/components/torah-logo";
+import { socialImageMeta } from "@/lib/social-meta";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Users, Sparkles, Layout, Brain, BarChart3, Presentation, ArrowLeft, BookOpen, Wrench, Mail, Gift } from "lucide-react";
@@ -18,10 +19,9 @@ export const Route = createFileRoute("/")({
       { property: "og:description", content: "כלי ניהול כיתה מותאם לתלמודי תורה, חיידרים ובתי ספר — סידור הושבה AI, מעקב פדגוגי, דוחות חכמים, וחוויית 3D עוצרת נשימה." },
       { property: "og:url", content: "https://hakitasheli.lovable.app/" },
       { property: "og:type", content: "website" },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/05baaa1b-2e2c-4979-b6f1-619d01883919" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/05baaa1b-2e2c-4979-b6f1-619d01883919" },
       { name: "twitter:title", content: "הכיתה שלי · ניהול כיתה חכם לתלמודי תורה וחיידרים" },
       { name: "twitter:description", content: "כלי ניהול כיתה מותאם לתלמודי תורה, חיידרים ובתי ספר — סידור הושבה AI, מעקב פדגוגי, דוחות חכמים, וחוויית 3D עוצרת נשימה." },
+      ...socialImageMeta(),
     ],
     links: [{ rel: "canonical", href: "https://hakitasheli.lovable.app/" }],
     scripts: [

@@ -1,4 +1,5 @@
 import { Rss } from "lucide-react";
+import { socialImageMeta } from "@/lib/social-meta";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { BLOG_INDEX_IMAGE, blogPostsNewestFirst } from "@/lib/blog-posts";
 import { RSS_PATH } from "@/lib/blog-seo";
@@ -25,8 +26,8 @@ export const Route = createFileRoute("/blog/")({
       { property: "og:image", content: BLOG_INDEX_IMAGE },
       { property: "og:image:width", content: "1200" },
       { property: "og:image:height", content: "630" },
-      { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:image", content: BLOG_INDEX_IMAGE },
+      ...socialImageMeta("בלוג הכיתה שלי"),
     ],
     links: [
       { rel: "canonical", href: `${SITE_URL}/blog` },

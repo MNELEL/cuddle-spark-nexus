@@ -1,3 +1,4 @@
+import { socialImageMeta } from "@/lib/social-meta";
 import { createFileRoute, Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/support")({
@@ -10,6 +11,7 @@ export const Route = createFileRoute("/support")({
       { property: "og:description", content: "תמיכה למשתמשי הכיתה שלי — שאלות נפוצות, יצירת קשר וקישורים שימושיים." },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://hakitasheli.lovable.app/support" },
+      ...socialImageMeta(),
     ],
     links: [{ rel: "canonical", href: "https://hakitasheli.lovable.app/support" }],
     scripts: [
