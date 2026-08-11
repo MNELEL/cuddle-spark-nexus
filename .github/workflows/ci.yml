@@ -104,6 +104,15 @@ jobs:
       - name: Check all links (pages + documents)
         run: bun run check:links
 
+      # Share previews: og:*, twitter:card, og:image format + recommended size.
+      - name: Check Open Graph & Twitter Cards
+        run: bun run check:og
+
+      # Opt-in network pass: confirms share images resolve at the real pixel size.
+      - name: Check share images resolve
+        continue-on-error: true
+        run: bun run check:og:remote
+
       # Opt-in network pass: verifies external URLs still respond. Non-blocking
       # because third-party outages are outside our control.
       - name: Check external links respond
