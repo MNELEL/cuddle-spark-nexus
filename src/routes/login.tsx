@@ -34,6 +34,7 @@ export const Route = createFileRoute("/login")({
       { property: "og:title", content: "כניסה למערכת · הכיתה שלי" },
       { property: "og:description", content: "התחבר ל-״הכיתה שלי״ — סטודיו לניהול כיתה תורנית בעברית מלאה." },
       { property: "og:url", content: "https://hakitasheli.lovable.app/login" },
+      { property: "og:type", content: "website" },
       ...socialImageMeta(),
     ],
     links: [{ rel: "canonical", href: "https://hakitasheli.lovable.app/login" }],
