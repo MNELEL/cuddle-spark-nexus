@@ -923,9 +923,29 @@ export const commitResource = createServerFn({ method: "POST" })
     resource_type: z.string().max(40).default("worksheet"),
     tags: z.array(z.string().max(40)).max(20).default([]),
     body: z.string().max(20000).default(""),
+    original_text: z.string().max(200000).default(""),
+    topic_id: uuid.nullable().optional(),
     questions: z.array(z.object({ q: z.string().min(1).max(500), a: z.string().max(2000).optional() })).max(50).default([]),
   }).parse(d))
   .handler(async ({ data, context }) => {
+    // Keep the original file: copy it out of staging into the library bucket.
+    const { data: jobRow } = await context.supabase
+      .from("ingest_jobs").select("source_path, mime_type, file_name").eq("id", data.jobId).maybeSingle();
+    const job = jobRow as { source_path: string; mime_type: string; file_name: string } | null;
+    let filePath: string | null = null;
+    if (job?.source_path) {
+      const dl = await context.supabase.storage.from("ingest-staging").download(job.source_path);
+      if (dl.data) {
+        const safeName = job.file_name.replace(/[^\w.\-\u0590-\u05FF]+/g, "_").slice(-80);
+        const target = `${context.userId}/${Date.now()}-${safeName}`;
+        const up = await context.supabase.storage
+          .from("teaching-resources")
+          .upload(target, dl.data, { contentType: job.mime_type || "application/octet-stream", upsert: false });
+        if (up.error) console.error("[storage copy]", up.error);
+        else filePath = target;
+      }
+    }
+
     const insertRow = {
       owner_id: context.userId,
       title: data.title,
@@ -934,7 +954,15 @@ export const commitResource = createServerFn({ method: "POST" })
       grade_level: data.grade_level,
       resource_type: data.resource_type,
       tags: data.tags,
-      content: { body: data.body, questions: data.questions },
+      topic_id: data.topic_id ?? null,
+      file_path: filePath,
+      mime_type: job?.mime_type ?? null,
+      content: {
+        body: data.body,
+        original_text: data.original_text,
+        source_kind: "upload",
+        questions: data.questions,
+      },
       ai_generated: true,
       source_prompt: "מקור: העלאה חכמה",
     };
@@ -942,12 +970,19 @@ export const commitResource = createServerFn({ method: "POST" })
       .from("teaching_resources").insert(insertRow as never).select("id").single();
     if (error) { console.error("[DB]", error); throw new Error("הפעולה נכשלה."); }
 
-    await context.supabase.storage.from("ingest-staging")
-      .remove([(await context.supabase.from("ingest_jobs").select("source_path").eq("id", data.jobId).maybeSingle()).data?.source_path ?? ""]).catch(() => {});
+    const newId = (ins as { id: string }).id;
+    if (data.original_text.trim()) {
+      const { indexResourceChunks } = await import("./resource-chunks.server");
+      await indexResourceChunks(context.supabase, context.userId, newId, data.original_text);
+    }
+
+    if (job?.source_path) {
+      await context.supabase.storage.from("ingest-staging").remove([job.source_path]).catch(() => {});
+    }
     await context.supabase.from("ingest_jobs")
       .update({ status: "committed", committed_at: new Date().toISOString() } as never)
       .eq("id", data.jobId);
-    return { ok: true, id: (ins as { id: string }).id };
+    return { ok: true, id: newId, file_saved: Boolean(filePath) };
   });
 
 export const commitLessonAudio = createServerFn({ method: "POST" })
