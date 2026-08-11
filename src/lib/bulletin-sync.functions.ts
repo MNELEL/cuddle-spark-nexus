@@ -100,6 +100,36 @@ export const listBulletinResources = createServerFn({ method: "POST" })
     return (rows ?? []) as unknown as Array<{ id: string; title: string; resource_type: string; subject: string; description: string }>;
   });
 
+/**
+ * חומרים שנוצרו אוטומטית מתוך ההספק הלימודי של העלון, לפי מקצוע —
+ * מאפשר לרב לוודא את הקישור לעלון ולפתוח את החומר לעריכה.
+ */
+export const listScheduleResources = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ bulletin_id: uuid }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: links } = await context.supabase
+      .from("bulletin_resources").select("resource_id").eq("bulletin_id", data.bulletin_id);
+    const ids = ((links ?? []) as { resource_id: string }[]).map((l) => l.resource_id);
+    if (!ids.length) return [];
+    const { data: rows, error } = await context.supabase
+      .from("teaching_resources")
+      .select("id,title,subject,resource_type,tags,updated_at")
+      .in("id", ids)
+      .contains("tags", ["הספק-לימודי"])
+      .order("updated_at", { ascending: false });
+    if (error) { console.error("[DB]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    const list = (rows ?? []) as unknown as Array<{
+      id: string; title: string; subject: string; resource_type: string; tags: string[]; updated_at: string;
+    }>;
+    return list.map((r) => {
+      // המקצוע נשמר גם בעמודת subject וגם בתגיות — נגזור את מפתח ההספק ממנו.
+      const key = (Object.keys(SCHEDULE_SUBJECTS) as ScheduleKey[])
+        .find((k) => SCHEDULE_SUBJECTS[k].label === r.subject || r.tags?.includes(SCHEDULE_SUBJECTS[k].label));
+      return { ...r, schedule_key: key ?? null, linked: true };
+    });
+  });
+
 /** Generate a question bank resource for the week's study points. */
 export const generateQuizFromBulletin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
