@@ -71,8 +71,13 @@ export function SmartUpload({
 
   async function handleFiles(files: FileList | File[] | null) {
     if (!files) return;
-    const list = Array.from(files).filter(accepted);
-    if (list.length === 0) return;
+    const all = Array.from(files);
+    if (all.length === 0) {
+      toast.error("לא נבחר קובץ. נסה שוב.");
+      return;
+    }
+    const list = all.filter(accepted);
+    if (list.length === 0) return; // accepted() כבר הציג הודעה על הסיבה
     for (const f of multiple ? list : [list[0]!]) {
       await onFile(f);
     }
@@ -88,7 +93,8 @@ export function SmartUpload({
         accept={accept}
         multiple={multiple}
         className="hidden"
-        onChange={(e) => { const f = e.target.files; e.currentTarget.value = ""; void handleFiles(f); }}
+        // חשוב: להעתיק את הקבצים למערך לפני איפוס value — איפוס מרוקן את ה-FileList החי
+        onChange={(e) => { const f = Array.from(e.target.files ?? []); e.currentTarget.value = ""; void handleFiles(f); }}
       />
       {allowFolder && (
         <input
@@ -98,7 +104,7 @@ export function SmartUpload({
           multiple
           // non-standard attributes for folder selection
           {...{ webkitdirectory: "", directory: "" }}
-          onChange={(e) => { const f = e.target.files; e.currentTarget.value = ""; void handleFiles(f); }}
+          onChange={(e) => { const f = Array.from(e.target.files ?? []); e.currentTarget.value = ""; void handleFiles(f); }}
         />
       )}
     </>
