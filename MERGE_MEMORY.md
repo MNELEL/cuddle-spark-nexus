@@ -2,7 +2,7 @@
 > מסמך זיכרון קבוע לפרויקט מיזוג האפליקציות. עדכן אותו בכל שיחה חדשה כדי לא לאבד החלטות.
 > יעד סופי: **Lovable**. הפרויקט החי: **"הכיתה שלי"** (שם קודם: Harmony Hub; repo: `cuddle-spark-nexus`), פרויקט Lovable ID `2734475a-1431-4ef2-8175-67b8af357276`.
 
-**עדכון אחרון:** 9 באוגוסט 2026 — נוסף סעיף 12.4.1/12.4.2: סיכום כיסוי טבלאות שנבדקו, ספירת טסטים (91), וקישורים לטסטי האינטגרציה המרכזיים לבדיקות עתידיות.
+**עדכון אחרון:** 11 באוגוסט 2026 — עודכן סעיף 12.4.1 עם ספירת טסטים מדויקת נכון להיום (כולל rls-student-profiles המורחב ו-rollover-copy המתוקן), ותאריך סעיף 12.4.4 אומת ל-11/8.
 
 **היסטוריית עדכונים קודמים (לשקיפות):**
 - 23/7: הושלמה משימת Task Automation + איחוד AI Gateway.
@@ -318,12 +318,12 @@ Test suite ל-RLS ולהעתקת תלמידים — נבדק: אין תשתית 
 |---|---|---|---|
 | RLS כיתות + תלמידים | `classes`, `students`, `student_relations`, `groups`, `seating_configs` | `rls-classes.test.ts`, `rls-students.test.ts`, `rollover-copy.test.ts` | 3 + 4 + 4 = 11 |
 | RLS נתוני כיתה | `behavior_points`, `grade_weights`, `reminders`, `curriculum_units` | `rls-behavior-points.test.ts`, `rls-grade-weights.test.ts`, `rls-reminders.test.ts` | 3 + 3 + 4 = 10 |
-| RLS מוסדות + תפקידים | `institutions`, `user_roles`, `access_requests` | `rls-institutions.test.ts`, `rls-access-requests.test.ts` | 9 + 6 = 15 |
-| RLS מידע רגיש והתראות | `student_profiles`, `class_notifications` | `rls-student-profiles.test.ts`, `rls-class-notifications.test.ts`, `notifications-flow.test.ts` | 2 + 5 + 6 = 13 |
+| RLS מוסדות + תפקידים | `institutions`, `user_roles`, `access_requests`, `trial_extension_requests` | `rls-institutions.test.ts`, `rls-access-requests.test.ts`, `rls-trial-requests.test.ts` | 9 + 9 + 7 = 25 |
+| RLS מידע רגיש והתראות | `student_profiles`, `class_notifications` | `rls-student-profiles.test.ts`, `rls-class-notifications.test.ts`, `notifications-flow.test.ts` | 5 + 5 + 13 = 23 |
 | לוגיקה עסקית | שקלול ציונים, תאריכים עבריים, אימות שדות תלמיד, מיזוג roster | `grade-weighting.test.ts`, `hebrew-date.test.ts`, `student-field-validation.test.ts`, `roster-merge.test.ts` | 8 + 10 + 10 + 7 = 35 |
-| תשתית | Circuit breaker AI Gateway | `ai-gateway-breaker.test.ts` | 7 |
+| תשתית | Circuit breaker AI Gateway, כיסוי קישורי ניווט | `ai-gateway-breaker.test.ts`, `route-link-coverage.test.ts` | 7 + 3 = 10 |
 
-**סה"כ:** 16 קבצים, 91 מקרי בדיקה (`it()`).
+**סה"כ:** 18 קבצים, 114 מקרי בדיקה (`it()`) — ספירה בפועל ב-11/8/2026.
 
 #### 12.4.2 קישורים לטסטים מרכזיים לבדיקות עתידיות
 
