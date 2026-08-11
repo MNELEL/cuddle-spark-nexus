@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
-import { ArrowRight, Award, Download, Plus, Settings, Sparkles, Trash2, Users } from "lucide-react";
+import { ArrowRight, Award, Download, Eye, Plus, Settings, Sparkles, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { getClass } from "@/lib/classes.functions";
@@ -44,6 +44,8 @@ import {
   type CertificateSubject,
 } from "@/lib/pdf/certificate-pdf";
 import { downloadPdfBlob } from "@/lib/pdf/pdf-builder";
+import { PdfPreviewDialog } from "@/components/pdf/pdf-preview-dialog";
+import { certificateToText } from "@/lib/text-export";
 
 export const Route = createFileRoute("/_authenticated/certificates/$classId")({
   component: CertificatesPage,
@@ -412,7 +414,7 @@ function CertificatesPage() {
     override: Partial<Pick<StudentRow, "teacherNote" | "principalNote">>,
   ) => persistRow(id, override);
 
-  const buildForStudent = async (row: StudentRow, kind: "regular" | "correction" = "regular") => {
+  const blobForStudent = async (row: StudentRow, kind: "regular" | "correction" = "regular") => {
     setPdfBrand({
       schoolName: brand.school_name || schoolName || "מוסד חינוכי",
       headerLine: brand.header_line,
@@ -438,7 +440,12 @@ function CertificatesPage() {
       issueDate: new Date().toISOString().slice(0, 10),
       type: kind,
     });
-    downloadPdfBlob(blob, certificateFilename(row.name, period.label));
+    return { blob, filename: certificateFilename(row.name, period.label) };
+  };
+
+  const buildForStudent = async (row: StudentRow, kind: "regular" | "correction" = "regular") => {
+    const { blob, filename } = await blobForStudent(row, kind);
+    downloadPdfBlob(blob, filename);
   };
 
   const generateAll = async () => {
