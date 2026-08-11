@@ -172,9 +172,14 @@ export const generateBulletin = createServerFn({ method: "POST" })
 - weekly_riddle: חידה תורנית אחת מהפרשה / מהש"ס
 - weekly_riddle_answer: התשובה
 - activities: מערך 2-4 פעילויות / יוזמות / מעלות שהיו השבוע
+- torah_dvar_title: כותרת קצרה לדבר תורה מהפרשה
+- torah_dvar_body: דבר תורה מורחב (2-4 פסקאות) מהפרשה או מהחומר הנלמד
+- study_schedule: ההספק הלימודי לפי מקצוע, לפי המידע שבקלט בלבד (אם אין מידע — השאר מחרוזות ריקות, אל תמציא דפים או מסכתות)
+- honored_students: השאר מערך ריק תמיד (שמות תלמידים מוזנים ידנית על ידי הרב)
+- special_notices: השאר מערך ריק תמיד (הודעות מיוחדות מוזנות ידנית)
 
 החזר אך ורק JSON תקין בפורמט הזה:
-{"title":"","digest_summary":"","study_points":[],"recap_questions":[{"question":"","answer":""}],"weekly_riddle":"","weekly_riddle_answer":"","activities":[]}`;
+{"title":"","digest_summary":"","study_points":[],"recap_questions":[{"question":"","answer":""}],"weekly_riddle":"","weekly_riddle_answer":"","activities":[],"torah_dvar_title":"","torah_dvar_body":"","study_schedule":{"gemara":{"daf":"","topic":""},"mishna":{"masechet":"","perek":""},"torah":{"parasha":"","pasuk_range":""},"navi":{"sefer":"","perek":""},"halacha":{"siman":"","seif":""}},"honored_students":[],"special_notices":[]}`;
 
     const raw = (await callLovableAI({
       messages: [
@@ -197,6 +202,7 @@ export const generateBulletin = createServerFn({ method: "POST" })
       weekly_riddle: parsed.weekly_riddle ?? "",
       weekly_riddle_answer: parsed.weekly_riddle_answer ?? "",
       activities: Array.isArray(parsed.activities) ? parsed.activities.map(String) : [],
+      ...normalizeExtras(parsed),
     };
   });
 
@@ -219,6 +225,11 @@ export const saveBulletin = createServerFn({ method: "POST" })
       weekly_riddle_answer: z.string().max(2000),
       activities: z.array(z.string().max(500)).max(20),
       notes: z.string().max(5000).default(""),
+      torah_dvar_title: z.string().max(280).default(""),
+      torah_dvar_body: z.string().max(20000).default(""),
+      study_schedule: StudyScheduleSchema,
+      honored_students: HonoredSchema,
+      special_notices: NoticesSchema,
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
@@ -234,6 +245,11 @@ export const saveBulletin = createServerFn({ method: "POST" })
       weekly_riddle_answer: data.weekly_riddle_answer,
       activities: data.activities,
       notes: data.notes,
+      torah_dvar_title: data.torah_dvar_title,
+      torah_dvar_body: data.torah_dvar_body,
+      study_schedule: data.study_schedule,
+      honored_students: data.honored_students,
+      special_notices: data.special_notices,
     };
     if (data.id) {
       // Published bulletins are locked: the teacher must unlock before editing.
