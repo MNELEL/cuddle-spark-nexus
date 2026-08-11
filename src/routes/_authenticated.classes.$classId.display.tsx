@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getClass, type RoomObject } from "@/lib/classes.functions";
+import { useClassFallbackRedirect } from "@/hooks/use-class-fallback";
 import { ROOM_OBJECT_META } from "@/components/seating-grid";
 import { listStudents } from "@/lib/students.functions";
 import { listClassScoreInputs } from "@/lib/scoring.functions";
@@ -53,7 +54,8 @@ function DisplayMode() {
   const listS = useServerFn(listStudents);
   const listScores = useServerFn(listClassScoreInputs);
 
-  const { data: cls } = useQuery({ queryKey: ["class", classId], queryFn: () => getC({ data: { id: classId } }) });
+  const { data: cls, isLoading: clsLoading } = useQuery({ queryKey: ["class", classId], queryFn: () => getC({ data: { id: classId } }) });
+  useClassFallbackRedirect(!clsLoading && !cls);
   const { data: students = [] } = useQuery({
     queryKey: ["students", classId],
     queryFn: () => listS({ data: { classId } }),

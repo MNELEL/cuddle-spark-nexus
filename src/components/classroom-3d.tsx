@@ -98,11 +98,17 @@ export function Classroom3D({ rows, cols, seats, objects = [], hidden = [] }: Pr
         onPointerUp={onPointerUp}
         onPointerLeave={onPointerUp}
         role="img"
+        data-testid="classroom-3d-stage"
+        data-preset={preset}
+        data-rot-x={Math.round(rotX)}
+        data-rot-y={Math.round(rotY)}
+        data-zoom={zoom.toFixed(2)}
         aria-label={`תצוגת כיתה תלת־ממדית, ${rows} שורות על ${cols} עמודות, ${seats.length} תלמידים`}
       >
         {/* ceiling */}
         <div
           className="pointer-events-none absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/70 to-transparent dark:from-slate-700/50"
+          data-testid="room-ceiling"
           aria-hidden
         />
         <div
@@ -124,6 +130,7 @@ export function Classroom3D({ rows, cols, seats, objects = [], hidden = [] }: Pr
               backgroundColor: "#d6d3d1",
               transform: "translateZ(0px)",
             }}
+            data-testid="room-floor"
             aria-hidden
           />
 
@@ -132,7 +139,13 @@ export function Classroom3D({ rows, cols, seats, objects = [], hidden = [] }: Pr
             const meta = OBJ_STYLE[o.type];
             const { left, top } = pos(o.row, o.col);
             return (
-              <div key={`o-${o.row}-${o.col}`} className="absolute" style={{ left, top, width: CELL, height: CELL, transformStyle: "preserve-3d" }}>
+              <div
+                key={`o-${o.row}-${o.col}`}
+                className="absolute"
+                data-testid="room-object"
+                data-object-type={o.type}
+                style={{ left, top, width: CELL, height: CELL, transformStyle: "preserve-3d" }}
+              >
                 <div
                   className="absolute inset-0 flex items-center justify-center rounded text-[10px] font-bold text-white shadow-lg"
                   style={{ background: meta.color, transform: `translateZ(${meta.height}px)` }}
@@ -152,22 +165,25 @@ export function Classroom3D({ rows, cols, seats, objects = [], hidden = [] }: Pr
               const student = seats.find((s) => s.row === r && s.col === c);
               const { left, top } = pos(r, c);
               return (
-                <div key={`s-${r}-${c}`} className="absolute" style={{ left, top, width: CELL, height: CELL, transformStyle: "preserve-3d" }}>
+                <div key={`s-${r}-${c}`} className="absolute" data-testid="room-seat" style={{ left, top, width: CELL, height: CELL, transformStyle: "preserve-3d" }}>
                   {/* chair */}
                   <div
                     className="absolute rounded-sm bg-slate-500 shadow"
+                    data-testid="room-chair"
                     style={{ left: 14, top: CELL - 20, width: CELL - 28, height: 14, transform: "translateZ(10px)" }}
                     aria-hidden
                   />
                   {/* desk top */}
                   <div
                     className="absolute rounded-sm border border-amber-900/40 bg-amber-200 shadow-md dark:bg-amber-300"
+                    data-testid="room-desk"
                     style={{ left: 4, top: 6, width: CELL - 8, height: CELL - 26, transform: "translateZ(20px)" }}
                     aria-hidden
                   />
                   {student && (
                     <div
                       className="absolute flex items-center justify-center"
+                      data-testid="room-nameplate"
                       style={{ left: -6, top: 4, width: CELL + 12, transform: `translateZ(58px) rotateX(${-rotX}deg) rotateZ(${-rotY}deg)` }}
                     >
                       <span className="max-w-full truncate rounded bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground shadow">

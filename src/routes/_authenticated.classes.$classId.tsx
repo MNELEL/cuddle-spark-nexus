@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { getClass, getClassChain, setClassStatus } from "@/lib/classes.functions";
+import { useClassFallbackRedirect } from "@/hooks/use-class-fallback";
 import {
   listStudents, upsertStudent, deleteStudent,
   listRelations, createRelation, deleteRelation,
@@ -194,12 +195,14 @@ function ClassDetail() {
   const isArchived = (cls as { status?: string } | undefined)?.status === "archived";
   const academicYear = (cls as { academic_year?: string | null } | undefined)?.academic_year ?? null;
 
+  useClassFallbackRedirect(!validClass || (!clsLoading && !cls));
+
   if (!validClass || (!clsLoading && !cls)) {
     return (
       <div className="mx-auto max-w-lg py-16 text-center">
         <h1 className="font-display text-2xl font-bold">כיתה לא נמצאה</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          הקישור שהגעת אליו אינו מפנה לכיתה קיימת.
+        <p className="mt-2 text-sm text-muted-foreground" role="status">
+          הקישור שהגעת אליו אינו מפנה לכיתה קיימת או שאין לך הרשאה — מעבירים אותך אוטומטית למסך הראשי.
         </p>
         <Link to="/classes" className="mt-4 inline-flex">
           <Button variant="outline"><ArrowRight className="ms-1 h-4 w-4" /> חזרה לכיתות</Button>

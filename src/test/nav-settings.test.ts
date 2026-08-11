@@ -44,4 +44,35 @@ describe("settings navigation", () => {
     expect(quick).toContain('to="/institution"');
     expect(layout).toContain("<HomeQuickNav />");
   });
+
+  it("settings tabs support full keyboard control", () => {
+    expect(tabs).toContain("ArrowRight");
+    expect(tabs).toContain("ArrowLeft");
+    expect(tabs).toContain('"Home"');
+    expect(tabs).toContain('"End"');
+    expect(tabs).toContain("onKeyDown={onKeyDown}");
+    expect(tabs).toContain("focus-visible:ring-2");
+    // Links are natively activated with Enter — no custom handler should shadow it.
+    expect(tabs).not.toContain('e.key === "Enter"');
+  });
+
+  it("settings sub-screens keep the tabs and the global back navigation", () => {
+    for (const file of [
+      "src/routes/_authenticated.settings.index.tsx",
+      "src/routes/_authenticated.settings.brand.tsx",
+      "src/routes/_authenticated.settings.theme.tsx",
+    ]) {
+      expect(read(file), `${file} missing SettingsTabs`).toContain("SettingsTabs");
+    }
+    // HomeQuickNav lives in the authenticated layout, so it covers every sub-screen.
+    expect(layout).toContain("<HomeQuickNav />");
+  });
+
+  it("a missing or forbidden class redirects to a usable fallback", () => {
+    const hook = read("src/hooks/use-class-fallback.ts");
+    expect(hook).toContain('to: adminFlag ? "/institution" : "/classes"');
+    expect(hook).toContain("replace: true");
+    expect(read("src/routes/_authenticated.classes.$classId.tsx")).toContain("useClassFallbackRedirect");
+    expect(read("src/routes/_authenticated.classes.$classId.display.tsx")).toContain("useClassFallbackRedirect");
+  });
 });
