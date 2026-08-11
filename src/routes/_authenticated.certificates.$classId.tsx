@@ -631,6 +631,7 @@ function CertificatesPage() {
       </Tabs>
 
       <Dialog open={suggestOpen} onOpenChange={setSuggestOpen}>
+        {/* AI note suggestions */}
         <DialogContent dir="rtl" className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>הצעות AI להערת מחנך</DialogTitle>
