@@ -81,6 +81,7 @@ import { Route as AuthenticatedResourcesIndexRouteImport } from './routes/_authe
 import { Route as AuthenticatedResourcesResourceIdRouteImport } from './routes/_authenticated.resources.$resourceId'
 import { Route as AuthenticatedResourcesGenerateRouteImport } from './routes/_authenticated.resources.generate'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated.settings.index'
+import { Route as AuthenticatedSettingsSplatRouteImport } from './routes/_authenticated.settings.$'
 import { Route as AuthenticatedSettingsBrandRouteImport } from './routes/_authenticated.settings.brand'
 import { Route as AuthenticatedSettingsThemeRouteImport } from './routes/_authenticated.settings.theme'
 import { Route as AuthenticatedShareClassIdRouteImport } from './routes/_authenticated.share.$classId'
@@ -482,6 +483,12 @@ const AuthenticatedSettingsIndexRoute =
     path: '/settings/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedSettingsSplatRoute =
+  AuthenticatedSettingsSplatRouteImport.update({
+    id: '/settings/$',
+    path: '/settings/$',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedSettingsBrandRoute =
   AuthenticatedSettingsBrandRouteImport.update({
     id: '/settings/brand',
@@ -600,6 +607,7 @@ export interface FileRoutesByFullPath {
   '/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/resources/$resourceId': typeof AuthenticatedResourcesResourceIdRoute
   '/resources/generate': typeof AuthenticatedResourcesGenerateRoute
+  '/settings/$': typeof AuthenticatedSettingsSplatRoute
   '/settings/brand': typeof AuthenticatedSettingsBrandRoute
   '/settings/theme': typeof AuthenticatedSettingsThemeRoute
   '/share/$classId': typeof AuthenticatedShareClassIdRoute
@@ -676,6 +684,7 @@ export interface FileRoutesByTo {
   '/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/resources/$resourceId': typeof AuthenticatedResourcesResourceIdRoute
   '/resources/generate': typeof AuthenticatedResourcesGenerateRoute
+  '/settings/$': typeof AuthenticatedSettingsSplatRoute
   '/settings/brand': typeof AuthenticatedSettingsBrandRoute
   '/settings/theme': typeof AuthenticatedSettingsThemeRoute
   '/share/$classId': typeof AuthenticatedShareClassIdRoute
@@ -759,6 +768,7 @@ export interface FileRoutesById {
   '/_authenticated/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/_authenticated/resources/$resourceId': typeof AuthenticatedResourcesResourceIdRoute
   '/_authenticated/resources/generate': typeof AuthenticatedResourcesGenerateRoute
+  '/_authenticated/settings/$': typeof AuthenticatedSettingsSplatRoute
   '/_authenticated/settings/brand': typeof AuthenticatedSettingsBrandRoute
   '/_authenticated/settings/theme': typeof AuthenticatedSettingsThemeRoute
   '/_authenticated/share/$classId': typeof AuthenticatedShareClassIdRoute
@@ -842,6 +852,7 @@ export interface FileRouteTypes {
     | '/reports/$classId'
     | '/resources/$resourceId'
     | '/resources/generate'
+    | '/settings/$'
     | '/settings/brand'
     | '/settings/theme'
     | '/share/$classId'
@@ -918,6 +929,7 @@ export interface FileRouteTypes {
     | '/reports/$classId'
     | '/resources/$resourceId'
     | '/resources/generate'
+    | '/settings/$'
     | '/settings/brand'
     | '/settings/theme'
     | '/share/$classId'
@@ -1000,6 +1012,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reports/$classId'
     | '/_authenticated/resources/$resourceId'
     | '/_authenticated/resources/generate'
+    | '/_authenticated/settings/$'
     | '/_authenticated/settings/brand'
     | '/_authenticated/settings/theme'
     | '/_authenticated/share/$classId'
@@ -1544,6 +1557,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/settings/$': {
+      id: '/_authenticated/settings/$'
+      path: '/settings/$'
+      fullPath: '/settings/$'
+      preLoaderRoute: typeof AuthenticatedSettingsSplatRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/settings/brand': {
       id: '/_authenticated/settings/brand'
       path: '/settings/brand'
@@ -1645,6 +1665,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedReportsClassIdRoute: typeof AuthenticatedReportsClassIdRoute
   AuthenticatedResourcesResourceIdRoute: typeof AuthenticatedResourcesResourceIdRoute
   AuthenticatedResourcesGenerateRoute: typeof AuthenticatedResourcesGenerateRoute
+  AuthenticatedSettingsSplatRoute: typeof AuthenticatedSettingsSplatRoute
   AuthenticatedSettingsBrandRoute: typeof AuthenticatedSettingsBrandRoute
   AuthenticatedSettingsThemeRoute: typeof AuthenticatedSettingsThemeRoute
   AuthenticatedShareClassIdRoute: typeof AuthenticatedShareClassIdRoute
@@ -1684,6 +1705,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedReportsClassIdRoute: AuthenticatedReportsClassIdRoute,
   AuthenticatedResourcesResourceIdRoute: AuthenticatedResourcesResourceIdRoute,
   AuthenticatedResourcesGenerateRoute: AuthenticatedResourcesGenerateRoute,
+  AuthenticatedSettingsSplatRoute: AuthenticatedSettingsSplatRoute,
   AuthenticatedSettingsBrandRoute: AuthenticatedSettingsBrandRoute,
   AuthenticatedSettingsThemeRoute: AuthenticatedSettingsThemeRoute,
   AuthenticatedShareClassIdRoute: AuthenticatedShareClassIdRoute,
