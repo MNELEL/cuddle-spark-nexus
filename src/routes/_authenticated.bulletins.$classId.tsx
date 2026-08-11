@@ -436,8 +436,10 @@ function BulletinsPage() {
                   <div className="space-y-2">
                     {SCHEDULE_ROWS.map((row) => {
                       const cur = ((editing.study_schedule ?? {}) as Record<string, Record<string, string>>)[row.key] ?? {};
+                      const generated = scheduleResources.filter((r) => r.schedule_key === row.key);
                       return (
-                        <div key={row.key} className="grid items-center gap-2 rounded-lg border p-2 sm:grid-cols-[80px_1fr_1fr_auto]">
+                        <div key={row.key} className="rounded-lg border p-2">
+                          <div className="grid items-center gap-2 sm:grid-cols-[80px_1fr_1fr_auto]">
                           <div className="text-sm font-medium">{row.label}</div>
                           <Input
                             placeholder={row.a[1]} disabled={locked}
@@ -457,6 +459,28 @@ function BulletinsPage() {
                           >
                             <Wand2 className="ms-1 h-3 w-3" aria-hidden="true" /> צור חומר
                           </Button>
+                          </div>
+                          {generated.length > 0 && (
+                            <div className="mt-2 space-y-1 print:hidden">
+                              {generated.map((r) => (
+                                <div key={r.id} className="flex flex-wrap items-center gap-2 rounded-md bg-muted/40 px-2 py-1 text-xs">
+                                  <Badge variant="outline" className="border-amber text-amber">מקושר לעלון</Badge>
+                                  <Link
+                                    to="/resources/$resourceId" params={{ resourceId: r.id }}
+                                    className="font-medium hover:underline"
+                                  >
+                                    {r.title}
+                                  </Link>
+                                  <Link
+                                    to="/resources/$resourceId" params={{ resourceId: r.id }}
+                                    className="ms-auto inline-flex items-center gap-1 text-muted-foreground hover:text-foreground"
+                                  >
+                                    <ExternalLink className="h-3 w-3" aria-hidden="true" /> פתח לעריכה
+                                  </Link>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -613,8 +637,27 @@ function BulletinsPage() {
                   <h2 className="mb-2 text-lg font-semibold text-primary">הודעות מיוחדות</h2>
                   <div className="space-y-2">
                     {editing.special_notices.map((n, i) => (
-                      <div key={i} className="space-y-1 rounded-lg border p-2">
+                      <div
+                        key={i}
+                        className={`space-y-1 rounded-lg border p-2 ${dragIndex === i ? "border-amber bg-amber/5" : ""}`}
+                        draggable={!locked}
+                        onDragStart={() => setDragIndex(i)}
+                        onDragEnd={() => setDragIndex(null)}
+                        onDragOver={(e) => { if (dragIndex !== null && !locked) e.preventDefault(); }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          if (dragIndex !== null) moveNotice(dragIndex, i);
+                          setDragIndex(null);
+                        }}
+                      >
                         <div className="flex items-center gap-2">
+                          <span
+                            className="cursor-grab text-muted-foreground print:hidden"
+                            aria-hidden="true"
+                            title="גרור כדי לסדר מחדש"
+                          >
+                            <GripVertical className="h-4 w-4" />
+                          </span>
                           <Input
                             className="!font-medium" placeholder="כותרת ההודעה…" value={n.title} disabled={locked}
                             onChange={(e) => {
@@ -623,7 +666,17 @@ function BulletinsPage() {
                               updateField("special_notices", arr);
                             }}
                           />
+                          <Button variant="ghost" size="sm" className="print:hidden" disabled={locked || i === 0}
+                            aria-label="הזז למעלה" onClick={() => moveNotice(i, i - 1)}>
+                            <ArrowUp className="h-4 w-4" aria-hidden="true" />
+                          </Button>
+                          <Button variant="ghost" size="sm" className="print:hidden"
+                            disabled={locked || i === editing.special_notices.length - 1}
+                            aria-label="הזז למטה" onClick={() => moveNotice(i, i + 1)}>
+                            <ArrowDown className="h-4 w-4" aria-hidden="true" />
+                          </Button>
                           <Button variant="ghost" size="sm" className="text-destructive print:hidden" disabled={locked}
+                            aria-label="מחק הודעה"
                             onClick={() => updateField("special_notices",
                               editing.special_notices.filter((_, j) => j !== i))}>
                             <Trash2 className="h-4 w-4" aria-hidden="true" />
@@ -639,6 +692,11 @@ function BulletinsPage() {
                         />
                       </div>
                     ))}
+                    {editing.special_notices.length > 1 && (
+                      <p className="text-xs text-muted-foreground print:hidden">
+                        גרור הודעה או השתמש בחצים כדי לשנות את הסדר — זה גם הסדר שיוצג בעלון.
+                      </p>
+                    )}
                     <Button variant="outline" size="sm" className="print:hidden" disabled={locked}
                       onClick={() => updateField("special_notices",
                         [...editing.special_notices, { title: "", body: "" } as SpecialNotice])}>
