@@ -9,6 +9,7 @@ import {
   Star, Pencil, MessageCircleQuestion, Send, ScanText, ArrowUpDown,
   ChevronRight, ChevronLeft,
 } from "lucide-react";
+import { Rows3, LayoutGrid, Image as ImageIcon } from "lucide-react";
 import { UploadCloud, FileArchive } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -63,6 +64,20 @@ const SORT_OPTIONS = [
 ] as const;
 type SortId = (typeof SORT_OPTIONS)[number]["id"];
 const PAGE_SIZES = [12, 24, 48, 96] as const;
+
+/** אופן תצוגת החומרים: רשימה / טורים / תמונות ממוזערות */
+const VIEW_MODES = [
+  { id: "list", label: "רשימה", icon: Rows3 },
+  { id: "grid", label: "טורים", icon: LayoutGrid },
+  { id: "thumbs", label: "תמונות", icon: ImageIcon },
+] as const;
+type ViewMode = (typeof VIEW_MODES)[number]["id"];
+const VIEW_MODE_KEY = "library-view-mode";
+const GRID_CLASS: Record<ViewMode, string> = {
+  list: "grid gap-2",
+  grid: "grid gap-3 sm:grid-cols-2 xl:grid-cols-3",
+  thumbs: "grid gap-3 grid-cols-2 sm:grid-cols-3 xl:grid-cols-4",
+};
 
 export const Route = createFileRoute("/_authenticated/resources/")({
   component: ResourcesPage,
@@ -168,6 +183,17 @@ function ResourcesPage() {
   const [pageIndex, setPageIndex] = useState(0);
   const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+
+  useEffect(() => {
+    const saved = localStorage.getItem(VIEW_MODE_KEY) as ViewMode | null;
+    if (saved && VIEW_MODES.some((m) => m.id === saved)) setViewMode(saved);
+  }, []);
+
+  const changeViewMode = (m: ViewMode) => {
+    setViewMode(m);
+    localStorage.setItem(VIEW_MODE_KEY, m);
+  };
 
   const bundleFn = useServerFn(getResourceDownloadLinks);
   const zipMut = useMutation({
