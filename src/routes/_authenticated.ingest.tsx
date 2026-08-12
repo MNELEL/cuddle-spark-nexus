@@ -29,6 +29,7 @@ import { ColumnMapper } from "@/components/ingest/column-mapper";
 import { exportLessonSummaryPdf } from "@/lib/pdf/lesson-summary-pdf";
 import { PdfPreviewDialog } from "@/components/ingest/pdf-preview-dialog";
 import { SmartUpload } from "@/components/smart-upload";
+import { ACCEPT_AUDIO, ACCEPT_RESOURCE, ACCEPT_ROSTER, validateUploadFile } from "@/lib/upload-accept";
 import { listTopics, type TopicRow } from "@/lib/topics.functions";
 import { listCollections, RESOURCE_TYPES, RESOURCE_TYPE_LABELS, type ResourceType } from "@/lib/teaching-resources.functions";
 import { AiSuggestionsAuditCard } from "@/components/ingest/ai-suggestions-audit";
