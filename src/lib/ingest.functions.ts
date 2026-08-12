@@ -971,6 +971,7 @@ export const commitResource = createServerFn({ method: "POST" })
     body: z.string().max(20000).default(""),
     original_text: z.string().max(200000).default(""),
     topic_id: uuid.nullable().optional(),
+    collection_ids: z.array(uuid).max(10).default([]),
     questions: z.array(z.object({ q: z.string().min(1).max(500), a: z.string().max(2000).optional() })).max(50).default([]),
   }).parse(d))
   .handler(async ({ data, context }) => {
@@ -1017,6 +1018,12 @@ export const commitResource = createServerFn({ method: "POST" })
     if (error) { console.error("[DB]", error); throw new Error("הפעולה נכשלה."); }
 
     const newId = (ins as { id: string }).id;
+    if (data.collection_ids.length > 0) {
+      const { error: cErr } = await context.supabase
+        .from("resource_collection_items")
+        .insert(data.collection_ids.map((cid) => ({ collection_id: cid, resource_id: newId })) as never);
+      if (cErr) console.error("[DB]", cErr);
+    }
     if (data.original_text.trim()) {
       const { indexResourceChunks } = await import("./resource-chunks.server");
       await indexResourceChunks(context.supabase, context.userId, newId, data.original_text);
