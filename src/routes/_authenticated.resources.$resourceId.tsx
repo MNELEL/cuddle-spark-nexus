@@ -20,6 +20,7 @@ import { ResourceVersionHistory } from "@/components/resource-version-history";
 import { analyzeExistingResource } from "@/lib/resource-understanding.functions";
 import { ResourceClassificationEditor } from "@/components/resource-classification-editor";
 import { ResourceOcrEditor } from "@/components/resource-ocr-editor";
+import { OcrPrintRangeDialog } from "@/components/ocr-print-range-dialog";
 import { SimilarResources } from "@/components/similar-resources";
 
 export const Route = createFileRoute("/_authenticated/resources/$resourceId")({
@@ -66,6 +67,7 @@ function ResourceDetailPage() {
   const [showOriginal, setShowOriginal] = useState(false);
   const [classifyOpen, setClassifyOpen] = useState(false);
   const [ocrOpen, setOcrOpen] = useState(false);
+  const [rangeOpen, setRangeOpen] = useState(false);
 
   const editSuggestionsQ = useQuery({
     queryKey: ["edit-suggestions", resourceId],
@@ -141,6 +143,14 @@ function ResourceDetailPage() {
           )}
           <Button variant="outline" size="sm" onClick={() => window.print()}>
             <Printer className="ms-1 h-4 w-4" /> הדפס / שמור כ-PDF
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setRangeOpen(true)}
+            title="בחירת טווח עמודים מתוך הטקסט שחולץ"
+          >
+            <Printer className="ms-1 h-4 w-4" /> הדפס טווח עמודים
           </Button>
           <Button variant="outline" size="sm" onClick={() => setClassifyOpen(true)}>
             <Pencil className="ms-1 h-4 w-4" /> ערוך סיווג ותגיות
@@ -298,6 +308,15 @@ function ResourceDetailPage() {
           resource={resource}
           open={ocrOpen}
           onClose={() => setOcrOpen(false)}
+        />
+      )}
+      {rangeOpen && (
+        <OcrPrintRangeDialog
+          open={rangeOpen}
+          onClose={() => setRangeOpen(false)}
+          title={resource.title}
+          meta={[resource.subject, resource.grade_level ? `כיתה ${resource.grade_level}` : ""].filter(Boolean).join(" · ")}
+          text={c.original_text ?? c.body ?? ""}
         />
       )}
 
