@@ -140,6 +140,7 @@ function ResourcesPage() {
   const [collOpen, setCollOpen] = useState(false);
   const [topOpen, setTopOpen] = useState(false);
   const [category, setCategory] = useState("all");
+  const [materialKind, setMaterialKind] = useState("all");
   const [view, setView] = useState<"items" | "ask">("items");
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [tasksOpen, setTasksOpen] = useState(false);
@@ -150,8 +151,10 @@ function ResourcesPage() {
 
   const hasActiveFilters =
     category !== "all" ||
+    materialKind !== "all" ||
     Boolean(filters.search || filters.resource_type || filters.subject || filters.grade_level || filters.difficulty) ||
     filters.favoritesOnly || filters.hasOriginalOnly ||
+    filters.tags.length > 0 ||
     filters.collectionIds.length > 0 ||
     filters.topicIds.length > 0;
 
@@ -159,10 +162,12 @@ function ResourcesPage() {
   // client-side on the same dataset so no control overwrites another.
   const serverArgs = {
     search: filters.search || undefined,
+    search_in_document_only: filters.searchInDocumentOnly || undefined,
     resource_type: filters.resource_type || undefined,
     subject: filters.subject || undefined,
     grade_level: filters.grade_level || undefined,
     tag: filters.tag || undefined,
+    tags: filters.tags.length > 0 ? filters.tags : undefined,
     difficulty: filters.difficulty || undefined,
     favorites_only: filters.favoritesOnly || filters.hasOriginalOnly || undefined,
   };
@@ -187,6 +192,10 @@ function ResourcesPage() {
     if (cat && cat.types.length > 0) {
       out = out.filter((r) => cat.types.includes(r.resource_type as ResourceType));
     }
+    const kind = MATERIAL_KINDS.find((k) => k.id === materialKind);
+    if (kind && kind.types.length > 0) {
+      out = out.filter((r) => kind.types.includes(r.resource_type as ResourceType));
+    }
     if (filters.collectionIds.length > 0) {
       const allowed = new Set(
         collectionItems
@@ -203,7 +212,16 @@ function ResourcesPage() {
     }
     // favorites first, then by recency (server already ordered by updated_at)
     return [...out].sort((a, b) => Number(b.is_favorite) - Number(a.is_favorite));
-  }, [resources, collectionItems, filters.collectionIds, filters.topicIds, category]);
+  }, [resources, collectionItems, filters.collectionIds, filters.topicIds, category, materialKind]);
+
+  /** ענן תגיות מתוך החומרים שקיימים בפועל */
+  const tagCloud = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const r of resources) {
+      for (const t of r.tags ?? []) counts.set(t, (counts.get(t) ?? 0) + 1);
+    }
+    return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 18);
+  }, [resources]);
 
   const favMut = useMutation({
     mutationFn: (v: { id: string; is_favorite: boolean }) => toggleFav({ data: v }),
