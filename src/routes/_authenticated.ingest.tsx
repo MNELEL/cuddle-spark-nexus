@@ -507,12 +507,27 @@ function ResourcePreview({ job, onDone }: { job: IngestJob; onDone: () => void }
   const [form, setForm] = useState(ex);
   const topicsFn = useServerFn(listTopics);
   const collectionsFn = useServerFn(listCollections);
-  const { data: topics = [] } = useQuery({ queryKey: ["topics"], queryFn: () => topicsFn() });
-  const { data: collections = [] } = useQuery({ queryKey: ["resource-collections"], queryFn: () => collectionsFn() });
-  const [topicId, setTopicId] = useState<string>(ex.suggested_topic_id ?? "none");
-  const [collectionIds, setCollectionIds] = useState<string[]>(ex.suggested_collection_ids ?? []);
+  const settingsFn = useServerFn(getIngestAiSettings);
+  const { data: topics = [], isLoading: topicsLoading } = useQuery({ queryKey: ["topics"], queryFn: () => topicsFn() });
+  const { data: collections = [], isLoading: collectionsLoading } = useQuery({ queryKey: ["resource-collections"], queryFn: () => collectionsFn() });
+  const { data: aiSettings } = useQuery({ queryKey: ["ingest-ai-settings"], queryFn: () => settingsFn() });
+  const topicThreshold = aiSettings?.topic_confidence_threshold ?? DEFAULT_CONFIDENCE_THRESHOLD;
+  const collThreshold = aiSettings?.collection_confidence_threshold ?? DEFAULT_CONFIDENCE_THRESHOLD;
+  const confidence = typeof ex.topic_confidence === "number" ? ex.topic_confidence : 0;
   const aiTopic = Boolean(ex.suggested_topic_id);
   const aiCollections = (ex.suggested_collection_ids ?? []).length > 0;
+  const topicAutoApplied = aiTopic && confidence >= topicThreshold;
+  const collectionsAutoApplied = aiCollections && confidence >= collThreshold;
+  const [topicId, setTopicId] = useState<string>("none");
+  const [collectionIds, setCollectionIds] = useState<string[]>([]);
+  const [prefilled, setPrefilled] = useState(false);
+  // Apply AI defaults once the user's confidence thresholds are known.
+  useEffect(() => {
+    if (prefilled || !aiSettings) return;
+    if (topicAutoApplied && ex.suggested_topic_id) setTopicId(ex.suggested_topic_id);
+    if (collectionsAutoApplied) setCollectionIds(ex.suggested_collection_ids ?? []);
+    setPrefilled(true);
+  }, [aiSettings, prefilled, topicAutoApplied, collectionsAutoApplied, ex.suggested_topic_id, ex.suggested_collection_ids]);
   const commit = useServerFn(commitResource);
   const commitM = useMutation({
     mutationFn: () => commit({ data: {
@@ -524,8 +539,13 @@ function ResourcePreview({ job, onDone }: { job: IngestJob; onDone: () => void }
       original_text: form.original_text ?? "",
       topic_id: topicId === "none" ? null : topicId,
       collection_ids: collectionIds,
+      confidence_threshold: topicThreshold,
     }}),
-    onSuccess: () => { toast.success("החומר נוסף לספרייה"); onDone(); },
+    onSuccess: () => {
+      toast.success("החומר נוסף לספרייה");
+      void qc.invalidateQueries({ queryKey: ["ingest-ai-suggestions"] });
+      onDone();
+    },
     onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
   });
 
