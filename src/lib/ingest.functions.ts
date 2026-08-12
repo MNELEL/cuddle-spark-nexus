@@ -989,13 +989,17 @@ export const commitResource = createServerFn({ method: "POST" })
     original_text: z.string().max(200000).default(""),
     topic_id: uuid.nullable().optional(),
     collection_ids: z.array(uuid).max(10).default([]),
+    confidence_threshold: z.number().min(0).max(1).default(0.6),
     questions: z.array(z.object({ q: z.string().min(1).max(500), a: z.string().max(2000).optional() })).max(50).default([]),
   }).parse(d))
   .handler(async ({ data, context }) => {
     // Keep the original file: copy it out of staging into the library bucket.
     const { data: jobRow } = await context.supabase
-      .from("ingest_jobs").select("source_path, mime_type, file_name").eq("id", data.jobId).maybeSingle();
-    const job = jobRow as { source_path: string; mime_type: string; file_name: string } | null;
+      .from("ingest_jobs").select("source_path, mime_type, file_name, extracted").eq("id", data.jobId).maybeSingle();
+    const job = jobRow as {
+      source_path: string; mime_type: string; file_name: string;
+      extracted: ResourceExtracted | null;
+    } | null;
     let filePath: string | null = null;
     if (job?.source_path) {
       const dl = await context.supabase.storage.from("ingest-staging").download(job.source_path);
