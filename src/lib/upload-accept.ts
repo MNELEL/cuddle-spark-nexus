@@ -47,6 +47,12 @@ export const ACCEPT_IMAGE = join(IMAGE);
 export const ACCEPT_LIBRARY_ALL = join(IMAGE, AUDIO, VIDEO, PDF, TEXT, WORD, EXCEL, SLIDES);
 /** העלאה חכמה ב-/ingest: ה-AI מזהה לבד אם זו רשימה או חומר לימוד */
 export const ACCEPT_SMART = join(IMAGE, PDF, TEXT, WORD, EXCEL, CSV, SLIDES);
+/** ייבוא/ייצוא רשימות: Excel ו-CSV */
+export const ACCEPT_SPREADSHEET = join(EXCEL, CSV);
+/** לוגו מוסד — PNG/JPEG בלבד */
+export const ACCEPT_LOGO = "image/png,image/jpeg,.png,.jpg,.jpeg";
+/** גודל מקסימלי ללוגו (KB) */
+export const MAX_LOGO_KB = 500;
 
 /** סינון לפי קבוצה בממשק ההעלאה של הספרייה */
 export const LIBRARY_KIND_ACCEPT = {
