@@ -14,6 +14,10 @@ import { Switch } from "@/components/ui/switch";
 import {
   Popover, PopoverContent, PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
+  DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { listStudents, listRelations, setSeat, toggleSeatLock, clearAllSeats, toggleHiddenSeat, smartSortSeats } from "@/lib/students.functions";
 import { getClass, updateClass, type RoomObject, type RoomObjectType, ROOM_OBJECT_TYPES } from "@/lib/classes.functions";
@@ -360,6 +364,12 @@ export function SeatingGrid({ classId }: { classId: string }) {
     for (const o of roomObjects) m.set(seatKey(o.row, o.col), o);
     return m;
   }, [roomObjects]);
+  // Seats that must never receive a student: hidden seats + cells taken by room objects.
+  const blockedSet = useMemo(() => {
+    const s = new Set<string>(hiddenSet);
+    for (const o of roomObjects) s.add(seatKey(o.row, o.col));
+    return s;
+  }, [hiddenSet, roomObjects]);
   const [editEnv, setEditEnv] = useState(false);
   const saveObjectsM = useMutation({
     mutationFn: (next: RoomObject[]) => updateClassFn({ data: { id: classId, room_objects: next } }),
