@@ -60,6 +60,11 @@ export type ResourceContent = {
     contexts?: string[];
     suggested_type?: string;
     at?: string;
+    /** ודאות ה-OCR/הניתוח לפי ה-AI (0-1). */
+    ocr_confidence?: number;
+    /** האם המלמד עבר ותיקן את הטקסט שחולץ. */
+    ocr_reviewed?: boolean;
+    ocr_reviewed_at?: string;
   };
 };
 
