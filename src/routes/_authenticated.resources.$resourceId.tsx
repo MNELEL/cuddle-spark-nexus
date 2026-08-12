@@ -218,10 +218,17 @@ function ResourceDetailPage() {
         </Card>
       )}
 
-      {c.materials && c.materials.length > 0 && (
-        <>
-        </>
+      {hasOriginal && (
+        <div className="hidden print:block">
+          <h2 className="mb-2 font-display text-lg font-bold">המקור המלא כפי שהועלה</h2>
+          <div className="whitespace-pre-wrap text-sm leading-relaxed" dir="rtl">
+            {c.original_text}
+          </div>
+        </div>
       )}
+
+      <ResourceVersionHistory resourceId={resource.id} />
+
       {c.materials && c.materials.length > 0 && (
         <Card>
           <CardContent className="py-5">
