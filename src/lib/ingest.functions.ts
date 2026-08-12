@@ -77,6 +77,10 @@ export type ResourceExtracted = {
   /** תמלול/OCR מדויק של המסמך — כפי שהוא, בלי שכתוב. */
   original_text: string;
   questions: { q: string; a?: string }[];
+  /** הצעת שיוך אוטומטית מתוך הנושאים/אוספים הקיימים של המשתמש. */
+  suggested_topic_id?: string | null;
+  suggested_collection_ids?: string[];
+  topic_confidence?: number;
 };
 export type LessonExtracted = {
   kind: "lesson_audio";
