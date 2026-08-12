@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Save, ScanText, RefreshCw } from "lucide-react";
+import { Loader2, Save, ScanText, RefreshCw, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,6 +16,8 @@ import { toast } from "sonner";
 import type { ResourceRow } from "@/lib/teaching-resources.functions";
 import { updateResourceOcrText } from "@/lib/library-extras.functions";
 import { analyzeExistingResource } from "@/lib/resource-understanding.functions";
+import { OcrPrintRangeDialog } from "@/components/ocr-print-range-dialog";
+import { splitOcrPages } from "@/lib/ocr-pages";
 
 function confidenceLabel(c: number | undefined) {
   if (c === undefined || c <= 0) return { text: "ודאות לא נמדדה", cls: "text-muted-foreground" };
@@ -44,6 +46,8 @@ export function ResourceOcrEditor({
   const analyzeFn = useServerFn(analyzeExistingResource);
   const c = resource.content ?? {};
   const [text, setText] = useState(c.original_text ?? "");
+  const [rangeOpen, setRangeOpen] = useState(false);
+  const pageCount = splitOcrPages(text).length;
   const conf = confidenceLabel(c.ai_understanding?.ocr_confidence);
 
   const invalidate = () => {
@@ -87,6 +91,7 @@ export function ResourceOcrEditor({
           <span className={conf.cls}>{conf.text}</span>
           <Badge variant="outline">{text.length.toLocaleString("he-IL")} תווים</Badge>
           {c.ai_understanding?.ocr_reviewed && <Badge variant="secondary">עבר בדיקה ידנית</Badge>}
+          {pageCount > 0 && <Badge variant="outline">{pageCount} עמודים להדפסה</Badge>}
         </div>
         <p className="text-xs text-muted-foreground">
           אפשר לתקן כאן שגיאות OCR. אחרי השמירה הטקסט מאונדקס מחדש והחיפוש בתוך המסמך יעבוד לפי
@@ -101,6 +106,9 @@ export function ResourceOcrEditor({
           className="font-mono text-xs leading-relaxed"
         />
         <DialogFooter className="flex-wrap gap-2">
+          <Button variant="outline" disabled={pageCount === 0} onClick={() => setRangeOpen(true)}>
+            <Printer className="ms-1 h-4 w-4" /> הדפס טווח עמודים
+          </Button>
           <Button
             variant="outline"
             disabled={rescanMut.isPending}
@@ -125,6 +133,15 @@ export function ResourceOcrEditor({
             שמור תיקונים
           </Button>
         </DialogFooter>
+        {rangeOpen && (
+          <OcrPrintRangeDialog
+            open={rangeOpen}
+            onClose={() => setRangeOpen(false)}
+            title={resource.title}
+            meta={resource.subject ?? ""}
+            text={text}
+          />
+        )}
       </DialogContent>
     </Dialog>
   );
