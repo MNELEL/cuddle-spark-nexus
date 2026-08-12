@@ -186,6 +186,27 @@ function ResourceDetailPage() {
         )}
       </div>
 
+      {c.ai_understanding && (c.ai_understanding.summary || (c.ai_understanding.contexts?.length ?? 0) > 0) && (
+        <Card className="border-amber/40 bg-amber/5 print:hidden">
+          <CardContent className="space-y-2 py-4">
+            <div className="flex items-center gap-2 text-sm font-semibold">
+              <ScanText className="h-4 w-4 text-amber" /> מה המערכת הבינה על החומר
+            </div>
+            {c.ai_understanding.summary && (
+              <p className="text-sm text-muted-foreground">{c.ai_understanding.summary}</p>
+            )}
+            {(c.ai_understanding.contexts?.length ?? 0) > 0 && (
+              <div className="flex flex-wrap gap-1">
+                <span className="text-xs text-muted-foreground">מתאים ל:</span>
+                {c.ai_understanding.contexts!.map((ctx) => (
+                  <Badge key={ctx} variant="outline" className="text-[11px]">{ctx}</Badge>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {c.body && (
         <Card className="relative group">
           <CardContent className="prose prose-sm max-w-none py-5 leading-relaxed whitespace-pre-wrap" dir="rtl">
