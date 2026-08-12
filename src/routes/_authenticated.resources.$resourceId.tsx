@@ -110,7 +110,7 @@ function ResourceDetailPage() {
   const hasOriginal = Boolean(c.original_text && c.original_text.trim());
 
   return (
-    <div className="mx-auto max-w-4xl space-y-5 print:max-w-none">
+    <div className="resource-print-area mx-auto max-w-4xl space-y-5 print:max-w-none">
       <div className="flex flex-wrap items-center gap-2 print:hidden">
         <Button asChild variant="ghost" size="sm">
           <Link to="/resources">
@@ -124,7 +124,7 @@ function ResourceDetailPage() {
             </Button>
           )}
           <Button variant="outline" size="sm" onClick={() => window.print()}>
-            <Printer className="ms-1 h-4 w-4" /> הדפס
+            <Printer className="ms-1 h-4 w-4" /> הדפס / שמור כ-PDF
           </Button>
           <Button
             variant="ghost"
