@@ -170,7 +170,7 @@ function DropZone({
 
   const accept =
     kind === "roster" ? "image/*,application/pdf,.csv,.xlsx,.xls,.txt" :
-    kind === "resource" ? "image/*,application/pdf,.txt,.md,.docx" :
+    kind === "resource" ? "image/*,application/pdf,.txt,.md,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword" :
     "audio/*";
   const requiresClass = kind === "roster" || kind === "lesson_audio";
 
@@ -1202,7 +1202,7 @@ function SmartAutoCard({
         )}
 
         <SmartUpload
-          accept="image/*,application/pdf,.txt,.md,.csv,.xlsx,.xls,.docx"
+          accept="image/*,application/pdf,.txt,.md,.csv,.xlsx,.xls,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword"
           multiple
           allowFolder
           busy={busy}
