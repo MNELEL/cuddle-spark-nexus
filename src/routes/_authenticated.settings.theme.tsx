@@ -1,5 +1,12 @@
-import { SettingsTabs } from "@/components/settings-tabs";
-import { SettingsBreadcrumb } from "@/components/settings-breadcrumb";
+import { SettingsTabs, SETTINGS_TAB_LABELS } from "@/components/settings-tabs";
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -26,6 +33,24 @@ export const Route = createFileRoute("/_authenticated/settings/theme")({
     ],
   }),
 });
+
+function SettingsSubBreadcrumb({ label }: { label: string }) {
+  return (
+    <Breadcrumb className="mb-2">
+      <BreadcrumbList>
+        <BreadcrumbItem>
+          <BreadcrumbLink asChild>
+            <Link to="/settings">הגדרות</Link>
+          </BreadcrumbLink>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator className="rotate-180" />
+        <BreadcrumbItem>
+          <BreadcrumbPage>{label}</BreadcrumbPage>
+        </BreadcrumbItem>
+      </BreadcrumbList>
+    </Breadcrumb>
+  );
+}
 
 const SWATCHES: Record<ThemeName, string[]> = {
   modern: ["#1e293b", "#f59e0b", "#f8fafc"],
@@ -63,7 +88,7 @@ function ThemeSettingsPage() {
 
   return (
     <div className="space-y-6">
-      <SettingsBreadcrumb current="ערכת נושא" />
+      <SettingsSubBreadcrumb label={SETTINGS_TAB_LABELS.theme} />
       <SettingsTabs active="theme" />
       <div className="space-y-2">
         <Button asChild variant="ghost" size="sm" className="px-0">

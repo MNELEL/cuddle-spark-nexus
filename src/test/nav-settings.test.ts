@@ -110,11 +110,20 @@ describe("settings area contract", () => {
     expect(notFound).toContain("SettingsBreadcrumb");
   });
 
-  it("breadcrumbs exist only on the brand and theme sub-routes", () => {
-    expect(read("src/routes/_authenticated.settings.brand.tsx")).toContain('<SettingsBreadcrumb current="מותג" />');
-    expect(read("src/routes/_authenticated.settings.theme.tsx")).toContain('<SettingsBreadcrumb current="ערכת נושא" />');
-    // /settings itself is the area home — no breadcrumb above itself.
-    expect(settings).not.toContain("SettingsBreadcrumb");
+  it("settings area shows dedicated breadcrumbs, not the toolkit breadcrumb", () => {
+    const toolBreadcrumbs = read("src/components/tool-breadcrumbs.tsx");
+    expect(toolBreadcrumbs).toContain('pathname.startsWith("/settings")');
+    expect(toolBreadcrumbs).toContain("return null;");
+
+    expect(settings).toContain("Breadcrumb");
+    expect(settings).toContain("SETTINGS_TAB_LABELS[tab]");
+
+    const brandRoute = read("src/routes/_authenticated.settings.brand.tsx");
+    const themeRoute = read("src/routes/_authenticated.settings.theme.tsx");
+    expect(brandRoute).toContain('to="/settings"');
+    expect(brandRoute).toContain("SETTINGS_TAB_LABELS.brand");
+    expect(themeRoute).toContain('to="/settings"');
+    expect(themeRoute).toContain("SETTINGS_TAB_LABELS.theme");
   });
 
   it("settings mutations are audited through logInfo with a dedicated source", () => {

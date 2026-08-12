@@ -4,17 +4,41 @@ import { useServerFn } from "@tanstack/react-start";
 import { Settings, Palette, ArrowLeft, Wrench, Library, ShieldCheck } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { SubscriptionStatusCard } from "@/components/subscription-status-card";
 import { ReminderPreferencesCard } from "@/components/reminder-preferences-card";
 import { SecuritySettings } from "@/components/security-settings";
 import { ThemePickerCard } from "@/components/theme-picker-card";
-import { SettingsTabs, type SettingsTabId } from "@/components/settings-tabs";
+import { SettingsTabs, SETTINGS_TAB_LABELS, type SettingsTabId } from "@/components/settings-tabs";
 import { HomeQuickNav } from "@/components/home-quick-nav";
 import { TOOLS } from "@/lib/tool-registry";
 import { useBrand } from "@/hooks/use-brand";
 import { isAdmin } from "@/lib/user-roles.functions";
 
 const TAB_IDS: SettingsTabId[] = ["general", "security", "reminders", "docs"];
+
+function SettingsPageBreadcrumb({ tab }: { tab: SettingsTabId }) {
+  return (
+    <Breadcrumb className="mb-2">
+      <BreadcrumbList>
+        <BreadcrumbItem>
+          <span className="font-normal text-foreground">הגדרות</span>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator className="rotate-180" />
+        <BreadcrumbItem>
+          <BreadcrumbPage>{SETTINGS_TAB_LABELS[tab]}</BreadcrumbPage>
+        </BreadcrumbItem>
+      </BreadcrumbList>
+    </Breadcrumb>
+  );
+}
+
 
 export const Route = createFileRoute("/_authenticated/settings/")({
   component: SettingsPage,
@@ -43,6 +67,7 @@ function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-5">
+      <SettingsPageBreadcrumb tab={tab} />
       <div>
         <h1 className="font-display flex items-center gap-2 text-3xl font-bold">
           <Settings className="h-7 w-7 text-primary" /> הגדרות

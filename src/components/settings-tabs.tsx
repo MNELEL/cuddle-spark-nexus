@@ -20,6 +20,10 @@ const TABS: {
   { id: "theme", label: "ערכת נושא", icon: Palette, to: "/settings/theme" },
 ];
 
+export const SETTINGS_TAB_LABELS = Object.fromEntries(
+  TABS.map((t) => [t.id, t.label]),
+) as Record<(typeof TABS)[number]["id"], string>;
+
 export function SettingsTabs({ active }: { active?: SettingsTabId | "brand" | "theme" }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navRef = useRef<HTMLElement | null>(null);
