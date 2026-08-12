@@ -88,9 +88,12 @@ function IngestPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <div className="rounded-2xl border bg-card bg-mesh p-4 sm:p-6 shadow-sm">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Sparkles className="h-6 w-6 text-primary" />
           <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight">העלאה חכמה</h1>
+          <Button asChild variant="outline" size="sm" className="ms-auto">
+            <Link to="/resources"><BookMarked className="ms-1 h-4 w-4" /> לכל חומרי הספרייה</Link>
+          </Button>
         </div>
         <p className="mt-1 text-sm text-muted-foreground">
           העלה כל קובץ — ציונים, הערות, יומן, מכתב הורים, חומר לימוד או הקלטה — והמערכת תזהה ותשבץ אוטומטית.
@@ -672,6 +675,9 @@ function ResourcePreview({ job, onDone }: { job: IngestJob; onDone: () => void }
         )}
         <div className="flex gap-2 justify-end pt-2">
           <Button variant="ghost" onClick={onDone}>ביטול</Button>
+          <Button variant="outline" asChild>
+            <Link to="/resources"><BookMarked className="ms-1 h-4 w-4" /> פתח את הספרייה</Link>
+          </Button>
           <Button onClick={() => commitM.mutate()} disabled={commitM.isPending}>
             {commitM.isPending ? <><Loader2 className="ms-1 h-4 w-4 animate-spin" /> שומר...</> : "אשר והוסף לספרייה"}
           </Button>
