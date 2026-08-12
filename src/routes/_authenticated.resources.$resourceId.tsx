@@ -219,6 +219,10 @@ function ResourceDetailPage() {
       )}
 
       {c.materials && c.materials.length > 0 && (
+        <>
+        </>
+      )}
+      {c.materials && c.materials.length > 0 && (
         <Card>
           <CardContent className="py-5">
             <h2 className="mb-2 font-display text-lg font-bold">חומרים נדרשים</h2>
