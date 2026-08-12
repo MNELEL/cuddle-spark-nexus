@@ -29,6 +29,8 @@ import { ColumnMapper } from "@/components/ingest/column-mapper";
 import { exportLessonSummaryPdf } from "@/lib/pdf/lesson-summary-pdf";
 import { PdfPreviewDialog } from "@/components/ingest/pdf-preview-dialog";
 import { SmartUpload } from "@/components/smart-upload";
+import { listTopics, type TopicRow } from "@/lib/topics.functions";
+import { listCollections } from "@/lib/teaching-resources.functions";
 
 type SearchParams = { classId?: string };
 
@@ -499,6 +501,14 @@ function RosterPreview({ job, classes, preferredClassId, onDone }: {
 function ResourcePreview({ job, onDone }: { job: IngestJob; onDone: () => void }) {
   const ex = job.extracted as ResourceExtracted;
   const [form, setForm] = useState(ex);
+  const topicsFn = useServerFn(listTopics);
+  const collectionsFn = useServerFn(listCollections);
+  const { data: topics = [] } = useQuery({ queryKey: ["topics"], queryFn: () => topicsFn() });
+  const { data: collections = [] } = useQuery({ queryKey: ["resource-collections"], queryFn: () => collectionsFn() });
+  const [topicId, setTopicId] = useState<string>(ex.suggested_topic_id ?? "none");
+  const [collectionIds, setCollectionIds] = useState<string[]>(ex.suggested_collection_ids ?? []);
+  const aiTopic = Boolean(ex.suggested_topic_id);
+  const aiCollections = (ex.suggested_collection_ids ?? []).length > 0;
   const commit = useServerFn(commitResource);
   const commitM = useMutation({
     mutationFn: () => commit({ data: {
@@ -508,6 +518,8 @@ function ResourcePreview({ job, onDone }: { job: IngestJob; onDone: () => void }
       resource_type: form.resource_type, tags: form.tags,
       body: form.body, questions: form.questions,
       original_text: form.original_text ?? "",
+      topic_id: topicId === "none" ? null : topicId,
+      collection_ids: collectionIds,
     }}),
     onSuccess: () => { toast.success("החומר נוסף לספרייה"); onDone(); },
     onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
@@ -524,6 +536,55 @@ function ResourcePreview({ job, onDone }: { job: IngestJob; onDone: () => void }
           <div><Label>סוג</Label><Input value={form.resource_type} onChange={(e) => setForm({ ...form, resource_type: e.target.value })} /></div>
         </div>
         <div><Label>תיאור</Label><Textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
+        <div className="grid gap-3 md:grid-cols-2">
+          <div>
+            <Label className="flex items-center gap-2">
+              נושא
+              {aiTopic && (
+                <Badge variant="secondary" className="text-[10px]">
+                  הצעת AI{typeof ex.topic_confidence === "number" && ex.topic_confidence > 0
+                    ? ` · ${Math.round(ex.topic_confidence * 100)}%` : ""}
+                </Badge>
+              )}
+            </Label>
+            <Select value={topicId} onValueChange={setTopicId}>
+              <SelectTrigger><SelectValue placeholder="בחר נושא" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">— ללא נושא</SelectItem>
+                {(topics as TopicRow[]).map((t) => (
+                  <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="flex items-center gap-2">
+              אוספים
+              {aiCollections && <Badge variant="secondary" className="text-[10px]">הצעת AI</Badge>}
+            </Label>
+            {collections.length === 0 ? (
+              <p className="mt-1 text-xs text-muted-foreground">אין אוספים עדיין.</p>
+            ) : (
+              <div className="mt-1 max-h-32 space-y-1 overflow-y-auto rounded-md border p-2">
+                {(collections as { id: string; name: string }[]).map((c) => (
+                  <label key={c.id} className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      className="h-3.5 w-3.5 accent-primary"
+                      checked={collectionIds.includes(c.id)}
+                      onChange={(e) => setCollectionIds(
+                        e.target.checked
+                          ? [...collectionIds, c.id].slice(0, 10)
+                          : collectionIds.filter((x) => x !== c.id),
+                      )}
+                    />
+                    {c.name}
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
         <div>
           <Label>הטקסט המקורי של המסמך (נשמר כפי שהוא)</Label>
           <Textarea
