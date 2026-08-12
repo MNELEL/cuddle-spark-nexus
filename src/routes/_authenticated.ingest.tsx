@@ -169,14 +169,15 @@ function DropZone({
   const analyze = useServerFn(analyzeIngestJob);
 
   const accept =
-    kind === "roster" ? "image/*,application/pdf,.csv,.xlsx,.xls,.txt" :
-    kind === "resource" ? "image/*,application/pdf,.txt,.md,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword" :
-    "audio/*";
+    kind === "roster" ? ACCEPT_ROSTER :
+    kind === "resource" ? ACCEPT_RESOURCE :
+    ACCEPT_AUDIO;
   const requiresClass = kind === "roster" || kind === "lesson_audio";
 
   async function onFile(file: File) {
     if (requiresClass && !classId) { toast.error("בחר כיתה קודם"); return; }
-    if (file.size > 20 * 1024 * 1024) { toast.error("הקובץ גדול מ-20MB"); return; }
+    const check = validateUploadFile(file, accept);
+    if (!check.ok) { toast.error(check.message); return; }
     setBusy(true);
     try {
       const safeName = file.name.replace(/[^a-zA-Z0-9._\- ]/g, "_");
