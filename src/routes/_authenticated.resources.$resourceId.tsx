@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { ArrowRight, Printer, Trash2, Loader2, Library, Sparkles, Tag, Send, Wand2, FileText, Download, ChevronUp, ChevronDown, Copy, ScanText } from "lucide-react";
+import { ArrowRight, Printer, Trash2, Loader2, Library, Sparkles, Tag, Send, Wand2, FileText, Download, ChevronUp, ChevronDown, Copy, ScanText, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +18,9 @@ import { suggestResourceEdits } from "@/lib/teacher-style.functions";
 import { listClasses } from "@/lib/classes.functions";
 import { ResourceVersionHistory } from "@/components/resource-version-history";
 import { analyzeExistingResource } from "@/lib/resource-understanding.functions";
+import { ResourceClassificationEditor } from "@/components/resource-classification-editor";
+import { ResourceOcrEditor } from "@/components/resource-ocr-editor";
+import { SimilarResources } from "@/components/similar-resources";
 
 export const Route = createFileRoute("/_authenticated/resources/$resourceId")({
   head: () => ({
@@ -61,6 +64,8 @@ function ResourceDetailPage() {
 
   const [submitClassId, setSubmitClassId] = useState<string>("");
   const [showOriginal, setShowOriginal] = useState(false);
+  const [classifyOpen, setClassifyOpen] = useState(false);
+  const [ocrOpen, setOcrOpen] = useState(false);
 
   const editSuggestionsQ = useQuery({
     queryKey: ["edit-suggestions", resourceId],
@@ -136,6 +141,12 @@ function ResourceDetailPage() {
           )}
           <Button variant="outline" size="sm" onClick={() => window.print()}>
             <Printer className="ms-1 h-4 w-4" /> הדפס / שמור כ-PDF
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setClassifyOpen(true)}>
+            <Pencil className="ms-1 h-4 w-4" /> ערוך סיווג ותגיות
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setOcrOpen(true)}>
+            <FileText className="ms-1 h-4 w-4" /> טקסט OCR ותיקון
           </Button>
           <Button
             variant="outline" size="sm"
@@ -272,6 +283,23 @@ function ResourceDetailPage() {
       )}
 
       <ResourceVersionHistory resourceId={resource.id} />
+
+      <SimilarResources resourceId={resource.id} />
+
+      {classifyOpen && (
+        <ResourceClassificationEditor
+          resource={resource}
+          open={classifyOpen}
+          onClose={() => setClassifyOpen(false)}
+        />
+      )}
+      {ocrOpen && (
+        <ResourceOcrEditor
+          resource={resource}
+          open={ocrOpen}
+          onClose={() => setOcrOpen(false)}
+        />
+      )}
 
       {c.materials && c.materials.length > 0 && (
         <Card>
