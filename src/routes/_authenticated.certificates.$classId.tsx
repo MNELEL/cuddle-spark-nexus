@@ -719,7 +719,7 @@ function StudentCertCard({
           <div className="flex items-center gap-2">
             <SmartUpload
               compact
-              accept="image/*"
+              accept={ACCEPT_IMAGE}
               buttonLabel="העלה צילום תעודה"
               onFile={(f: File) => onOcrPhoto(f)}
             />

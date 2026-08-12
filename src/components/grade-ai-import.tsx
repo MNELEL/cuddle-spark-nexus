@@ -200,7 +200,7 @@ function Inner({ classId, students, onClose }: { classId: string; students: Stud
               <div className="flex items-center gap-2">
                 <SmartUpload
                   compact
-                  accept="image/*"
+                  accept={ACCEPT_IMAGE}
                   maxSizeMb={10}
                   busy={ocrLoading}
                   busyLabel="מזהה תמונה..."
