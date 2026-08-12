@@ -693,6 +693,7 @@ function LessonPreview({ job, classes, preferredClassId, onDone, onReanalyze, re
   job: IngestJob; classes: { id: string; name: string }[]; preferredClassId?: string; onDone: () => void;
   onReanalyze: () => void; reanalyzing: boolean;
 }) {
+  const qc = useQueryClient();
   const ex = job.extracted as LessonExtracted;
   const [form, setForm] = useState<LessonExtracted>({
     ...ex,
@@ -1230,6 +1231,7 @@ const CATEGORY_ICON: Record<AutoCategory, React.ComponentType<{ className?: stri
 function AutoPreview({ job, classes, preferredClassId, onDone }: {
   job: IngestJob; classes: { id: string; name: string }[]; preferredClassId?: string; onDone: () => void;
 }) {
+  const qc = useQueryClient();
   const ex = job.extracted as unknown as AutoExtracted;
   const [items, setItems] = useState<AutoItem[]>(ex?.items ?? []);
   const [classId, setClassId] = useState<string>(preferredClassId ?? job.class_id ?? "");

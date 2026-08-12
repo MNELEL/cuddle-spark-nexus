@@ -92,7 +92,7 @@ type FilterState = {
 
 const emptyFilters: FilterState = {
   search: "", resource_type: "", subject: "", grade_level: "", tag: "",
-  difficulty: "", favoritesOnly: false,
+  difficulty: "", favoritesOnly: false, hasOriginalOnly: false,
   topicIds: [], collectionIds: [],
 };
 
