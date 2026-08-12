@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { Loader2, ScanLine, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { MAX_UPLOAD_MB, validateUploadFile } from "@/lib/upload-accept";
 
 /**
  * Shared upload surface for the whole app ("תחנת העלאה" אחת).
@@ -34,7 +35,7 @@ export function SmartUpload({
   accept,
   onFile,
   busy = false,
-  maxSizeMb = 20,
+  maxSizeMb = MAX_UPLOAD_MB,
   multiple = false,
   allowFolder = false,
   title = "גרור קובץ או לחץ להעלאה",
@@ -52,22 +53,9 @@ export function SmartUpload({
 
   /** בודק התאמה של קובץ בודד. quiet=true — בלי הודעה פרטנית (לבחירת תיקייה שלמה). */
   function accepted(file: File, quiet = false): boolean {
-    if (file.size > maxSizeMb * 1024 * 1024) {
-      if (!quiet) toast.error(`הקובץ "${file.name}" גדול מ-${maxSizeMb}MB`);
-      return false;
-    }
-    const rules = accept.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
-    if (rules.length === 0) return true;
-    const name = file.name.toLowerCase();
-    const type = (file.type || "").toLowerCase();
-    const ok = rules.some((r) => {
-      if (r === "*/*" || r === "*") return true;
-      if (r.startsWith(".")) return name.endsWith(r);
-      if (r.endsWith("/*")) return type.startsWith(r.slice(0, -1));
-      return type === r;
-    });
-    if (!ok && !quiet) toast.error(`סוג הקובץ "${file.name}" אינו נתמך`);
-    return ok;
+    const res = validateUploadFile(file, accept, maxSizeMb);
+    if (!res.ok && !quiet) toast.error(res.message);
+    return res.ok;
   }
 
   async function handleFiles(files: FileList | File[] | null, fromFolder = false) {
