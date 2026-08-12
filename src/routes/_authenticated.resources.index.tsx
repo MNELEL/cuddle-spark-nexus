@@ -760,67 +760,87 @@ function ResourcesPage() {
 
         {/* Grid */}
         <div className="space-y-3 lg:col-start-2 lg:row-start-1 lg:row-span-2">
-          {/* מיון + גודל עמוד */}
+          {/* סרגל אחד: מיון · אופן תצוגה · גודל עמוד · בחירה */}
           {!isLoading && visibleResources.length > 0 && (
-            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-card px-3 py-2">
-              <div className="flex items-center gap-2">
-                <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
-                <Label className="text-xs text-muted-foreground" htmlFor="library-sort">מיון</Label>
-                <Select value={sort} onValueChange={(v) => setSort(v as SortId)}>
-                  <SelectTrigger id="library-sort" className="h-8 w-[200px] text-xs"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {SORT_OPTIONS.map((o) => (
-                      <SelectItem key={o.id} value={o.id}>{o.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="text-xs text-muted-foreground" htmlFor="library-page-size">לעמוד</Label>
+            <div className="space-y-2 rounded-xl border bg-card px-3 py-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-1.5">
+                  <ArrowUpDown className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                  <Select value={sort} onValueChange={(v) => setSort(v as SortId)}>
+                    <SelectTrigger id="library-sort" aria-label="מיון" className="h-8 w-[180px] text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SORT_OPTIONS.map((o) => (
+                        <SelectItem key={o.id} value={o.id}>{o.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center gap-1 rounded-lg border p-0.5" role="group" aria-label="אופן תצוגה">
+                  {VIEW_MODES.map((m) => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      aria-pressed={viewMode === m.id}
+                      title={m.label}
+                      onClick={() => changeViewMode(m.id)}
+                      className={`flex min-h-8 items-center gap-1 rounded-md px-2 text-xs transition ${viewMode === m.id ? "bg-primary font-semibold text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
+                    >
+                      <m.icon className="h-3.5 w-3.5" aria-hidden="true" />
+                      <span className="hidden sm:inline">{m.label}</span>
+                    </button>
+                  ))}
+                </div>
+
                 <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
-                  <SelectTrigger id="library-page-size" className="h-8 w-[80px] text-xs"><SelectValue /></SelectTrigger>
+                  <SelectTrigger id="library-page-size" aria-label="פריטים לעמוד" className="h-8 w-[92px] text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {PAGE_SIZES.map((n) => (
-                      <SelectItem key={n} value={String(n)}>{n}</SelectItem>
+                      <SelectItem key={n} value={String(n)}>{n} לעמוד</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <span className="text-xs text-muted-foreground" aria-live="polite">
+
+                <span className="ms-auto text-xs text-muted-foreground" aria-live="polite">
                   {visibleResources.length.toLocaleString("he-IL")} חומרים · עמוד {safePage + 1} מתוך {pageCount}
                 </span>
-              </div>
-            </div>
-          )}
-          {!isLoading && visibleResources.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-card px-3 py-2 text-xs">
-              <Button
-                size="sm" variant="outline"
-                onClick={() => setSelectedIds(
-                  pagedResources.every((r) => selectedIds.includes(r.id))
-                    ? selectedIds.filter((id) => !pagedResources.some((r) => r.id === id))
-                    : [...new Set([...selectedIds, ...pagedResources.map((r) => r.id)])],
-                )}
-              >
-                {pagedResources.every((r) => selectedIds.includes(r.id)) ? "בטל בחירת העמוד" : "בחר את כל העמוד"}
-              </Button>
-              <span className="text-muted-foreground">נבחרו {selectedIds.length}</span>
-              <div className="ms-auto flex flex-wrap gap-2">
-                {selectedIds.length > 0 && (
-                  <Button size="sm" variant="ghost" onClick={() => setSelectedIds([])}>
-                    <X className="ms-1 h-4 w-4" /> נקה בחירה
-                  </Button>
-                )}
+
                 <Button
-                  size="sm"
-                  disabled={selectedIds.length === 0 || zipMut.isPending}
-                  onClick={() => zipMut.mutate(selectedIds.slice(0, 60))}
+                  size="sm" variant="ghost" className="text-xs"
+                  onClick={() => setSelectedIds(
+                    pagedResources.every((r) => selectedIds.includes(r.id))
+                      ? selectedIds.filter((id) => !pagedResources.some((r) => r.id === id))
+                      : [...new Set([...selectedIds, ...pagedResources.map((r) => r.id)])],
+                  )}
                 >
-                  {zipMut.isPending
-                    ? <Loader2 className="ms-1 h-4 w-4 animate-spin" />
-                    : <FileArchive className="ms-1 h-4 w-4" />}
-                  הורדה מרוכזת (ZIP)
+                  {pagedResources.every((r) => selectedIds.includes(r.id)) ? "בטל בחירת העמוד" : "בחר את כל העמוד"}
                 </Button>
               </div>
+
+              {selectedIds.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2 border-t pt-2 text-xs">
+                  <span className="text-muted-foreground">נבחרו {selectedIds.length} חומרים</span>
+                  <div className="ms-auto flex flex-wrap gap-2">
+                    <Button size="sm" variant="ghost" onClick={() => setSelectedIds([])}>
+                      <X className="ms-1 h-4 w-4" /> נקה בחירה
+                    </Button>
+                    <Button
+                      size="sm"
+                      disabled={zipMut.isPending}
+                      onClick={() => zipMut.mutate(selectedIds.slice(0, 60))}
+                    >
+                      {zipMut.isPending
+                        ? <Loader2 className="ms-1 h-4 w-4 animate-spin" />
+                        : <FileArchive className="ms-1 h-4 w-4" />}
+                      הורדה מרוכזת (ZIP)
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
           {isLoading && (
@@ -846,11 +866,12 @@ function ResourcesPage() {
               )}
             </CardContent></Card>
           )}
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <div className={GRID_CLASS[viewMode]}>
             {pagedResources.map((r) => (
               <ResourceCard
                 key={r.id}
                 resource={r}
+                variant={viewMode}
                 usageCount={usageCounts[r.id] ?? 0}
                 analyzing={analyzingId === r.id}
                 selected={selectedIds.includes(r.id)}
