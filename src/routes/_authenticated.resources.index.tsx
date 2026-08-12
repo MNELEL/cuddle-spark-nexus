@@ -9,6 +9,7 @@ import {
   Star, Pencil, MessageCircleQuestion, Send, ScanText, ArrowUpDown,
   ChevronRight, ChevronLeft,
 } from "lucide-react";
+import { Rows3, LayoutGrid, Image as ImageIcon } from "lucide-react";
 import { UploadCloud, FileArchive } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -63,6 +64,20 @@ const SORT_OPTIONS = [
 ] as const;
 type SortId = (typeof SORT_OPTIONS)[number]["id"];
 const PAGE_SIZES = [12, 24, 48, 96] as const;
+
+/** אופן תצוגת החומרים: רשימה / טורים / תמונות ממוזערות */
+const VIEW_MODES = [
+  { id: "list", label: "רשימה", icon: Rows3 },
+  { id: "grid", label: "טורים", icon: LayoutGrid },
+  { id: "thumbs", label: "תמונות", icon: ImageIcon },
+] as const;
+type ViewMode = (typeof VIEW_MODES)[number]["id"];
+const VIEW_MODE_KEY = "library-view-mode";
+const GRID_CLASS: Record<ViewMode, string> = {
+  list: "grid gap-2",
+  grid: "grid gap-3 sm:grid-cols-2 xl:grid-cols-3",
+  thumbs: "grid gap-3 grid-cols-2 sm:grid-cols-3 xl:grid-cols-4",
+};
 
 export const Route = createFileRoute("/_authenticated/resources/")({
   component: ResourcesPage,
@@ -168,6 +183,17 @@ function ResourcesPage() {
   const [pageIndex, setPageIndex] = useState(0);
   const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+
+  useEffect(() => {
+    const saved = localStorage.getItem(VIEW_MODE_KEY) as ViewMode | null;
+    if (saved && VIEW_MODES.some((m) => m.id === saved)) setViewMode(saved);
+  }, []);
+
+  const changeViewMode = (m: ViewMode) => {
+    setViewMode(m);
+    localStorage.setItem(VIEW_MODE_KEY, m);
+  };
 
   const bundleFn = useServerFn(getResourceDownloadLinks);
   const zipMut = useMutation({
@@ -734,67 +760,87 @@ function ResourcesPage() {
 
         {/* Grid */}
         <div className="space-y-3 lg:col-start-2 lg:row-start-1 lg:row-span-2">
-          {/* מיון + גודל עמוד */}
+          {/* סרגל אחד: מיון · אופן תצוגה · גודל עמוד · בחירה */}
           {!isLoading && visibleResources.length > 0 && (
-            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-card px-3 py-2">
-              <div className="flex items-center gap-2">
-                <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
-                <Label className="text-xs text-muted-foreground" htmlFor="library-sort">מיון</Label>
-                <Select value={sort} onValueChange={(v) => setSort(v as SortId)}>
-                  <SelectTrigger id="library-sort" className="h-8 w-[200px] text-xs"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {SORT_OPTIONS.map((o) => (
-                      <SelectItem key={o.id} value={o.id}>{o.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="text-xs text-muted-foreground" htmlFor="library-page-size">לעמוד</Label>
+            <div className="space-y-2 rounded-xl border bg-card px-3 py-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-1.5">
+                  <ArrowUpDown className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                  <Select value={sort} onValueChange={(v) => setSort(v as SortId)}>
+                    <SelectTrigger id="library-sort" aria-label="מיון" className="h-8 w-[180px] text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SORT_OPTIONS.map((o) => (
+                        <SelectItem key={o.id} value={o.id}>{o.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center gap-1 rounded-lg border p-0.5" role="group" aria-label="אופן תצוגה">
+                  {VIEW_MODES.map((m) => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      aria-pressed={viewMode === m.id}
+                      title={m.label}
+                      onClick={() => changeViewMode(m.id)}
+                      className={`flex min-h-8 items-center gap-1 rounded-md px-2 text-xs transition ${viewMode === m.id ? "bg-primary font-semibold text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
+                    >
+                      <m.icon className="h-3.5 w-3.5" aria-hidden="true" />
+                      <span className="hidden sm:inline">{m.label}</span>
+                    </button>
+                  ))}
+                </div>
+
                 <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
-                  <SelectTrigger id="library-page-size" className="h-8 w-[80px] text-xs"><SelectValue /></SelectTrigger>
+                  <SelectTrigger id="library-page-size" aria-label="פריטים לעמוד" className="h-8 w-[92px] text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {PAGE_SIZES.map((n) => (
-                      <SelectItem key={n} value={String(n)}>{n}</SelectItem>
+                      <SelectItem key={n} value={String(n)}>{n} לעמוד</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <span className="text-xs text-muted-foreground" aria-live="polite">
+
+                <span className="ms-auto text-xs text-muted-foreground" aria-live="polite">
                   {visibleResources.length.toLocaleString("he-IL")} חומרים · עמוד {safePage + 1} מתוך {pageCount}
                 </span>
-              </div>
-            </div>
-          )}
-          {!isLoading && visibleResources.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-card px-3 py-2 text-xs">
-              <Button
-                size="sm" variant="outline"
-                onClick={() => setSelectedIds(
-                  pagedResources.every((r) => selectedIds.includes(r.id))
-                    ? selectedIds.filter((id) => !pagedResources.some((r) => r.id === id))
-                    : [...new Set([...selectedIds, ...pagedResources.map((r) => r.id)])],
-                )}
-              >
-                {pagedResources.every((r) => selectedIds.includes(r.id)) ? "בטל בחירת העמוד" : "בחר את כל העמוד"}
-              </Button>
-              <span className="text-muted-foreground">נבחרו {selectedIds.length}</span>
-              <div className="ms-auto flex flex-wrap gap-2">
-                {selectedIds.length > 0 && (
-                  <Button size="sm" variant="ghost" onClick={() => setSelectedIds([])}>
-                    <X className="ms-1 h-4 w-4" /> נקה בחירה
-                  </Button>
-                )}
+
                 <Button
-                  size="sm"
-                  disabled={selectedIds.length === 0 || zipMut.isPending}
-                  onClick={() => zipMut.mutate(selectedIds.slice(0, 60))}
+                  size="sm" variant="ghost" className="text-xs"
+                  onClick={() => setSelectedIds(
+                    pagedResources.every((r) => selectedIds.includes(r.id))
+                      ? selectedIds.filter((id) => !pagedResources.some((r) => r.id === id))
+                      : [...new Set([...selectedIds, ...pagedResources.map((r) => r.id)])],
+                  )}
                 >
-                  {zipMut.isPending
-                    ? <Loader2 className="ms-1 h-4 w-4 animate-spin" />
-                    : <FileArchive className="ms-1 h-4 w-4" />}
-                  הורדה מרוכזת (ZIP)
+                  {pagedResources.every((r) => selectedIds.includes(r.id)) ? "בטל בחירת העמוד" : "בחר את כל העמוד"}
                 </Button>
               </div>
+
+              {selectedIds.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2 border-t pt-2 text-xs">
+                  <span className="text-muted-foreground">נבחרו {selectedIds.length} חומרים</span>
+                  <div className="ms-auto flex flex-wrap gap-2">
+                    <Button size="sm" variant="ghost" onClick={() => setSelectedIds([])}>
+                      <X className="ms-1 h-4 w-4" /> נקה בחירה
+                    </Button>
+                    <Button
+                      size="sm"
+                      disabled={zipMut.isPending}
+                      onClick={() => zipMut.mutate(selectedIds.slice(0, 60))}
+                    >
+                      {zipMut.isPending
+                        ? <Loader2 className="ms-1 h-4 w-4 animate-spin" />
+                        : <FileArchive className="ms-1 h-4 w-4" />}
+                      הורדה מרוכזת (ZIP)
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
           {isLoading && (
@@ -820,11 +866,12 @@ function ResourcesPage() {
               )}
             </CardContent></Card>
           )}
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <div className={GRID_CLASS[viewMode]}>
             {pagedResources.map((r) => (
               <ResourceCard
                 key={r.id}
                 resource={r}
+                variant={viewMode}
                 usageCount={usageCounts[r.id] ?? 0}
                 analyzing={analyzingId === r.id}
                 selected={selectedIds.includes(r.id)}
@@ -955,6 +1002,7 @@ function ResourcesPage() {
 function ResourceCard({
   resource, onView, onEdit, onVariant, onToggleFavorite,
   usageCount = 0, analyzing = false, onAnalyze, selected = false, onToggleSelected,
+  variant = "grid",
 }: {
   resource: ResourceRow;
   onView: () => void;
@@ -966,8 +1014,11 @@ function ResourceCard({
   onAnalyze?: () => void;
   selected?: boolean;
   onToggleSelected?: () => void;
+  variant?: ViewMode;
 }) {
   const hasText = Boolean(resource.content?.original_text?.trim());
+  const compact = variant === "list";
+  const thumbs = variant === "thumbs";
   return (
     <div
       role="button"
@@ -977,8 +1028,15 @@ function ResourceCard({
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onView(); }
       }}
-      className={`group cursor-pointer rounded-xl border bg-card p-4 text-right transition hover:border-amber/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${selected ? "border-amber ring-1 ring-amber/40" : ""}`}
+      className={`group cursor-pointer rounded-xl border bg-card text-right transition hover:border-amber/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${compact ? "px-3 py-2" : "p-4"} ${selected ? "border-amber ring-1 ring-amber/40" : ""}`}
     >
+      {thumbs && (
+        <div className="mb-2 flex h-24 items-center justify-center rounded-lg border bg-muted/40">
+          {resource.mime_type?.startsWith("image/")
+            ? <ImageIcon className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
+            : <FileText className="h-8 w-8 text-muted-foreground" aria-hidden="true" />}
+        </div>
+      )}
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 items-start gap-2">
           {onToggleSelected && (
@@ -990,7 +1048,7 @@ function ResourceCard({
               />
             </span>
           )}
-          <div className="line-clamp-2 font-semibold">{resource.title}</div>
+          <div className={`font-semibold ${compact ? "line-clamp-1 text-sm" : "line-clamp-2"}`}>{resource.title}</div>
         </div>
         <button
           type="button"
@@ -1002,40 +1060,40 @@ function ResourceCard({
           <Star className={`h-4 w-4 ${resource.is_favorite ? "fill-amber text-amber" : "text-muted-foreground"}`} />
         </button>
       </div>
-      <div className="mt-2 flex flex-wrap gap-1">
+      <div className={`mt-2 flex flex-wrap gap-1 ${compact ? "text-[10px]" : ""}`}>
         <Badge variant="outline" className="text-[10px]">
           {RESOURCE_TYPE_LABELS[resource.resource_type] ?? resource.resource_type}
         </Badge>
-        {resource.difficulty && (
+        {!compact && resource.difficulty && (
           <Badge variant="outline" className={`text-[10px] ${DIFFICULTY_BADGE[resource.difficulty]}`}>
             {DIFFICULTY_LABELS[resource.difficulty]}
           </Badge>
         )}
-        {resource.ai_generated && (
+        {!compact && resource.ai_generated && (
           <Badge variant="outline" className="gap-0.5 border-amber/40 bg-amber/10 text-[10px] text-amber-700 dark:text-amber-300">
             <Sparkles className="h-2.5 w-2.5" /> נוצר ב-AI
           </Badge>
         )}
-        {resource.content?.source_kind === "upload" && (
+        {!compact && resource.content?.source_kind === "upload" && (
           <Badge variant="outline" className="gap-0.5 text-[10px]">
             <Download className="h-2.5 w-2.5" /> הועלה כקובץ
           </Badge>
         )}
         {resource.subject && <Badge variant="secondary" className="text-[10px]">{resource.subject}</Badge>}
         {resource.grade_level && <Badge variant="secondary" className="text-[10px]">כיתה {resource.grade_level}</Badge>}
-        {usageCount > 0 && (
+        {!compact && usageCount > 0 && (
           <Badge variant="outline" className="text-[10px]">שימוש בכיתות: {usageCount}</Badge>
         )}
-        {!hasText && (
+        {!compact && !hasText && (
           <Badge variant="outline" className="gap-0.5 border-dashed text-[10px] text-muted-foreground">
             <ScanText className="h-2.5 w-2.5" /> אין טקסט לחיפוש
           </Badge>
         )}
       </div>
-      {resource.description && (
+      {!compact && !thumbs && resource.description && (
         <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">{resource.description}</p>
       )}
-      {resource.tags?.length > 0 && (
+      {!compact && !thumbs && resource.tags?.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-1">
           {resource.tags.slice(0, 4).map((t) => (
             <span key={t} className="inline-flex items-center gap-0.5 rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
@@ -1044,9 +1102,9 @@ function ResourceCard({
           ))}
         </div>
       )}
-      <div className="mt-3 flex gap-2">
+      <div className={`flex gap-2 ${compact ? "mt-1" : "mt-3"}`}>
         <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); onEdit(); }} aria-label={`ערוך את "${resource.title}"`}>
-          <Pencil className="ms-1 h-4 w-4" /> ערוך
+          <Pencil className="ms-1 h-4 w-4" /> {compact ? "" : "ערוך"}
         </Button>
         <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); onVariant(resource); }}
           title="צור וריאציה עם AI מפריט זה" aria-label={`צור וריאציה עם AI מ-"${resource.title}"`}>
