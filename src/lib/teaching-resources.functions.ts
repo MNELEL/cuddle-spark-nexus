@@ -5,6 +5,7 @@ import { recomputeStyleProfileFor, buildStyleContextString } from "./teacher-sty
 import { callLovableAI } from "./ai-gateway.server";
 import { embedText } from "./embeddings.server";
 import { indexResourceChunks } from "./resource-chunks.server";
+import { recordResourceVersion } from "./resource-versions.server";
 
 const uuid = z.string().uuid();
 
@@ -82,10 +83,13 @@ export const listResources = createServerFn({ method: "POST" })
   .inputValidator((d) =>
     z.object({
       search: z.string().max(120).optional(),
+      /** חיפוש רק בתוך טקסט המסמך המקורי. */
+      search_in_document_only: z.boolean().optional(),
       resource_type: z.enum(RESOURCE_TYPES).optional(),
       subject: z.string().max(80).optional(),
       grade_level: z.string().max(40).optional(),
       tag: z.string().max(40).optional(),
+      tags: z.array(z.string().min(1).max(40)).max(10).optional(),
       collection_id: uuid.optional(),
       favorites_only: z.boolean().optional(),
       difficulty: z.enum(DIFFICULTIES).optional(),
@@ -110,12 +114,17 @@ export const listResources = createServerFn({ method: "POST" })
     if (data.subject) q = q.eq("subject", data.subject);
     if (data.grade_level) q = q.eq("grade_level", data.grade_level);
     if (data.tag) q = q.contains("tags", [data.tag]);
+    if (data.tags && data.tags.length > 0) q = q.overlaps("tags", data.tags);
     if (data.favorites_only) q = q.eq("is_favorite", true);
     if (data.difficulty) q = q.eq("difficulty", data.difficulty);
     if (ids) q = q.in("id", ids);
     if (data.search) {
       const s = data.search.replace(/[%,]/g, " ");
-      q = q.or(`title.ilike.%${s}%,description.ilike.%${s}%,content->>body.ilike.%${s}%,content->>original_text.ilike.%${s}%`);
+      q = data.search_in_document_only
+        ? q.or(`content->>original_text.ilike.%${s}%,content->>body.ilike.%${s}%`)
+        : q.or(
+            `title.ilike.%${s}%,description.ilike.%${s}%,file_path.ilike.%${s}%,source_prompt.ilike.%${s}%,content->>body.ilike.%${s}%,content->>original_text.ilike.%${s}%`,
+          );
     }
     q = q.order("updated_at", { ascending: false });
     if (data.limit !== undefined) {
@@ -235,6 +244,8 @@ export const upsertResource = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     if (data.id) {
       const { id, ...rest } = data;
+      // תצלום של המצב שלפני העדכון — לצורך היסטוריית גרסאות ושחזור
+      await recordResourceVersion(context.supabase, context.userId, id, data.ai_generated ? "ai" : "manual");
       const { error } = await context.supabase.from("teaching_resources").update(rest as never).eq("id", id);
       if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
       void recomputeStyleProfileFor(context.supabase, context.userId).catch((e) => console.error("[Style trigger]", e));
