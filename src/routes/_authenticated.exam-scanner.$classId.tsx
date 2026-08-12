@@ -168,7 +168,7 @@ function ExamScannerPage() {
             <input
               ref={inputRef}
               type="file"
-              accept="image/*"
+              accept={ACCEPT_IMAGE}
               capture="environment"
               className="hidden"
               onChange={(e) => onPick(e.target.files?.[0] ?? null)}

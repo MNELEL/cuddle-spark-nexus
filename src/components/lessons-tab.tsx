@@ -89,7 +89,8 @@ function RecordOrUpload({ classId, onCreated }: { classId: string; onCreated: ()
   async function upload() {
     if (!file) { toast.error("בחר או הקלט קובץ"); return; }
     if (!title.trim()) { toast.error("הוסף כותרת לשיעור"); return; }
-    if (file.size > 24 * 1024 * 1024) { toast.error("הקובץ גדול מ-24MB"); return; }
+    const check = validateUploadFile(file, ACCEPT_AUDIO, 24);
+    if (!check.ok) { toast.error(check.message); return; }
     setBusy(true);
     try {
       const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
@@ -137,7 +138,7 @@ function RecordOrUpload({ classId, onCreated }: { classId: string; onCreated: ()
           </div>
           <div className="flex items-end">
             <label className="inline-flex">
-              <input type="file" accept="audio/*" className="hidden"
+              <input type="file" accept={ACCEPT_AUDIO} className="hidden"
                 onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
               <Button type="button" variant="outline" asChild>
                 <span><Upload className="ms-1 h-4 w-4" /> בחר קובץ</span>

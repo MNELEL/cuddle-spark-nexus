@@ -72,6 +72,8 @@ export function ImportExportBar({ classId }: { classId: string }) {
   });
 
   const onFile = async (file: File) => {
+    const check = validateUploadFile(file, ACCEPT_SPREADSHEET);
+    if (!check.ok) { toast.error(check.message); return; }
     try {
       const buf = await file.arrayBuffer();
       const wb = XLSX.read(buf, { type: "array" });
@@ -205,7 +207,7 @@ export function ImportExportBar({ classId }: { classId: string }) {
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <input ref={fileInput} type="file" accept=".xlsx,.xls,.csv" className="hidden"
+      <input ref={fileInput} type="file" accept={ACCEPT_SPREADSHEET} className="hidden"
         onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); e.target.value = ""; }} />
       <Button size="sm" variant="outline" onClick={() => fileInput.current?.click()} disabled={importM.isPending}>
         <Upload className="ms-1 h-4 w-4" /> ייבוא Excel

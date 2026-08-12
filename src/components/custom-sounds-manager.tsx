@@ -52,8 +52,12 @@ export function CustomSoundsManager() {
   async function handleUpload() {
     const file = fileRef.current?.files?.[0];
     if (!file) { toast.error("יש לבחור קובץ שמע"); return; }
-    if (file.size > MAX_BYTES) { toast.error("הקובץ גדול מ-10MB"); return; }
-    if (file.type && !ALLOWED.includes(file.type)) { toast.error("סוג הקובץ אינו נתמך (MP3, WAV, OGG, M4A)"); return; }
+    const check = validateUploadFile(file, ACCEPT_AUDIO, MAX_BYTES / (1024 * 1024));
+    if (!check.ok) { toast.error(check.message); return; }
+    if (file.type && !ALLOWED.includes(file.type)) {
+      toast.error(`סוג הקובץ "${file.name}" אינו נתמך. אפשר להעלות: MP3, WAV, OGG, M4A`);
+      return;
+    }
     setUploading(true);
     setStatus("מעלה את הצליל…");
     try {
@@ -104,7 +108,7 @@ export function CustomSoundsManager() {
           <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
             <div className="space-y-1">
               <Label htmlFor="custom-sound-file">קובץ שמע</Label>
-              <Input id="custom-sound-file" ref={fileRef} type="file" accept="audio/*" />
+              <Input id="custom-sound-file" ref={fileRef} type="file" accept={ACCEPT_AUDIO} />
             </div>
             <div className="space-y-1">
               <Label htmlFor="custom-sound-name">שם הצליל (לא חובה)</Label>
