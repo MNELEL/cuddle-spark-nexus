@@ -1204,7 +1204,7 @@ function SmartAutoCard({
         )}
 
         <SmartUpload
-          accept="image/*,application/pdf,.txt,.md,.csv,.xlsx,.xls,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword"
+          accept={ACCEPT_SMART}
           multiple
           allowFolder
           busy={busy}
