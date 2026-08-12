@@ -85,7 +85,7 @@ type FilterState = {
   grade_level: string;
   tag: string;
   difficulty: Difficulty | "";
-  favoritesOnly: boolean;
+  favoritesOnly: boolean; hasOriginalOnly: boolean;
   topicIds: string[];
   collectionIds: string[];
 };
@@ -140,7 +140,7 @@ function ResourcesPage() {
   const hasActiveFilters =
     category !== "all" ||
     Boolean(filters.search || filters.resource_type || filters.subject || filters.grade_level || filters.difficulty) ||
-    filters.favoritesOnly ||
+    filters.favoritesOnly || filters.hasOriginalOnly ||
     filters.collectionIds.length > 0 ||
     filters.topicIds.length > 0;
 
@@ -153,7 +153,7 @@ function ResourcesPage() {
     grade_level: filters.grade_level || undefined,
     tag: filters.tag || undefined,
     difficulty: filters.difficulty || undefined,
-    favorites_only: filters.favoritesOnly || undefined,
+    favorites_only: filters.favoritesOnly || filters.hasOriginalOnly || undefined,
   };
 
   const { data: resources = [], isLoading } = useQuery({

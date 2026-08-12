@@ -115,7 +115,7 @@ export const listResources = createServerFn({ method: "POST" })
     if (ids) q = q.in("id", ids);
     if (data.search) {
       const s = data.search.replace(/[%,]/g, " ");
-      q = q.or(`title.ilike.%${s}%,description.ilike.%${s}%`);
+      q = q.or(`title.ilike.%${s}%,description.ilike.%${s}%,content->>body.ilike.%${s}%`);
     }
     q = q.order("updated_at", { ascending: false });
     if (data.limit !== undefined) {
