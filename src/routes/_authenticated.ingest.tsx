@@ -1277,7 +1277,7 @@ function AutoPreview({ job, classes, preferredClassId, onDone }: {
           <Badge variant="secondary" className="gap-1"><DetectedIcon className="h-3 w-3" />{AUTO_CATEGORY_LABEL[ex?.detected ?? "other"]}</Badge>
           <span className="text-xs text-muted-foreground">· {included}/{items.length} נבחרו</span>
         </CardTitle>
-        {ex?.reasoning && (
+        {ex?.reasoning && /[\u0590-\u05FF]/.test(ex.reasoning) && (
           <p className="text-xs text-muted-foreground italic">{ex.reasoning}</p>
         )}
       </CardHeader>

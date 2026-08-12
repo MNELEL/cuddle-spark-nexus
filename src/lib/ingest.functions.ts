@@ -1250,6 +1250,8 @@ async function analyzeAuto(
 
 לכל פריט קבע confidence (0..1) לפי בהירות הזיהוי. השתמש במונחים "הרב", "המלמד", "התלמידים".
 
+חובה: כל הטקסט שאתה מחזיר — כולל השדה reasoning — יהיה בעברית בלבד, משפט אחד או שניים קצרים וברורים. אסור להחזיר טקסט באנגלית.
+
 החזר JSON תקין בלבד:
 {"detected":"grades|behavior|journal|parent_letter|resource|other","reasoning":"...","items":[{"category":"grades","student_id":"uuid או null","student_name":"","subject":"","value":0,"max_value":100,"behavior_type":"","channel":"","title":"","description":"","date":"YYYY-MM-DD","confidence":0.0}]}`;
 
@@ -1316,7 +1318,10 @@ async function analyzeAuto(
       student,
       subject: cleanStr(it.subject, 80),
       value: Number.isFinite(val) ? val : undefined,
-      max_value: Number.isFinite(maxv) ? maxv : (cat === "grades" ? 100 : undefined),
+      max_value:
+        cat === "grades"
+          ? (Number.isFinite(maxv) && (maxv as number) > 0 ? maxv : 100)
+          : undefined,
       behavior_type,
       channel,
       title: cleanStr(it.title, 200),
