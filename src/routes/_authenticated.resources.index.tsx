@@ -627,7 +627,7 @@ function ResourcesPage() {
               </div>
             )}
             <Button variant="ghost" size="sm" className="w-full"
-              onClick={() => setFilters(emptyFilters)}>
+              onClick={() => { setFilters(emptyFilters); setMaterialKind("all"); }}>
               <X className="ms-1 h-3 w-3" /> נקה סינון
             </Button>
           </CardContent>
@@ -656,7 +656,7 @@ function ResourcesPage() {
                 {hasActiveFilters ? "לא נמצאו חומרים מתאימים. נסה לנקות את הסינון." : "עדיין אין חומרים בספרייה"}
               </div>
               {hasActiveFilters && (
-                <Button variant="outline" className="mt-4" onClick={() => { setFilters(emptyFilters); setCategory("all"); }}>
+                <Button variant="outline" className="mt-4" onClick={() => { setFilters(emptyFilters); setCategory("all"); setMaterialKind("all"); }}>
                   <X className="ms-1 h-4 w-4" /> נקה סינון
                 </Button>
               )}
