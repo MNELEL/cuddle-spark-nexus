@@ -77,6 +77,10 @@ export type ResourceExtracted = {
   /** תמלול/OCR מדויק של המסמך — כפי שהוא, בלי שכתוב. */
   original_text: string;
   questions: { q: string; a?: string }[];
+  /** הצעת שיוך אוטומטית מתוך הנושאים/אוספים הקיימים של המשתמש. */
+  suggested_topic_id?: string | null;
+  suggested_collection_ids?: string[];
+  topic_confidence?: number;
 };
 export type LessonExtracted = {
   kind: "lesson_audio";
@@ -271,7 +275,14 @@ export const analyzeIngestJob = createServerFn({ method: "POST" })
           ? `${extracted.students.length} שורות, ${tab.headers.length} עמודות — נדרשת סקירת מיפוי`
           : `${extracted.students.length} תלמידים זוהו`;
       } else if (job.kind === "resource") {
-        extracted = await analyzeResource(b64, mime, apiKey);
+        const [{ data: topicRows }, { data: collRows }] = await Promise.all([
+          context.supabase.from("topics").select("id, name, parent_id").eq("owner_id", context.userId).order("name"),
+          context.supabase.from("resource_collections").select("id, name").eq("owner_id", context.userId).order("name"),
+        ]);
+        extracted = await analyzeResource(b64, mime, apiKey, {
+          topics: (topicRows ?? []) as { id: string; name: string; parent_id: string | null }[],
+          collections: (collRows ?? []) as { id: string; name: string }[],
+        });
         summary = extracted.title || "חומר לימוד";
       } else if (job.kind === "lesson_audio") {
         extracted = await analyzeLessonAudio(b64, mime, apiKey);
@@ -684,16 +695,39 @@ export const remapRosterTabular = createServerFn({ method: "POST" })
     return { ok: true, students, summary };
   });
 
-async function analyzeResource(b64: string, mime: string, apiKey: string): Promise<ResourceExtracted> {
+type SuggestCandidates = {
+  topics: { id: string; name: string; parent_id: string | null }[];
+  collections: { id: string; name: string }[];
+};
+
+async function analyzeResource(
+  b64: string,
+  mime: string,
+  apiKey: string,
+  candidates: SuggestCandidates = { topics: [], collections: [] },
+): Promise<ResourceExtracted> {
+  const topicList = candidates.topics.map((t) => `- ${t.id} :: ${t.name}`).join("\n");
+  const collList = candidates.collections.map((c) => `- ${c.id} :: ${c.name}`).join("\n");
+  const hasCandidates = candidates.topics.length > 0 || candidates.collections.length > 0;
+  const suggestBlock = hasCandidates
+    ? `\nשיוך אוטומטי — בחר **רק** מזהים מהרשימות הבאות, אל תמציא מזהים:
+נושאים קיימים:
+${topicList || "(אין)"}
+אוספים קיימים:
+${collList || "(אין)"}
+- suggested_topic_id: מזהה נושא אחד מהרשימה שמתאים ביותר, או null אם אין התאמה.
+- suggested_collection_ids: מערך מזהי אוספים מתאימים (אפשר ריק).
+- topic_confidence: מספר בין 0 ל-1 לביטחון בהצעת הנושא.\n`
+    : `\nאין למשתמש נושאים או אוספים קיימים — החזר suggested_topic_id: null, suggested_collection_ids: [], topic_confidence: 0.\n`;
   const system = `אתה עוזר של רב/מלמד בתלמוד תורה חרדי. נתח את החומר המצורף וסווג אותו כחומר לימוד:
 - זהה כותרת, תיאור קצר (1-2 משפטים), מקצוע (גמרא/משנה/חומש/נביא/הלכה/מוסר/תפילה/פרשת שבוע), כיתה (א-ח), סוג (worksheet/question_bank/riddle/story/song/game/visual_aid/lesson_plan/activity/other), תגיות.
 - original_text: העתק את **כל** הטקסט של המסמך כפי שהוא, מדויק ומלא, ללא שכתוב, ללא קיצור וללא הוספות. שמור על סדר השורות והפסקאות. אם המסמך תמונה או סרוק — בצע OCR מדויק.
 - body: גרסה מסודרת/מתומצתת של התוכן (זה השדה היחיד שמותר לשכתב בו).
 - חלץ שאלות אם יש.
 השתמש במונחים "הרב", "המלמד", "התלמידים".
-
+${suggestBlock}
 החזר JSON תקין בלבד:
-{"title":"","description":"","subject":"","grade_level":"","resource_type":"worksheet","tags":[],"original_text":"","body":"","questions":[{"q":"","a":""}]}`;
+{"title":"","description":"","subject":"","grade_level":"","resource_type":"worksheet","tags":[],"original_text":"","body":"","questions":[{"q":"","a":""}],"suggested_topic_id":null,"suggested_collection_ids":[],"topic_confidence":0}`;
 
   const isImage = mime.startsWith("image/");
   const isPdf = mime === "application/pdf";
@@ -711,6 +745,15 @@ async function analyzeResource(b64: string, mime: string, apiKey: string): Promi
 
   let p: Partial<ResourceExtracted> = {};
   try { p = JSON.parse(raw); } catch { /* ignore */ }
+  const topicIds = new Set(candidates.topics.map((t) => t.id));
+  const collIds = new Set(candidates.collections.map((c) => c.id));
+  const suggestedTopic = typeof p.suggested_topic_id === "string" && topicIds.has(p.suggested_topic_id)
+    ? p.suggested_topic_id : null;
+  const suggestedCollections = Array.isArray(p.suggested_collection_ids)
+    ? p.suggested_collection_ids.filter((id): id is string => typeof id === "string" && collIds.has(id)).slice(0, 10)
+    : [];
+  const rawConf = typeof p.topic_confidence === "number" ? p.topic_confidence : 0;
+  const confidence = suggestedTopic ? Math.min(1, Math.max(0, rawConf)) : 0;
   return {
     kind: "resource",
     title: String(p.title ?? "חומר לימוד").slice(0, 200),
@@ -727,6 +770,9 @@ async function analyzeResource(b64: string, mime: string, apiKey: string): Promi
           a: q.a ? String(q.a).slice(0, 2000) : undefined,
         })).slice(0, 50)
       : [],
+    suggested_topic_id: suggestedTopic,
+    suggested_collection_ids: suggestedCollections,
+    topic_confidence: confidence,
   };
 }
 
@@ -925,6 +971,7 @@ export const commitResource = createServerFn({ method: "POST" })
     body: z.string().max(20000).default(""),
     original_text: z.string().max(200000).default(""),
     topic_id: uuid.nullable().optional(),
+    collection_ids: z.array(uuid).max(10).default([]),
     questions: z.array(z.object({ q: z.string().min(1).max(500), a: z.string().max(2000).optional() })).max(50).default([]),
   }).parse(d))
   .handler(async ({ data, context }) => {
@@ -971,6 +1018,12 @@ export const commitResource = createServerFn({ method: "POST" })
     if (error) { console.error("[DB]", error); throw new Error("הפעולה נכשלה."); }
 
     const newId = (ins as { id: string }).id;
+    if (data.collection_ids.length > 0) {
+      const { error: cErr } = await context.supabase
+        .from("resource_collection_items")
+        .insert(data.collection_ids.map((cid) => ({ collection_id: cid, resource_id: newId })) as never);
+      if (cErr) console.error("[DB]", cErr);
+    }
     if (data.original_text.trim()) {
       const { indexResourceChunks } = await import("./resource-chunks.server");
       await indexResourceChunks(context.supabase, context.userId, newId, data.original_text);
