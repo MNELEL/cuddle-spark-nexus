@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useSearch } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { listClasses } from "@/lib/classes.functions";
 import {
@@ -31,6 +31,8 @@ import { PdfPreviewDialog } from "@/components/ingest/pdf-preview-dialog";
 import { SmartUpload } from "@/components/smart-upload";
 import { listTopics, type TopicRow } from "@/lib/topics.functions";
 import { listCollections } from "@/lib/teaching-resources.functions";
+import { AiSuggestionsAuditCard } from "@/components/ingest/ai-suggestions-audit";
+import { getIngestAiSettings, DEFAULT_CONFIDENCE_THRESHOLD } from "@/lib/ingest-ai.functions";
 
 type SearchParams = { classId?: string };
 
@@ -139,6 +141,8 @@ function IngestPage() {
           )}
         </CardContent>
       </Card>
+
+      <AiSuggestionsAuditCard />
     </div>
   );
 }
@@ -501,14 +505,30 @@ function RosterPreview({ job, classes, preferredClassId, onDone }: {
 function ResourcePreview({ job, onDone }: { job: IngestJob; onDone: () => void }) {
   const ex = job.extracted as ResourceExtracted;
   const [form, setForm] = useState(ex);
+  const qc = useQueryClient();
   const topicsFn = useServerFn(listTopics);
   const collectionsFn = useServerFn(listCollections);
-  const { data: topics = [] } = useQuery({ queryKey: ["topics"], queryFn: () => topicsFn() });
-  const { data: collections = [] } = useQuery({ queryKey: ["resource-collections"], queryFn: () => collectionsFn() });
-  const [topicId, setTopicId] = useState<string>(ex.suggested_topic_id ?? "none");
-  const [collectionIds, setCollectionIds] = useState<string[]>(ex.suggested_collection_ids ?? []);
+  const settingsFn = useServerFn(getIngestAiSettings);
+  const { data: topics = [], isLoading: topicsLoading } = useQuery({ queryKey: ["topics"], queryFn: () => topicsFn() });
+  const { data: collections = [], isLoading: collectionsLoading } = useQuery({ queryKey: ["resource-collections"], queryFn: () => collectionsFn() });
+  const { data: aiSettings } = useQuery({ queryKey: ["ingest-ai-settings"], queryFn: () => settingsFn() });
+  const topicThreshold = aiSettings?.topic_confidence_threshold ?? DEFAULT_CONFIDENCE_THRESHOLD;
+  const collThreshold = aiSettings?.collection_confidence_threshold ?? DEFAULT_CONFIDENCE_THRESHOLD;
+  const confidence = typeof ex.topic_confidence === "number" ? ex.topic_confidence : 0;
   const aiTopic = Boolean(ex.suggested_topic_id);
   const aiCollections = (ex.suggested_collection_ids ?? []).length > 0;
+  const topicAutoApplied = aiTopic && confidence >= topicThreshold;
+  const collectionsAutoApplied = aiCollections && confidence >= collThreshold;
+  const [topicId, setTopicId] = useState<string>("none");
+  const [collectionIds, setCollectionIds] = useState<string[]>([]);
+  const [prefilled, setPrefilled] = useState(false);
+  // Apply AI defaults once the user's confidence thresholds are known.
+  useEffect(() => {
+    if (prefilled || !aiSettings) return;
+    if (topicAutoApplied && ex.suggested_topic_id) setTopicId(ex.suggested_topic_id);
+    if (collectionsAutoApplied) setCollectionIds(ex.suggested_collection_ids ?? []);
+    setPrefilled(true);
+  }, [aiSettings, prefilled, topicAutoApplied, collectionsAutoApplied, ex.suggested_topic_id, ex.suggested_collection_ids]);
   const commit = useServerFn(commitResource);
   const commitM = useMutation({
     mutationFn: () => commit({ data: {
@@ -520,8 +540,13 @@ function ResourcePreview({ job, onDone }: { job: IngestJob; onDone: () => void }
       original_text: form.original_text ?? "",
       topic_id: topicId === "none" ? null : topicId,
       collection_ids: collectionIds,
+      confidence_threshold: topicThreshold,
     }}),
-    onSuccess: () => { toast.success("החומר נוסף לספרייה"); onDone(); },
+    onSuccess: () => {
+      toast.success("החומר נוסף לספרייה");
+      void qc.invalidateQueries({ queryKey: ["ingest-ai-suggestions"] });
+      onDone();
+    },
     onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
   });
 
@@ -540,30 +565,57 @@ function ResourcePreview({ job, onDone }: { job: IngestJob; onDone: () => void }
           <div>
             <Label className="flex items-center gap-2">
               נושא
-              {aiTopic && (
+              {aiTopic && topicAutoApplied && (
                 <Badge variant="secondary" className="text-[10px]">
-                  הצעת AI{typeof ex.topic_confidence === "number" && ex.topic_confidence > 0
-                    ? ` · ${Math.round(ex.topic_confidence * 100)}%` : ""}
+                  הצעת AI{confidence > 0 ? ` · ${Math.round(confidence * 100)}%` : ""}
+                </Badge>
+              )}
+              {aiTopic && !topicAutoApplied && (
+                <Badge variant="outline" className="text-[10px]">
+                  הצעת AI מתחת לסף ({Math.round(confidence * 100)}% מתוך {Math.round(topicThreshold * 100)}%) — בחר ידנית
                 </Badge>
               )}
             </Label>
-            <Select value={topicId} onValueChange={setTopicId}>
-              <SelectTrigger><SelectValue placeholder="בחר נושא" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">— ללא נושא</SelectItem>
-                {(topics as TopicRow[]).map((t) => (
-                  <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {topicsLoading ? (
+              <p className="mt-1 text-xs text-muted-foreground">טוען נושאים...</p>
+            ) : (topics as TopicRow[]).length === 0 ? (
+              <div className="mt-1 rounded-md border border-dashed p-2 text-xs text-muted-foreground">
+                עדיין לא הגדרת נושאים, ולכן אין מה לשבץ. צור נושא ב
+                <Link to="/resources" className="mx-1 underline">ספריית חומרי ההוראה</Link>
+                ואז אפשר יהיה לשייך אליו חומרים (ה-AI מציע רק מתוך הנושאים הקיימים שלך).
+              </div>
+            ) : (
+              <Select value={topicId} onValueChange={setTopicId}>
+                <SelectTrigger><SelectValue placeholder="בחר נושא" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">— ללא נושא</SelectItem>
+                  {(topics as TopicRow[]).map((t) => (
+                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
           <div>
             <Label className="flex items-center gap-2">
               אוספים
-              {aiCollections && <Badge variant="secondary" className="text-[10px]">הצעת AI</Badge>}
+              {aiCollections && collectionsAutoApplied && (
+                <Badge variant="secondary" className="text-[10px]">הצעת AI</Badge>
+              )}
+              {aiCollections && !collectionsAutoApplied && (
+                <Badge variant="outline" className="text-[10px]">
+                  הצעת AI מתחת לסף — סמן ידנית
+                </Badge>
+              )}
             </Label>
-            {collections.length === 0 ? (
-              <p className="mt-1 text-xs text-muted-foreground">אין אוספים עדיין.</p>
+            {collectionsLoading ? (
+              <p className="mt-1 text-xs text-muted-foreground">טוען אוספים...</p>
+            ) : collections.length === 0 ? (
+              <div className="mt-1 rounded-md border border-dashed p-2 text-xs text-muted-foreground">
+                עדיין לא יצרת אוספים. אפשר לשמור את החומר בלי אוסף, או ליצור אוסף ב
+                <Link to="/resources" className="mx-1 underline">ספריית חומרי ההוראה</Link>
+                ולשייך אחר כך.
+              </div>
             ) : (
               <div className="mt-1 max-h-32 space-y-1 overflow-y-auto rounded-md border p-2">
                 {(collections as { id: string; name: string }[]).map((c) => (

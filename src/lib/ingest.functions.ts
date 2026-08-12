@@ -989,13 +989,17 @@ export const commitResource = createServerFn({ method: "POST" })
     original_text: z.string().max(200000).default(""),
     topic_id: uuid.nullable().optional(),
     collection_ids: z.array(uuid).max(10).default([]),
+    confidence_threshold: z.number().min(0).max(1).default(0.6),
     questions: z.array(z.object({ q: z.string().min(1).max(500), a: z.string().max(2000).optional() })).max(50).default([]),
   }).parse(d))
   .handler(async ({ data, context }) => {
     // Keep the original file: copy it out of staging into the library bucket.
     const { data: jobRow } = await context.supabase
-      .from("ingest_jobs").select("source_path, mime_type, file_name").eq("id", data.jobId).maybeSingle();
-    const job = jobRow as { source_path: string; mime_type: string; file_name: string } | null;
+      .from("ingest_jobs").select("source_path, mime_type, file_name, extracted").eq("id", data.jobId).maybeSingle();
+    const job = jobRow as {
+      source_path: string; mime_type: string; file_name: string;
+      extracted: ResourceExtracted | null;
+    } | null;
     let filePath: string | null = null;
     if (job?.source_path) {
       const dl = await context.supabase.storage.from("ingest-staging").download(job.source_path);
@@ -1045,6 +1049,33 @@ export const commitResource = createServerFn({ method: "POST" })
       const { indexResourceChunks } = await import("./resource-chunks.server");
       await indexResourceChunks(context.supabase, context.userId, newId, data.original_text);
     }
+
+    // Audit trail: what the AI suggested vs. what the teacher actually saved.
+    const sugTopic = job?.extracted?.suggested_topic_id ?? null;
+    const sugColls = [...(job?.extracted?.suggested_collection_ids ?? [])].sort();
+    const finalColls = [...data.collection_ids].sort();
+    let sugTopicName = "";
+    if (sugTopic) {
+      const { data: t } = await context.supabase
+        .from("topics").select("name").eq("id", sugTopic).maybeSingle();
+      sugTopicName = (t as { name: string } | null)?.name ?? "";
+    }
+    const { error: auditErr } = await context.supabase.from("ingest_ai_suggestions").insert({
+      owner_id: context.userId,
+      job_id: data.jobId,
+      resource_id: newId,
+      resource_title: data.title,
+      suggested_topic_id: sugTopic,
+      suggested_topic_name: sugTopicName,
+      topic_confidence: job?.extracted?.topic_confidence ?? 0,
+      confidence_threshold: data.confidence_threshold,
+      suggested_collection_ids: sugColls,
+      final_topic_id: data.topic_id ?? null,
+      final_collection_ids: finalColls,
+      topic_changed: (sugTopic ?? null) !== (data.topic_id ?? null),
+      collections_changed: sugColls.join(",") !== finalColls.join(","),
+    } as never);
+    if (auditErr) console.error("[DB audit]", auditErr);
 
     if (job?.source_path) {
       await context.supabase.storage.from("ingest-staging").remove([job.source_path]).catch(() => {});
