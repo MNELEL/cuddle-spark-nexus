@@ -275,7 +275,14 @@ export const analyzeIngestJob = createServerFn({ method: "POST" })
           ? `${extracted.students.length} שורות, ${tab.headers.length} עמודות — נדרשת סקירת מיפוי`
           : `${extracted.students.length} תלמידים זוהו`;
       } else if (job.kind === "resource") {
-        extracted = await analyzeResource(b64, mime, apiKey);
+        const [{ data: topicRows }, { data: collRows }] = await Promise.all([
+          context.supabase.from("topics").select("id, name, parent_id").eq("owner_id", context.userId).order("name"),
+          context.supabase.from("resource_collections").select("id, name").eq("owner_id", context.userId).order("name"),
+        ]);
+        extracted = await analyzeResource(b64, mime, apiKey, {
+          topics: (topicRows ?? []) as { id: string; name: string; parent_id: string | null }[],
+          collections: (collRows ?? []) as { id: string; name: string }[],
+        });
         summary = extracted.title || "חומר לימוד";
       } else if (job.kind === "lesson_audio") {
         extracted = await analyzeLessonAudio(b64, mime, apiKey);
