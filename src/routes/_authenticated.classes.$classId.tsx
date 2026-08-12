@@ -185,6 +185,7 @@ function ClassDetail() {
   // Entering a class should immediately show the seating map — that is what the
   // teacher looks at first when walking into the room.
   const [tab, setTab] = useState("seating");
+  useEffect(() => { if (validClass) recordClassVisit(classId); }, [classId, validClass]);
   const getC = useServerFn(getClass);
   const listS = useServerFn(listStudents);
   const listR = useServerFn(listRelations);
