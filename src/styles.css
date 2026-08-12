@@ -372,3 +372,34 @@
     page-break-after: auto;
   }
 }
+
+/* ---- הדפסת פריט מהספרייה (A4, RTL, נקי) ---- */
+@media print {
+  @page {
+    size: A4;
+    margin: 15mm;
+  }
+  body:has(.resource-print-area) header,
+  body:has(.resource-print-area) footer,
+  body:has(.resource-print-area) nav,
+  body:has(.resource-print-area) aside {
+    display: none !important;
+  }
+  body:has(.resource-print-area) {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .resource-print-area {
+    direction: rtl;
+  }
+  .resource-print-area * {
+    box-shadow: none !important;
+    background-image: none !important;
+  }
+  .resource-print-area .rounded-2xl,
+  .resource-print-area [data-slot="card"] {
+    border-color: #ddd !important;
+    background: #fff !important;
+    page-break-inside: avoid;
+  }
+}

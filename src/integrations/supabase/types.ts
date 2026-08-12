@@ -1953,6 +1953,41 @@ export type Database = {
         }
         Relationships: []
       }
+      resource_versions: {
+        Row: {
+          created_at: string
+          id: string
+          owner_id: string
+          resource_id: string
+          snapshot: Json
+          source: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          owner_id: string
+          resource_id: string
+          snapshot?: Json
+          source?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          owner_id?: string
+          resource_id?: string
+          snapshot?: Json
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resource_versions_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "teaching_resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reward_redemptions: {
         Row: {
           campaign_id: string | null

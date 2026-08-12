@@ -77,6 +77,14 @@ const LIBRARY_CATEGORIES: { id: string; label: string; types: ResourceType[] }[]
 
 const CATEGORY_IDS = LIBRARY_CATEGORIES.map((c) => c.id);
 
+/** סינון מהיר לפי סוג חומר — כדי למצוא גם חומרים ישנים בלחיצה אחת */
+const MATERIAL_KINDS: { id: string; label: string; types: ResourceType[] }[] = [
+  { id: "all", label: "הכל", types: [] },
+  { id: "study", label: "חומרי לימוד", types: ["lesson_plan", "worksheet", "summary", "story", "song", "visual_aid", "activity", "game", "riddle", "other"] },
+  { id: "exams", label: "מבחנים", types: ["question_bank", "worksheet"] },
+  { id: "prep", label: "הכנה לחזרה", types: ["question_bank", "summary", "riddle"] },
+];
+
 /** Single, centralized filter state for the whole library screen. */
 type FilterState = {
   search: string;
@@ -84,6 +92,8 @@ type FilterState = {
   subject: string;
   grade_level: string;
   tag: string;
+  tags: string[];
+  searchInDocumentOnly: boolean;
   difficulty: Difficulty | "";
   favoritesOnly: boolean; hasOriginalOnly: boolean;
   topicIds: string[];
@@ -91,7 +101,8 @@ type FilterState = {
 };
 
 const emptyFilters: FilterState = {
-  search: "", resource_type: "", subject: "", grade_level: "", tag: "",
+  search: "", resource_type: "", subject: "", grade_level: "", tag: "", tags: [],
+  searchInDocumentOnly: false,
   difficulty: "", favoritesOnly: false, hasOriginalOnly: false,
   topicIds: [], collectionIds: [],
 };
@@ -129,6 +140,7 @@ function ResourcesPage() {
   const [collOpen, setCollOpen] = useState(false);
   const [topOpen, setTopOpen] = useState(false);
   const [category, setCategory] = useState("all");
+  const [materialKind, setMaterialKind] = useState("all");
   const [view, setView] = useState<"items" | "ask">("items");
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [tasksOpen, setTasksOpen] = useState(false);
@@ -139,8 +151,10 @@ function ResourcesPage() {
 
   const hasActiveFilters =
     category !== "all" ||
+    materialKind !== "all" ||
     Boolean(filters.search || filters.resource_type || filters.subject || filters.grade_level || filters.difficulty) ||
     filters.favoritesOnly || filters.hasOriginalOnly ||
+    filters.tags.length > 0 ||
     filters.collectionIds.length > 0 ||
     filters.topicIds.length > 0;
 
@@ -148,10 +162,12 @@ function ResourcesPage() {
   // client-side on the same dataset so no control overwrites another.
   const serverArgs = {
     search: filters.search || undefined,
+    search_in_document_only: filters.searchInDocumentOnly || undefined,
     resource_type: filters.resource_type || undefined,
     subject: filters.subject || undefined,
     grade_level: filters.grade_level || undefined,
     tag: filters.tag || undefined,
+    tags: filters.tags.length > 0 ? filters.tags : undefined,
     difficulty: filters.difficulty || undefined,
     favorites_only: filters.favoritesOnly || filters.hasOriginalOnly || undefined,
   };
@@ -176,6 +192,10 @@ function ResourcesPage() {
     if (cat && cat.types.length > 0) {
       out = out.filter((r) => cat.types.includes(r.resource_type as ResourceType));
     }
+    const kind = MATERIAL_KINDS.find((k) => k.id === materialKind);
+    if (kind && kind.types.length > 0) {
+      out = out.filter((r) => kind.types.includes(r.resource_type as ResourceType));
+    }
     if (filters.collectionIds.length > 0) {
       const allowed = new Set(
         collectionItems
@@ -192,7 +212,16 @@ function ResourcesPage() {
     }
     // favorites first, then by recency (server already ordered by updated_at)
     return [...out].sort((a, b) => Number(b.is_favorite) - Number(a.is_favorite));
-  }, [resources, collectionItems, filters.collectionIds, filters.topicIds, category]);
+  }, [resources, collectionItems, filters.collectionIds, filters.topicIds, category, materialKind]);
+
+  /** ענן תגיות מתוך החומרים שקיימים בפועל */
+  const tagCloud = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const r of resources) {
+      for (const t of r.tags ?? []) counts.set(t, (counts.get(t) ?? 0) + 1);
+    }
+    return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 18);
+  }, [resources]);
 
   const favMut = useMutation({
     mutationFn: (v: { id: string; is_favorite: boolean }) => toggleFav({ data: v }),
@@ -318,6 +347,58 @@ function ResourcesPage() {
           aria-label="חיפוש בכל חומרי הספרייה"
         />
       </div>
+      <label className="flex items-center gap-2 text-xs text-muted-foreground">
+        <input
+          type="checkbox"
+          className="h-3.5 w-3.5 accent-primary"
+          checked={filters.searchInDocumentOnly}
+          onChange={(e) => patch({ searchInDocumentOnly: e.target.checked })}
+        />
+        חפש רק בתוך טקסט המסמכים שהועלו
+      </label>
+      {/* סינון מהיר לפי סוג חומר */}
+      <div className="flex flex-wrap gap-2" role="group" aria-label="סינון לפי סוג חומר">
+        {MATERIAL_KINDS.map((k) => {
+          const on = materialKind === k.id;
+          return (
+            <button
+              key={k.id}
+              type="button"
+              aria-pressed={on}
+              onClick={() => setMaterialKind(k.id)}
+              className={`min-h-9 shrink-0 rounded-full border px-3 py-1.5 text-sm transition ${on ? "border-primary bg-primary/10 font-semibold text-primary" : "hover:bg-accent"}`}
+            >
+              {k.label}
+            </button>
+          );
+        })}
+      </div>
+      {tagCloud.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-xs text-muted-foreground">תגיות:</span>
+          {tagCloud.map(([t, n]) => {
+            const on = filters.tags.includes(t);
+            return (
+              <button
+                key={t}
+                type="button"
+                aria-pressed={on}
+                onClick={() => patch({
+                  tags: on ? filters.tags.filter((x) => x !== t) : [...filters.tags, t],
+                })}
+                className={`rounded-full border px-2 py-0.5 text-xs transition ${on ? "border-primary bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent"}`}
+              >
+                {t} <span className="opacity-60">({n})</span>
+              </button>
+            );
+          })}
+          {filters.tags.length > 0 && (
+            <button type="button" className="text-xs underline text-muted-foreground" onClick={() => patch({ tags: [] })}>
+              נקה תגיות
+            </button>
+          )}
+        </div>
+      )}
       {/* קטגוריות ראשיות */}
       <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="קטגוריות ספרייה">
         {LIBRARY_CATEGORIES.map((c) => {
@@ -546,7 +627,7 @@ function ResourcesPage() {
               </div>
             )}
             <Button variant="ghost" size="sm" className="w-full"
-              onClick={() => setFilters(emptyFilters)}>
+              onClick={() => { setFilters(emptyFilters); setMaterialKind("all"); }}>
               <X className="ms-1 h-3 w-3" /> נקה סינון
             </Button>
           </CardContent>
@@ -575,7 +656,7 @@ function ResourcesPage() {
                 {hasActiveFilters ? "לא נמצאו חומרים מתאימים. נסה לנקות את הסינון." : "עדיין אין חומרים בספרייה"}
               </div>
               {hasActiveFilters && (
-                <Button variant="outline" className="mt-4" onClick={() => { setFilters(emptyFilters); setCategory("all"); }}>
+                <Button variant="outline" className="mt-4" onClick={() => { setFilters(emptyFilters); setCategory("all"); setMaterialKind("all"); }}>
                   <X className="ms-1 h-4 w-4" /> נקה סינון
                 </Button>
               )}
