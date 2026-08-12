@@ -1050,6 +1050,33 @@ export const commitResource = createServerFn({ method: "POST" })
       await indexResourceChunks(context.supabase, context.userId, newId, data.original_text);
     }
 
+    // Audit trail: what the AI suggested vs. what the teacher actually saved.
+    const sugTopic = job?.extracted?.suggested_topic_id ?? null;
+    const sugColls = [...(job?.extracted?.suggested_collection_ids ?? [])].sort();
+    const finalColls = [...data.collection_ids].sort();
+    let sugTopicName = "";
+    if (sugTopic) {
+      const { data: t } = await context.supabase
+        .from("topics").select("name").eq("id", sugTopic).maybeSingle();
+      sugTopicName = (t as { name: string } | null)?.name ?? "";
+    }
+    const { error: auditErr } = await context.supabase.from("ingest_ai_suggestions").insert({
+      owner_id: context.userId,
+      job_id: data.jobId,
+      resource_id: newId,
+      resource_title: data.title,
+      suggested_topic_id: sugTopic,
+      suggested_topic_name: sugTopicName,
+      topic_confidence: job?.extracted?.topic_confidence ?? 0,
+      confidence_threshold: data.confidence_threshold,
+      suggested_collection_ids: sugColls,
+      final_topic_id: data.topic_id ?? null,
+      final_collection_ids: finalColls,
+      topic_changed: (sugTopic ?? null) !== (data.topic_id ?? null),
+      collections_changed: sugColls.join(",") !== finalColls.join(","),
+    } as never);
+    if (auditErr) console.error("[DB audit]", auditErr);
+
     if (job?.source_path) {
       await context.supabase.storage.from("ingest-staging").remove([job.source_path]).catch(() => {});
     }
