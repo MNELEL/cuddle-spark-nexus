@@ -257,9 +257,26 @@ export const analyzeIngestJob = createServerFn({ method: "POST" })
     if (!job) throw new Error("המשימה לא נמצאה");
 
     try {
-      const { data: file, error: derr } = await context.supabase
-        .storage.from("ingest-staging").download(job.source_path);
-      if (derr || !file) throw new Error("שגיאה בהורדת הקובץ");
+      // Storage writes are eventually consistent right after uploadToSignedUrl,
+      // so a download issued immediately can 404. Retry briefly before failing.
+      let file: Blob | null = null;
+      let derr: { message?: string } | null = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const res = await context.supabase.storage
+          .from("ingest-staging").download(job.source_path);
+        if (res.data) { file = res.data; derr = null; break; }
+        derr = (res.error ?? null) as { message?: string } | null;
+        if (attempt < 2) await new Promise((r) => setTimeout(r, 600 * (attempt + 1)));
+      }
+      if (!file) {
+        console.error("[Storage] download failed", job.source_path, derr);
+        const notFound = /not found|does not exist|404/i.test(derr?.message ?? "");
+        throw new Error(
+          notFound
+            ? "הקובץ המקורי אינו זמין יותר באזור ההעלאה. העלה אותו מחדש."
+            : `שגיאה בהורדת הקובץ: ${derr?.message ?? "לא ידוע"}`,
+        );
+      }
       const buf = new Uint8Array(await file.arrayBuffer());
       if (buf.length > 20 * 1024 * 1024) throw new Error("הקובץ גדול מ-20MB.");
       const mime = file.type || job.mime_type || "application/octet-stream";
