@@ -550,7 +550,7 @@ export function SeatingGrid({ classId }: { classId: string }) {
       const freeSeats: { row: number; col: number }[] = [];
       for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
         const k = seatKey(r, c);
-        if (!hiddenSet.has(k) && !lockedKeys.has(k)) freeSeats.push({ row: r, col: c });
+        if (!blockedSet.has(k) && !lockedKeys.has(k)) freeSeats.push({ row: r, col: c });
       }
       const movable = students.filter((s) => !s.seat_locked);
       // shuffle
@@ -579,7 +579,7 @@ export function SeatingGrid({ classId }: { classId: string }) {
   const templateM = useMutation({
     mutationFn: async (fn: (s: Student[], r: number, c: number, h: Set<string>) => { placements: { studentId: string; row: number; col: number }[]; movable: Student[] }) => {
       pushUndo();
-      const { placements, movable } = fn(students, rows, cols, hiddenSet);
+      const { placements, movable } = fn(students, rows, cols, blockedSet);
       // clear movable seats first (same approach as מיון אקראי), then assign new positions
       await Promise.all(movable.map((s) =>
         setSeatFn({ data: { class_id: classId, student_id: s.id, seat_row: null, seat_col: null } })));
