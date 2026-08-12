@@ -387,7 +387,7 @@ Test suite ל-RLS ולהעתקת תלמידים — נבדק: אין תשתית 
 - **Command palette:** `Ctrl+K` עדיין מצביע ל-`/settings/brand` ותקין — לא השתנה.
 - **הפרדת אחריות:** `/settings` = הגדרות משתמש/מוסד (אבטחה, תזכורות, מנוי, מיתוג, ערכת נושא); `/toolkit` = כלים + קישורי ניווט להגדרות.
 
----
+--
 
 ## 14. אימות ספריית חומרי הוראה + הצעת נושא/אוסף אוטומטית ב-ingest — 12/8/2026
 
@@ -412,3 +412,46 @@ Test suite ל-RLS ולהעתקת תלמידים — נבדק: אין תשתית 
 - src/routes/_authenticated.ingest.tsx — ResourcePreview כוללת כעת Select לנושא (עם listTopics) ו-checkboxes לאוספים (עם listCollections), מסומנים מראש לפי הצעת ה-AI, עם תג "הצעת AI · X%" ליד הנושא.
 - מחוץ להיקף בכוונה: commitAuto ו-commitLessonAudio לא שונו. אין migration — topic_id ו-resource_collection_items כבר היו קיימים.
 
+## 14. Breadcrumb ל-/settings + תרגום מסכי 404/שגיאה — מומש (12/8/2026)
+
+### רקע — אימות מול קוד חי לפני בנייה
+
+מתוך חמש משימות `/settings` שהיו ב-queue ממתין (ראה סעיפים קודמים), בוצע אימות מול קוד חי לפני כל תכנון. התוצאה: שתיים מהחמש התבררו כמומשות כבר במלואן ולא נכללו בעבודה:
+
+- **Active-tab state** — כבר מומש במלואו: `?tab=` search param, `validateSearch`, `SettingsTabs active`. אין צורך בפעולה.
+- **Audit logging לשינויי הגדרות** — כבר מומש במלואו: `logInfo` עם `source: "settings_update"` קיים ב-`setPin`/`disablePin` (`security.functions.ts`) וב-`saveReminderPreferences` (מנגנון reminder-preferences). 0 שורות ב-`app_logs` לא מעידות על באג — פשוט אף אחד לא שינה הגדרות אלה לאחרונה. אין צורך בפעולה.
+
+שתי המשימות הבאות אומתו כפערים אמיתיים ובוצעו:
+
+### 14.1 Breadcrumb ייעודי ל-/settings (במקום "ארגז כלים › הגדרות")
+
+**הבעיה שאומתה:** `/settings`, `/settings/brand`, `/settings/theme` היו רשומים ב-`tool-registry.ts`, ולכן `ToolBreadcrumbs` הציג "ארגז כלים › הגדרות › X" — מטעה, כי `/settings` נגיש ישירות מכפתור "הגדרות" ב-header (לא דרך `/toolkit`), ולא השתקף בו איזו לשונית פנימית (כללי/אבטחה/תזכורות/מסמכים) פעילה.
+
+**מה בוצע (commit `3fbb479d`):**
+- `src/components/tool-breadcrumbs.tsx` — מחזיר `null` כש-`pathname.startsWith("/settings")`, כדי לא להציג יותר את ה-breadcrumb הישן דרך ארגז כלים.
+- `src/components/settings-tabs.tsx` — נוסף `SETTINGS_TAB_LABELS`, מיפוי `tab id → שם תצוגה` שנגזר מ-`TABS` הקיים (מונע שכפול מחרוזות).
+- `src/routes/_authenticated.settings.index.tsx` — breadcrumb חדש בראש הדף: "הגדרות › \<לשונית פעילה\>" (`SETTINGS_TAB_LABELS[tab]`), לא קישור לעצמו.
+- `src/routes/_authenticated.settings.brand.tsx` ו-`_authenticated.settings.theme.tsx` — גילוי אגבי: כבר היה קיים רכיב `SettingsBreadcrumb` ישן בקבצים אלה (`current="מותג"` / `current="ערכת נושא"`), לא תועד קודם ב-MERGE_MEMORY. הוחלף ברכיב `SettingsSubBreadcrumb` חדש עם "הגדרות" כקישור פעיל ל-`/settings` ואז `BreadcrumbPage` עם השם מ-`SETTINGS_TAB_LABELS`.
+- `src/test/nav-settings.test.ts` — הטסט הקיים `"breadcrumbs exist only on the brand and theme sub-routes"` שהתייחס ל-`SettingsBreadcrumb` הישן הוחלף ב-`"settings area shows dedicated breadcrumbs, not the toolkit breadcrumb"`, בודק גם את ה-early-return ב-`tool-breadcrumbs.tsx` וגם את השימוש ב-`SETTINGS_TAB_LABELS` בשלושת הראוטים.
+
+### 14.2 תרגום מסך 404 ומסך שגיאה גלובלי לעברית
+
+**הבעיה שאומתה:** `NotFoundComponent` ו-`ErrorComponent` ב-`src/routes/__root.tsx` היו כתובים באנגלית לגמרי ("Page not found" / "Go home" / "Try again" וכו'), בניגוד לכל שאר האתר (עברית, RTL).
+
+**מה בוצע (commit `3fbb479d`), שני הרכיבים ב-`src/routes/__root.tsx`:**
+- `NotFoundComponent`: "404" נשאר, כותרת → "הדף שחיפשת לא נמצא", תיאור → "ייתכן שהקישור שגוי או שהדף הוסר", כפתור → "חזרה לדף הבית" מפנה ל-`/classes` (נקודת הכניסה האמיתית, לא `/`).
+- `ErrorComponent`: כותרת → "הדף לא נטען", תיאור → "משהו השתבש. אפשר לנסות שוב או לחזור לדף הבית", כפתור ראשון → "נסה שוב", כפתור שני → "חזרה לדף הבית" מפנה גם הוא ל-`/classes`.
+
+**היקף:** ללא migration, ללא HITL, ללא קבצים חדשים. Type-checking עבר.
+
+### 14.3 מצב מעודכן של 5 משימות `/settings` המקוריות
+
+| # | משימה | סטטוס |
+|---|---|---|
+| 1 | e2e tests | ⏳ עדיין פתוח — scope גדול משמעותית, לא בוצע בסבב הזה. דורש התקנת Playwright, `playwright.config.ts`, `e2e/settings.spec.ts`, helper login, CI job נפרד (בדומה ל-`notifications-guard`), והחלטות פתוחות: סביבת ריצה (dev server מקומי מול CI מוצע, לא production), משתמש טסט ייעודי או משותף עם vitest, היקף התחלתי (הוצע: /settings בלבד). |
+| 2 | Breadcrumbs | ✅ בוצע (12/8) — סעיף 14.1 |
+| 3 | דף 404 בעברית | ✅ בוצע (12/8) — סעיף 14.2 |
+| 4 | Audit logging להגדרות | ✅ כבר היה מומש קודם לכן — לא פער אמיתי |
+| 5 | Active-tab state | ✅ כבר היה מומש קודם לכן — לא פער אמיתי |
+
+**מסקנה לפעם הבאה:** תמיד לאמת מול קוד חי לפני תכנון — שוב התברר ששני פריטים מתוך חמישה ב-queue כבר היו מומשים במלואם, ופריט שלישי (breadcrumb ב-brand/theme) התברר כקיים בצורה חלקית/ישנה ולא כפי שתועד.
