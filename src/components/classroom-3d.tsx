@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import type { RoomObjectType } from "@/lib/classes.functions";
@@ -21,6 +22,9 @@ const PRESETS = {
   side: { label: "מהצד", rotX: 68, rotY: 90, zoom: 0.9 },
 } as const;
 type PresetId = keyof typeof PRESETS;
+
+/** תצוגת ברירת המחדל — חזית הכיתה בזווית נוחה. */
+export const DEFAULT_VIEW = PRESETS.teacher;
 
 const OBJ_STYLE: Record<RoomObjectType, { label: string; color: string; height: number }> = {
   board: { label: "לוח", color: "#1e293b", height: 46 },
@@ -46,6 +50,15 @@ export function Classroom3D({ rows, cols, seats, objects = [], hidden = [] }: Pr
     setRotX(PRESETS[id].rotX);
     setRotY(PRESETS[id].rotY);
     setZoom(PRESETS[id].zoom);
+  };
+
+  /** איפוס מלא — חוזר תמיד לחזית שהוגדרה ולזווית נוחה, גם אחרי סיבוב או גרירה. */
+  const resetView = () => {
+    drag.current = null;
+    setPreset("teacher");
+    setRotX(DEFAULT_VIEW.rotX);
+    setRotY(DEFAULT_VIEW.rotY);
+    setZoom(DEFAULT_VIEW.zoom);
   };
 
   const onPointerDown = (e: React.PointerEvent) => {
@@ -92,6 +105,10 @@ export function Classroom3D({ rows, cols, seats, objects = [], hidden = [] }: Pr
           <Slider value={[zoom * 100]} min={50} max={160} step={5}
             onValueChange={(v) => setZoom((v[0] ?? 100) / 100)} aria-label="זום" />
         </div>
+        <Button size="sm" variant="ghost" onClick={resetView} data-testid="reset-3d-view"
+          title="החזר את התצוגה לחזית הכיתה ולזווית ברירת המחדל">
+          <RotateCcw className="ms-1 h-4 w-4" /> אפס תצוגה
+        </Button>
       </div>
       <p className="text-xs text-muted-foreground">גרירה עם העכבר או האצבע מסובבת את הכיתה בתלת־ממד.</p>
 

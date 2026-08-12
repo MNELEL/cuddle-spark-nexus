@@ -5,7 +5,7 @@ import {
 } from "@dnd-kit/core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Lock, Unlock, EyeOff, Shuffle, Settings2, Sparkles, AlertTriangle, Accessibility, Undo2, Star, X, Presentation, Armchair, DoorOpen, Rows3, BookOpen, PanelTopOpen } from "lucide-react";
+import { Lock, Unlock, EyeOff, Shuffle, Settings2, Sparkles, AlertTriangle, Accessibility, Undo2, Redo2, Printer, FileDown, Check, Loader2, Star, X, Presentation, Armchair, DoorOpen, Rows3, BookOpen, PanelTopOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,11 @@ import { Classroom3D } from "@/components/classroom-3d";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Box } from "lucide-react";
 import { SeatingWizardModal } from "@/components/SeatingWizardModal";
+import {
+  emptyHistory, recordChange, undo as undoHistory, redo as redoHistory,
+  canUndo, canRedo, type SeatHistory, type SeatSnapshot,
+} from "@/lib/seat-history";
+import { printSeatingLayout, exportSeatingPdf, printSeatKey, type SeatingPrintCell } from "@/lib/print-seating";
 
 type Student = {
   id: string; class_id: string; name: string;
@@ -340,12 +345,14 @@ export function SeatingGrid({ classId }: { classId: string }) {
     return m;
   }, [groupsData]);
 
-  // In-memory undo stack of previous seat layouts (last 5)
-  type SeatSnap = { id: string; seat_row: number | null; seat_col: number | null; seat_locked: boolean };
-  const [undoStack, setUndoStack] = useState<SeatSnap[][]>([]);
-  const captureSnapshot = (): SeatSnap[] =>
+  // היסטוריית שינויים (Undo / Redo) של סידור ההושבה
+  const [history, setHistory] = useState<SeatHistory>(() => emptyHistory());
+  const captureSnapshot = (): SeatSnapshot[] =>
     students.map((s) => ({ id: s.id, seat_row: s.seat_row, seat_col: s.seat_col, seat_locked: s.seat_locked }));
-  const pushUndo = () => setUndoStack((prev) => [...prev.slice(-4), captureSnapshot()]);
+  const pushUndo = () => setHistory((prev) => recordChange(prev, captureSnapshot()));
+
+  // מצב שמירה אוטומטית — כל שינוי בשיבוץ נשמר מיד בשרת
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
 
   const rows = cls?.grid_rows ?? 5;
   const cols = cls?.grid_cols ?? 6;
@@ -514,6 +521,7 @@ export function SeatingGrid({ classId }: { classId: string }) {
   };
 
   const invalidate = () => {
+    setLastSavedAt(new Date());
     qc.invalidateQueries({ queryKey: ["students", classId] });
   };
 
@@ -602,19 +610,75 @@ export function SeatingGrid({ classId }: { classId: string }) {
     templateM.mutate(fn);
   };
 
+  const applySnapshot = async (snap: SeatSnapshot[]) => {
+    // שחזור סדרתי — כיתות קטנות, וכל setSeat שומר מיד בשרת
+    for (const s of snap) {
+      await setSeatFn({ data: { class_id: classId, student_id: s.id, seat_row: s.seat_row, seat_col: s.seat_col } });
+    }
+  };
+
   const undoM = useMutation({
     mutationFn: async () => {
-      const snap = undoStack[undoStack.length - 1];
-      if (!snap) return;
-      // restore seats sequentially (small classes); rely on setSeat for positions
-      for (const s of snap) {
-        await setSeatFn({ data: { class_id: classId, student_id: s.id, seat_row: s.seat_row, seat_col: s.seat_col } });
-      }
-      setUndoStack((prev) => prev.slice(0, -1));
+      const step = undoHistory(history, captureSnapshot());
+      if (!step) return false;
+      await applySnapshot(step.restore);
+      setHistory(step.history);
+      return true;
     },
-    onSuccess: () => { invalidate(); toast.success("הפעולה בוטלה"); },
+    onSuccess: (ok) => { if (ok) { invalidate(); toast.success("הפעולה בוטלה"); } },
     onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
   });
+
+  const redoM = useMutation({
+    mutationFn: async () => {
+      const step = redoHistory(history, captureSnapshot());
+      if (!step) return false;
+      await applySnapshot(step.restore);
+      setHistory(step.history);
+      return true;
+    },
+    onSuccess: (ok) => { if (ok) { invalidate(); toast.success("הפעולה שוחזרה"); } },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
+  });
+
+  // בניית נתוני ההדפסה מהמצב הנוכחי של הגריד
+  const buildPrintInput = () => {
+    const cells: Record<string, SeatingPrintCell> = {};
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      const k = seatKey(r, c);
+      const child = seated.get(k);
+      const obj = objectAt.get(k);
+      cells[printSeatKey(r, c)] =
+        child ? { kind: "student", name: child.name, locked: child.seat_locked }
+        : obj ? { kind: "object", label: ROOM_OBJECT_META[obj.type]?.label ?? "אובייקט" }
+        : hiddenSet.has(k) ? { kind: "hidden" }
+        : { kind: "empty" };
+    }
+    return {
+      className: cls?.name ?? "כיתה",
+      rows, cols, cells,
+      unseated: unseated.map((s) => s.name),
+    };
+  };
+
+  const handlePrint = () => {
+    if (!printSeatingLayout(buildPrintInput())) {
+      toast.error("הדפדפן חסם את חלון ההדפסה — אשר חלונות קופצים ונסה שוב");
+    }
+  };
+
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const handlePdf = async () => {
+    setPdfBusy(true);
+    try {
+      await exportSeatingPdf("seating-grid-canvas", `seating-${cls?.name ?? "class"}.pdf`);
+      toast.success("קובץ ה-PDF הורד");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "ייצוא ה-PDF נכשל");
+    } finally {
+      setPdfBusy(false);
+    }
+  };
 
   const onDragStart = (e: DragStartEvent) => {
     const d = e.active.data.current as { studentId?: string; objectId?: string; newType?: RoomObjectType } | undefined;
@@ -656,6 +720,7 @@ export function SeatingGrid({ classId }: { classId: string }) {
     if (objectAt.get(seatKey(overData.row, overData.col))) { toast.error("המשבצת תפוסה על ידי אובייקט"); return; }
     const occupant = seated.get(seatKey(overData.row, overData.col));
     if (occupant?.seat_locked) { toast.error("המושב היעד נעול"); return; }
+    pushUndo();
     moveM.mutate({ student_id: sid, seat_row: overData.row, seat_col: overData.col });
   };
 
@@ -687,11 +752,14 @@ export function SeatingGrid({ classId }: { classId: string }) {
                 <DropdownMenuItem onClick={() => clearM.mutate()} className="text-destructive">נקה סידור</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            {undoStack.length > 0 && (
-              <Button size="sm" variant="ghost" onClick={() => undoM.mutate()} disabled={undoM.isPending} title="בטל את הפעולה האחרונה">
-                <Undo2 className="ms-1 h-4 w-4" /> בטל ({undoStack.length})
-              </Button>
-            )}
+            <Button size="sm" variant="ghost" onClick={() => undoM.mutate()}
+              disabled={!canUndo(history) || undoM.isPending} title="בטל את השינוי האחרון">
+              <Undo2 className="ms-1 h-4 w-4" /> בטל{canUndo(history) ? ` (${history.past.length})` : ""}
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => redoM.mutate()}
+              disabled={!canRedo(history) || redoM.isPending} title="בצע מחדש את השינוי שבוטל">
+              <Redo2 className="ms-1 h-4 w-4" /> בצע מחדש{canRedo(history) ? ` (${history.future.length})` : ""}
+            </Button>
             <span className="mx-1 hidden h-5 w-px bg-border sm:inline-block" aria-hidden />
             <span className="hidden text-[11px] font-semibold text-muted-foreground sm:inline">סביבת הכיתה</span>
             <Button size="sm" variant={editEnv ? "default" : "outline"} onClick={() => setEditEnv((v) => !v)} title="הוסף/הזז אובייקטי סביבה">
@@ -709,6 +777,21 @@ export function SeatingGrid({ classId }: { classId: string }) {
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <span className="flex items-center gap-1 text-[11px] text-muted-foreground" aria-live="polite">
+              {moveM.isPending || saveObjectsM.isPending || hideM.isPending || lockM.isPending ? (
+                <><Loader2 className="h-3.5 w-3.5 animate-spin" /> שומר…</>
+              ) : (
+                <><Check className="h-3.5 w-3.5 text-emerald-600" /> נשמר אוטומטית
+                  {lastSavedAt ? ` · ${lastSavedAt.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}` : ""}
+                </>
+              )}
+            </span>
+            <Button size="sm" variant="ghost" onClick={handlePrint} title="הדפסת פריסת ההושבה">
+              <Printer className="ms-1 h-4 w-4" /> הדפסה
+            </Button>
+            <Button size="sm" variant="ghost" onClick={handlePdf} disabled={pdfBusy} title="ייצוא הפריסה ל-PDF">
+              {pdfBusy ? <Loader2 className="ms-1 h-4 w-4 animate-spin" /> : <FileDown className="ms-1 h-4 w-4" />} PDF
+            </Button>
             <Popover>
               <PopoverTrigger asChild>
                 <Button size="sm" variant={a11y ? "default" : "ghost"} aria-pressed={a11y} aria-label="הגדרות נגישות">

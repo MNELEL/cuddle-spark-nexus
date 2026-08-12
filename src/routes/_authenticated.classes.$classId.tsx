@@ -10,6 +10,7 @@ import {
   listRelations, createRelation, deleteRelation,
 } from "@/lib/students.functions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ClassAnnouncementsBanner } from "@/components/class-announcements-banner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -223,6 +224,7 @@ function ClassDetail() {
         </Link>
       </div>
       {isArchived ? <ArchivedBanner classId={classId} /> : <ClassActionGrid classId={classId} onSeating={() => setTab("seating")} />}
+      <ClassAnnouncementsBanner classId={classId} readOnly={isArchived} />
       <div className="relative overflow-hidden rounded-2xl border bg-primary p-6 text-primary-foreground shadow-sm">
         <div className="pointer-events-none absolute inset-0 opacity-20">
           <SeatFillGrid rows={4} cols={12} className="h-full" />
