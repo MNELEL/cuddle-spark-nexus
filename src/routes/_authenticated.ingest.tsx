@@ -30,7 +30,7 @@ import { exportLessonSummaryPdf } from "@/lib/pdf/lesson-summary-pdf";
 import { PdfPreviewDialog } from "@/components/ingest/pdf-preview-dialog";
 import { SmartUpload } from "@/components/smart-upload";
 import { listTopics, type TopicRow } from "@/lib/topics.functions";
-import { listCollections } from "@/lib/teaching-resources.functions";
+import { listCollections, RESOURCE_TYPES, RESOURCE_TYPE_LABELS, type ResourceType } from "@/lib/teaching-resources.functions";
 import { AiSuggestionsAuditCard } from "@/components/ingest/ai-suggestions-audit";
 import { getIngestAiSettings, DEFAULT_CONFIDENCE_THRESHOLD } from "@/lib/ingest-ai.functions";
 
@@ -544,6 +544,7 @@ function ResourcePreview({ job, onDone }: { job: IngestJob; onDone: () => void }
     }}),
     onSuccess: () => {
       toast.success("החומר נוסף לספרייה");
+      void qc.invalidateQueries({ queryKey: ["teaching-resources"] });
       void qc.invalidateQueries({ queryKey: ["ingest-ai-suggestions"] });
       onDone();
     },
@@ -558,7 +559,7 @@ function ResourcePreview({ job, onDone }: { job: IngestJob; onDone: () => void }
           <div><Label>כותרת</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
           <div><Label>מקצוע</Label><Input value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} /></div>
           <div><Label>כיתה</Label><Input value={form.grade_level} onChange={(e) => setForm({ ...form, grade_level: e.target.value })} /></div>
-          <div><Label>סוג</Label><Input value={form.resource_type} onChange={(e) => setForm({ ...form, resource_type: e.target.value })} /></div>
+          <div><Label>סוג</Label><Select value={form.resource_type} onValueChange={(v) => setForm({ ...form, resource_type: v as ResourceType })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{RESOURCE_TYPES.map((t) => (<SelectItem key={t} value={t}>{RESOURCE_TYPE_LABELS[t]}</SelectItem>))}</SelectContent></Select></div>
         </div>
         <div><Label>תיאור</Label><Textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
         <div className="grid gap-3 md:grid-cols-2">
@@ -746,6 +747,8 @@ function LessonPreview({ job, classes, preferredClassId, onDone, onReanalyze, re
       } });
     },
     onSuccess: (r) => {
+      void qc.invalidateQueries({ queryKey: ["teaching-resources"] });
+      void qc.invalidateQueries({ queryKey: ["lesson-transcripts"] });
       toast.success(r.question_bank_id ? "השיעור ומאגר השאלות נשמרו" : "השיעור נשמר");
       onDone();
     },
@@ -1238,6 +1241,10 @@ function AutoPreview({ job, classes, preferredClassId, onDone }: {
       if (s.behavior) parts.push(`${s.behavior} הערות`);
       if (s.journal) parts.push(`${s.journal} יומן`);
       if (s.parent_letter) parts.push(`${s.parent_letter} מכתבי הורים`);
+      void qc.invalidateQueries({ queryKey: ["teaching-resources"] });
+      void qc.invalidateQueries({ queryKey: ["grades"] });
+      void qc.invalidateQueries({ queryKey: ["discipline-events"] });
+      void qc.invalidateQueries({ queryKey: ["parent-communications"] });
       if (s.resource) parts.push(`${s.resource} חומרים`);
       if (s.other) parts.push(`${s.other} אחר`);
       toast.success(parts.length ? `נשמר: ${parts.join(" · ")}` : "לא נשמרו פריטים");
