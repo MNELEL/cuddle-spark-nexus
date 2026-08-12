@@ -189,7 +189,7 @@ export const smartSortSeats = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ class_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { data: cls, error: e1 } = await context.supabase
-      .from("classes").select("grid_rows, grid_cols, hidden_seats").eq("id", data.class_id).single();
+      .from("classes").select("grid_rows, grid_cols, hidden_seats, room_objects").eq("id", data.class_id).single();
     if (e1) throw new Error(e1.message);
     const { data: students, error: e2 } = await context.supabase
       .from("students").select("*").eq("class_id", data.class_id);
@@ -199,6 +199,13 @@ export const smartSortSeats = createServerFn({ method: "POST" })
     if (e3) throw new Error(e3.message);
 
     const hidden = new Set<string>(Array.isArray(cls.hidden_seats) ? (cls.hidden_seats as string[]) : []);
+    // Cells occupied by room objects (board, window, cabinet...) are never seatable.
+    const objects = Array.isArray((cls as { room_objects?: unknown }).room_objects)
+      ? ((cls as { room_objects?: unknown }).room_objects as Array<{ row?: number; col?: number }>)
+      : [];
+    for (const o of objects) {
+      if (typeof o?.row === "number" && typeof o?.col === "number") hidden.add(`${o.row}:${o.col}`);
+    }
     const assign = smartAssign(
       (students ?? []) as unknown as ScoringStudent[],
       (relations ?? []) as unknown as ScoringRelation[],
