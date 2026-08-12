@@ -138,6 +138,19 @@ export function Classroom3D({ rows, cols, seats, objects = [], hidden = [] }: Pr
             data-testid="room-floor"
             aria-hidden
           />
+          {/* front-of-class marker keeps the orientation obvious after rotating */}
+          <div
+            className="absolute flex justify-center"
+            style={{ left: 0, top: -26, width, transformStyle: "preserve-3d" }}
+            data-testid="room-front-label"
+          >
+            <span
+              className="rounded bg-slate-900/80 px-2 py-0.5 text-[10px] font-bold text-white"
+              style={{ transform: `translateZ(30px) ${billboard}` }}
+            >
+              חזית הכיתה
+            </span>
+          </div>
 
           {/* room objects */}
           {objects.map((o) => {
