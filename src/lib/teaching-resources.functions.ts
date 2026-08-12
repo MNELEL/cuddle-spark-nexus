@@ -54,6 +54,13 @@ export type ResourceContent = {
   materials?: string[];
   /** כשהחומר הופק מתוך חומר אחר בספרייה — מזהה חומר המקור. */
   source_resource_id?: string;
+  /** מה ה-AI הבין על החומר: סיכום, סוג מוצע והקשרי הוראה מעשיים. */
+  ai_understanding?: {
+    summary?: string;
+    contexts?: string[];
+    suggested_type?: string;
+    at?: string;
+  };
 };
 
 export type ResourceRow = {
