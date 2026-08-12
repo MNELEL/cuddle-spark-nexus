@@ -347,6 +347,58 @@ function ResourcesPage() {
           aria-label="חיפוש בכל חומרי הספרייה"
         />
       </div>
+      <label className="flex items-center gap-2 text-xs text-muted-foreground">
+        <input
+          type="checkbox"
+          className="h-3.5 w-3.5 accent-primary"
+          checked={filters.searchInDocumentOnly}
+          onChange={(e) => patch({ searchInDocumentOnly: e.target.checked })}
+        />
+        חפש רק בתוך טקסט המסמכים שהועלו
+      </label>
+      {/* סינון מהיר לפי סוג חומר */}
+      <div className="flex flex-wrap gap-2" role="group" aria-label="סינון לפי סוג חומר">
+        {MATERIAL_KINDS.map((k) => {
+          const on = materialKind === k.id;
+          return (
+            <button
+              key={k.id}
+              type="button"
+              aria-pressed={on}
+              onClick={() => setMaterialKind(k.id)}
+              className={`min-h-9 shrink-0 rounded-full border px-3 py-1.5 text-sm transition ${on ? "border-primary bg-primary/10 font-semibold text-primary" : "hover:bg-accent"}`}
+            >
+              {k.label}
+            </button>
+          );
+        })}
+      </div>
+      {tagCloud.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-xs text-muted-foreground">תגיות:</span>
+          {tagCloud.map(([t, n]) => {
+            const on = filters.tags.includes(t);
+            return (
+              <button
+                key={t}
+                type="button"
+                aria-pressed={on}
+                onClick={() => patch({
+                  tags: on ? filters.tags.filter((x) => x !== t) : [...filters.tags, t],
+                })}
+                className={`rounded-full border px-2 py-0.5 text-xs transition ${on ? "border-primary bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent"}`}
+              >
+                {t} <span className="opacity-60">({n})</span>
+              </button>
+            );
+          })}
+          {filters.tags.length > 0 && (
+            <button type="button" className="text-xs underline text-muted-foreground" onClick={() => patch({ tags: [] })}>
+              נקה תגיות
+            </button>
+          )}
+        </div>
+      )}
       {/* קטגוריות ראשיות */}
       <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="קטגוריות ספרייה">
         {LIBRARY_CATEGORIES.map((c) => {
