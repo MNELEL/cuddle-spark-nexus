@@ -386,3 +386,29 @@ Test suite ל-RLS ולהעתקת תלמידים — נבדק: אין תשתית 
 - **מה שנשאר ב-/toolkit:** ארגז כלים פדגוגי/תפעולי — כלים, צלצולים וסאונד, מוטיבציה ופרסים, הערכה ומבחנים, מסמכים ותבניות.
 - **Command palette:** `Ctrl+K` עדיין מצביע ל-`/settings/brand` ותקין — לא השתנה.
 - **הפרדת אחריות:** `/settings` = הגדרות משתמש/מוסד (אבטחה, תזכורות, מנוי, מיתוג, ערכת נושא); `/toolkit` = כלים + קישורי ניווט להגדרות.
+
+---
+
+## 14. אימות ספריית חומרי הוראה + הצעת נושא/אוסף אוטומטית ב-ingest — 12/8/2026
+
+### 14.1 רקע — תוכנית ישנה שהתבררה כבר מיושמת
+
+התקבלה תוכנית בשם "ספריית חומרי הוראה — פישוט הממשק + שמירת המקור כפי שהוא" לביצוע. לפני שליחה ל-Lovable נבדק קוד חי (src/lib/ingest.functions.ts, src/routes/_authenticated.resources.index.tsx, src/lib/teaching-resources.functions.ts) ונמצא שכל התוכנית **כבר מיושמת**:
+- original_text נשמר במלואו ב-ResourceExtracted, בלי שכתוב, עם הנחיה מפורשת בפרומפט.
+- commitResource מעביר את הקובץ המקורי מ-ingest-staging ל-teaching-resources bucket במקום למחוק אותו, ושומר file_path + mime_type.
+- resource_chunks table + indexResourceChunks קיימים ומחוברים גם ל-commitResource וגם ל-commitLessonAudio.
+- תמלול שיעור נשמר כחומר מלא בספרייה (resource_type: "summary"), לא רק כמאגר שאלות.
+- ResourceViewerDialog כולל מצב "המקור המלא" מתקפל + כפתור הורדת קובץ מקורי.
+- מסך /resources מפושט: תפריט "הוסף חומר" יחיד, סינון מקופל עם מונה פעיל, כרטיס נקי (כוכב + עריכה/וריאציה בלבד).
+
+מסקנה: נמנעה בנייה כפולה מיותרת של פיצ'ר שלם. תואם לעיקרון הקבוע במסמך זה (סעיף "הערה קריטית") — קוד חי תמיד קודם להנחות.
+
+### 14.2 הפער האמיתי שאותר ותוקן — הצעת נושא/אוסף אוטומטית
+
+הפער היחיד שנמצא בפועל מול התוכנית: analyzeResource לא הציע topic_id או collection, ו-ResourcePreview לא כללה שדות לבחירתם. תוקן (commit 3091464, 3.2 קרדיטים):
+
+- src/lib/ingest.functions.ts — analyzeResource מקבל כעת candidates (topics + collections של ה-owner), מעביר אותם לפרומפט עם הנחיה מפורשת "בחר רק מזהים מהרשימה, אל תמציא". התוצאה מסוננת שוב בקוד מול Set של המזהים האמיתיים (topicIds.has / collIds.has) — כפל הגנה נגד הזיה. ResourceExtracted הורחב עם suggested_topic_id, suggested_collection_ids, topic_confidence.
+- commitResource מקבל collection_ids (עד 10), ומכניס ל-resource_collection_items ב-insert אחד.
+- src/routes/_authenticated.ingest.tsx — ResourcePreview כוללת כעת Select לנושא (עם listTopics) ו-checkboxes לאוספים (עם listCollections), מסומנים מראש לפי הצעת ה-AI, עם תג "הצעת AI · X%" ליד הנושא.
+- מחוץ להיקף בכוונה: commitAuto ו-commitLessonAudio לא שונו. אין migration — topic_id ו-resource_collection_items כבר היו קיימים.
+
