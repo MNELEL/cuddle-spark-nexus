@@ -492,6 +492,85 @@ export type Database = {
         }
         Relationships: []
       }
+      class_announcement_states: {
+        Row: {
+          announcement_id: string
+          dismissed_at: string | null
+          id: string
+          read_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          announcement_id: string
+          dismissed_at?: string | null
+          id?: string
+          read_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          announcement_id?: string
+          dismissed_at?: string | null
+          id?: string
+          read_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_announcement_states_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "class_announcements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      class_announcements: {
+        Row: {
+          active: boolean
+          body: string | null
+          class_id: string
+          created_at: string
+          created_by: string
+          id: string
+          severity: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          body?: string | null
+          class_id: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          severity?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          body?: string | null
+          class_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          severity?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_announcements_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       class_duty_assignments: {
         Row: {
           class_id: string
