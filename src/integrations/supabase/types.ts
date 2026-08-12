@@ -1262,6 +1262,84 @@ export type Database = {
         }
         Relationships: []
       }
+      ingest_ai_settings: {
+        Row: {
+          collection_confidence_threshold: number
+          created_at: string
+          topic_confidence_threshold: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          collection_confidence_threshold?: number
+          created_at?: string
+          topic_confidence_threshold?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          collection_confidence_threshold?: number
+          created_at?: string
+          topic_confidence_threshold?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ingest_ai_suggestions: {
+        Row: {
+          collections_changed: boolean
+          confidence_threshold: number
+          created_at: string
+          final_collection_ids: string[]
+          final_topic_id: string | null
+          id: string
+          job_id: string | null
+          owner_id: string
+          resource_id: string | null
+          resource_title: string
+          suggested_collection_ids: string[]
+          suggested_topic_id: string | null
+          suggested_topic_name: string
+          topic_changed: boolean
+          topic_confidence: number
+        }
+        Insert: {
+          collections_changed?: boolean
+          confidence_threshold?: number
+          created_at?: string
+          final_collection_ids?: string[]
+          final_topic_id?: string | null
+          id?: string
+          job_id?: string | null
+          owner_id: string
+          resource_id?: string | null
+          resource_title?: string
+          suggested_collection_ids?: string[]
+          suggested_topic_id?: string | null
+          suggested_topic_name?: string
+          topic_changed?: boolean
+          topic_confidence?: number
+        }
+        Update: {
+          collections_changed?: boolean
+          confidence_threshold?: number
+          created_at?: string
+          final_collection_ids?: string[]
+          final_topic_id?: string | null
+          id?: string
+          job_id?: string | null
+          owner_id?: string
+          resource_id?: string | null
+          resource_title?: string
+          suggested_collection_ids?: string[]
+          suggested_topic_id?: string | null
+          suggested_topic_name?: string
+          topic_changed?: boolean
+          topic_confidence?: number
+        }
+        Relationships: []
+      }
       ingest_jobs: {
         Row: {
           class_id: string | null
