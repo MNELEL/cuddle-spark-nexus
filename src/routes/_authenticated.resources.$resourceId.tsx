@@ -17,6 +17,7 @@ import {
 import { suggestResourceEdits } from "@/lib/teacher-style.functions";
 import { listClasses } from "@/lib/classes.functions";
 import { ResourceVersionHistory } from "@/components/resource-version-history";
+import { analyzeExistingResource } from "@/lib/resource-understanding.functions";
 
 export const Route = createFileRoute("/_authenticated/resources/$resourceId")({
   head: () => ({
@@ -39,6 +40,16 @@ function ResourceDetailPage() {
   const listCls = useServerFn(listClasses);
   const suggestEdits = useServerFn(suggestResourceEdits);
   const signUrl = useServerFn(getResourceSignedUrl);
+  const analyzeFn = useServerFn(analyzeExistingResource);
+  const analyzeMut = useMutation({
+    mutationFn: (force: boolean) => analyzeFn({ data: { id: resourceId, force } }),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["teaching-resource", resourceId] });
+      qc.invalidateQueries({ queryKey: ["teaching-resources"] });
+      toast.success(res.ocr_added ? "הטקסט חולץ מהמסמך והחומר סווג" : "החומר נותח מחדש");
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "הניתוח נכשל"),
+  });
 
   const { data: resource, isLoading } = useQuery({
     queryKey: ["teaching-resource", resourceId],
@@ -125,6 +136,17 @@ function ResourceDetailPage() {
           )}
           <Button variant="outline" size="sm" onClick={() => window.print()}>
             <Printer className="ms-1 h-4 w-4" /> הדפס / שמור כ-PDF
+          </Button>
+          <Button
+            variant="outline" size="sm"
+            disabled={analyzeMut.isPending}
+            onClick={() => analyzeMut.mutate(false)}
+            title="חילוץ טקסט (OCR) וסיווג אוטומטי של החומר"
+          >
+            {analyzeMut.isPending
+              ? <Loader2 className="ms-1 h-4 w-4 animate-spin" />
+              : <ScanText className="ms-1 h-4 w-4" />}
+            OCR וניתוח AI
           </Button>
           <Button
             variant="ghost"
