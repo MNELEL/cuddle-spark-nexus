@@ -141,7 +141,7 @@ export const getSimilarResources = createServerFn({ method: "POST" })
           subject: r.subject ?? "",
           grade_level: r.grade_level ?? "",
           similarity: m.similarity,
-          summary: r.content?.ai_understanding?.summary ?? r.description_placeholder ?? "",
+          summary: r.content?.ai_understanding?.summary ?? "",
         } as SimilarResource;
       })
       .filter((x): x is SimilarResource => x !== null);
