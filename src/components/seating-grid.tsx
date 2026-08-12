@@ -14,6 +14,10 @@ import { Switch } from "@/components/ui/switch";
 import {
   Popover, PopoverContent, PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
+  DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { listStudents, listRelations, setSeat, toggleSeatLock, clearAllSeats, toggleHiddenSeat, smartSortSeats } from "@/lib/students.functions";
 import { getClass, updateClass, type RoomObject, type RoomObjectType, ROOM_OBJECT_TYPES } from "@/lib/classes.functions";
@@ -360,6 +364,12 @@ export function SeatingGrid({ classId }: { classId: string }) {
     for (const o of roomObjects) m.set(seatKey(o.row, o.col), o);
     return m;
   }, [roomObjects]);
+  // Seats that must never receive a student: hidden seats + cells taken by room objects.
+  const blockedSet = useMemo(() => {
+    const s = new Set<string>(hiddenSet);
+    for (const o of roomObjects) s.add(seatKey(o.row, o.col));
+    return s;
+  }, [hiddenSet, roomObjects]);
   const [editEnv, setEditEnv] = useState(false);
   const saveObjectsM = useMutation({
     mutationFn: (next: RoomObject[]) => updateClassFn({ data: { id: classId, room_objects: next } }),
@@ -540,7 +550,7 @@ export function SeatingGrid({ classId }: { classId: string }) {
       const freeSeats: { row: number; col: number }[] = [];
       for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
         const k = seatKey(r, c);
-        if (!hiddenSet.has(k) && !lockedKeys.has(k)) freeSeats.push({ row: r, col: c });
+        if (!blockedSet.has(k) && !lockedKeys.has(k)) freeSeats.push({ row: r, col: c });
       }
       const movable = students.filter((s) => !s.seat_locked);
       // shuffle
@@ -569,7 +579,7 @@ export function SeatingGrid({ classId }: { classId: string }) {
   const templateM = useMutation({
     mutationFn: async (fn: (s: Student[], r: number, c: number, h: Set<string>) => { placements: { studentId: string; row: number; col: number }[]; movable: Student[] }) => {
       pushUndo();
-      const { placements, movable } = fn(students, rows, cols, hiddenSet);
+      const { placements, movable } = fn(students, rows, cols, blockedSet);
       // clear movable seats first (same approach as מיון אקראי), then assign new positions
       await Promise.all(movable.map((s) =>
         setSeatFn({ data: { class_id: classId, student_id: s.id, seat_row: null, seat_col: null } })));
@@ -653,34 +663,39 @@ export function SeatingGrid({ classId }: { classId: string }) {
     <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
       <div className={`space-y-4 ${highContrast ? "contrast-125 [&_*]:!border-foreground/60" : ""}`}>
         <div aria-live="polite" aria-atomic="true" className="sr-only">{announcement}</div>
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex flex-wrap gap-2">
+        {/* Toolbar: grouped by intent — first "arrange", then "room", then "view" */}
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-card p-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="hidden text-[11px] font-semibold text-muted-foreground sm:inline">סידור</span>
             <Button size="sm" onClick={() => smartM.mutate()} disabled={smartM.isPending || students.length === 0}>
               <Sparkles className="ms-1 h-4 w-4" /> מיון חכם
             </Button>
             <SeatingWizardModal classId={classId} studentNameById={new Map(students.map((s) => [s.id, s.name]))} />
-            <Button size="sm" variant="secondary" onClick={() => randomM.mutate()} disabled={randomM.isPending || students.length === 0}>
-              <Shuffle className="ms-1 h-4 w-4" /> מיון אקראי
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => runTemplate(applyClassicRowsTemplate)} disabled={templateM.isPending || students.length === 0}>
-              שורות קלאסיות
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => runTemplate(applyUShapeTemplate)} disabled={templateM.isPending || students.length === 0}>
-              צורת ח׳
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => runTemplate(applyGroupsWithAislesTemplate)} disabled={templateM.isPending || students.length === 0}>
-              קבוצות עם מעברים
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => clearM.mutate()} disabled={clearM.isPending}>
-              נקה סידור
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline" disabled={students.length === 0}>
+                  <Rows3 className="ms-1 h-4 w-4" /> תבניות
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-52">
+                <DropdownMenuLabel>תבניות הושבה</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => runTemplate(applyClassicRowsTemplate)}>שורות קלאסיות</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => runTemplate(applyUShapeTemplate)}>צורת ח׳</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => runTemplate(applyGroupsWithAislesTemplate)}>קבוצות עם מעברים</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => randomM.mutate()}>מיון אקראי</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => clearM.mutate()} className="text-destructive">נקה סידור</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             {undoStack.length > 0 && (
               <Button size="sm" variant="ghost" onClick={() => undoM.mutate()} disabled={undoM.isPending} title="בטל את הפעולה האחרונה">
                 <Undo2 className="ms-1 h-4 w-4" /> בטל ({undoStack.length})
               </Button>
             )}
+            <span className="mx-1 hidden h-5 w-px bg-border sm:inline-block" aria-hidden />
+            <span className="hidden text-[11px] font-semibold text-muted-foreground sm:inline">סביבת הכיתה</span>
             <Button size="sm" variant={editEnv ? "default" : "outline"} onClick={() => setEditEnv((v) => !v)} title="הוסף/הזז אובייקטי סביבה">
-              <Presentation className="ms-1 h-4 w-4" /> {editEnv ? "סיים עריכת סביבה" : "עריכת סביבה"}
+              <Presentation className="ms-1 h-4 w-4" /> {editEnv ? "סיים עריכה" : "עריכת סביבה"}
             </Button>
             {selectedId && (
               <Button size="sm" variant="ghost" onClick={() => setSelectedId(null)}>
@@ -693,7 +708,7 @@ export function SeatingGrid({ classId }: { classId: string }) {
               </Button>
             )}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2">
             <Popover>
               <PopoverTrigger asChild>
                 <Button size="sm" variant={a11y ? "default" : "ghost"} aria-pressed={a11y} aria-label="הגדרות נגישות">

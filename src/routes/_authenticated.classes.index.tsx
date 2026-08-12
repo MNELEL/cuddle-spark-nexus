@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { getRecentClassIds } from "@/lib/recent-classes";
 import { listClasses, deleteClass, setClassStatus } from "@/lib/classes.functions";
 import { getMyInstitution } from "@/lib/institution-dashboard.functions";
 import { listUnreadClassNotifications, markNotificationRead } from "@/lib/notifications.functions";
@@ -48,6 +49,8 @@ function ClassesPage() {
   const qc = useQueryClient();
   const [q, setQ] = useState("");
   const [statusFilter, setStatusFilter] = useState<"active" | "archived" | "all">("active");
+  const [recentIds, setRecentIds] = useState<string[]>([]);
+  useEffect(() => { setRecentIds(getRecentClassIds()); }, []);
 
   const { data: notifications = [] } = useQuery({
     queryKey: ["class-notifications"],
@@ -89,13 +92,17 @@ function ClassesPage() {
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
+    const rank = (id: string) => {
+      const i = recentIds.indexOf(id);
+      return i === -1 ? Number.MAX_SAFE_INTEGER : i;
+    };
     return (classes as Array<Record<string, unknown>>).filter((c) => {
       const status = (c.status as string) ?? "active";
       if (statusFilter !== "all" && status !== statusFilter) return false;
       if (term && !String(c.name ?? "").toLowerCase().includes(term)) return false;
       return true;
-    }) as typeof classes;
-  }, [classes, q, statusFilter]);
+    }).sort((a, b) => rank(String(a.id)) - rank(String(b.id))) as typeof classes;
+  }, [classes, q, statusFilter, recentIds]);
 
   const hasFilters = q.trim().length > 0 || statusFilter !== "active";
   const clearFilters = () => { setQ(""); setStatusFilter("active"); };
@@ -240,6 +247,7 @@ function ClassesPage() {
                     <div className="flex items-center gap-2">
                       <span className="truncate font-display text-lg font-bold">{c.name}</span>
                       {status === "archived" && <Badge variant="secondary">בארכיון</Badge>}
+                      {recentIds[0] === c.id && <Badge className="shrink-0">הכיתה הקבועה שלי</Badge>}
                       {(c as { academic_year?: string | null }).academic_year && (
                         <Badge variant="outline" className="font-mono-tabular">
                           {(c as { academic_year?: string | null }).academic_year}

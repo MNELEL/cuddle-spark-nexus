@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
+import { recordClassVisit } from "@/lib/recent-classes";
 import { getClass, getClassChain, setClassStatus } from "@/lib/classes.functions";
 import { useClassFallbackRedirect } from "@/hooks/use-class-fallback";
 import {
@@ -182,7 +183,10 @@ type Student = {
 function ClassDetail() {
   const { classId } = Route.useParams();
   const validClass = isValidClassId(classId);
-  const [tab, setTab] = useState("students");
+  // Entering a class should immediately show the seating map — that is what the
+  // teacher looks at first when walking into the room.
+  const [tab, setTab] = useState("seating");
+  useEffect(() => { if (validClass) recordClassVisit(classId); }, [classId, validClass]);
   const getC = useServerFn(getClass);
   const listS = useServerFn(listStudents);
   const listR = useServerFn(listRelations);
