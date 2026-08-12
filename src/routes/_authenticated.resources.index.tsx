@@ -77,6 +77,14 @@ const LIBRARY_CATEGORIES: { id: string; label: string; types: ResourceType[] }[]
 
 const CATEGORY_IDS = LIBRARY_CATEGORIES.map((c) => c.id);
 
+/** סינון מהיר לפי סוג חומר — כדי למצוא גם חומרים ישנים בלחיצה אחת */
+const MATERIAL_KINDS: { id: string; label: string; types: ResourceType[] }[] = [
+  { id: "all", label: "הכל", types: [] },
+  { id: "study", label: "חומרי לימוד", types: ["lesson_plan", "worksheet", "summary", "story", "song", "visual_aid", "activity", "game", "riddle", "other"] },
+  { id: "exams", label: "מבחנים", types: ["question_bank", "worksheet"] },
+  { id: "prep", label: "הכנה לחזרה", types: ["question_bank", "summary", "riddle"] },
+];
+
 /** Single, centralized filter state for the whole library screen. */
 type FilterState = {
   search: string;
@@ -84,6 +92,8 @@ type FilterState = {
   subject: string;
   grade_level: string;
   tag: string;
+  tags: string[];
+  searchInDocumentOnly: boolean;
   difficulty: Difficulty | "";
   favoritesOnly: boolean; hasOriginalOnly: boolean;
   topicIds: string[];
@@ -91,7 +101,8 @@ type FilterState = {
 };
 
 const emptyFilters: FilterState = {
-  search: "", resource_type: "", subject: "", grade_level: "", tag: "",
+  search: "", resource_type: "", subject: "", grade_level: "", tag: "", tags: [],
+  searchInDocumentOnly: false,
   difficulty: "", favoritesOnly: false, hasOriginalOnly: false,
   topicIds: [], collectionIds: [],
 };
