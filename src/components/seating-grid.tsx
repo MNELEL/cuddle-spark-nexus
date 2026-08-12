@@ -663,34 +663,39 @@ export function SeatingGrid({ classId }: { classId: string }) {
     <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
       <div className={`space-y-4 ${highContrast ? "contrast-125 [&_*]:!border-foreground/60" : ""}`}>
         <div aria-live="polite" aria-atomic="true" className="sr-only">{announcement}</div>
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex flex-wrap gap-2">
+        {/* Toolbar: grouped by intent — first "arrange", then "room", then "view" */}
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-card p-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="hidden text-[11px] font-semibold text-muted-foreground sm:inline">סידור</span>
             <Button size="sm" onClick={() => smartM.mutate()} disabled={smartM.isPending || students.length === 0}>
               <Sparkles className="ms-1 h-4 w-4" /> מיון חכם
             </Button>
             <SeatingWizardModal classId={classId} studentNameById={new Map(students.map((s) => [s.id, s.name]))} />
-            <Button size="sm" variant="secondary" onClick={() => randomM.mutate()} disabled={randomM.isPending || students.length === 0}>
-              <Shuffle className="ms-1 h-4 w-4" /> מיון אקראי
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => runTemplate(applyClassicRowsTemplate)} disabled={templateM.isPending || students.length === 0}>
-              שורות קלאסיות
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => runTemplate(applyUShapeTemplate)} disabled={templateM.isPending || students.length === 0}>
-              צורת ח׳
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => runTemplate(applyGroupsWithAislesTemplate)} disabled={templateM.isPending || students.length === 0}>
-              קבוצות עם מעברים
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => clearM.mutate()} disabled={clearM.isPending}>
-              נקה סידור
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline" disabled={students.length === 0}>
+                  <Rows3 className="ms-1 h-4 w-4" /> תבניות
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" dir="rtl" className="w-52">
+                <DropdownMenuLabel>תבניות הושבה</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => runTemplate(applyClassicRowsTemplate)}>שורות קלאסיות</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => runTemplate(applyUShapeTemplate)}>צורת ח׳</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => runTemplate(applyGroupsWithAislesTemplate)}>קבוצות עם מעברים</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => randomM.mutate()}>מיון אקראי</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => clearM.mutate()} className="text-destructive">נקה סידור</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             {undoStack.length > 0 && (
               <Button size="sm" variant="ghost" onClick={() => undoM.mutate()} disabled={undoM.isPending} title="בטל את הפעולה האחרונה">
                 <Undo2 className="ms-1 h-4 w-4" /> בטל ({undoStack.length})
               </Button>
             )}
+            <span className="mx-1 hidden h-5 w-px bg-border sm:inline-block" aria-hidden />
+            <span className="hidden text-[11px] font-semibold text-muted-foreground sm:inline">סביבת הכיתה</span>
             <Button size="sm" variant={editEnv ? "default" : "outline"} onClick={() => setEditEnv((v) => !v)} title="הוסף/הזז אובייקטי סביבה">
-              <Presentation className="ms-1 h-4 w-4" /> {editEnv ? "סיים עריכת סביבה" : "עריכת סביבה"}
+              <Presentation className="ms-1 h-4 w-4" /> {editEnv ? "סיים עריכה" : "עריכת סביבה"}
             </Button>
             {selectedId && (
               <Button size="sm" variant="ghost" onClick={() => setSelectedId(null)}>
@@ -703,7 +708,7 @@ export function SeatingGrid({ classId }: { classId: string }) {
               </Button>
             )}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2">
             <Popover>
               <PopoverTrigger asChild>
                 <Button size="sm" variant={a11y ? "default" : "ghost"} aria-pressed={a11y} aria-label="הגדרות נגישות">
