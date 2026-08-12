@@ -147,6 +147,9 @@ function ResourcesPage() {
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [tasksOpen, setTasksOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [sort, setSort] = useState<SortId>("updated_desc");
+  const [pageSize, setPageSize] = useState(24);
+  const [pageIndex, setPageIndex] = useState(0);
 
   const viewKeys = useTablistKeys(VIEW_TABS, view, setView);
   const categoryKeys = useTablistKeys(CATEGORY_IDS, category, setCategory);
@@ -188,6 +191,30 @@ function ResourcesPage() {
     queryFn: () => listCollItems(),
   });
 
+  const usageFn = useServerFn(getResourceUsageCounts);
+  const { data: usageCounts = {} } = useQuery({
+    queryKey: ["resource-usage-counts"],
+    queryFn: () => usageFn(),
+  });
+
+  const analyzeFn = useServerFn(analyzeExistingResource);
+  const [analyzingId, setAnalyzingId] = useState<string | null>(null);
+  const analyzeMut = useMutation({
+    mutationFn: (v: { id: string; force: boolean }) => analyzeFn({ data: v }),
+    onMutate: (v) => setAnalyzingId(v.id),
+    onSettled: () => setAnalyzingId(null),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["teaching-resources"] });
+      toast.success(
+        res.ocr_added
+          ? `הטקסט חולץ (${res.ocr_chars.toLocaleString("he-IL")} תווים) והחומר סווג`
+          : "החומר נותח וסווג מחדש",
+        { description: res.contexts.length > 0 ? `מתאים ל: ${res.contexts.slice(0, 3).join(" · ")}` : undefined },
+      );
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "הניתוח נכשל"),
+  });
+
   const visibleResources = useMemo(() => {
     let out = resources;
     const cat = LIBRARY_CATEGORIES.find((c) => c.id === category);
@@ -212,9 +239,33 @@ function ResourcesPage() {
         return tid !== null && filters.topicIds.includes(tid);
       });
     }
-    // favorites first, then by recency (server already ordered by updated_at)
-    return [...out].sort((a, b) => Number(b.is_favorite) - Number(a.is_favorite));
-  }, [resources, collectionItems, filters.collectionIds, filters.topicIds, category, materialKind]);
+    const cmp = (a: ResourceRow, b: ResourceRow) => {
+      switch (sort) {
+        case "updated_asc": return a.updated_at.localeCompare(b.updated_at);
+        case "created_desc": return b.created_at.localeCompare(a.created_at);
+        case "created_asc": return a.created_at.localeCompare(b.created_at);
+        case "popularity": {
+          const d = (usageCounts[b.id] ?? 0) - (usageCounts[a.id] ?? 0);
+          return d !== 0 ? d : b.updated_at.localeCompare(a.updated_at);
+        }
+        case "title": return a.title.localeCompare(b.title, "he");
+        default: return b.updated_at.localeCompare(a.updated_at);
+      }
+    };
+    // favorites first, then by the chosen sort
+    return [...out].sort((a, b) => Number(b.is_favorite) - Number(a.is_favorite) || cmp(a, b));
+  }, [resources, collectionItems, filters.collectionIds, filters.topicIds, category, materialKind, sort, usageCounts]);
+
+  const pageCount = Math.max(1, Math.ceil(visibleResources.length / pageSize));
+  const safePage = Math.min(pageIndex, pageCount - 1);
+  const pagedResources = useMemo(
+    () => visibleResources.slice(safePage * pageSize, safePage * pageSize + pageSize),
+    [visibleResources, safePage, pageSize],
+  );
+  // חוזרים לעמוד הראשון בכל שינוי סינון/מיון
+  useEffect(() => {
+    setPageIndex(0);
+  }, [filters, category, materialKind, sort, pageSize]);
 
   /** ענן תגיות מתוך החומרים שקיימים בפועל */
   const tagCloud = useMemo(() => {
