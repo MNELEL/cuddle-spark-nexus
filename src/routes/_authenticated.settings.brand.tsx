@@ -1,4 +1,5 @@
 import { SettingsTabs, SETTINGS_TAB_LABELS } from "@/components/settings-tabs";
+import { ACCEPT_LOGO, MAX_LOGO_KB, validateUploadFile } from "@/lib/upload-accept";
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -107,8 +108,8 @@ function BrandSettingsPage() {
   const onLogo = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]; e.target.value = "";
     if (!f) return;
-    if (!f.type.startsWith("image/")) { toast.error("יש לבחור תמונה"); return; }
-    if (f.size > 500_000) { toast.error("הלוגו גדול מדי (עד 500KB)"); return; }
+    const check = validateUploadFile(f, ACCEPT_LOGO, MAX_LOGO_KB / 1024);
+    if (!check.ok) { toast.error(check.message); return; }
     const dataUrl = await new Promise<string>((res, rej) => {
       const r = new FileReader();
       r.onload = () => res(String(r.result || ""));
@@ -172,7 +173,7 @@ function BrandSettingsPage() {
                 <Button type="button" variant="outline" disabled={isLocked("logo_data_url")} onClick={() => fileRef.current?.click()}>
                   <ImageIcon className="ms-1 h-4 w-4" /> העלה לוגו
                 </Button>
-                <input ref={fileRef} type="file" accept="image/png,image/jpeg" className="hidden" onChange={onLogo} />
+                <input ref={fileRef} type="file" accept={ACCEPT_LOGO} className="hidden" onChange={onLogo} />
                 <p className="mt-1 text-xs text-muted-foreground">PNG/JPG עד 500KB. ריבועי מומלץ.</p>
               </div>
             </div>
@@ -276,8 +277,8 @@ function InstitutionBrandTab() {
   const onLogo = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]; e.target.value = "";
     if (!f) return;
-    if (!f.type.startsWith("image/")) { toast.error("יש לבחור תמונה"); return; }
-    if (f.size > 500_000) { toast.error("הלוגו גדול מדי (עד 500KB)"); return; }
+    const check = validateUploadFile(f, ACCEPT_LOGO, MAX_LOGO_KB / 1024);
+    if (!check.ok) { toast.error(check.message); return; }
     const dataUrl = await new Promise<string>((res, rej) => {
       const r = new FileReader();
       r.onload = () => res(String(r.result || ""));
@@ -337,7 +338,7 @@ function InstitutionBrandTab() {
                 <Button type="button" variant="outline" disabled={!canEdit} onClick={() => logoRef.current?.click()}>
                   <ImageIcon className="ms-1 h-4 w-4" /> העלה לוגו
                 </Button>
-                <input ref={logoRef} type="file" accept="image/png,image/jpeg" className="hidden" onChange={onLogo} />
+                <input ref={logoRef} type="file" accept={ACCEPT_LOGO} className="hidden" onChange={onLogo} />
               </div>
             </div>
           </div>

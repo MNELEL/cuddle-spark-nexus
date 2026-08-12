@@ -28,6 +28,10 @@ import {
 } from "@/lib/teaching-resources.functions";
 import { createUploadedResource } from "@/lib/library-extras.functions";
 import { analyzeExistingResource } from "@/lib/resource-understanding.functions";
+import {
+  ACCEPT_LIBRARY_ALL, LIBRARY_KIND_ACCEPT, validateUploadFile,
+  type LibraryKindId,
+} from "@/lib/upload-accept";
 
 type ItemState = {
   name: string;
@@ -39,19 +43,19 @@ function cleanName(name: string) {
   return name.replace(/[^\w.\-\u0590-\u05FF]+/g, "_").slice(-80);
 }
 
-/** קבוצות קבצים נתמכות — לחיצה פותחת את בוחר הקבצים עם הסינון המתאים */
-const FILE_KINDS: { id: string; label: string; icon: typeof FileText; accept: string }[] = [
-  { id: "pdf", label: "PDF", icon: FileText, accept: "application/pdf" },
-  { id: "word", label: "Word", icon: FileText, accept: ".doc,.docx,.rtf,.txt" },
-  { id: "audio", label: "אודיו", icon: Music, accept: "audio/*" },
-  { id: "record", label: "הקלטה", icon: Mic, accept: "audio/*" },
-  { id: "video", label: "סרטון", icon: Film, accept: "video/*" },
-  { id: "slides", label: "מצגת", icon: Presentation, accept: ".ppt,.pptx" },
-  { id: "image", label: "תמונה", icon: ImageIcon, accept: "image/*" },
-  { id: "other", label: "אחר", icon: FolderOpen, accept: "" },
+/** קבוצות קבצים נתמכות — הסינון מגיע מ-upload-accept, אותו מקור אמת לכל המערכת */
+const FILE_KINDS: { id: LibraryKindId; label: string; icon: typeof FileText; accept: string }[] = [
+  { id: "pdf", label: "PDF", icon: FileText, accept: LIBRARY_KIND_ACCEPT.pdf },
+  { id: "word", label: "Word", icon: FileText, accept: LIBRARY_KIND_ACCEPT.word },
+  { id: "audio", label: "אודיו", icon: Music, accept: LIBRARY_KIND_ACCEPT.audio },
+  { id: "record", label: "הקלטה", icon: Mic, accept: LIBRARY_KIND_ACCEPT.record },
+  { id: "video", label: "סרטון", icon: Film, accept: LIBRARY_KIND_ACCEPT.video },
+  { id: "slides", label: "מצגת", icon: Presentation, accept: LIBRARY_KIND_ACCEPT.slides },
+  { id: "image", label: "תמונה", icon: ImageIcon, accept: LIBRARY_KIND_ACCEPT.image },
+  { id: "other", label: "אחר", icon: FolderOpen, accept: LIBRARY_KIND_ACCEPT.other },
 ];
 
-const ALL_ACCEPT = "image/*,audio/*,video/*,application/pdf,.doc,.docx,.rtf,.txt,.ppt,.pptx";
+const ALL_ACCEPT = ACCEPT_LIBRARY_ALL;
 
 export function LibraryBulkUpload({ open, onClose }: { open: boolean; onClose: () => void }) {
   const qc = useQueryClient();
@@ -83,9 +87,17 @@ export function LibraryBulkUpload({ open, onClose }: { open: boolean; onClose: (
     const incoming = fileList ? Array.from(fileList) : [];
     if (inputRef.current) inputRef.current.value = "";
     if (incoming.length === 0) return;
+    // אותה ולידציה (סוג + גודל) כמו בכל שאר נקודות ההעלאה, עם הודעות בעברית
+    const valid: File[] = [];
+    for (const f of incoming) {
+      const res = validateUploadFile(f, ALL_ACCEPT);
+      if (res.ok) valid.push(f);
+      else toast.error(res.message);
+    }
+    if (valid.length === 0) return;
     setPending((prev) => {
-      const merged = [...prev, ...incoming].slice(0, 20);
-      if (prev.length + incoming.length > 20) toast.error("אפשר להעלות עד 20 קבצים בפעם אחת");
+      const merged = [...prev, ...valid].slice(0, 20);
+      if (prev.length + valid.length > 20) toast.error("אפשר להעלות עד 20 קבצים בפעם אחת");
       return merged;
     });
   };

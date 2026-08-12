@@ -5,6 +5,7 @@ import { Mic, MicOff, Sparkles, Loader2, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { SmartUpload } from "@/components/smart-upload";
+import { ACCEPT_IMAGE } from "@/lib/upload-accept";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -200,7 +201,7 @@ function Inner({ classId, students, onClose }: { classId: string; students: Stud
               <div className="flex items-center gap-2">
                 <SmartUpload
                   compact
-                  accept="image/*"
+                  accept={ACCEPT_IMAGE}
                   maxSizeMb={10}
                   busy={ocrLoading}
                   busyLabel="מזהה תמונה..."
