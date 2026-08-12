@@ -1,6 +1,13 @@
-import { SettingsTabs } from "@/components/settings-tabs";
-import { SettingsBreadcrumb } from "@/components/settings-breadcrumb";
-import { createFileRoute } from "@tanstack/react-router";
+import { SettingsTabs, SETTINGS_TAB_LABELS } from "@/components/settings-tabs";
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -37,6 +44,24 @@ export const Route = createFileRoute("/_authenticated/settings/brand")({
     ],
   }),
 });
+
+function SettingsSubBreadcrumb({ label }: { label: string }) {
+  return (
+    <Breadcrumb className="mb-2">
+      <BreadcrumbList>
+        <BreadcrumbItem>
+          <BreadcrumbLink asChild>
+            <Link to="/settings">הגדרות</Link>
+          </BreadcrumbLink>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator className="rotate-180" />
+        <BreadcrumbItem>
+          <BreadcrumbPage>{label}</BreadcrumbPage>
+        </BreadcrumbItem>
+      </BreadcrumbList>
+    </Breadcrumb>
+  );
+}
 
 function BrandSettingsPage() {
   const qc = useQueryClient();
@@ -104,7 +129,7 @@ function BrandSettingsPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-5">
-      <SettingsBreadcrumb current="מותג" />
+      <SettingsSubBreadcrumb label={SETTINGS_TAB_LABELS.brand} />
       <SettingsTabs active="brand" />
       <div>
         <h1 className="font-display text-3xl font-bold">מיתוג המוסד</h1>

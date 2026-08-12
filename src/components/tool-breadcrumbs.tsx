@@ -10,6 +10,7 @@ import { normalizePathname, sectionLabel, toolByPath } from "@/lib/tool-registry
  */
 export function ToolBreadcrumbs() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  if (pathname.startsWith("/settings")) return null;
   const entry = toolByPath(normalizePathname(pathname));
   if (!entry) return null;
 
