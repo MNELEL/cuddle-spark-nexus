@@ -172,7 +172,7 @@ function BrandSettingsPage() {
                 <Button type="button" variant="outline" disabled={isLocked("logo_data_url")} onClick={() => fileRef.current?.click()}>
                   <ImageIcon className="ms-1 h-4 w-4" /> העלה לוגו
                 </Button>
-                <input ref={fileRef} type="file" accept="image/png,image/jpeg" className="hidden" onChange={onLogo} />
+                <input ref={fileRef} type="file" accept={ACCEPT_LOGO} className="hidden" onChange={onLogo} />
                 <p className="mt-1 text-xs text-muted-foreground">PNG/JPG עד 500KB. ריבועי מומלץ.</p>
               </div>
             </div>
@@ -337,7 +337,7 @@ function InstitutionBrandTab() {
                 <Button type="button" variant="outline" disabled={!canEdit} onClick={() => logoRef.current?.click()}>
                   <ImageIcon className="ms-1 h-4 w-4" /> העלה לוגו
                 </Button>
-                <input ref={logoRef} type="file" accept="image/png,image/jpeg" className="hidden" onChange={onLogo} />
+                <input ref={logoRef} type="file" accept={ACCEPT_LOGO} className="hidden" onChange={onLogo} />
               </div>
             </div>
           </div>
