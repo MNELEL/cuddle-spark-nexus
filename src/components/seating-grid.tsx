@@ -677,7 +677,7 @@ export function SeatingGrid({ classId }: { classId: string }) {
                   <Rows3 className="ms-1 h-4 w-4" /> תבניות
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" dir="rtl" className="w-52">
+              <DropdownMenuContent align="start" className="w-52">
                 <DropdownMenuLabel>תבניות הושבה</DropdownMenuLabel>
                 <DropdownMenuItem onClick={() => runTemplate(applyClassicRowsTemplate)}>שורות קלאסיות</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => runTemplate(applyUShapeTemplate)}>צורת ח׳</DropdownMenuItem>
