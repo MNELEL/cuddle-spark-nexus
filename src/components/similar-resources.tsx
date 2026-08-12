@@ -48,9 +48,19 @@ export function SimilarResources({ resourceId }: { resourceId: string }) {
                     <Badge variant="outline" className="text-[10px]">
                       {RESOURCE_TYPE_LABELS[r.resource_type as ResourceType] ?? r.resource_type}
                     </Badge>
-                    {r.subject && <Badge variant="secondary" className="text-[10px]">{r.subject}</Badge>}
-                    {r.grade_level && <Badge variant="secondary" className="text-[10px]">כיתה {r.grade_level}</Badge>}
-                    <Badge variant="outline" className="text-[10px]">התאמה {Math.round(r.similarity * 100)}%</Badge>
+                    {r.subject && (
+                      <Badge variant="secondary" className="text-[10px]">
+                        {r.subject}
+                      </Badge>
+                    )}
+                    {r.grade_level && (
+                      <Badge variant="secondary" className="text-[10px]">
+                        כיתה {r.grade_level}
+                      </Badge>
+                    )}
+                    <Badge variant="outline" className="text-[10px]">
+                      התאמה {Math.round(r.similarity * 100)}%
+                    </Badge>
                   </div>
                 </div>
                 <ArrowLeft className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" />

@@ -2,8 +2,10 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
-  RESOURCE_TYPES, DIFFICULTIES,
-  type ResourceRow, type ResourceContent,
+  RESOURCE_TYPES,
+  DIFFICULTIES,
+  type ResourceRow,
+  type ResourceContent,
 } from "./teaching-resources.functions";
 
 const uuid = z.string().uuid();
@@ -12,15 +14,17 @@ const uuid = z.string().uuid();
 export const patchResourceClassification = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
-    z.object({
-      id: uuid,
-      subject: z.string().max(80),
-      grade_level: z.string().max(40),
-      resource_type: z.enum(RESOURCE_TYPES),
-      difficulty: z.enum(DIFFICULTIES),
-      description: z.string().max(2000),
-      tags: z.array(z.string().min(1).max(40)).max(25),
-    }).parse(d),
+    z
+      .object({
+        id: uuid,
+        subject: z.string().max(80),
+        grade_level: z.string().max(40),
+        resource_type: z.enum(RESOURCE_TYPES),
+        difficulty: z.enum(DIFFICULTIES),
+        description: z.string().max(2000),
+        tags: z.array(z.string().min(1).max(40)).max(25),
+      })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     const { id, ...patch } = data;
@@ -30,21 +34,29 @@ export const patchResourceClassification = createServerFn({ method: "POST" })
       .from("teaching_resources")
       .update({ ...patch, tags: [...new Set(patch.tags)] } as never)
       .eq("id", id);
-    if (error) { console.error("[DB Error]", error); throw new Error("שמירת הסיווג נכשלה"); }
+    if (error) {
+      console.error("[DB Error]", error);
+      throw new Error("שמירת הסיווג נכשלה");
+    }
     return { ok: true };
   });
 
 /** תיקון ידני של הטקסט שחולץ ב-OCR + אינדוקס מחדש לחיפוש. */
 export const updateResourceOcrText = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) =>
-    z.object({ id: uuid, original_text: z.string().max(200000) }).parse(d),
-  )
+  .inputValidator((d) => z.object({ id: uuid, original_text: z.string().max(200000) }).parse(d))
   .handler(async ({ data, context }) => {
     const { data: row, error } = await context.supabase
-      .from("teaching_resources").select("content").eq("id", data.id).maybeSingle();
-    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
-    const content = ((row as { content: ResourceContent } | null)?.content ?? {}) as ResourceContent;
+      .from("teaching_resources")
+      .select("content")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (error) {
+      console.error("[DB Error]", error);
+      throw new Error("הפעולה נכשלה. נסה שוב.");
+    }
+    const content = ((row as { content: ResourceContent } | null)?.content ??
+      {}) as ResourceContent;
     const { recordResourceVersion } = await import("./resource-versions.server");
     await recordResourceVersion(context.supabase, context.userId, data.id, "manual");
     const nextContent: ResourceContent = {
@@ -57,8 +69,13 @@ export const updateResourceOcrText = createServerFn({ method: "POST" })
       },
     };
     const { error: upErr } = await context.supabase
-      .from("teaching_resources").update({ content: nextContent } as never).eq("id", data.id);
-    if (upErr) { console.error("[DB Error]", upErr); throw new Error("שמירת הטקסט נכשלה"); }
+      .from("teaching_resources")
+      .update({ content: nextContent } as never)
+      .eq("id", data.id);
+    if (upErr) {
+      console.error("[DB Error]", upErr);
+      throw new Error("שמירת הטקסט נכשלה");
+    }
     if (data.original_text.trim()) {
       const { indexResourceChunks } = await import("./resource-chunks.server");
       await indexResourceChunks(context.supabase, context.userId, data.id, data.original_text);
@@ -101,7 +118,9 @@ export const getSimilarResources = createServerFn({ method: "POST" })
         c.ai_understanding?.summary ?? "",
         (c.ai_understanding?.contexts ?? []).join(", "),
         (c.original_text ?? c.body ?? "").slice(0, 4000),
-      ].filter(Boolean).join("\n");
+      ]
+        .filter(Boolean)
+        .join("\n");
       if (!seed.trim()) return [];
       const { embedText, toPgVector } = await import("./embeddings.server");
       const emb = await embedText(seed);
@@ -116,19 +135,31 @@ export const getSimilarResources = createServerFn({ method: "POST" })
       match_count: data.limit,
       exclude_id: data.id,
     });
-    if (error) { console.error("[match_resources]", error); return []; }
+    if (error) {
+      console.error("[match_resources]", error);
+      return [];
+    }
     const scored = (matches ?? []) as { id: string; similarity: number }[];
     if (scored.length === 0) return [];
 
     const { data: rows } = await context.supabase
       .from("teaching_resources")
       .select("id,title,resource_type,subject,grade_level,content")
-      .in("id", scored.map((m) => m.id));
+      .in(
+        "id",
+        scored.map((m) => m.id),
+      );
     const byId = new Map(
-      ((rows ?? []) as Array<{
-        id: string; title: string; resource_type: string; subject: string;
-        grade_level: string; content: ResourceContent | null;
-      }>).map((r) => [r.id, r]),
+      (
+        (rows ?? []) as Array<{
+          id: string;
+          title: string;
+          resource_type: string;
+          subject: string;
+          grade_level: string;
+          content: ResourceContent | null;
+        }>
+      ).map((r) => [r.id, r]),
     );
     return scored
       .map((m) => {
@@ -151,11 +182,13 @@ export const getSimilarResources = createServerFn({ method: "POST" })
 export const createUploadedResource = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
-    z.object({
-      title: z.string().min(1).max(200),
-      file_path: z.string().min(1).max(500),
-      mime_type: z.string().max(120).default(""),
-    }).parse(d),
+    z
+      .object({
+        title: z.string().min(1).max(200),
+        file_path: z.string().min(1).max(500),
+        mime_type: z.string().max(120).default(""),
+      })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     const { data: ins, error } = await context.supabase
@@ -171,7 +204,10 @@ export const createUploadedResource = createServerFn({ method: "POST" })
       } as never)
       .select("id")
       .single();
-    if (error) { console.error("[DB Error]", error); throw new Error("שמירת החומר נכשלה"); }
+    if (error) {
+      console.error("[DB Error]", error);
+      throw new Error("שמירת החומר נכשלה");
+    }
     return { id: (ins as { id: string }).id };
   });
 
@@ -184,15 +220,28 @@ export const getResourceDownloadLinks = createServerFn({ method: "POST" })
       .from("teaching_resources")
       .select("id,title,file_path,content")
       .in("id", data.ids);
-    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
-    const out: { id: string; title: string; file_name: string; url: string | null; text: string }[] = [];
+    if (error) {
+      console.error("[DB Error]", error);
+      throw new Error("הפעולה נכשלה. נסה שוב.");
+    }
+    const out: {
+      id: string;
+      title: string;
+      file_name: string;
+      url: string | null;
+      text: string;
+    }[] = [];
     for (const r of (rows ?? []) as Array<{
-      id: string; title: string; file_path: string | null; content: ResourceContent | null;
+      id: string;
+      title: string;
+      file_path: string | null;
+      content: ResourceContent | null;
     }>) {
       let url: string | null = null;
       if (r.file_path) {
         const signed = await context.supabase.storage
-          .from("teaching-resources").createSignedUrl(r.file_path, 60 * 10);
+          .from("teaching-resources")
+          .createSignedUrl(r.file_path, 60 * 10);
         url = signed.data?.signedUrl ?? null;
       }
       const name = (r.file_path?.split("/").pop() ?? `${r.title}.txt`).slice(-100);

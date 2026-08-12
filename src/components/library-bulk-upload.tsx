@@ -4,14 +4,22 @@ import { useServerFn } from "@tanstack/react-start";
 import { Loader2, UploadCloud, CheckCircle2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { createUploadedResource } from "@/lib/library-extras.functions";
 import { analyzeExistingResource } from "@/lib/resource-understanding.functions";
 
-type ItemState = { name: string; status: "pending" | "uploading" | "analyzing" | "done" | "error"; note?: string };
+type ItemState = {
+  name: string;
+  status: "pending" | "uploading" | "analyzing" | "done" | "error";
+  note?: string;
+};
 
 function cleanName(name: string) {
   return name.replace(/[^\w.\-\u0590-\u05FF]+/g, "_").slice(-80);
@@ -41,7 +49,11 @@ export function LibraryBulkUpload({ open, onClose }: { open: boolean; onClose: (
 
     const { data: auth } = await supabase.auth.getUser();
     const uid = auth.user?.id;
-    if (!uid) { toast.error("נדרשת התחברות מחדש"); setRunning(false); return; }
+    if (!uid) {
+      toast.error("נדרשת התחברות מחדש");
+      setRunning(false);
+      return;
+    }
 
     let ok = 0;
     for (let i = 0; i < files.length; i++) {
@@ -49,12 +61,15 @@ export function LibraryBulkUpload({ open, onClose }: { open: boolean; onClose: (
       try {
         update(i, { status: "uploading" });
         const path = `${uid}/${Date.now()}-${i}-${cleanName(file.name)}`;
-        const up = await supabase.storage
-          .from("teaching-resources")
-          .upload(path, file, { contentType: file.type || "application/octet-stream", upsert: false });
+        const up = await supabase.storage.from("teaching-resources").upload(path, file, {
+          contentType: file.type || "application/octet-stream",
+          upsert: false,
+        });
         if (up.error) throw new Error(up.error.message);
         const title = file.name.replace(/\.[^.]+$/, "").slice(0, 200) || "חומר חדש";
-        const { id } = await createFn({ data: { title, file_path: path, mime_type: file.type || "" } });
+        const { id } = await createFn({
+          data: { title, file_path: path, mime_type: file.type || "" },
+        });
         update(i, { status: "analyzing" });
         try {
           const res = await analyzeFn({ data: { id, force: false } });
@@ -79,7 +94,15 @@ export function LibraryBulkUpload({ open, onClose }: { open: boolean; onClose: (
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v && !running) { setItems([]); onClose(); } }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v && !running) {
+          setItems([]);
+          onClose();
+        }
+      }}
+    >
       <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto" dir="rtl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-right">
@@ -87,7 +110,8 @@ export function LibraryBulkUpload({ open, onClose }: { open: boolean; onClose: (
           </DialogTitle>
         </DialogHeader>
         <p className="text-xs text-muted-foreground">
-          אפשר לבחור כמה קבצים יחד — כולל סרוקים ותמונות. כל קובץ נשמר כפי שהוא, עובר OCR וסיווג אוטומטי.
+          אפשר לבחור כמה קבצים יחד — כולל סרוקים ותמונות. כל קובץ נשמר כפי שהוא, עובר OCR וסיווג
+          אוטומטי.
         </p>
         <input
           ref={inputRef}
@@ -98,27 +122,59 @@ export function LibraryBulkUpload({ open, onClose }: { open: boolean; onClose: (
           onChange={(e) => void handleFiles(e.target.files)}
         />
         <Button variant="outline" disabled={running} onClick={() => inputRef.current?.click()}>
-          {running ? <Loader2 className="ms-1 h-4 w-4 animate-spin" /> : <UploadCloud className="ms-1 h-4 w-4" />}
+          {running ? (
+            <Loader2 className="ms-1 h-4 w-4 animate-spin" />
+          ) : (
+            <UploadCloud className="ms-1 h-4 w-4" />
+          )}
           בחר קבצים
         </Button>
         {items.length > 0 && (
           <ul className="space-y-1 text-xs" aria-live="polite">
             {items.map((it, i) => (
-              <li key={`${it.name}-${i}`} className="flex items-center justify-between gap-2 rounded border bg-card px-2 py-1.5">
+              <li
+                key={`${it.name}-${i}`}
+                className="flex items-center justify-between gap-2 rounded border bg-card px-2 py-1.5"
+              >
                 <span className="truncate">{it.name}</span>
                 <span className="flex shrink-0 items-center gap-1 text-muted-foreground">
-                  {it.status === "uploading" && <><Loader2 className="h-3 w-3 animate-spin" /> מעלה…</>}
-                  {it.status === "analyzing" && <><Loader2 className="h-3 w-3 animate-spin" /> מנתח…</>}
+                  {it.status === "uploading" && (
+                    <>
+                      <Loader2 className="h-3 w-3 animate-spin" /> מעלה…
+                    </>
+                  )}
+                  {it.status === "analyzing" && (
+                    <>
+                      <Loader2 className="h-3 w-3 animate-spin" /> מנתח…
+                    </>
+                  )}
                   {it.status === "pending" && "בהמתנה"}
-                  {it.status === "done" && <><CheckCircle2 className="h-3 w-3 text-emerald-500" /> {it.note}</>}
-                  {it.status === "error" && <><AlertTriangle className="h-3 w-3 text-destructive" /> {it.note}</>}
+                  {it.status === "done" && (
+                    <>
+                      <CheckCircle2 className="h-3 w-3 text-emerald-500" /> {it.note}
+                    </>
+                  )}
+                  {it.status === "error" && (
+                    <>
+                      <AlertTriangle className="h-3 w-3 text-destructive" /> {it.note}
+                    </>
+                  )}
                 </span>
               </li>
             ))}
           </ul>
         )}
         <DialogFooter>
-          <Button variant="ghost" disabled={running} onClick={() => { setItems([]); onClose(); }}>סגור</Button>
+          <Button
+            variant="ghost"
+            disabled={running}
+            onClick={() => {
+              setItems([]);
+              onClose();
+            }}
+          >
+            סגור
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

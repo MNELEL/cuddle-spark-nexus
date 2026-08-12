@@ -7,23 +7,38 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { KODESH_SUBJECTS } from "@/lib/kodesh-subjects";
 import {
-  RESOURCE_TYPES, RESOURCE_TYPE_LABELS, DIFFICULTIES, DIFFICULTY_LABELS,
-  type Difficulty, type ResourceRow, type ResourceType,
+  RESOURCE_TYPES,
+  RESOURCE_TYPE_LABELS,
+  DIFFICULTIES,
+  DIFFICULTY_LABELS,
+  type Difficulty,
+  type ResourceRow,
+  type ResourceType,
 } from "@/lib/teaching-resources.functions";
 import { patchResourceClassification } from "@/lib/library-extras.functions";
 
 const GRADES = ["א", "ב", "ג", "ד", "ה", "ו", "ז", "ח"] as const;
 
 export function ResourceClassificationEditor({
-  resource, open, onClose,
+  resource,
+  open,
+  onClose,
 }: {
   resource: ResourceRow;
   open: boolean;
@@ -51,8 +66,12 @@ export function ResourceClassificationEditor({
       save({
         data: {
           id: resource.id,
-          subject, grade_level: grade, resource_type: type,
-          difficulty, description, tags,
+          subject,
+          grade_level: grade,
+          resource_type: type,
+          difficulty,
+          description,
+          tags,
         },
       }),
     onSuccess: () => {
@@ -65,7 +84,12 @@ export function ResourceClassificationEditor({
   });
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) onClose();
+      }}
+    >
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" dir="rtl">
         <DialogHeader>
           <DialogTitle className="text-right">עריכת הסיווג והתגיות</DialogTitle>
@@ -77,10 +101,14 @@ export function ResourceClassificationEditor({
           <div className="space-y-1">
             <Label htmlFor="cls-type">סוג החומר</Label>
             <Select value={type} onValueChange={(v) => setType(v as ResourceType)}>
-              <SelectTrigger id="cls-type"><SelectValue /></SelectTrigger>
+              <SelectTrigger id="cls-type">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 {RESOURCE_TYPES.map((t) => (
-                  <SelectItem key={t} value={t}>{RESOURCE_TYPE_LABELS[t]}</SelectItem>
+                  <SelectItem key={t} value={t}>
+                    {RESOURCE_TYPE_LABELS[t]}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -88,22 +116,33 @@ export function ResourceClassificationEditor({
           <div className="space-y-1">
             <Label htmlFor="cls-difficulty">רמת קושי</Label>
             <Select value={difficulty} onValueChange={(v) => setDifficulty(v as Difficulty)}>
-              <SelectTrigger id="cls-difficulty"><SelectValue /></SelectTrigger>
+              <SelectTrigger id="cls-difficulty">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 {DIFFICULTIES.map((d) => (
-                  <SelectItem key={d} value={d}>{DIFFICULTY_LABELS[d]}</SelectItem>
+                  <SelectItem key={d} value={d}>
+                    {DIFFICULTY_LABELS[d]}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-1">
             <Label htmlFor="cls-subject">מקצוע</Label>
-            <Select value={subject || "none"} onValueChange={(v) => setSubject(v === "none" ? "" : v)}>
-              <SelectTrigger id="cls-subject"><SelectValue placeholder="ללא" /></SelectTrigger>
+            <Select
+              value={subject || "none"}
+              onValueChange={(v) => setSubject(v === "none" ? "" : v)}
+            >
+              <SelectTrigger id="cls-subject">
+                <SelectValue placeholder="ללא" />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">ללא</SelectItem>
                 {KODESH_SUBJECTS.map((s) => (
-                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                  <SelectItem key={s} value={s}>
+                    {s}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -111,11 +150,15 @@ export function ResourceClassificationEditor({
           <div className="space-y-1">
             <Label htmlFor="cls-grade">כיתה</Label>
             <Select value={grade || "none"} onValueChange={(v) => setGrade(v === "none" ? "" : v)}>
-              <SelectTrigger id="cls-grade"><SelectValue placeholder="ללא" /></SelectTrigger>
+              <SelectTrigger id="cls-grade">
+                <SelectValue placeholder="ללא" />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">ללא</SelectItem>
                 {GRADES.map((g) => (
-                  <SelectItem key={g} value={g}>כיתה {g}</SelectItem>
+                  <SelectItem key={g} value={g}>
+                    כיתה {g}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -123,15 +166,27 @@ export function ResourceClassificationEditor({
         </div>
         <div className="space-y-1">
           <Label htmlFor="cls-desc">תיאור</Label>
-          <Textarea id="cls-desc" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
+          <Textarea
+            id="cls-desc"
+            rows={3}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="cls-tag">תגיות</Label>
           <div className="flex gap-2">
             <Input
-              id="cls-tag" value={tagDraft} placeholder="הוסף תגית ולחץ Enter"
+              id="cls-tag"
+              value={tagDraft}
+              placeholder="הוסף תגית ולחץ Enter"
               onChange={(e) => setTagDraft(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addTag(); } }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addTag();
+                }
+              }}
             />
             <Button type="button" variant="outline" onClick={addTag}>
               <Plus className="h-4 w-4" />
@@ -139,9 +194,16 @@ export function ResourceClassificationEditor({
           </div>
           <div className="flex flex-wrap gap-1">
             {tags.map((t) => (
-              <span key={t} className="inline-flex items-center gap-1 rounded bg-muted px-2 py-0.5 text-xs">
+              <span
+                key={t}
+                className="inline-flex items-center gap-1 rounded bg-muted px-2 py-0.5 text-xs"
+              >
                 <Tag className="h-3 w-3" /> {t}
-                <button type="button" aria-label={`הסר את התגית ${t}`} onClick={() => setTags(tags.filter((x) => x !== t))}>
+                <button
+                  type="button"
+                  aria-label={`הסר את התגית ${t}`}
+                  onClick={() => setTags(tags.filter((x) => x !== t))}
+                >
                   <X className="h-3 w-3" />
                 </button>
               </span>
@@ -150,9 +212,15 @@ export function ResourceClassificationEditor({
           </div>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>ביטול</Button>
+          <Button variant="ghost" onClick={onClose}>
+            ביטול
+          </Button>
           <Button disabled={mut.isPending} onClick={() => mut.mutate()}>
-            {mut.isPending ? <Loader2 className="ms-1 h-4 w-4 animate-spin" /> : <Save className="ms-1 h-4 w-4" />}
+            {mut.isPending ? (
+              <Loader2 className="ms-1 h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="ms-1 h-4 w-4" />
+            )}
             שמור
           </Button>
         </DialogFooter>
