@@ -9,7 +9,7 @@ export type ResourceSnapshot = {
   subject: string;
   grade_level: string;
   resource_type: string;
-  content: Record<string, unknown>;
+  content: Record<string, string | number | boolean | null | unknown[] | Record<string, unknown>>;
   tags: string[];
   file_path: string | null;
   mime_type: string | null;
