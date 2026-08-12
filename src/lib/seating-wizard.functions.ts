@@ -39,7 +39,7 @@ export const runSeatingWizard = createServerFn({ method: "POST" })
     // 1. Class + students + grades + behavior + relations
     const [cls, studentsRes, gradesRes, behaviorRes, relationsRes] = await Promise.all([
       supabase.from("classes")
-        .select("grid_rows, grid_cols, hidden_seats").eq("id", classId).single(),
+        .select("grid_rows, grid_cols, hidden_seats, room_objects").eq("id", classId).single(),
       supabase.from("students")
         .select("id, name, height, row_pref, corner_pref, seat_row, seat_col, seat_locked, notes")
         .eq("class_id", classId),
@@ -63,6 +63,13 @@ export const runSeatingWizard = createServerFn({ method: "POST" })
     const hiddenSeats = new Set<string>(
       Array.isArray(cls.data.hidden_seats) ? (cls.data.hidden_seats as string[]) : [],
     );
+    // Cells taken by room objects (window, board, cabinet...) are not seatable.
+    const roomObjs = Array.isArray((cls.data as { room_objects?: unknown }).room_objects)
+      ? ((cls.data as { room_objects?: unknown }).room_objects as Array<{ row?: number; col?: number }>)
+      : [];
+    for (const o of roomObjs) {
+      if (typeof o?.row === "number" && typeof o?.col === "number") hiddenSeats.add(`${o.row}:${o.col}`);
+    }
 
     // 2. Averages per student (grades as % of max_value)
     const avgByStudent = new Map<string, number>();
