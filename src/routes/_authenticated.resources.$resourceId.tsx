@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { ArrowRight, Printer, Trash2, Loader2, Library, Sparkles, Tag, Send, Wand2, FileText, Download, ChevronUp, ChevronDown, Copy } from "lucide-react";
+import { ArrowRight, Printer, Trash2, Loader2, Library, Sparkles, Tag, Send, Wand2, FileText, Download, ChevronUp, ChevronDown, Copy, ScanText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
