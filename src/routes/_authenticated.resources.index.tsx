@@ -708,6 +708,37 @@ function ResourcesPage() {
 
         {/* Grid */}
         <div className="space-y-3 lg:col-start-2 lg:row-start-1 lg:row-span-2">
+          {/* מיון + גודל עמוד */}
+          {!isLoading && visibleResources.length > 0 && (
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-card px-3 py-2">
+              <div className="flex items-center gap-2">
+                <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+                <Label className="text-xs text-muted-foreground" htmlFor="library-sort">מיון</Label>
+                <Select value={sort} onValueChange={(v) => setSort(v as SortId)}>
+                  <SelectTrigger id="library-sort" className="h-8 w-[200px] text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {SORT_OPTIONS.map((o) => (
+                      <SelectItem key={o.id} value={o.id}>{o.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="text-xs text-muted-foreground" htmlFor="library-page-size">לעמוד</Label>
+                <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
+                  <SelectTrigger id="library-page-size" className="h-8 w-[80px] text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {PAGE_SIZES.map((n) => (
+                      <SelectItem key={n} value={String(n)}>{n}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <span className="text-xs text-muted-foreground" aria-live="polite">
+                  {visibleResources.length.toLocaleString("he-IL")} חומרים · עמוד {safePage + 1} מתוך {pageCount}
+                </span>
+              </div>
+            </div>
+          )}
           {isLoading && (
             <Card><CardContent className="py-12 text-center text-muted-foreground">
               <Loader2 className="mx-auto mb-2 h-6 w-6 animate-spin" /> טוען חומרים…
@@ -732,10 +763,13 @@ function ResourcesPage() {
             </CardContent></Card>
           )}
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {visibleResources.map((r) => (
+            {pagedResources.map((r) => (
               <ResourceCard
                 key={r.id}
                 resource={r}
+                usageCount={usageCounts[r.id] ?? 0}
+                analyzing={analyzingId === r.id}
+                onAnalyze={() => analyzeMut.mutate({ id: r.id, force: false })}
                 onView={() => setViewing(r)}
                 onEdit={() => setEditing(r)}
                 onVariant={(src) => { setAiSource(src); setAiOpen(true); }}
@@ -743,6 +777,40 @@ function ResourcesPage() {
               />
             ))}
           </div>
+          {pageCount > 1 && (
+            <nav className="flex items-center justify-center gap-2 pt-1" aria-label="דפדוף בין עמודי הספרייה">
+              <Button
+                size="sm" variant="outline" disabled={safePage === 0}
+                onClick={() => setPageIndex(safePage - 1)}
+              >
+                <ChevronRight className="h-4 w-4" /> הקודם
+              </Button>
+              <div className="flex flex-wrap items-center gap-1">
+                {Array.from({ length: pageCount }, (_, i) => i)
+                  .filter((i) => i === 0 || i === pageCount - 1 || Math.abs(i - safePage) <= 1)
+                  .map((i, idx, arr) => (
+                    <span key={i} className="flex items-center gap-1">
+                      {idx > 0 && arr[idx - 1] !== i - 1 && <span className="px-1 text-xs text-muted-foreground">…</span>}
+                      <button
+                        type="button"
+                        aria-current={i === safePage ? "page" : undefined}
+                        aria-label={`עמוד ${i + 1}`}
+                        onClick={() => setPageIndex(i)}
+                        className={`min-h-8 min-w-8 rounded-md border px-2 text-xs transition ${i === safePage ? "border-primary bg-primary font-semibold text-primary-foreground" : "hover:bg-accent"}`}
+                      >
+                        {i + 1}
+                      </button>
+                    </span>
+                  ))}
+              </div>
+              <Button
+                size="sm" variant="outline" disabled={safePage >= pageCount - 1}
+                onClick={() => setPageIndex(safePage + 1)}
+              >
+                הבא <ChevronLeft className="h-4 w-4" />
+              </Button>
+            </nav>
+          )}
         </div>
       </div>
       </>
