@@ -31,6 +31,8 @@ import { PdfPreviewDialog } from "@/components/ingest/pdf-preview-dialog";
 import { SmartUpload } from "@/components/smart-upload";
 import { listTopics, type TopicRow } from "@/lib/topics.functions";
 import { listCollections } from "@/lib/teaching-resources.functions";
+import { AiSuggestionsAuditCard } from "@/components/ingest/ai-suggestions-audit";
+import { getIngestAiSettings, DEFAULT_CONFIDENCE_THRESHOLD } from "@/lib/ingest-ai.functions";
 
 type SearchParams = { classId?: string };
 
@@ -139,6 +141,8 @@ function IngestPage() {
           )}
         </CardContent>
       </Card>
+
+      <AiSuggestionsAuditCard />
     </div>
   );
 }
