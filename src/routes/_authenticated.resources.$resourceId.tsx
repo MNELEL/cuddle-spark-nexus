@@ -16,6 +16,7 @@ import {
 } from "@/lib/teaching-resources.functions";
 import { suggestResourceEdits } from "@/lib/teacher-style.functions";
 import { listClasses } from "@/lib/classes.functions";
+import { ResourceVersionHistory } from "@/components/resource-version-history";
 
 export const Route = createFileRoute("/_authenticated/resources/$resourceId")({
   head: () => ({
