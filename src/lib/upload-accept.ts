@@ -45,6 +45,8 @@ export const ACCEPT_AUDIO = join(AUDIO);
 export const ACCEPT_IMAGE = join(IMAGE);
 /** כל סוגי הקבצים שהספרייה מקבלת */
 export const ACCEPT_LIBRARY_ALL = join(IMAGE, AUDIO, VIDEO, PDF, TEXT, WORD, EXCEL, SLIDES);
+/** העלאה חכמה ב-/ingest: ה-AI מזהה לבד אם זו רשימה או חומר לימוד */
+export const ACCEPT_SMART = join(IMAGE, PDF, TEXT, WORD, EXCEL, CSV, SLIDES);
 
 /** סינון לפי קבוצה בממשק ההעלאה של הספרייה */
 export const LIBRARY_KIND_ACCEPT = {
