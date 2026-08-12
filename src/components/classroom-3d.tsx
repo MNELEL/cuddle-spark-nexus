@@ -63,10 +63,15 @@ export function Classroom3D({ rows, cols, seats, objects = [], hidden = [] }: Pr
   const width = cols * CELL + (cols - 1) * GAP;
   const depth = rows * CELL + (rows - 1) * GAP;
   const hiddenSet = new Set(hidden);
+  // RTL: column 0 is the right-most seat, exactly like the 2D seating grid,
+  // so the 3D view never mirrors left/right relative to what the teacher sees.
   const pos = (row: number, col: number) => ({
-    left: col * (CELL + GAP),
+    left: (cols - 1 - col) * (CELL + GAP),
     top: row * (CELL + GAP),
   });
+  // Billboard transform: inverse rotations in reverse order, so name plates stay
+  // upright and readable from every angle the room is rotated to.
+  const billboard = `rotateZ(${-rotY}deg) rotateX(${-rotX}deg)`;
 
   return (
     <div className="space-y-3">
