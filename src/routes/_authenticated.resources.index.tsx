@@ -9,6 +9,8 @@ import {
   Star, Pencil, MessageCircleQuestion, Send, ScanText, ArrowUpDown,
   ChevronRight, ChevronLeft,
 } from "lucide-react";
+import { UploadCloud, FileArchive } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,6 +41,9 @@ import {
 } from "@/lib/teaching-resources.functions";
 import { getPersonalRecommendations, recomputeStyleProfile } from "@/lib/teacher-style.functions";
 import { analyzeExistingResource, getResourceUsageCounts } from "@/lib/resource-understanding.functions";
+import { getResourceDownloadLinks } from "@/lib/library-extras.functions";
+import { downloadResourcesZip } from "@/lib/zip-download";
+import { LibraryBulkUpload } from "@/components/library-bulk-upload";
 import { Wand2 } from "lucide-react";
 import { WeeklyPaceCard } from "@/components/weekly-pace-card";
 import { TopicTreeFilter } from "@/components/topic-tree-filter";
@@ -161,6 +166,24 @@ function ResourcesPage() {
   const [sort, setSort] = useState<SortId>("updated_desc");
   const [pageSize, setPageSize] = useState(24);
   const [pageIndex, setPageIndex] = useState(0);
+  const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  const bundleFn = useServerFn(getResourceDownloadLinks);
+  const zipMut = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const items = await bundleFn({ data: { ids } });
+      return downloadResourcesZip(items);
+    },
+    onSuccess: (added) => {
+      if (added === 0) toast.error("לא נמצאו קבצים או טקסט להורדה בפריטים שנבחרו");
+      else toast.success(`נארזו ${added} קבצים לקובץ ZIP`);
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "ההורדה נכשלה"),
+  });
+
+  const toggleSelected = (id: string) =>
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
 
   const viewKeys = useTablistKeys(VIEW_TABS, view, setView);
   const categoryKeys = useTablistKeys(CATEGORY_IDS, category, setCategory);
@@ -357,6 +380,9 @@ function ResourcesPage() {
                 <Link to="/ingest">
                   <Download className="ms-1 h-4 w-4" /> העלאת מסמך או הקלטה
                 </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setBulkUploadOpen(true)}>
+                <UploadCloud className="ms-1 h-4 w-4" /> העלאת כמה קבצים יחד (OCR אוטומטי)
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuLabel>הפקה מחומר קיים</DropdownMenuLabel>
