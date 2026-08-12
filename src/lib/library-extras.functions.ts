@@ -187,6 +187,8 @@ export const createUploadedResource = createServerFn({ method: "POST" })
         title: z.string().min(1).max(200),
         file_path: z.string().min(1).max(500),
         mime_type: z.string().max(120).default(""),
+        subject: z.string().max(80).default(""),
+        resource_type: z.string().max(40).default(""),
       })
       .parse(d),
   )
@@ -198,7 +200,8 @@ export const createUploadedResource = createServerFn({ method: "POST" })
         title: data.title,
         file_path: data.file_path,
         mime_type: data.mime_type || null,
-        resource_type: "other",
+        subject: data.subject || null,
+        resource_type: data.resource_type || "other",
         content: { source_kind: "upload" },
         source_prompt: "מקור: העלאה מרובה לספרייה",
       } as never)
