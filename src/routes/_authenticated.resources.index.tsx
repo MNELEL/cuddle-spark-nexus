@@ -6,7 +6,8 @@ import {
   Sparkles, Loader2, Save, Trash2, Printer, Plus, Search,
   BookOpen, FileText, FolderPlus, X, ArrowRight, Tag, Library,
   ChevronDown, ChevronUp, Download, Eye, ListChecks,
-  Star, Pencil, MessageCircleQuestion, Send,
+  Star, Pencil, MessageCircleQuestion, Send, ScanText, ArrowUpDown,
+  ChevronRight, ChevronLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +38,7 @@ import {
   type Difficulty,
 } from "@/lib/teaching-resources.functions";
 import { getPersonalRecommendations, recomputeStyleProfile } from "@/lib/teacher-style.functions";
+import { analyzeExistingResource, getResourceUsageCounts } from "@/lib/resource-understanding.functions";
 import { Wand2 } from "lucide-react";
 import { WeeklyPaceCard } from "@/components/weekly-pace-card";
 import { TopicTreeFilter } from "@/components/topic-tree-filter";
