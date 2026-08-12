@@ -892,13 +892,18 @@ function ResourcesPage() {
 
 function ResourceCard({
   resource, onView, onEdit, onVariant, onToggleFavorite,
+  usageCount = 0, analyzing = false, onAnalyze,
 }: {
   resource: ResourceRow;
   onView: () => void;
   onEdit: () => void;
   onVariant: (r: ResourceRow) => void;
   onToggleFavorite: () => void;
+  usageCount?: number;
+  analyzing?: boolean;
+  onAnalyze?: () => void;
 }) {
+  const hasText = Boolean(resource.content?.original_text?.trim());
   return (
     <div
       role="button"
@@ -943,6 +948,14 @@ function ResourceCard({
         )}
         {resource.subject && <Badge variant="secondary" className="text-[10px]">{resource.subject}</Badge>}
         {resource.grade_level && <Badge variant="secondary" className="text-[10px]">כיתה {resource.grade_level}</Badge>}
+        {usageCount > 0 && (
+          <Badge variant="outline" className="text-[10px]">שימוש בכיתות: {usageCount}</Badge>
+        )}
+        {!hasText && (
+          <Badge variant="outline" className="gap-0.5 border-dashed text-[10px] text-muted-foreground">
+            <ScanText className="h-2.5 w-2.5" /> אין טקסט לחיפוש
+          </Badge>
+        )}
       </div>
       {resource.description && (
         <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">{resource.description}</p>
@@ -964,6 +977,16 @@ function ResourceCard({
           title="צור וריאציה עם AI מפריט זה" aria-label={`צור וריאציה עם AI מ-"${resource.title}"`}>
           <Sparkles className="h-4 w-4 text-amber" />
         </Button>
+        {onAnalyze && (
+          <Button
+            size="sm" variant="ghost" disabled={analyzing}
+            onClick={(e) => { e.stopPropagation(); onAnalyze(); }}
+            title={hasText ? "נתח מחדש וסווג עם AI" : "הפעל OCR וסיווג אוטומטי"}
+            aria-label={`הפעל OCR וניתוח AI על "${resource.title}"`}
+          >
+            {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <ScanText className="h-4 w-4" />}
+          </Button>
+        )}
       </div>
     </div>
   );
