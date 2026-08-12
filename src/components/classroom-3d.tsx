@@ -63,10 +63,15 @@ export function Classroom3D({ rows, cols, seats, objects = [], hidden = [] }: Pr
   const width = cols * CELL + (cols - 1) * GAP;
   const depth = rows * CELL + (rows - 1) * GAP;
   const hiddenSet = new Set(hidden);
+  // RTL: column 0 is the right-most seat, exactly like the 2D seating grid,
+  // so the 3D view never mirrors left/right relative to what the teacher sees.
   const pos = (row: number, col: number) => ({
-    left: col * (CELL + GAP),
+    left: (cols - 1 - col) * (CELL + GAP),
     top: row * (CELL + GAP),
   });
+  // Billboard transform: inverse rotations in reverse order, so name plates stay
+  // upright and readable from every angle the room is rotated to.
+  const billboard = `rotateZ(${-rotY}deg) rotateX(${-rotX}deg)`;
 
   return (
     <div className="space-y-3">
@@ -133,6 +138,19 @@ export function Classroom3D({ rows, cols, seats, objects = [], hidden = [] }: Pr
             data-testid="room-floor"
             aria-hidden
           />
+          {/* front-of-class marker keeps the orientation obvious after rotating */}
+          <div
+            className="absolute flex justify-center"
+            style={{ left: 0, top: -26, width, transformStyle: "preserve-3d" }}
+            data-testid="room-front-label"
+          >
+            <span
+              className="rounded bg-slate-900/80 px-2 py-0.5 text-[10px] font-bold text-white"
+              style={{ transform: `translateZ(30px) ${billboard}` }}
+            >
+              חזית הכיתה
+            </span>
+          </div>
 
           {/* room objects */}
           {objects.map((o) => {
@@ -150,7 +168,7 @@ export function Classroom3D({ rows, cols, seats, objects = [], hidden = [] }: Pr
                   className="absolute inset-0 flex items-center justify-center rounded text-[10px] font-bold text-white shadow-lg"
                   style={{ background: meta.color, transform: `translateZ(${meta.height}px)` }}
                 >
-                  {meta.label}
+                  <span style={{ transform: billboard }} className="whitespace-nowrap">{meta.label}</span>
                 </div>
                 <div className="absolute inset-x-1 bottom-0 rounded bg-black/25" style={{ height: 6 }} aria-hidden />
               </div>
@@ -184,7 +202,7 @@ export function Classroom3D({ rows, cols, seats, objects = [], hidden = [] }: Pr
                     <div
                       className="absolute flex items-center justify-center"
                       data-testid="room-nameplate"
-                      style={{ left: -6, top: 4, width: CELL + 12, transform: `translateZ(58px) rotateX(${-rotX}deg) rotateZ(${-rotY}deg)` }}
+                      style={{ left: -6, top: 4, width: CELL + 12, transform: `translateZ(58px) ${billboard}` }}
                     >
                       <span className="max-w-full truncate rounded bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground shadow">
                         {student.name}
