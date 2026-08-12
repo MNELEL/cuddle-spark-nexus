@@ -5,7 +5,7 @@
  */
 import { callLovableAI } from "./ai-gateway.server";
 import { indexResourceChunks } from "./resource-chunks.server";
-import { RESOURCE_TYPES, type ResourceRow } from "./teaching-resources.types";
+import { RESOURCE_TYPES, type ResourceRow } from "./teaching-resources.functions";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Supa = any;
