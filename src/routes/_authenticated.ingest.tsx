@@ -30,7 +30,7 @@ import { exportLessonSummaryPdf } from "@/lib/pdf/lesson-summary-pdf";
 import { PdfPreviewDialog } from "@/components/ingest/pdf-preview-dialog";
 import { SmartUpload } from "@/components/smart-upload";
 import { listTopics, type TopicRow } from "@/lib/topics.functions";
-import { listCollections } from "@/lib/teaching-resources.functions";
+import { listCollections, RESOURCE_TYPES, RESOURCE_TYPE_LABELS, type ResourceType } from "@/lib/teaching-resources.functions";
 import { AiSuggestionsAuditCard } from "@/components/ingest/ai-suggestions-audit";
 import { getIngestAiSettings, DEFAULT_CONFIDENCE_THRESHOLD } from "@/lib/ingest-ai.functions";
 
@@ -88,9 +88,12 @@ function IngestPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <div className="rounded-2xl border bg-card bg-mesh p-4 sm:p-6 shadow-sm">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Sparkles className="h-6 w-6 text-primary" />
           <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight">העלאה חכמה</h1>
+          <Button asChild variant="outline" size="sm" className="ms-auto">
+            <Link to="/resources"><BookMarked className="ms-1 h-4 w-4" /> לכל חומרי הספרייה</Link>
+          </Button>
         </div>
         <p className="mt-1 text-sm text-muted-foreground">
           העלה כל קובץ — ציונים, הערות, יומן, מכתב הורים, חומר לימוד או הקלטה — והמערכת תזהה ותשבץ אוטומטית.
@@ -544,6 +547,7 @@ function ResourcePreview({ job, onDone }: { job: IngestJob; onDone: () => void }
     }}),
     onSuccess: () => {
       toast.success("החומר נוסף לספרייה");
+      void qc.invalidateQueries({ queryKey: ["teaching-resources"] });
       void qc.invalidateQueries({ queryKey: ["ingest-ai-suggestions"] });
       onDone();
     },
@@ -558,7 +562,7 @@ function ResourcePreview({ job, onDone }: { job: IngestJob; onDone: () => void }
           <div><Label>כותרת</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
           <div><Label>מקצוע</Label><Input value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} /></div>
           <div><Label>כיתה</Label><Input value={form.grade_level} onChange={(e) => setForm({ ...form, grade_level: e.target.value })} /></div>
-          <div><Label>סוג</Label><Input value={form.resource_type} onChange={(e) => setForm({ ...form, resource_type: e.target.value })} /></div>
+          <div><Label>סוג</Label><Select value={form.resource_type} onValueChange={(v) => setForm({ ...form, resource_type: v as ResourceType })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{RESOURCE_TYPES.map((t) => (<SelectItem key={t} value={t}>{RESOURCE_TYPE_LABELS[t]}</SelectItem>))}</SelectContent></Select></div>
         </div>
         <div><Label>תיאור</Label><Textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
         <div className="grid gap-3 md:grid-cols-2">
@@ -671,6 +675,9 @@ function ResourcePreview({ job, onDone }: { job: IngestJob; onDone: () => void }
         )}
         <div className="flex gap-2 justify-end pt-2">
           <Button variant="ghost" onClick={onDone}>ביטול</Button>
+          <Button variant="outline" asChild>
+            <Link to="/resources"><BookMarked className="ms-1 h-4 w-4" /> פתח את הספרייה</Link>
+          </Button>
           <Button onClick={() => commitM.mutate()} disabled={commitM.isPending}>
             {commitM.isPending ? <><Loader2 className="ms-1 h-4 w-4 animate-spin" /> שומר...</> : "אשר והוסף לספרייה"}
           </Button>
@@ -686,6 +693,7 @@ function LessonPreview({ job, classes, preferredClassId, onDone, onReanalyze, re
   job: IngestJob; classes: { id: string; name: string }[]; preferredClassId?: string; onDone: () => void;
   onReanalyze: () => void; reanalyzing: boolean;
 }) {
+  const qc = useQueryClient();
   const ex = job.extracted as LessonExtracted;
   const [form, setForm] = useState<LessonExtracted>({
     ...ex,
@@ -746,6 +754,8 @@ function LessonPreview({ job, classes, preferredClassId, onDone, onReanalyze, re
       } });
     },
     onSuccess: (r) => {
+      void qc.invalidateQueries({ queryKey: ["teaching-resources"] });
+      void qc.invalidateQueries({ queryKey: ["lesson-transcripts"] });
       toast.success(r.question_bank_id ? "השיעור ומאגר השאלות נשמרו" : "השיעור נשמר");
       onDone();
     },
@@ -1221,6 +1231,7 @@ const CATEGORY_ICON: Record<AutoCategory, React.ComponentType<{ className?: stri
 function AutoPreview({ job, classes, preferredClassId, onDone }: {
   job: IngestJob; classes: { id: string; name: string }[]; preferredClassId?: string; onDone: () => void;
 }) {
+  const qc = useQueryClient();
   const ex = job.extracted as unknown as AutoExtracted;
   const [items, setItems] = useState<AutoItem[]>(ex?.items ?? []);
   const [classId, setClassId] = useState<string>(preferredClassId ?? job.class_id ?? "");
@@ -1238,6 +1249,10 @@ function AutoPreview({ job, classes, preferredClassId, onDone }: {
       if (s.behavior) parts.push(`${s.behavior} הערות`);
       if (s.journal) parts.push(`${s.journal} יומן`);
       if (s.parent_letter) parts.push(`${s.parent_letter} מכתבי הורים`);
+      void qc.invalidateQueries({ queryKey: ["teaching-resources"] });
+      void qc.invalidateQueries({ queryKey: ["grades"] });
+      void qc.invalidateQueries({ queryKey: ["discipline-events"] });
+      void qc.invalidateQueries({ queryKey: ["parent-communications"] });
       if (s.resource) parts.push(`${s.resource} חומרים`);
       if (s.other) parts.push(`${s.other} אחר`);
       toast.success(parts.length ? `נשמר: ${parts.join(" · ")}` : "לא נשמרו פריטים");

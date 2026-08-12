@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { ArrowRight, Printer, Trash2, Loader2, Library, Sparkles, Tag, Send, Wand2 } from "lucide-react";
+import { ArrowRight, Printer, Trash2, Loader2, Library, Sparkles, Tag, Send, Wand2, FileText, Download, ChevronUp, ChevronDown, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import {
-  getResource, deleteResource, logResourceUsage,
+  getResource, deleteResource, logResourceUsage, getResourceSignedUrl,
   RESOURCE_TYPE_LABELS,
 } from "@/lib/teaching-resources.functions";
 import { suggestResourceEdits } from "@/lib/teacher-style.functions";
@@ -37,6 +37,7 @@ function ResourceDetailPage() {
   const logUsage = useServerFn(logResourceUsage);
   const listCls = useServerFn(listClasses);
   const suggestEdits = useServerFn(suggestResourceEdits);
+  const signUrl = useServerFn(getResourceSignedUrl);
 
   const { data: resource, isLoading } = useQuery({
     queryKey: ["teaching-resource", resourceId],
@@ -47,6 +48,7 @@ function ResourceDetailPage() {
   });
 
   const [submitClassId, setSubmitClassId] = useState<string>("");
+  const [showOriginal, setShowOriginal] = useState(false);
 
   const editSuggestionsQ = useQuery({
     queryKey: ["edit-suggestions", resourceId],
@@ -71,6 +73,21 @@ function ResourceDetailPage() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
   });
 
+  const openOriginalFile = async () => {
+    if (!resource?.file_path) return;
+    try {
+      const { url } = await signUrl({ data: { file_path: resource.file_path } });
+      window.open(url, "_blank", "noopener");
+    } catch {
+      toast.error("לא הצלחנו לפתוח את הקובץ המקורי");
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success("הועתק ללוח");
+  };
+
   if (isLoading) {
     return (
       <div className="mx-auto max-w-3xl py-20 text-center text-muted-foreground">
@@ -89,6 +106,7 @@ function ResourceDetailPage() {
   }
 
   const c = resource.content ?? {};
+  const hasOriginal = Boolean(c.original_text && c.original_text.trim());
 
   return (
     <div className="mx-auto max-w-4xl space-y-5 print:max-w-none">
@@ -99,6 +117,11 @@ function ResourceDetailPage() {
           </Link>
         </Button>
         <div className="ms-auto flex flex-wrap gap-2">
+          {resource.file_path && (
+            <Button variant="outline" size="sm" onClick={openOriginalFile}>
+              <Download className="ms-1 h-4 w-4" /> קובץ מקורי
+            </Button>
+          )}
           <Button variant="outline" size="sm" onClick={() => window.print()}>
             <Printer className="ms-1 h-4 w-4" /> הדפס
           </Button>
@@ -141,10 +164,57 @@ function ResourceDetailPage() {
       </div>
 
       {c.body && (
-        <Card>
+        <Card className="relative group">
           <CardContent className="prose prose-sm max-w-none py-5 leading-relaxed whitespace-pre-wrap" dir="rtl">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute left-2 top-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity print:hidden"
+              onClick={() => copyToClipboard(c.body!)}
+              title="העתק טקסט"
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
             {c.body}
           </CardContent>
+        </Card>
+      )}
+
+      {hasOriginal && (
+        <Card className="print:hidden">
+          <button
+            type="button"
+            className="flex w-full items-center justify-between px-6 py-4 text-sm font-medium"
+            aria-expanded={showOriginal}
+            onClick={() => setShowOriginal((v) => !v)}
+          >
+            <span className="flex items-center gap-2 text-lg font-bold">
+              <FileText className="h-5 w-5 text-muted-foreground" />
+              המקור המלא כפי שהועלה
+              {c.source_kind === "lesson_audio" && (
+                <Badge variant="secondary" className="ms-2">תמלול שיעור</Badge>
+              )}
+            </span>
+            {showOriginal ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+          </button>
+          {showOriginal && (
+            <CardContent className="border-t bg-muted/5 py-5">
+              <div className="relative group">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute left-0 top-0 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => copyToClipboard(c.original_text!)}
+                  title="העתק טקסט מקורי"
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+                <div className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
+                  {c.original_text}
+                </div>
+              </div>
+            </CardContent>
+          )}
         </Card>
       )}
 

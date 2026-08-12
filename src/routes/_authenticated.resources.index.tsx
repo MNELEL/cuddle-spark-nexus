@@ -64,10 +64,10 @@ const GRADE_LEVELS = ["א", "ב", "ג", "ד", "ה", "ו", "ז", "ח"] as const;
 
 /** קטגוריות ראשיות לספרייה — כל קטגוריה מקבצת כמה סוגי עזר */
 const LIBRARY_CATEGORIES: { id: string; label: string; types: ResourceType[] }[] = [
-  { id: "all", label: "הכל", types: [] },
+  { id: "all", label: "כל החומרים", types: [] },
   { id: "lesson_plan", label: "מערכי שיעור", types: ["lesson_plan"] },
   { id: "worksheet", label: "דפי עבודה", types: ["worksheet"] },
-  { id: "exams", label: "מבחנים ושאלות", types: ["question_bank"] },
+  { id: "exams", label: "מבחנים והכנה", types: ["question_bank", "worksheet"] },
   { id: "activities", label: "פעילויות ומשחקים", types: ["activity", "game", "riddle"] },
   { id: "summaries", label: "סיכומים", types: ["summary"] },
   { id: "stories", label: "סיפורים ושירים", types: ["story", "song"] },
@@ -85,14 +85,14 @@ type FilterState = {
   grade_level: string;
   tag: string;
   difficulty: Difficulty | "";
-  favoritesOnly: boolean;
+  favoritesOnly: boolean; hasOriginalOnly: boolean;
   topicIds: string[];
   collectionIds: string[];
 };
 
 const emptyFilters: FilterState = {
   search: "", resource_type: "", subject: "", grade_level: "", tag: "",
-  difficulty: "", favoritesOnly: false,
+  difficulty: "", favoritesOnly: false, hasOriginalOnly: false,
   topicIds: [], collectionIds: [],
 };
 
@@ -140,7 +140,7 @@ function ResourcesPage() {
   const hasActiveFilters =
     category !== "all" ||
     Boolean(filters.search || filters.resource_type || filters.subject || filters.grade_level || filters.difficulty) ||
-    filters.favoritesOnly ||
+    filters.favoritesOnly || filters.hasOriginalOnly ||
     filters.collectionIds.length > 0 ||
     filters.topicIds.length > 0;
 
@@ -153,7 +153,7 @@ function ResourcesPage() {
     grade_level: filters.grade_level || undefined,
     tag: filters.tag || undefined,
     difficulty: filters.difficulty || undefined,
-    favorites_only: filters.favoritesOnly || undefined,
+    favorites_only: filters.favoritesOnly || filters.hasOriginalOnly || undefined,
   };
 
   const { data: resources = [], isLoading } = useQuery({
@@ -233,7 +233,7 @@ function ResourcesPage() {
           </div>
           <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">חומרי הוראה ועזרים</h1>
           <p className="mt-1 hidden text-sm text-muted-foreground sm:block">
-            מאגר אישי של דפי עבודה, חידות, סיפורים, מערכי שיעור ועזרים — עם יצירת תוכן ב-AI
+            כל חומרי הלימוד שלך במקום אחד — מסמכים שהעלית, מבחנים קודמים, חומרי הכנה, דפי עבודה ותוצרים חדשים
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -308,6 +308,16 @@ function ResourcesPage() {
 
       {view === "items" && (
       <>
+      <div className="relative">
+        <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          className="h-11 pe-10"
+          placeholder="חפש בכל החומרים, המבחנים והמסמכים שהעלית…"
+          value={filters.search}
+          onChange={(e) => patch({ search: e.target.value })}
+          aria-label="חיפוש בכל חומרי הספרייה"
+        />
+      </div>
       {/* קטגוריות ראשיות */}
       <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="קטגוריות ספרייה">
         {LIBRARY_CATEGORIES.map((c) => {
@@ -441,15 +451,6 @@ function ResourcesPage() {
           {filtersOpen && (
           <CardContent className="space-y-3">
             <div>
-              <Label className="text-xs">חיפוש</Label>
-              <div className="relative">
-                <Search className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-                <Input className="pe-7" placeholder="כותרת או תיאור…"
-                  value={filters.search}
-                  onChange={(e) => patch({ search: e.target.value })} />
-              </div>
-            </div>
-            <div>
               <Label className="text-xs">סוג</Label>
               <Select value={filters.resource_type || "all"}
                 onValueChange={(v) => patch({ resource_type: v === "all" ? "" : (v as ResourceType) })}>
@@ -571,7 +572,7 @@ function ResourcesPage() {
             <Card><CardContent className="py-16 text-center" aria-live="polite">
               <BookOpen className="mx-auto mb-3 h-10 w-10 text-muted-foreground/50" />
               <div className="text-muted-foreground">
-                {hasActiveFilters ? "אין חומרים תואמים לסינון הנוכחי" : "אין עדיין חומרים — צור את הראשון עם AI ✨"}
+                {hasActiveFilters ? "לא נמצאו חומרים מתאימים. נסה לנקות את הסינון." : "עדיין אין חומרים בספרייה"}
               </div>
               {hasActiveFilters && (
                 <Button variant="outline" className="mt-4" onClick={() => { setFilters(emptyFilters); setCategory("all"); }}>
@@ -579,8 +580,8 @@ function ResourcesPage() {
                 </Button>
               )}
               {!hasActiveFilters && (
-              <Button className="mt-4" onClick={() => setAiOpen(true)}>
-                <Sparkles className="ms-1 h-4 w-4" /> צור עם AI
+              <Button className="mt-4" asChild>
+                <Link to="/ingest"><Download className="ms-1 h-4 w-4" /> העלה חומר ראשון</Link>
               </Button>
               )}
             </CardContent></Card>
@@ -720,6 +721,11 @@ function ResourceCard({
         {resource.ai_generated && (
           <Badge variant="outline" className="gap-0.5 border-amber/40 bg-amber/10 text-[10px] text-amber-700 dark:text-amber-300">
             <Sparkles className="h-2.5 w-2.5" /> נוצר ב-AI
+          </Badge>
+        )}
+        {resource.content?.source_kind === "upload" && (
+          <Badge variant="outline" className="gap-0.5 text-[10px]">
+            <Download className="h-2.5 w-2.5" /> הועלה כקובץ
           </Badge>
         )}
         {resource.subject && <Badge variant="secondary" className="text-[10px]">{resource.subject}</Badge>}
@@ -890,7 +896,7 @@ function ResourceViewerDialog({
 
   const empty = !c.body && !c.questions?.length && !c.steps?.length && !c.materials?.length;
   const hasOriginal = Boolean(c.original_text && c.original_text.trim());
-  const [showOriginal, setShowOriginal] = useState(false);
+  const [showOriginal, setShowOriginal] = useState(c.source_kind === "upload");
   const signUrl = useServerFn(getResourceSignedUrl);
   const openOriginalFile = async () => {
     if (!resource.file_path) return;
@@ -931,7 +937,7 @@ function ResourceViewerDialog({
               </Link>
             </p>
           )}
-          {c.body && (
+          {c.body && !showOriginal && (
             <div className="whitespace-pre-wrap rounded-lg border bg-muted/20 p-3 text-sm leading-relaxed">{c.body}</div>
           )}
           {hasOriginal && (
@@ -944,7 +950,7 @@ function ResourceViewerDialog({
               >
                 <span className="flex items-center gap-2">
                   <FileText className="h-4 w-4" />
-                  המקור המלא כפי שהועלה
+                   {showOriginal ? "מציג את המקור המלא כפי שהועלה" : "הצג את המקור המלא כפי שהועלה"}
                   {c.source_kind === "lesson_audio" && (
                     <Badge variant="secondary" className="text-[10px]">תמלול שיעור</Badge>
                   )}
@@ -960,7 +966,7 @@ function ResourceViewerDialog({
           )}
           {resource.file_path && (
             <Button variant="outline" size="sm" onClick={openOriginalFile}>
-              <Download className="ms-1 h-4 w-4" /> הורד את הקובץ המקורי
+              <Eye className="ms-1 h-4 w-4" /> פתח את הקובץ המקורי
             </Button>
           )}
           {c.materials && c.materials.length > 0 && (

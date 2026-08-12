@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { RESOURCE_TYPES } from "./teaching-resources.functions";
 import { callLovableAI } from "./ai-gateway.server";
 import {
   buildMatchIndex,
@@ -983,7 +984,7 @@ export const commitResource = createServerFn({ method: "POST" })
     description: z.string().max(2000).default(""),
     subject: z.string().max(80).default(""),
     grade_level: z.string().max(40).default(""),
-    resource_type: z.string().max(40).default("worksheet"),
+    resource_type: z.enum(RESOURCE_TYPES).default("worksheet"),
     tags: z.array(z.string().max(40)).max(20).default([]),
     body: z.string().max(20000).default(""),
     original_text: z.string().max(200000).default(""),
