@@ -155,7 +155,7 @@ export function Classroom3D({ rows, cols, seats, objects = [], hidden = [] }: Pr
                   className="absolute inset-0 flex items-center justify-center rounded text-[10px] font-bold text-white shadow-lg"
                   style={{ background: meta.color, transform: `translateZ(${meta.height}px)` }}
                 >
-                  {meta.label}
+                  <span style={{ transform: billboard }} className="whitespace-nowrap">{meta.label}</span>
                 </div>
                 <div className="absolute inset-x-1 bottom-0 rounded bg-black/25" style={{ height: 6 }} aria-hidden />
               </div>
@@ -189,7 +189,7 @@ export function Classroom3D({ rows, cols, seats, objects = [], hidden = [] }: Pr
                     <div
                       className="absolute flex items-center justify-center"
                       data-testid="room-nameplate"
-                      style={{ left: -6, top: 4, width: CELL + 12, transform: `translateZ(58px) rotateX(${-rotX}deg) rotateZ(${-rotY}deg)` }}
+                      style={{ left: -6, top: 4, width: CELL + 12, transform: `translateZ(58px) ${billboard}` }}
                     >
                       <span className="max-w-full truncate rounded bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground shadow">
                         {student.name}
