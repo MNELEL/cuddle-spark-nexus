@@ -1002,6 +1002,7 @@ function ResourcesPage() {
 function ResourceCard({
   resource, onView, onEdit, onVariant, onToggleFavorite,
   usageCount = 0, analyzing = false, onAnalyze, selected = false, onToggleSelected,
+  variant = "grid",
 }: {
   resource: ResourceRow;
   onView: () => void;
@@ -1013,8 +1014,11 @@ function ResourceCard({
   onAnalyze?: () => void;
   selected?: boolean;
   onToggleSelected?: () => void;
+  variant?: ViewMode;
 }) {
   const hasText = Boolean(resource.content?.original_text?.trim());
+  const compact = variant === "list";
+  const thumbs = variant === "thumbs";
   return (
     <div
       role="button"
@@ -1024,8 +1028,15 @@ function ResourceCard({
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onView(); }
       }}
-      className={`group cursor-pointer rounded-xl border bg-card p-4 text-right transition hover:border-amber/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${selected ? "border-amber ring-1 ring-amber/40" : ""}`}
+      className={`group cursor-pointer rounded-xl border bg-card text-right transition hover:border-amber/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${compact ? "px-3 py-2" : "p-4"} ${selected ? "border-amber ring-1 ring-amber/40" : ""}`}
     >
+      {thumbs && (
+        <div className="mb-2 flex h-24 items-center justify-center rounded-lg border bg-muted/40">
+          {resource.mime_type?.startsWith("image/")
+            ? <ImageIcon className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
+            : <FileText className="h-8 w-8 text-muted-foreground" aria-hidden="true" />}
+        </div>
+      )}
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 items-start gap-2">
           {onToggleSelected && (
@@ -1037,7 +1048,7 @@ function ResourceCard({
               />
             </span>
           )}
-          <div className="line-clamp-2 font-semibold">{resource.title}</div>
+          <div className={`font-semibold ${compact ? "line-clamp-1 text-sm" : "line-clamp-2"}`}>{resource.title}</div>
         </div>
         <button
           type="button"
@@ -1049,40 +1060,40 @@ function ResourceCard({
           <Star className={`h-4 w-4 ${resource.is_favorite ? "fill-amber text-amber" : "text-muted-foreground"}`} />
         </button>
       </div>
-      <div className="mt-2 flex flex-wrap gap-1">
+      <div className={`mt-2 flex flex-wrap gap-1 ${compact ? "text-[10px]" : ""}`}>
         <Badge variant="outline" className="text-[10px]">
           {RESOURCE_TYPE_LABELS[resource.resource_type] ?? resource.resource_type}
         </Badge>
-        {resource.difficulty && (
+        {!compact && resource.difficulty && (
           <Badge variant="outline" className={`text-[10px] ${DIFFICULTY_BADGE[resource.difficulty]}`}>
             {DIFFICULTY_LABELS[resource.difficulty]}
           </Badge>
         )}
-        {resource.ai_generated && (
+        {!compact && resource.ai_generated && (
           <Badge variant="outline" className="gap-0.5 border-amber/40 bg-amber/10 text-[10px] text-amber-700 dark:text-amber-300">
             <Sparkles className="h-2.5 w-2.5" /> נוצר ב-AI
           </Badge>
         )}
-        {resource.content?.source_kind === "upload" && (
+        {!compact && resource.content?.source_kind === "upload" && (
           <Badge variant="outline" className="gap-0.5 text-[10px]">
             <Download className="h-2.5 w-2.5" /> הועלה כקובץ
           </Badge>
         )}
         {resource.subject && <Badge variant="secondary" className="text-[10px]">{resource.subject}</Badge>}
         {resource.grade_level && <Badge variant="secondary" className="text-[10px]">כיתה {resource.grade_level}</Badge>}
-        {usageCount > 0 && (
+        {!compact && usageCount > 0 && (
           <Badge variant="outline" className="text-[10px]">שימוש בכיתות: {usageCount}</Badge>
         )}
-        {!hasText && (
+        {!compact && !hasText && (
           <Badge variant="outline" className="gap-0.5 border-dashed text-[10px] text-muted-foreground">
             <ScanText className="h-2.5 w-2.5" /> אין טקסט לחיפוש
           </Badge>
         )}
       </div>
-      {resource.description && (
+      {!compact && !thumbs && resource.description && (
         <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">{resource.description}</p>
       )}
-      {resource.tags?.length > 0 && (
+      {!compact && !thumbs && resource.tags?.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-1">
           {resource.tags.slice(0, 4).map((t) => (
             <span key={t} className="inline-flex items-center gap-0.5 rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
@@ -1091,9 +1102,9 @@ function ResourceCard({
           ))}
         </div>
       )}
-      <div className="mt-3 flex gap-2">
+      <div className={`flex gap-2 ${compact ? "mt-1" : "mt-3"}`}>
         <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); onEdit(); }} aria-label={`ערוך את "${resource.title}"`}>
-          <Pencil className="ms-1 h-4 w-4" /> ערוך
+          <Pencil className="ms-1 h-4 w-4" /> {compact ? "" : "ערוך"}
         </Button>
         <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); onVariant(resource); }}
           title="צור וריאציה עם AI מפריט זה" aria-label={`צור וריאציה עם AI מ-"${resource.title}"`}>
