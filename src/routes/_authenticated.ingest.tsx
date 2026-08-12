@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useSearch } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { listClasses } from "@/lib/classes.functions";
 import {
@@ -505,6 +505,7 @@ function RosterPreview({ job, classes, preferredClassId, onDone }: {
 function ResourcePreview({ job, onDone }: { job: IngestJob; onDone: () => void }) {
   const ex = job.extracted as ResourceExtracted;
   const [form, setForm] = useState(ex);
+  const qc = useQueryClient();
   const topicsFn = useServerFn(listTopics);
   const collectionsFn = useServerFn(listCollections);
   const settingsFn = useServerFn(getIngestAiSettings);
@@ -564,30 +565,57 @@ function ResourcePreview({ job, onDone }: { job: IngestJob; onDone: () => void }
           <div>
             <Label className="flex items-center gap-2">
               נושא
-              {aiTopic && (
+              {aiTopic && topicAutoApplied && (
                 <Badge variant="secondary" className="text-[10px]">
-                  הצעת AI{typeof ex.topic_confidence === "number" && ex.topic_confidence > 0
-                    ? ` · ${Math.round(ex.topic_confidence * 100)}%` : ""}
+                  הצעת AI{confidence > 0 ? ` · ${Math.round(confidence * 100)}%` : ""}
+                </Badge>
+              )}
+              {aiTopic && !topicAutoApplied && (
+                <Badge variant="outline" className="text-[10px]">
+                  הצעת AI מתחת לסף ({Math.round(confidence * 100)}% מתוך {Math.round(topicThreshold * 100)}%) — בחר ידנית
                 </Badge>
               )}
             </Label>
-            <Select value={topicId} onValueChange={setTopicId}>
-              <SelectTrigger><SelectValue placeholder="בחר נושא" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">— ללא נושא</SelectItem>
-                {(topics as TopicRow[]).map((t) => (
-                  <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {topicsLoading ? (
+              <p className="mt-1 text-xs text-muted-foreground">טוען נושאים...</p>
+            ) : (topics as TopicRow[]).length === 0 ? (
+              <div className="mt-1 rounded-md border border-dashed p-2 text-xs text-muted-foreground">
+                עדיין לא הגדרת נושאים, ולכן אין מה לשבץ. צור נושא ב
+                <Link to="/resources" className="mx-1 underline">ספריית חומרי ההוראה</Link>
+                ואז אפשר יהיה לשייך אליו חומרים (ה-AI מציע רק מתוך הנושאים הקיימים שלך).
+              </div>
+            ) : (
+              <Select value={topicId} onValueChange={setTopicId}>
+                <SelectTrigger><SelectValue placeholder="בחר נושא" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">— ללא נושא</SelectItem>
+                  {(topics as TopicRow[]).map((t) => (
+                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
           <div>
             <Label className="flex items-center gap-2">
               אוספים
-              {aiCollections && <Badge variant="secondary" className="text-[10px]">הצעת AI</Badge>}
+              {aiCollections && collectionsAutoApplied && (
+                <Badge variant="secondary" className="text-[10px]">הצעת AI</Badge>
+              )}
+              {aiCollections && !collectionsAutoApplied && (
+                <Badge variant="outline" className="text-[10px]">
+                  הצעת AI מתחת לסף — סמן ידנית
+                </Badge>
+              )}
             </Label>
-            {collections.length === 0 ? (
-              <p className="mt-1 text-xs text-muted-foreground">אין אוספים עדיין.</p>
+            {collectionsLoading ? (
+              <p className="mt-1 text-xs text-muted-foreground">טוען אוספים...</p>
+            ) : collections.length === 0 ? (
+              <div className="mt-1 rounded-md border border-dashed p-2 text-xs text-muted-foreground">
+                עדיין לא יצרת אוספים. אפשר לשמור את החומר בלי אוסף, או ליצור אוסף ב
+                <Link to="/resources" className="mx-1 underline">ספריית חומרי ההוראה</Link>
+                ולשייך אחר כך.
+              </div>
             ) : (
               <div className="mt-1 max-h-32 space-y-1 overflow-y-auto rounded-md border p-2">
                 {(collections as { id: string; name: string }[]).map((c) => (
