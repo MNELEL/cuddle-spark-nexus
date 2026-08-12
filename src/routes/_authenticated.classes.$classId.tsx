@@ -182,7 +182,9 @@ type Student = {
 function ClassDetail() {
   const { classId } = Route.useParams();
   const validClass = isValidClassId(classId);
-  const [tab, setTab] = useState("students");
+  // Entering a class should immediately show the seating map — that is what the
+  // teacher looks at first when walking into the room.
+  const [tab, setTab] = useState("seating");
   const getC = useServerFn(getClass);
   const listS = useServerFn(listStudents);
   const listR = useServerFn(listRelations);
