@@ -48,6 +48,17 @@ import { TaskGenerator } from "@/components/task-generator";
 
 const VIEW_TABS = ["items", "ask"] as const;
 
+const SORT_OPTIONS = [
+  { id: "updated_desc", label: "עודכן לאחרונה" },
+  { id: "updated_asc", label: "עודכן — הישן קודם" },
+  { id: "created_desc", label: "הועלה לאחרונה" },
+  { id: "created_asc", label: "הועלה — הישן קודם" },
+  { id: "popularity", label: "פופולריות (שימוש בכיתות)" },
+  { id: "title", label: "לפי כותרת (א-ת)" },
+] as const;
+type SortId = (typeof SORT_OPTIONS)[number]["id"];
+const PAGE_SIZES = [12, 24, 48, 96] as const;
+
 export const Route = createFileRoute("/_authenticated/resources/")({
   component: ResourcesPage,
   head: () => ({
