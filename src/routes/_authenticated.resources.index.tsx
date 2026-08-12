@@ -6,7 +6,8 @@ import {
   Sparkles, Loader2, Save, Trash2, Printer, Plus, Search,
   BookOpen, FileText, FolderPlus, X, ArrowRight, Tag, Library,
   ChevronDown, ChevronUp, Download, Eye, ListChecks,
-  Star, Pencil, MessageCircleQuestion, Send,
+  Star, Pencil, MessageCircleQuestion, Send, ScanText, ArrowUpDown,
+  ChevronRight, ChevronLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +38,7 @@ import {
   type Difficulty,
 } from "@/lib/teaching-resources.functions";
 import { getPersonalRecommendations, recomputeStyleProfile } from "@/lib/teacher-style.functions";
+import { analyzeExistingResource, getResourceUsageCounts } from "@/lib/resource-understanding.functions";
 import { Wand2 } from "lucide-react";
 import { WeeklyPaceCard } from "@/components/weekly-pace-card";
 import { TopicTreeFilter } from "@/components/topic-tree-filter";
@@ -45,6 +47,17 @@ import { SummaryGenerator } from "@/components/summary-generator";
 import { TaskGenerator } from "@/components/task-generator";
 
 const VIEW_TABS = ["items", "ask"] as const;
+
+const SORT_OPTIONS = [
+  { id: "updated_desc", label: "עודכן לאחרונה" },
+  { id: "updated_asc", label: "עודכן — הישן קודם" },
+  { id: "created_desc", label: "הועלה לאחרונה" },
+  { id: "created_asc", label: "הועלה — הישן קודם" },
+  { id: "popularity", label: "פופולריות (שימוש בכיתות)" },
+  { id: "title", label: "לפי כותרת (א-ת)" },
+] as const;
+type SortId = (typeof SORT_OPTIONS)[number]["id"];
+const PAGE_SIZES = [12, 24, 48, 96] as const;
 
 export const Route = createFileRoute("/_authenticated/resources/")({
   component: ResourcesPage,
@@ -145,6 +158,9 @@ function ResourcesPage() {
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [tasksOpen, setTasksOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [sort, setSort] = useState<SortId>("updated_desc");
+  const [pageSize, setPageSize] = useState(24);
+  const [pageIndex, setPageIndex] = useState(0);
 
   const viewKeys = useTablistKeys(VIEW_TABS, view, setView);
   const categoryKeys = useTablistKeys(CATEGORY_IDS, category, setCategory);
@@ -186,6 +202,30 @@ function ResourcesPage() {
     queryFn: () => listCollItems(),
   });
 
+  const usageFn = useServerFn(getResourceUsageCounts);
+  const { data: usageCounts = {} } = useQuery({
+    queryKey: ["resource-usage-counts"],
+    queryFn: () => usageFn(),
+  });
+
+  const analyzeFn = useServerFn(analyzeExistingResource);
+  const [analyzingId, setAnalyzingId] = useState<string | null>(null);
+  const analyzeMut = useMutation({
+    mutationFn: (v: { id: string; force: boolean }) => analyzeFn({ data: v }),
+    onMutate: (v) => setAnalyzingId(v.id),
+    onSettled: () => setAnalyzingId(null),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["teaching-resources"] });
+      toast.success(
+        res.ocr_added
+          ? `הטקסט חולץ (${res.ocr_chars.toLocaleString("he-IL")} תווים) והחומר סווג`
+          : "החומר נותח וסווג מחדש",
+        { description: res.contexts.length > 0 ? `מתאים ל: ${res.contexts.slice(0, 3).join(" · ")}` : undefined },
+      );
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "הניתוח נכשל"),
+  });
+
   const visibleResources = useMemo(() => {
     let out = resources;
     const cat = LIBRARY_CATEGORIES.find((c) => c.id === category);
@@ -210,9 +250,33 @@ function ResourcesPage() {
         return tid !== null && filters.topicIds.includes(tid);
       });
     }
-    // favorites first, then by recency (server already ordered by updated_at)
-    return [...out].sort((a, b) => Number(b.is_favorite) - Number(a.is_favorite));
-  }, [resources, collectionItems, filters.collectionIds, filters.topicIds, category, materialKind]);
+    const cmp = (a: ResourceRow, b: ResourceRow) => {
+      switch (sort) {
+        case "updated_asc": return a.updated_at.localeCompare(b.updated_at);
+        case "created_desc": return b.created_at.localeCompare(a.created_at);
+        case "created_asc": return a.created_at.localeCompare(b.created_at);
+        case "popularity": {
+          const d = (usageCounts[b.id] ?? 0) - (usageCounts[a.id] ?? 0);
+          return d !== 0 ? d : b.updated_at.localeCompare(a.updated_at);
+        }
+        case "title": return a.title.localeCompare(b.title, "he");
+        default: return b.updated_at.localeCompare(a.updated_at);
+      }
+    };
+    // favorites first, then by the chosen sort
+    return [...out].sort((a, b) => Number(b.is_favorite) - Number(a.is_favorite) || cmp(a, b));
+  }, [resources, collectionItems, filters.collectionIds, filters.topicIds, category, materialKind, sort, usageCounts]);
+
+  const pageCount = Math.max(1, Math.ceil(visibleResources.length / pageSize));
+  const safePage = Math.min(pageIndex, pageCount - 1);
+  const pagedResources = useMemo(
+    () => visibleResources.slice(safePage * pageSize, safePage * pageSize + pageSize),
+    [visibleResources, safePage, pageSize],
+  );
+  // חוזרים לעמוד הראשון בכל שינוי סינון/מיון
+  useEffect(() => {
+    setPageIndex(0);
+  }, [filters, category, materialKind, sort, pageSize]);
 
   /** ענן תגיות מתוך החומרים שקיימים בפועל */
   const tagCloud = useMemo(() => {
@@ -644,6 +708,37 @@ function ResourcesPage() {
 
         {/* Grid */}
         <div className="space-y-3 lg:col-start-2 lg:row-start-1 lg:row-span-2">
+          {/* מיון + גודל עמוד */}
+          {!isLoading && visibleResources.length > 0 && (
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-card px-3 py-2">
+              <div className="flex items-center gap-2">
+                <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+                <Label className="text-xs text-muted-foreground" htmlFor="library-sort">מיון</Label>
+                <Select value={sort} onValueChange={(v) => setSort(v as SortId)}>
+                  <SelectTrigger id="library-sort" className="h-8 w-[200px] text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {SORT_OPTIONS.map((o) => (
+                      <SelectItem key={o.id} value={o.id}>{o.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="text-xs text-muted-foreground" htmlFor="library-page-size">לעמוד</Label>
+                <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
+                  <SelectTrigger id="library-page-size" className="h-8 w-[80px] text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {PAGE_SIZES.map((n) => (
+                      <SelectItem key={n} value={String(n)}>{n}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <span className="text-xs text-muted-foreground" aria-live="polite">
+                  {visibleResources.length.toLocaleString("he-IL")} חומרים · עמוד {safePage + 1} מתוך {pageCount}
+                </span>
+              </div>
+            </div>
+          )}
           {isLoading && (
             <Card><CardContent className="py-12 text-center text-muted-foreground">
               <Loader2 className="mx-auto mb-2 h-6 w-6 animate-spin" /> טוען חומרים…
@@ -668,10 +763,13 @@ function ResourcesPage() {
             </CardContent></Card>
           )}
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {visibleResources.map((r) => (
+            {pagedResources.map((r) => (
               <ResourceCard
                 key={r.id}
                 resource={r}
+                usageCount={usageCounts[r.id] ?? 0}
+                analyzing={analyzingId === r.id}
+                onAnalyze={() => analyzeMut.mutate({ id: r.id, force: false })}
                 onView={() => setViewing(r)}
                 onEdit={() => setEditing(r)}
                 onVariant={(src) => { setAiSource(src); setAiOpen(true); }}
@@ -679,6 +777,40 @@ function ResourcesPage() {
               />
             ))}
           </div>
+          {pageCount > 1 && (
+            <nav className="flex items-center justify-center gap-2 pt-1" aria-label="דפדוף בין עמודי הספרייה">
+              <Button
+                size="sm" variant="outline" disabled={safePage === 0}
+                onClick={() => setPageIndex(safePage - 1)}
+              >
+                <ChevronRight className="h-4 w-4" /> הקודם
+              </Button>
+              <div className="flex flex-wrap items-center gap-1">
+                {Array.from({ length: pageCount }, (_, i) => i)
+                  .filter((i) => i === 0 || i === pageCount - 1 || Math.abs(i - safePage) <= 1)
+                  .map((i, idx, arr) => (
+                    <span key={i} className="flex items-center gap-1">
+                      {idx > 0 && arr[idx - 1] !== i - 1 && <span className="px-1 text-xs text-muted-foreground">…</span>}
+                      <button
+                        type="button"
+                        aria-current={i === safePage ? "page" : undefined}
+                        aria-label={`עמוד ${i + 1}`}
+                        onClick={() => setPageIndex(i)}
+                        className={`min-h-8 min-w-8 rounded-md border px-2 text-xs transition ${i === safePage ? "border-primary bg-primary font-semibold text-primary-foreground" : "hover:bg-accent"}`}
+                      >
+                        {i + 1}
+                      </button>
+                    </span>
+                  ))}
+              </div>
+              <Button
+                size="sm" variant="outline" disabled={safePage >= pageCount - 1}
+                onClick={() => setPageIndex(safePage + 1)}
+              >
+                הבא <ChevronLeft className="h-4 w-4" />
+              </Button>
+            </nav>
+          )}
         </div>
       </div>
       </>
@@ -760,13 +892,18 @@ function ResourcesPage() {
 
 function ResourceCard({
   resource, onView, onEdit, onVariant, onToggleFavorite,
+  usageCount = 0, analyzing = false, onAnalyze,
 }: {
   resource: ResourceRow;
   onView: () => void;
   onEdit: () => void;
   onVariant: (r: ResourceRow) => void;
   onToggleFavorite: () => void;
+  usageCount?: number;
+  analyzing?: boolean;
+  onAnalyze?: () => void;
 }) {
+  const hasText = Boolean(resource.content?.original_text?.trim());
   return (
     <div
       role="button"
@@ -811,6 +948,14 @@ function ResourceCard({
         )}
         {resource.subject && <Badge variant="secondary" className="text-[10px]">{resource.subject}</Badge>}
         {resource.grade_level && <Badge variant="secondary" className="text-[10px]">כיתה {resource.grade_level}</Badge>}
+        {usageCount > 0 && (
+          <Badge variant="outline" className="text-[10px]">שימוש בכיתות: {usageCount}</Badge>
+        )}
+        {!hasText && (
+          <Badge variant="outline" className="gap-0.5 border-dashed text-[10px] text-muted-foreground">
+            <ScanText className="h-2.5 w-2.5" /> אין טקסט לחיפוש
+          </Badge>
+        )}
       </div>
       {resource.description && (
         <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">{resource.description}</p>
@@ -832,6 +977,16 @@ function ResourceCard({
           title="צור וריאציה עם AI מפריט זה" aria-label={`צור וריאציה עם AI מ-"${resource.title}"`}>
           <Sparkles className="h-4 w-4 text-amber" />
         </Button>
+        {onAnalyze && (
+          <Button
+            size="sm" variant="ghost" disabled={analyzing}
+            onClick={(e) => { e.stopPropagation(); onAnalyze(); }}
+            title={hasText ? "נתח מחדש וסווג עם AI" : "הפעל OCR וסיווג אוטומטי"}
+            aria-label={`הפעל OCR וניתוח AI על "${resource.title}"`}
+          >
+            {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <ScanText className="h-4 w-4" />}
+          </Button>
+        )}
       </div>
     </div>
   );

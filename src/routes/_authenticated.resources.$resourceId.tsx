@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { ArrowRight, Printer, Trash2, Loader2, Library, Sparkles, Tag, Send, Wand2, FileText, Download, ChevronUp, ChevronDown, Copy } from "lucide-react";
+import { ArrowRight, Printer, Trash2, Loader2, Library, Sparkles, Tag, Send, Wand2, FileText, Download, ChevronUp, ChevronDown, Copy, ScanText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +17,7 @@ import {
 import { suggestResourceEdits } from "@/lib/teacher-style.functions";
 import { listClasses } from "@/lib/classes.functions";
 import { ResourceVersionHistory } from "@/components/resource-version-history";
+import { analyzeExistingResource } from "@/lib/resource-understanding.functions";
 
 export const Route = createFileRoute("/_authenticated/resources/$resourceId")({
   head: () => ({
@@ -39,6 +40,16 @@ function ResourceDetailPage() {
   const listCls = useServerFn(listClasses);
   const suggestEdits = useServerFn(suggestResourceEdits);
   const signUrl = useServerFn(getResourceSignedUrl);
+  const analyzeFn = useServerFn(analyzeExistingResource);
+  const analyzeMut = useMutation({
+    mutationFn: (force: boolean) => analyzeFn({ data: { id: resourceId, force } }),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["teaching-resource", resourceId] });
+      qc.invalidateQueries({ queryKey: ["teaching-resources"] });
+      toast.success(res.ocr_added ? "הטקסט חולץ מהמסמך והחומר סווג" : "החומר נותח מחדש");
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "הניתוח נכשל"),
+  });
 
   const { data: resource, isLoading } = useQuery({
     queryKey: ["teaching-resource", resourceId],
@@ -127,6 +138,17 @@ function ResourceDetailPage() {
             <Printer className="ms-1 h-4 w-4" /> הדפס / שמור כ-PDF
           </Button>
           <Button
+            variant="outline" size="sm"
+            disabled={analyzeMut.isPending}
+            onClick={() => analyzeMut.mutate(false)}
+            title="חילוץ טקסט (OCR) וסיווג אוטומטי של החומר"
+          >
+            {analyzeMut.isPending
+              ? <Loader2 className="ms-1 h-4 w-4 animate-spin" />
+              : <ScanText className="ms-1 h-4 w-4" />}
+            OCR וניתוח AI
+          </Button>
+          <Button
             variant="ghost"
             size="sm"
             className="text-destructive"
@@ -163,6 +185,27 @@ function ResourceDetailPage() {
           </div>
         )}
       </div>
+
+      {c.ai_understanding && (c.ai_understanding.summary || (c.ai_understanding.contexts?.length ?? 0) > 0) && (
+        <Card className="border-amber/40 bg-amber/5 print:hidden">
+          <CardContent className="space-y-2 py-4">
+            <div className="flex items-center gap-2 text-sm font-semibold">
+              <ScanText className="h-4 w-4 text-amber" /> מה המערכת הבינה על החומר
+            </div>
+            {c.ai_understanding.summary && (
+              <p className="text-sm text-muted-foreground">{c.ai_understanding.summary}</p>
+            )}
+            {(c.ai_understanding.contexts?.length ?? 0) > 0 && (
+              <div className="flex flex-wrap gap-1">
+                <span className="text-xs text-muted-foreground">מתאים ל:</span>
+                {c.ai_understanding.contexts!.map((ctx) => (
+                  <Badge key={ctx} variant="outline" className="text-[11px]">{ctx}</Badge>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {c.body && (
         <Card className="relative group">
