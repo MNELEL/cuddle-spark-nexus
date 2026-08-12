@@ -1,6 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 /** מקור השינוי שנרשם בגרסה. */
+type Json = string | number | boolean | null | Json[] | { [key: string]: Json };
+
 export type VersionSource = "manual" | "ai" | "upload" | "restore";
 
 export type ResourceSnapshot = {
@@ -9,7 +11,7 @@ export type ResourceSnapshot = {
   subject: string;
   grade_level: string;
   resource_type: string;
-  content: Record<string, string | number | boolean | null | unknown[] | Record<string, unknown>>;
+  content: { [key: string]: Json };
   tags: string[];
   file_path: string | null;
   mime_type: string | null;
