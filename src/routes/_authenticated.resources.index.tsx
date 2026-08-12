@@ -9,6 +9,8 @@ import {
   Star, Pencil, MessageCircleQuestion, Send, ScanText, ArrowUpDown,
   ChevronRight, ChevronLeft,
 } from "lucide-react";
+import { UploadCloud, FileArchive } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,6 +41,9 @@ import {
 } from "@/lib/teaching-resources.functions";
 import { getPersonalRecommendations, recomputeStyleProfile } from "@/lib/teacher-style.functions";
 import { analyzeExistingResource, getResourceUsageCounts } from "@/lib/resource-understanding.functions";
+import { getResourceDownloadLinks } from "@/lib/library-extras.functions";
+import { downloadResourcesZip } from "@/lib/zip-download";
+import { LibraryBulkUpload } from "@/components/library-bulk-upload";
 import { Wand2 } from "lucide-react";
 import { WeeklyPaceCard } from "@/components/weekly-pace-card";
 import { TopicTreeFilter } from "@/components/topic-tree-filter";
@@ -161,6 +166,24 @@ function ResourcesPage() {
   const [sort, setSort] = useState<SortId>("updated_desc");
   const [pageSize, setPageSize] = useState(24);
   const [pageIndex, setPageIndex] = useState(0);
+  const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  const bundleFn = useServerFn(getResourceDownloadLinks);
+  const zipMut = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const items = await bundleFn({ data: { ids } });
+      return downloadResourcesZip(items);
+    },
+    onSuccess: (added) => {
+      if (added === 0) toast.error("לא נמצאו קבצים או טקסט להורדה בפריטים שנבחרו");
+      else toast.success(`נארזו ${added} קבצים לקובץ ZIP`);
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "ההורדה נכשלה"),
+  });
+
+  const toggleSelected = (id: string) =>
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
 
   const viewKeys = useTablistKeys(VIEW_TABS, view, setView);
   const categoryKeys = useTablistKeys(CATEGORY_IDS, category, setCategory);
@@ -357,6 +380,9 @@ function ResourcesPage() {
                 <Link to="/ingest">
                   <Download className="ms-1 h-4 w-4" /> העלאת מסמך או הקלטה
                 </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setBulkUploadOpen(true)}>
+                <UploadCloud className="ms-1 h-4 w-4" /> העלאת כמה קבצים יחד (OCR אוטומטי)
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuLabel>הפקה מחומר קיים</DropdownMenuLabel>
@@ -739,6 +765,38 @@ function ResourcesPage() {
               </div>
             </div>
           )}
+          {!isLoading && visibleResources.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-card px-3 py-2 text-xs">
+              <Button
+                size="sm" variant="outline"
+                onClick={() => setSelectedIds(
+                  pagedResources.every((r) => selectedIds.includes(r.id))
+                    ? selectedIds.filter((id) => !pagedResources.some((r) => r.id === id))
+                    : [...new Set([...selectedIds, ...pagedResources.map((r) => r.id)])],
+                )}
+              >
+                {pagedResources.every((r) => selectedIds.includes(r.id)) ? "בטל בחירת העמוד" : "בחר את כל העמוד"}
+              </Button>
+              <span className="text-muted-foreground">נבחרו {selectedIds.length}</span>
+              <div className="ms-auto flex flex-wrap gap-2">
+                {selectedIds.length > 0 && (
+                  <Button size="sm" variant="ghost" onClick={() => setSelectedIds([])}>
+                    <X className="ms-1 h-4 w-4" /> נקה בחירה
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  disabled={selectedIds.length === 0 || zipMut.isPending}
+                  onClick={() => zipMut.mutate(selectedIds.slice(0, 60))}
+                >
+                  {zipMut.isPending
+                    ? <Loader2 className="ms-1 h-4 w-4 animate-spin" />
+                    : <FileArchive className="ms-1 h-4 w-4" />}
+                  הורדה מרוכזת (ZIP)
+                </Button>
+              </div>
+            </div>
+          )}
           {isLoading && (
             <Card><CardContent className="py-12 text-center text-muted-foreground">
               <Loader2 className="mx-auto mb-2 h-6 w-6 animate-spin" /> טוען חומרים…
@@ -769,6 +827,8 @@ function ResourcesPage() {
                 resource={r}
                 usageCount={usageCounts[r.id] ?? 0}
                 analyzing={analyzingId === r.id}
+                selected={selectedIds.includes(r.id)}
+                onToggleSelected={() => toggleSelected(r.id)}
                 onAnalyze={() => analyzeMut.mutate({ id: r.id, force: false })}
                 onView={() => setViewing(r)}
                 onEdit={() => setEditing(r)}
@@ -857,6 +917,8 @@ function ResourcesPage() {
         }
       />
 
+      <LibraryBulkUpload open={bulkUploadOpen} onClose={() => setBulkUploadOpen(false)} />
+
       {/* מחולל סיכום מותאם */}
       <Dialog open={summaryOpen} onOpenChange={setSummaryOpen}>
         <DialogContent
@@ -892,7 +954,7 @@ function ResourcesPage() {
 
 function ResourceCard({
   resource, onView, onEdit, onVariant, onToggleFavorite,
-  usageCount = 0, analyzing = false, onAnalyze,
+  usageCount = 0, analyzing = false, onAnalyze, selected = false, onToggleSelected,
 }: {
   resource: ResourceRow;
   onView: () => void;
@@ -902,6 +964,8 @@ function ResourceCard({
   usageCount?: number;
   analyzing?: boolean;
   onAnalyze?: () => void;
+  selected?: boolean;
+  onToggleSelected?: () => void;
 }) {
   const hasText = Boolean(resource.content?.original_text?.trim());
   return (
@@ -913,10 +977,21 @@ function ResourceCard({
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onView(); }
       }}
-      className="group cursor-pointer rounded-xl border bg-card p-4 text-right transition hover:border-amber/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className={`group cursor-pointer rounded-xl border bg-card p-4 text-right transition hover:border-amber/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${selected ? "border-amber ring-1 ring-amber/40" : ""}`}
     >
       <div className="flex items-start justify-between gap-2">
-        <div className="line-clamp-2 font-semibold">{resource.title}</div>
+        <div className="flex min-w-0 items-start gap-2">
+          {onToggleSelected && (
+            <span onClick={(e) => e.stopPropagation()} className="pt-0.5">
+              <Checkbox
+                checked={selected}
+                onCheckedChange={() => onToggleSelected()}
+                aria-label={`בחר את "${resource.title}" להורדה מרוכזת`}
+              />
+            </span>
+          )}
+          <div className="line-clamp-2 font-semibold">{resource.title}</div>
+        </div>
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}

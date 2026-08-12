@@ -20,6 +20,7 @@ export type UnderstandResult = {
   suggested_subject: string;
   suggested_grade: string;
   tags: string[];
+  ocr_confidence: number;
 };
 
 function toBase64(buf: Uint8Array): string {
@@ -36,9 +37,10 @@ const SYSTEM = `אתה עוזר של רב/מלמד בתלמוד תורה חרד�
 - resource_type: אחד מ: ${RESOURCE_TYPES.join("/")}.
 - tags: עד 12 תגיות תוכן (מסכת/פרק/פרשה/נושא).
 - teaching_contexts: 3-5 הקשרים מעשיים שבהם המלמד יכול להשתמש בחומר (למשל "חזרה לפני מבחן", "פתיחה לשיעור גמרא", "עבודה בזוגות").
+- ocr_confidence: מספר בין 0 ל-1 — כמה אתה בטוח שהטקסט שחולץ מדויק ומלא.
 השתמש במונחים "הרב", "המלמד", "התלמידים".
 החזר JSON תקין בלבד:
-{"original_text":"","summary":"","subject":"","grade_level":"","resource_type":"worksheet","tags":[],"teaching_contexts":[]}`;
+{"original_text":"","summary":"","subject":"","grade_level":"","resource_type":"worksheet","tags":[],"teaching_contexts":[],"ocr_confidence":0.9}`;
 
 export async function understandResource(
   supabase: Supa,
@@ -106,6 +108,8 @@ export async function understandResource(
   const suggestedType = String(p.resource_type ?? "").slice(0, 40);
   const suggestedSubject = String(p.subject ?? "").slice(0, 80);
   const suggestedGrade = String(p.grade_level ?? "").slice(0, 40);
+  const confRaw = Number(p.ocr_confidence);
+  const confidence = Number.isFinite(confRaw) ? Math.min(1, Math.max(0, confRaw)) : 0;
 
   const shouldReplaceText = ocr.trim().length > 0 && (force || existingText.trim().length === 0);
   const nextText = shouldReplaceText ? ocr : existingText;
@@ -118,6 +122,8 @@ export async function understandResource(
       summary,
       contexts,
       suggested_type: suggestedType,
+      ocr_confidence: confidence,
+      ocr_reviewed: false,
       at: new Date().toISOString(),
     },
   };
@@ -147,5 +153,6 @@ export async function understandResource(
     suggested_subject: suggestedSubject,
     suggested_grade: suggestedGrade,
     tags: mergedTags,
+    ocr_confidence: confidence,
   };
 }
