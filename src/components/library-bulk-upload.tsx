@@ -28,6 +28,10 @@ import {
 } from "@/lib/teaching-resources.functions";
 import { createUploadedResource } from "@/lib/library-extras.functions";
 import { analyzeExistingResource } from "@/lib/resource-understanding.functions";
+import {
+  ACCEPT_LIBRARY_ALL, LIBRARY_KIND_ACCEPT, validateUploadFile,
+  type LibraryKindId,
+} from "@/lib/upload-accept";
 
 type ItemState = {
   name: string;
