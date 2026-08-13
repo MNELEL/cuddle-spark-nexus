@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { FileText, Image as ImageIcon, Music, Film, Presentation } from "lucide-react";
+import { FileText, Image as ImageIcon, Music, Film, Presentation, Loader2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
@@ -64,6 +65,8 @@ export function ResourceThumb({
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   const [src, setSrc] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [ready, setReady] = useState(false);
   const mime = (mimeType ?? "").toLowerCase();
   const isImage = mime.startsWith("image/");
   const isPdf = mime.includes("pdf") || (filePath ?? "").toLowerCase().endsWith(".pdf");
@@ -79,8 +82,9 @@ export function ResourceThumb({
   }, [visible]);
 
   useEffect(() => {
-    if (!visible || !filePath || (!isImage && !isPdf)) return;
+    if (!visible || !filePath || (!isImage && !isPdf)) { setReady(true); return; }
     let alive = true;
+    setLoading(true);
     void (async () => {
       try {
         const url = await signedUrl(filePath);
@@ -90,20 +94,35 @@ export function ResourceThumb({
         if (alive && data) setSrc(data);
       } catch {
         /* נשארים עם אייקון סוג הקובץ */
+      } finally {
+        if (alive) { setLoading(false); setReady(true); }
       }
     })();
     return () => { alive = false; };
   }, [visible, filePath, isImage, isPdf]);
 
+  const showSkeleton = (!visible || loading) && (isImage || isPdf);
+
   return (
     <div
       ref={ref}
       className={`flex h-24 items-center justify-center overflow-hidden rounded-lg border bg-muted/40 ${className}`}
+      aria-busy={showSkeleton}
     >
-      {src ? (
+      {showSkeleton && !src ? (
+        // placeholder עד שהתמונה/האייקון מוכנים — נטען רק מה שנמצא בתצוגה
+        <div className="relative h-full w-full">
+          <Skeleton className="h-full w-full" />
+          <span className="absolute inset-0 grid place-items-center">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" aria-label="טוען תצוגה מקדימה" />
+          </span>
+        </div>
+      ) : src ? (
         <img src={src} alt={`תצוגה מקדימה של ${title}`} loading="lazy" className="h-full w-full object-cover" />
-      ) : (
+      ) : ready || (!isImage && !isPdf) ? (
         <FallbackIcon mime={mime} />
+      ) : (
+        <Skeleton className="h-full w-full" />
       )}
     </div>
   );

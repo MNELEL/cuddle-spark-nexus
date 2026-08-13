@@ -84,6 +84,7 @@ import { Route as AuthenticatedReportsClassIdRouteImport } from './routes/_authe
 import { Route as AuthenticatedResourcesIndexRouteImport } from './routes/_authenticated.resources.index'
 import { Route as AuthenticatedResourcesResourceIdRouteImport } from './routes/_authenticated.resources.$resourceId'
 import { Route as AuthenticatedResourcesGenerateRouteImport } from './routes/_authenticated.resources.generate'
+import { Route as AuthenticatedResourcesUploadLogRouteImport } from './routes/_authenticated.resources.upload-log'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated.settings.index'
 import { Route as AuthenticatedSettingsSplatRouteImport } from './routes/_authenticated.settings.$'
 import { Route as AuthenticatedSettingsBrandRouteImport } from './routes/_authenticated.settings.brand'
@@ -503,6 +504,12 @@ const AuthenticatedResourcesGenerateRoute =
     path: '/resources/generate',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedResourcesUploadLogRoute =
+  AuthenticatedResourcesUploadLogRouteImport.update({
+    id: '/resources/upload-log',
+    path: '/resources/upload-log',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedSettingsIndexRoute =
   AuthenticatedSettingsIndexRouteImport.update({
     id: '/settings/',
@@ -637,6 +644,7 @@ export interface FileRoutesByFullPath {
   '/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/resources/$resourceId': typeof AuthenticatedResourcesResourceIdRoute
   '/resources/generate': typeof AuthenticatedResourcesGenerateRoute
+  '/resources/upload-log': typeof AuthenticatedResourcesUploadLogRoute
   '/settings/$': typeof AuthenticatedSettingsSplatRoute
   '/settings/brand': typeof AuthenticatedSettingsBrandRoute
   '/settings/theme': typeof AuthenticatedSettingsThemeRoute
@@ -718,6 +726,7 @@ export interface FileRoutesByTo {
   '/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/resources/$resourceId': typeof AuthenticatedResourcesResourceIdRoute
   '/resources/generate': typeof AuthenticatedResourcesGenerateRoute
+  '/resources/upload-log': typeof AuthenticatedResourcesUploadLogRoute
   '/settings/$': typeof AuthenticatedSettingsSplatRoute
   '/settings/brand': typeof AuthenticatedSettingsBrandRoute
   '/settings/theme': typeof AuthenticatedSettingsThemeRoute
@@ -806,6 +815,7 @@ export interface FileRoutesById {
   '/_authenticated/reports/$classId': typeof AuthenticatedReportsClassIdRoute
   '/_authenticated/resources/$resourceId': typeof AuthenticatedResourcesResourceIdRoute
   '/_authenticated/resources/generate': typeof AuthenticatedResourcesGenerateRoute
+  '/_authenticated/resources/upload-log': typeof AuthenticatedResourcesUploadLogRoute
   '/_authenticated/settings/$': typeof AuthenticatedSettingsSplatRoute
   '/_authenticated/settings/brand': typeof AuthenticatedSettingsBrandRoute
   '/_authenticated/settings/theme': typeof AuthenticatedSettingsThemeRoute
@@ -894,6 +904,7 @@ export interface FileRouteTypes {
     | '/reports/$classId'
     | '/resources/$resourceId'
     | '/resources/generate'
+    | '/resources/upload-log'
     | '/settings/$'
     | '/settings/brand'
     | '/settings/theme'
@@ -975,6 +986,7 @@ export interface FileRouteTypes {
     | '/reports/$classId'
     | '/resources/$resourceId'
     | '/resources/generate'
+    | '/resources/upload-log'
     | '/settings/$'
     | '/settings/brand'
     | '/settings/theme'
@@ -1062,6 +1074,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reports/$classId'
     | '/_authenticated/resources/$resourceId'
     | '/_authenticated/resources/generate'
+    | '/_authenticated/resources/upload-log'
     | '/_authenticated/settings/$'
     | '/_authenticated/settings/brand'
     | '/_authenticated/settings/theme'
@@ -1629,6 +1642,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedResourcesGenerateRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/resources/upload-log': {
+      id: '/_authenticated/resources/upload-log'
+      path: '/resources/upload-log'
+      fullPath: '/resources/upload-log'
+      preLoaderRoute: typeof AuthenticatedResourcesUploadLogRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/settings/': {
       id: '/_authenticated/settings/'
       path: '/settings'
@@ -1747,6 +1767,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedReportsClassIdRoute: typeof AuthenticatedReportsClassIdRoute
   AuthenticatedResourcesResourceIdRoute: typeof AuthenticatedResourcesResourceIdRoute
   AuthenticatedResourcesGenerateRoute: typeof AuthenticatedResourcesGenerateRoute
+  AuthenticatedResourcesUploadLogRoute: typeof AuthenticatedResourcesUploadLogRoute
   AuthenticatedSettingsSplatRoute: typeof AuthenticatedSettingsSplatRoute
   AuthenticatedSettingsBrandRoute: typeof AuthenticatedSettingsBrandRoute
   AuthenticatedSettingsThemeRoute: typeof AuthenticatedSettingsThemeRoute
@@ -1790,6 +1811,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedReportsClassIdRoute: AuthenticatedReportsClassIdRoute,
   AuthenticatedResourcesResourceIdRoute: AuthenticatedResourcesResourceIdRoute,
   AuthenticatedResourcesGenerateRoute: AuthenticatedResourcesGenerateRoute,
+  AuthenticatedResourcesUploadLogRoute: AuthenticatedResourcesUploadLogRoute,
   AuthenticatedSettingsSplatRoute: AuthenticatedSettingsSplatRoute,
   AuthenticatedSettingsBrandRoute: AuthenticatedSettingsBrandRoute,
   AuthenticatedSettingsThemeRoute: AuthenticatedSettingsThemeRoute,

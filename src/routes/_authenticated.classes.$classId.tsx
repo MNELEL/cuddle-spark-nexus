@@ -187,7 +187,7 @@ function YearChain({ classId }: { classId: string }) {
   );
 }
 
-type ClassSearch = { q?: string; field?: string; tab?: string };
+type ClassSearch = { q?: string; field?: string; tab?: string; sort?: string; page?: number };
 const CLASS_TABS = ["students", "relations", "groups", "seating", "tracking", "crm", "lessons"] as const;
 
 export const Route = createFileRoute("/_authenticated/classes/$classId")({
@@ -198,6 +198,8 @@ export const Route = createFileRoute("/_authenticated/classes/$classId")({
     q: typeof s.q === "string" ? s.q : undefined,
     field: typeof s.field === "string" ? s.field : undefined,
     tab: typeof s.tab === "string" ? s.tab : undefined,
+    sort: typeof s.sort === "string" ? s.sort : undefined,
+    page: Number.isFinite(Number(s.page)) && Number(s.page) > 1 ? Math.floor(Number(s.page)) : undefined,
   }),
   loader: async ({ params }) => {
     const { getClass } = await import("@/lib/classes.functions");
@@ -253,9 +255,18 @@ function ClassDetail() {
     ? (search.field as SearchField)
     : "full_name";
   const setQuery = (q: string) =>
-    void navigate({ search: (prev) => ({ ...prev, q: q || undefined }), replace: true });
+    // כל שינוי בסינון מאפס את הדף כדי שהמצב בכתובת יישאר מדויק
+    void navigate({ search: (prev) => ({ ...prev, q: q || undefined, page: undefined }), replace: true });
   const setSearchField = (f: SearchField) =>
-    void navigate({ search: (prev) => ({ ...prev, field: f === "full_name" ? undefined : f }), replace: true });
+    void navigate({ search: (prev) => ({ ...prev, field: f === "full_name" ? undefined : f, page: undefined }), replace: true });
+  const sortKey: SortKey = (search.sort && search.sort in SORT_OPTIONS)
+    ? (search.sort as SortKey)
+    : "first_name";
+  const setSortKey = (k: SortKey) =>
+    void navigate({ search: (prev) => ({ ...prev, sort: k === "first_name" ? undefined : k, page: undefined }), replace: true });
+  const page = Math.max(1, search.page ?? 1);
+  const setPage = (p: number) =>
+    void navigate({ search: (prev) => ({ ...prev, page: p > 1 ? p : undefined }), replace: true });
   useEffect(() => { if (validClass) recordClassVisit(classId); }, [classId, validClass]);
   const getC = useServerFn(getClass);
   const listS = useServerFn(listStudents);
@@ -355,6 +366,10 @@ function ClassDetail() {
             searchField={searchField}
             onQueryChange={setQuery}
             onSearchFieldChange={setSearchField}
+            sortKey={sortKey}
+            onSortChange={setSortKey}
+            page={page}
+            onPageChange={setPage}
           />
         </TabsContent>
 
@@ -536,6 +551,7 @@ function UpcomingBirthdays({ students }: { students: Student[] }) {
 
 function StudentsTab({
   classId, students, scoreInputs, query, searchField, onQueryChange, onSearchFieldChange,
+  sortKey, onSortChange, page, onPageChange,
 }: {
   classId: string; students: Student[];
   scoreInputs?: { grades: { student_id: string; value: number; max_value: number }[]; attendance: { student_id: string; status: string }[]; behavior: { student_id: string; points: number }[] };
@@ -543,14 +559,21 @@ function StudentsTab({
   searchField: SearchField;
   onQueryChange: (q: string) => void;
   onSearchFieldChange: (f: SearchField) => void;
+  sortKey: SortKey;
+  onSortChange: (k: SortKey) => void;
+  page: number;
+  onPageChange: (p: number) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Student | null>(null);
   const [fileFor, setFileFor] = useState<Student | null>(null);
-  const [sortKey, setSortKey] = useState<SortKey>("first_name");
+  // המיון נשמר בכתובת; ה-localStorage הוא ברירת מחדל בלבד כשאין פרמטר
   useEffect(() => {
     const saved = localStorage.getItem(sortStorageKey(classId));
-    if (saved && saved in SORT_OPTIONS) setSortKey(saved as SortKey);
+    if (saved && saved in SORT_OPTIONS && saved !== "first_name" && sortKey === "first_name") {
+      onSortChange(saved as SortKey);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [classId]);
   // ברירת מחדל מה-localStorage רק כשאין פרמטר בכתובת
   useEffect(() => {
@@ -562,7 +585,7 @@ function StudentsTab({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [classId]);
   const changeSort = (k: SortKey) => {
-    setSortKey(k);
+    onSortChange(k);
     localStorage.setItem(sortStorageKey(classId), k);
   };
   const changeSearchField = (f: SearchField) => {
@@ -588,6 +611,10 @@ function StudentsTab({
     return searchField === "first_name" ? first : searchField === "last_name" ? (last || "—") : (s.name ?? "");
   });
   const isDirty = query.trim().length > 0 || searchField !== "full_name" || sortKey !== "first_name";
+  const PAGE_SIZE = 25;
+  const pageCount = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  const safePage = Math.min(Math.max(1, page), pageCount);
+  const pageRows = sorted.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
   const className = "רשימת תלמידים";
   const profilesFn = useServerFn(listClassProfiles);
   const handoffM = useMutation({
@@ -710,11 +737,28 @@ function StudentsTab({
         </CardContent></Card>
       ) : (
         <div className="grid gap-2">
-          {sorted.map((s) => (
+          {pageRows.map((s) => (
             <StudentRow key={s.id} student={s} scoreInputs={scoreInputs}
               onEdit={() => { setEditing(s); setOpen(true); }}
               onOpenFile={() => setFileFor(s)} />
           ))}
+          {pageCount > 1 && (
+            <div className="flex items-center justify-between gap-2 pt-1 text-xs" aria-live="polite">
+              <Button
+                variant="outline" size="sm" className="rounded-xl"
+                disabled={safePage <= 1}
+                onClick={() => onPageChange(safePage - 1)}
+              >הקודם</Button>
+              <span className="font-mono-tabular text-muted-foreground">
+                עמוד {safePage} מתוך {pageCount}
+              </span>
+              <Button
+                variant="outline" size="sm" className="rounded-xl"
+                disabled={safePage >= pageCount}
+                onClick={() => onPageChange(safePage + 1)}
+              >הבא</Button>
+            </div>
+          )}
         </div>
       )}
 

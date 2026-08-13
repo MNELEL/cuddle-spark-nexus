@@ -95,6 +95,8 @@ export const NAV_EXEMPT_ROUTES = [
   "/classes/$classId",
   "/classes/$classId/display",
   "/resources/$resourceId",
+  // נפתח מתפריט ההעלאה בספרייה
+  "/resources/upload-log",
 ] as const;
 
 export function toolByPath(path: string): ToolEntry | undefined {
