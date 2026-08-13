@@ -68,8 +68,11 @@ export const LIBRARY_KIND_ACCEPT = {
 
 export type LibraryKindId = keyof typeof LIBRARY_KIND_ACCEPT;
 
-/** תיאור קריא בעברית של הסוגים שמותר להעלות, לשימוש בהודעות שגיאה */
-export function describeAccept(accept: string): string {
+/**
+ * תיאור קריא בעברית של הסוגים שמותר להעלות — כמערך, כדי שממשק ההעלאה
+ * יוכל להציג כל סוג כתג נפרד. המקור היחיד לרשימת הסוגים.
+ */
+export function describeAcceptDetailed(accept: string): string[] {
   const rules = accept.toLowerCase();
   const parts: string[] = [];
   if (rules.includes("image/")) parts.push("תמונה");
@@ -80,7 +83,12 @@ export function describeAccept(accept: string): string {
   if (rules.includes(".txt") || rules.includes("text/plain")) parts.push("טקסט");
   if (rules.includes("audio/")) parts.push("אודיו");
   if (rules.includes("video/")) parts.push("סרטון");
-  return parts.join(", ");
+  return parts;
+}
+
+/** תיאור קריא בעברית של הסוגים שמותר להעלות, לשימוש בהודעות שגיאה */
+export function describeAccept(accept: string): string {
+  return describeAcceptDetailed(accept).join(", ");
 }
 
 export type UploadValidation = { ok: true } | { ok: false; message: string };
