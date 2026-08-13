@@ -872,6 +872,31 @@ function ResourcesPage() {
                         : <FileArchive className="ms-1 h-4 w-4" />}
                       הורדה מרוכזת (ZIP)
                     </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="sm" variant="destructive" disabled={bulkDeleteMut.isPending}>
+                          {bulkDeleteMut.isPending
+                            ? <Loader2 className="ms-1 h-4 w-4 animate-spin" />
+                            : <Trash2 className="ms-1 h-4 w-4" />}
+                          מחק את הנבחרים
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent dir="rtl">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>למחוק את החומרים הנבחרים?</AlertDialogTitle>
+                          <AlertDialogDescription>פעולה זו תמחק לצמיתות {selectedIds.length} חומרים מהספרייה.</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>ביטול</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => bulkDeleteMut.mutate(selectedIds)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            מחק
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
               )}
