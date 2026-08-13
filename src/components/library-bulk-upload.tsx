@@ -164,8 +164,19 @@ export function LibraryBulkUpload({ open, onClose }: { open: boolean; onClose: (
           update(i, { status: "done", note: "נשמר בספרייה — הניתוח האוטומטי לא הצליח" });
         }
         ok++;
+        recordUpload({
+          name: file!.name, sizeBytes: file!.size, mimeType: file!.type || "",
+          status: "success", resourceId: id, filePath: path,
+        });
       } catch (e) {
-        update(i, { status: "error", note: e instanceof Error ? e.message : "העלאה נכשלה" });
+        const message = e instanceof Error ? e.message : "העלאה נכשלה";
+        update(i, { status: "error", note: message });
+        if (file) {
+          recordUpload({
+            name: file.name, sizeBytes: file.size, mimeType: file.type || "",
+            status: "error", error: message,
+          });
+        }
         if (file) failed.push(file);
       }
     }
