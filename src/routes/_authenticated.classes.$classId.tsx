@@ -467,13 +467,26 @@ function StudentsTab({
   const [editing, setEditing] = useState<Student | null>(null);
   const [fileFor, setFileFor] = useState<Student | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("first_name");
+  const [searchField, setSearchField] = useState<SearchField>("full_name");
+  const [query, setQuery] = useState("");
   useEffect(() => {
     const saved = localStorage.getItem(sortStorageKey(classId));
     if (saved && saved in SORT_OPTIONS) setSortKey(saved as SortKey);
+    const savedField = localStorage.getItem(searchStorageKey(classId));
+    if (savedField && savedField in SEARCH_FIELDS) setSearchField(savedField as SearchField);
   }, [classId]);
   const changeSort = (k: SortKey) => {
     setSortKey(k);
     localStorage.setItem(sortStorageKey(classId), k);
+  };
+  const changeSearchField = (f: SearchField) => {
+    setSearchField(f);
+    localStorage.setItem(searchStorageKey(classId), f);
+  };
+  const resetFilters = () => {
+    setQuery("");
+    changeSearchField("full_name");
+    changeSort("first_name");
   };
 
   const scoreOf = (id: string) =>
@@ -481,9 +494,14 @@ function StudentsTab({
       ? computeStudentScore(id, scoreInputs.grades, scoreInputs.attendance, scoreInputs.behavior)?.score ?? null
       : null;
   const sorted = useMemo(
-    () => sortStudents(students, sortKey, scoreOf),
-    [students, sortKey, scoreInputs],
+    () => sortStudents(students.filter((s) => matchesSearch(s, searchField, query)), sortKey, scoreOf),
+    [students, sortKey, scoreInputs, searchField, query],
   );
+  const sample = sorted.slice(0, 3).map((s) => {
+    const { first, last } = nameParts(s);
+    return searchField === "first_name" ? first : searchField === "last_name" ? (last || "—") : (s.name ?? "");
+  });
+  const isDirty = query.trim().length > 0 || searchField !== "full_name" || sortKey !== "first_name";
   const className = "רשימת תלמידים";
   const profilesFn = useServerFn(listClassProfiles);
   const handoffM = useMutation({
