@@ -7,6 +7,9 @@
 
 /** גודל מקסימלי ברירת מחדל, מסונכרן עם המגבלה בצד השרת */
 export const MAX_UPLOAD_MB = 20;
+/** העלאה לספרייה — כל סוג קובץ, עד 50MB לקובץ, עד 50 קבצים בבת אחת */
+export const MAX_LIBRARY_UPLOAD_MB = 50;
+export const MAX_LIBRARY_UPLOAD_FILES = 50;
 
 const IMAGE = ["image/*"];
 const AUDIO = ["audio/*"];
