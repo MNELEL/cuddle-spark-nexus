@@ -551,10 +551,63 @@ function StudentsTab({
         </Dialog>
       </div>
 
+      <div className="rounded-2xl border bg-card/50 p-3">
+        <div className="flex flex-wrap items-end gap-2">
+          <div className="min-w-[180px] flex-1">
+            <Label htmlFor="students-search" className="text-xs text-muted-foreground">חיפוש תלמיד</Label>
+            <Input
+              id="students-search"
+              type="search"
+              className="h-9 rounded-xl text-sm"
+              placeholder={`חיפוש לפי ${SEARCH_FIELDS[searchField]}…`}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label htmlFor="students-search-field" className="text-xs text-muted-foreground">שדה החיפוש</Label>
+            <Select value={searchField} onValueChange={(v) => changeSearchField(v as SearchField)}>
+              <SelectTrigger id="students-search-field" className="h-9 w-36 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {Object.entries(SEARCH_FIELDS).map(([k, label]) => (
+                  <SelectItem key={k} value={k} className="text-xs">{label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {isDirty && (
+            <Button variant="ghost" size="sm" className="rounded-xl" onClick={resetFilters}>
+              איפוס סינון ומיון
+            </Button>
+          )}
+        </div>
+
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs" aria-live="polite">
+          <Badge variant="secondary">מיון פעיל: {SORT_OPTIONS[sortKey]}</Badge>
+          <Badge variant="outline">חיפוש בשדה: {SEARCH_FIELDS[searchField]}</Badge>
+          <span className="text-muted-foreground font-mono-tabular">{sorted.length} מתוך {students.length}</span>
+          {sample.length > 0 && (
+            <span className="text-muted-foreground">
+              דוגמאות מהשדה הנבחר: {sample.join(" · ")}
+            </span>
+          )}
+        </div>
+        {searchField === "last_name" && (
+          <p className="mt-1 text-xs text-muted-foreground">
+            אם לתלמיד לא הוזן שם משפחה, המערכת גוזרת אותו מהמילים שאחרי השם הפרטי בשם המלא.
+          </p>
+        )}
+      </div>
+
       <UpcomingBirthdays students={students} />
 
       {students.length === 0 ? (
         <Card><CardContent className="py-10 text-center text-muted-foreground">אין תלמידים. הוסף את הראשון.</CardContent></Card>
+      ) : sorted.length === 0 ? (
+        <Card><CardContent className="flex flex-col items-center gap-3 py-10 text-center text-muted-foreground">
+          <span>אין תלמידים התואמים לחיפוש בשדה ״{SEARCH_FIELDS[searchField]}״</span>
+          <Button variant="outline" className="rounded-xl" onClick={resetFilters}>איפוס סינון</Button>
+        </CardContent></Card>
       ) : (
         <div className="grid gap-2">
           {sorted.map((s) => (
