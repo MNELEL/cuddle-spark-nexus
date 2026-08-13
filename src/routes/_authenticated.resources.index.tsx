@@ -1127,6 +1127,35 @@ function ResourceCard({
             {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <ScanText className="h-4 w-4" />}
           </Button>
         )}
+        {onDelete && (
+          <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+            <AlertDialogTrigger asChild>
+              <Button
+                size="sm" variant="ghost"
+                className="text-destructive transition-colors hover:bg-destructive/10 motion-reduce:transition-none"
+                onClick={(e) => e.stopPropagation()}
+                aria-label={`מחק את "${resource.title}"`}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent dir="rtl">
+              <AlertDialogHeader>
+                <AlertDialogTitle>למחוק את החומר?</AlertDialogTitle>
+                <AlertDialogDescription>פעולה זו תמחק לצמיתות את "{resource.title}" מהספרייה.</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setDeleteOpen(false)}>ביטול</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => { onDelete(resource); setDeleteOpen(false); }}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  מחק
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </div>
     </div>
   );
