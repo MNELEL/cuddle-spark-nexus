@@ -12,8 +12,22 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { LibraryLinkExplanation } from "@/components/library-link-info";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type Target = "lesson" | "bulletin";
+
+/** מילים משמעותיות בשם/מקצוע, לבדיקת התאמה בין החומר ליעד */
+function words(...parts: (string | null | undefined)[]): string[] {
+  return parts
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase()
+    .split(/[\s,.\-–—:;()"'׳״]+/)
+    .filter((w) => w.length >= 2);
+}
 
 /** "חבר ספרייה עכשיו" — picks a resource + a lesson/bulletin and links them. */
 export function ConnectLibraryDialog({ classId }: { classId: string }) {
@@ -23,6 +37,7 @@ export function ConnectLibraryDialog({ classId }: { classId: string }) {
   const [targetId, setTargetId] = useState("");
   const [resourceId, setResourceId] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const targetsFn = useServerFn(listClassLibraryTargets);
   const resourcesFn = useServerFn(listResources);
@@ -41,6 +56,21 @@ export function ConnectLibraryDialog({ classId }: { classId: string }) {
   });
 
   const options = target === "lesson" ? targets?.lessons ?? [] : targets?.bulletins ?? [];
+  const chosenTarget = options.find((o) => o.id === targetId) as
+    | { id: string; title: string; subject?: string | null }
+    | undefined;
+  const chosenResource = resources.find((r) => r.id === resourceId) as
+    | { id: string; title: string; subject?: string | null }
+    | undefined;
+
+  /** אין אף מילה משותפת בין שם/מקצוע החומר לשם/מקצוע היעד */
+  const mismatch = (() => {
+    if (!chosenTarget || !chosenResource) return false;
+    const a = words(chosenResource.title, chosenResource.subject);
+    const b = words(chosenTarget.title, chosenTarget.subject);
+    if (a.length === 0 || b.length === 0) return false;
+    return !a.some((w) => b.includes(w));
+  })();
 
   const connectM = useMutation({
     mutationFn: () => connectFn({ data: { classId, resourceId, target, targetId } }),
@@ -63,6 +93,8 @@ export function ConnectLibraryDialog({ classId }: { classId: string }) {
       setError(target === "lesson" ? "בחר שיעור לחיבור" : "בחר עלון לחיבור");
       return;
     }
+    // אזהרה לפני חיבור כשאין התאמה בשמות/מקצוע — כדי למנוע חיבור בטעות
+    if (mismatch) { setConfirmOpen(true); return; }
     connectM.mutate();
   };
 
@@ -145,6 +177,12 @@ export function ConnectLibraryDialog({ classId }: { classId: string }) {
           </div>
 
           {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+          {mismatch && !error && (
+            <p role="status" className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-2 text-xs">
+              שים לב: אין התאמה בין שם/מקצוע החומר ״{chosenResource?.title}״ לשם/מקצוע
+              {target === "lesson" ? " השיעור " : " העלון "}״{chosenTarget?.title}״. אפשר לחבר בכל זאת — תישאל לאישור.
+            </p>
+          )}
         </div>
 
         <DialogFooter>
@@ -155,6 +193,25 @@ export function ConnectLibraryDialog({ classId }: { classId: string }) {
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>לחבר בלי התאמה בשמות?</AlertDialogTitle>
+            <AlertDialogDescription>
+              החומר ״{chosenResource?.title}״ לא מתאים לפי שם או מקצוע
+              {target === "lesson" ? " לשיעור " : " לעלון "}״{chosenTarget?.title}״.
+              אם זה מכוון — אפשר להמשיך; אחרת בחר יעד או חומר אחר.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>חזרה לבחירה</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { setConfirmOpen(false); connectM.mutate(); }}>
+              חבר בכל זאת
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
