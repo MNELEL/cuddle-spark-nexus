@@ -50,6 +50,7 @@ import { analyzeExistingResource, getResourceUsageCounts } from "@/lib/resource-
 import { getResourceDownloadLinks } from "@/lib/library-extras.functions";
 import { downloadResourcesZip } from "@/lib/zip-download";
 import { LibraryBulkUpload } from "@/components/library-bulk-upload";
+import { ResourceThumb } from "@/components/resource-thumb";
 import { Wand2 } from "lucide-react";
 import { WeeklyPaceCard } from "@/components/weekly-pace-card";
 import { TopicTreeFilter } from "@/components/topic-tree-filter";
@@ -1093,11 +1094,12 @@ function ResourceCard({
       className={`group cursor-pointer rounded-xl border bg-card text-right transition hover:border-amber/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${compact ? "px-3 py-2" : "p-4"} ${selected ? "border-amber ring-1 ring-amber/40" : ""}`}
     >
       {thumbs && (
-        <div className="mb-2 flex h-24 items-center justify-center rounded-lg border bg-muted/40">
-          {resource.mime_type?.startsWith("image/")
-            ? <ImageIcon className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
-            : <FileText className="h-8 w-8 text-muted-foreground" aria-hidden="true" />}
-        </div>
+        <ResourceThumb
+          filePath={resource.file_path}
+          mimeType={resource.mime_type}
+          title={resource.title}
+          className="mb-2"
+        />
       )}
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 items-start gap-2">
