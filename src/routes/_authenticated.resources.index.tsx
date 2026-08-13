@@ -445,6 +445,11 @@ function ResourcesPage() {
               <DropdownMenuItem onClick={() => setBulkUploadOpen(true)}>
                 <UploadCloud className="ms-1 h-4 w-4" /> העלאת כמה קבצים יחד (OCR אוטומטי)
               </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/resources/upload-log">
+                  <ListChecks className="ms-1 h-4 w-4" /> יומן העלאות (הצלחות וכשלים)
+                </Link>
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuLabel>הפקה מחומר קיים</DropdownMenuLabel>
               <DropdownMenuItem onClick={() => setSummaryOpen(true)}>
