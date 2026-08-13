@@ -32,7 +32,11 @@ import {
   emptyHistory, recordChange, undo as undoHistory, redo as redoHistory,
   canUndo, canRedo, type SeatHistory, type SeatSnapshot,
 } from "@/lib/seat-history";
-import { printSeatingLayout, exportSeatingPdf, printSeatKey, type SeatingPrintCell } from "@/lib/print-seating";
+import {
+  printSeatingLayout, exportSeatingPdf, printSeatKey, PAPER_SIZE_LABELS,
+  DEFAULT_SEATING_PRINT_OPTIONS, type SeatingPrintCell, type SeatingPrintOptions,
+  type PaperSize, type PaperOrientation,
+} from "@/lib/print-seating";
 
 type Student = {
   id: string; class_id: string; name: string;
