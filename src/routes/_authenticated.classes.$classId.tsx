@@ -330,6 +330,28 @@ type SortKey = keyof typeof SORT_OPTIONS;
 
 function sortStorageKey(classId: string) { return `students-sort:${classId}`; }
 
+/* ---- search field scope ---- */
+
+const SEARCH_FIELDS = {
+  full_name: "שם מלא",
+  first_name: "שם פרטי",
+  last_name: "שם משפחה",
+} as const;
+type SearchField = keyof typeof SEARCH_FIELDS;
+
+function searchStorageKey(classId: string) { return `students-search-field:${classId}`; }
+
+function matchesSearch(s: Student, field: SearchField, term: string): boolean {
+  const t = term.trim().toLowerCase();
+  if (!t) return true;
+  const { first, last } = nameParts(s);
+  const hay =
+    field === "first_name" ? first :
+    field === "last_name" ? last :
+    (s.name ?? "");
+  return hay.toLowerCase().includes(t);
+}
+
 function parentSortName(s: Student): string {
   return (s.father_name?.trim() || s.mother_name?.trim() || "");
 }
@@ -445,13 +467,26 @@ function StudentsTab({
   const [editing, setEditing] = useState<Student | null>(null);
   const [fileFor, setFileFor] = useState<Student | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("first_name");
+  const [searchField, setSearchField] = useState<SearchField>("full_name");
+  const [query, setQuery] = useState("");
   useEffect(() => {
     const saved = localStorage.getItem(sortStorageKey(classId));
     if (saved && saved in SORT_OPTIONS) setSortKey(saved as SortKey);
+    const savedField = localStorage.getItem(searchStorageKey(classId));
+    if (savedField && savedField in SEARCH_FIELDS) setSearchField(savedField as SearchField);
   }, [classId]);
   const changeSort = (k: SortKey) => {
     setSortKey(k);
     localStorage.setItem(sortStorageKey(classId), k);
+  };
+  const changeSearchField = (f: SearchField) => {
+    setSearchField(f);
+    localStorage.setItem(searchStorageKey(classId), f);
+  };
+  const resetFilters = () => {
+    setQuery("");
+    changeSearchField("full_name");
+    changeSort("first_name");
   };
 
   const scoreOf = (id: string) =>
@@ -459,9 +494,14 @@ function StudentsTab({
       ? computeStudentScore(id, scoreInputs.grades, scoreInputs.attendance, scoreInputs.behavior)?.score ?? null
       : null;
   const sorted = useMemo(
-    () => sortStudents(students, sortKey, scoreOf),
-    [students, sortKey, scoreInputs],
+    () => sortStudents(students.filter((s) => matchesSearch(s, searchField, query)), sortKey, scoreOf),
+    [students, sortKey, scoreInputs, searchField, query],
   );
+  const sample = sorted.slice(0, 3).map((s) => {
+    const { first, last } = nameParts(s);
+    return searchField === "first_name" ? first : searchField === "last_name" ? (last || "—") : (s.name ?? "");
+  });
+  const isDirty = query.trim().length > 0 || searchField !== "full_name" || sortKey !== "first_name";
   const className = "רשימת תלמידים";
   const profilesFn = useServerFn(listClassProfiles);
   const handoffM = useMutation({
@@ -511,10 +551,63 @@ function StudentsTab({
         </Dialog>
       </div>
 
+      <div className="rounded-2xl border bg-card/50 p-3">
+        <div className="flex flex-wrap items-end gap-2">
+          <div className="min-w-[180px] flex-1">
+            <Label htmlFor="students-search" className="text-xs text-muted-foreground">חיפוש תלמיד</Label>
+            <Input
+              id="students-search"
+              type="search"
+              className="h-9 rounded-xl text-sm"
+              placeholder={`חיפוש לפי ${SEARCH_FIELDS[searchField]}…`}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label htmlFor="students-search-field" className="text-xs text-muted-foreground">שדה החיפוש</Label>
+            <Select value={searchField} onValueChange={(v) => changeSearchField(v as SearchField)}>
+              <SelectTrigger id="students-search-field" className="h-9 w-36 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {Object.entries(SEARCH_FIELDS).map(([k, label]) => (
+                  <SelectItem key={k} value={k} className="text-xs">{label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {isDirty && (
+            <Button variant="ghost" size="sm" className="rounded-xl" onClick={resetFilters}>
+              איפוס סינון ומיון
+            </Button>
+          )}
+        </div>
+
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs" aria-live="polite">
+          <Badge variant="secondary">מיון פעיל: {SORT_OPTIONS[sortKey]}</Badge>
+          <Badge variant="outline">חיפוש בשדה: {SEARCH_FIELDS[searchField]}</Badge>
+          <span className="text-muted-foreground font-mono-tabular">{sorted.length} מתוך {students.length}</span>
+          {sample.length > 0 && (
+            <span className="text-muted-foreground">
+              דוגמאות מהשדה הנבחר: {sample.join(" · ")}
+            </span>
+          )}
+        </div>
+        {searchField === "last_name" && (
+          <p className="mt-1 text-xs text-muted-foreground">
+            אם לתלמיד לא הוזן שם משפחה, המערכת גוזרת אותו מהמילים שאחרי השם הפרטי בשם המלא.
+          </p>
+        )}
+      </div>
+
       <UpcomingBirthdays students={students} />
 
       {students.length === 0 ? (
         <Card><CardContent className="py-10 text-center text-muted-foreground">אין תלמידים. הוסף את הראשון.</CardContent></Card>
+      ) : sorted.length === 0 ? (
+        <Card><CardContent className="flex flex-col items-center gap-3 py-10 text-center text-muted-foreground">
+          <span>אין תלמידים התואמים לחיפוש בשדה ״{SEARCH_FIELDS[searchField]}״</span>
+          <Button variant="outline" className="rounded-xl" onClick={resetFilters}>איפוס סינון</Button>
+        </CardContent></Card>
       ) : (
         <div className="grid gap-2">
           {sorted.map((s) => (
