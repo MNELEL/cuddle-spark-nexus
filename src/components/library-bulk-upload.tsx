@@ -29,12 +29,14 @@ import {
 import { createUploadedResource } from "@/lib/library-extras.functions";
 import { analyzeExistingResource } from "@/lib/resource-understanding.functions";
 import {
-  ACCEPT_LIBRARY_ALL, LIBRARY_KIND_ACCEPT, validateUploadFile,
+  LIBRARY_KIND_ACCEPT, validateUploadFile,
+  MAX_LIBRARY_UPLOAD_MB, MAX_LIBRARY_UPLOAD_FILES,
   type LibraryKindId,
 } from "@/lib/upload-accept";
 
 type ItemState = {
   name: string;
+  file?: File;
   status: "pending" | "uploading" | "analyzing" | "done" | "error";
   note?: string;
 };
@@ -55,11 +57,14 @@ const FILE_KINDS: { id: LibraryKindId; label: string; icon: typeof FileText; acc
   { id: "other", label: "אחר", icon: FolderOpen, accept: LIBRARY_KIND_ACCEPT.other },
 ];
 
-const ALL_ACCEPT = ACCEPT_LIBRARY_ALL;
+/** הספרייה מקבלת כל סוג קובץ — הסינון לפי קבוצה הוא נוחות בלבד */
+const ALL_ACCEPT = "";
+const fmtMb = (bytes: number) => (bytes / (1024 * 1024)).toFixed(1);
 
 export function LibraryBulkUpload({ open, onClose }: { open: boolean; onClose: () => void }) {
   const qc = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
+  const folderRef = useRef<HTMLInputElement>(null);
   const createFn = useServerFn(createUploadedResource);
   const analyzeFn = useServerFn(analyzeExistingResource);
   const saveFn = useServerFn(upsertResource);
@@ -78,37 +83,42 @@ export function LibraryBulkUpload({ open, onClose }: { open: boolean; onClose: (
     setItems((prev) => prev.map((it, idx) => (idx === i ? { ...it, ...p } : it)));
 
   const pickFiles = (kindAccept: string) => {
-    setAccept(kindAccept || ALL_ACCEPT);
+    setAccept(kindAccept);
     // מאפשר לדפדפן להחיל את ה-accept המעודכן לפני פתיחת הבוחר
     window.setTimeout(() => inputRef.current?.click(), 0);
   };
 
-  const addFiles = (fileList: FileList | File[] | null) => {
+  const addFiles = (fileList: FileList | File[] | null, fromFolder = false) => {
     const incoming = fileList ? Array.from(fileList) : [];
     if (inputRef.current) inputRef.current.value = "";
+    if (folderRef.current) folderRef.current.value = "";
     if (incoming.length === 0) return;
-    // אותה ולידציה (סוג + גודל) כמו בכל שאר נקודות ההעלאה, עם הודעות בעברית
+    // כל סוג קובץ מותר; נבדק רק המשקל (עד 50MB) — בבחירת תיקייה מדווחים סיכום אחד
     const valid: File[] = [];
+    let skipped = 0;
     for (const f of incoming) {
-      const res = validateUploadFile(f, ALL_ACCEPT);
+      const res = validateUploadFile(f, ALL_ACCEPT, MAX_LIBRARY_UPLOAD_MB);
       if (res.ok) valid.push(f);
+      else if (fromFolder) skipped += 1;
       else toast.error(res.message);
     }
+    if (fromFolder && skipped > 0) toast.info(`${skipped} קבצים דולגו (ריקים או מעל ${MAX_LIBRARY_UPLOAD_MB}MB)`);
     if (valid.length === 0) return;
     setPending((prev) => {
-      const merged = [...prev, ...valid].slice(0, 20);
-      if (prev.length + valid.length > 20) toast.error("אפשר להעלות עד 20 קבצים בפעם אחת");
+      const merged = [...prev, ...valid].slice(0, MAX_LIBRARY_UPLOAD_FILES);
+      if (prev.length + valid.length > MAX_LIBRARY_UPLOAD_FILES) {
+        toast.error(`אפשר להעלות עד ${MAX_LIBRARY_UPLOAD_FILES} קבצים בפעם אחת`);
+      }
       return merged;
     });
   };
 
-  const uploadPending = async () => {
-    const files = pending;
+  const uploadFiles = async (files: File[]) => {
     if (files.length === 0) {
       toast.error("בחר קבצים להעלאה");
       return;
     }
-    setItems(files.map((f) => ({ name: f.name, status: "pending" as const })));
+    setItems(files.map((f) => ({ name: f.name, file: f, status: "pending" as const })));
     setRunning(true);
 
     const { data: auth } = await supabase.auth.getUser();
@@ -120,6 +130,7 @@ export function LibraryBulkUpload({ open, onClose }: { open: boolean; onClose: (
     }
 
     let ok = 0;
+    const failed: File[] = [];
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       try {
@@ -155,14 +166,19 @@ export function LibraryBulkUpload({ open, onClose }: { open: boolean; onClose: (
         ok++;
       } catch (e) {
         update(i, { status: "error", note: e instanceof Error ? e.message : "העלאה נכשלה" });
+        if (file) failed.push(file);
       }
     }
 
     setRunning(false);
-    setPending([]);
+    // הקבצים שנכשלו נשארים ברשימה כדי שאפשר יהיה להמשיך מאיפה שנעצר
+    setPending(failed);
     qc.invalidateQueries({ queryKey: ["teaching-resources"] });
-    toast.success(`הועלו ${ok} מתוך ${files.length} קבצים`);
+    if (failed.length === 0) toast.success(`הועלו ${ok} מתוך ${files.length} קבצים`);
+    else toast.error(`${failed.length} קבצים נכשלו — אפשר להמשיך את ההעלאה שלהם`);
   };
+
+  const uploadPending = () => uploadFiles(pending);
 
   const savePasted = async () => {
     const body = pasteText.trim();
