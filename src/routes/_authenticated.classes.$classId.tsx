@@ -187,7 +187,7 @@ function YearChain({ classId }: { classId: string }) {
   );
 }
 
-type ClassSearch = { q?: string; field?: string; tab?: string };
+type ClassSearch = { q?: string; field?: string; tab?: string; sort?: string; page?: number };
 const CLASS_TABS = ["students", "relations", "groups", "seating", "tracking", "crm", "lessons"] as const;
 
 export const Route = createFileRoute("/_authenticated/classes/$classId")({
@@ -198,6 +198,8 @@ export const Route = createFileRoute("/_authenticated/classes/$classId")({
     q: typeof s.q === "string" ? s.q : undefined,
     field: typeof s.field === "string" ? s.field : undefined,
     tab: typeof s.tab === "string" ? s.tab : undefined,
+    sort: typeof s.sort === "string" ? s.sort : undefined,
+    page: Number.isFinite(Number(s.page)) && Number(s.page) > 1 ? Math.floor(Number(s.page)) : undefined,
   }),
   loader: async ({ params }) => {
     const { getClass } = await import("@/lib/classes.functions");
