@@ -1005,7 +1005,7 @@ function ResourcesPage() {
 /* -------------------- card -------------------- */
 
 function ResourceCard({
-  resource, onView, onEdit, onVariant, onToggleFavorite,
+  resource, onView, onEdit, onVariant, onToggleFavorite, onDelete,
   usageCount = 0, analyzing = false, onAnalyze, selected = false, onToggleSelected,
   variant = "grid",
 }: {
@@ -1014,6 +1014,7 @@ function ResourceCard({
   onEdit: () => void;
   onVariant: (r: ResourceRow) => void;
   onToggleFavorite: () => void;
+  onDelete?: (r: ResourceRow) => void;
   usageCount?: number;
   analyzing?: boolean;
   onAnalyze?: () => void;
@@ -1024,6 +1025,7 @@ function ResourceCard({
   const hasText = Boolean(resource.content?.original_text?.trim());
   const compact = variant === "list";
   const thumbs = variant === "thumbs";
+  const [deleteOpen, setDeleteOpen] = useState(false);
   return (
     <div
       role="button"
