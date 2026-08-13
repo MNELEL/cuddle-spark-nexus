@@ -114,8 +114,8 @@
 
 **פעולה נדרשת:**
 - ~~**שקלול ציונים**: טבלת `grade_weights` חדשה ב-Supabase (class_id, category, weight) + server function לחישוב ממוצע משוקלל + UI להגדרת משקלים (הרחבת `analytics.$classId.tsx` או route ייעודי).~~ ✅ הושלם (אוגוסט 2026).
-- דשבורד מנהל מוסד עם דוחות ברמת כיתה/מחוז.
 - report builder בסיסי לבחירת שדות וייצוא PDF/CSV.
+- ייצוא נתונים לסטנדרטים (JSON/CSV).
 
 ---
 
