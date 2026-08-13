@@ -737,11 +737,28 @@ function StudentsTab({
         </CardContent></Card>
       ) : (
         <div className="grid gap-2">
-          {sorted.map((s) => (
+          {pageRows.map((s) => (
             <StudentRow key={s.id} student={s} scoreInputs={scoreInputs}
               onEdit={() => { setEditing(s); setOpen(true); }}
               onOpenFile={() => setFileFor(s)} />
           ))}
+          {pageCount > 1 && (
+            <div className="flex items-center justify-between gap-2 pt-1 text-xs" aria-live="polite">
+              <Button
+                variant="outline" size="sm" className="rounded-xl"
+                disabled={safePage <= 1}
+                onClick={() => onPageChange(safePage - 1)}
+              >הקודם</Button>
+              <span className="font-mono-tabular text-muted-foreground">
+                עמוד {safePage} מתוך {pageCount}
+              </span>
+              <Button
+                variant="outline" size="sm" className="rounded-xl"
+                disabled={safePage >= pageCount}
+                onClick={() => onPageChange(safePage + 1)}
+              >הבא</Button>
+            </div>
+          )}
         </div>
       )}
 
