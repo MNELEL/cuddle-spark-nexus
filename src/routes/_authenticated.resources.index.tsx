@@ -915,6 +915,7 @@ function ResourcesPage() {
                 onEdit={() => setEditing(r)}
                 onVariant={(src) => { setAiSource(src); setAiOpen(true); }}
                 onToggleFavorite={() => favMut.mutate({ id: r.id, is_favorite: !r.is_favorite })}
+                onDelete={(r) => deleteMut.mutate(r)}
               />
             ))}
           </div>
