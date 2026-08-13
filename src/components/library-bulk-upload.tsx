@@ -33,6 +33,7 @@ import {
   MAX_LIBRARY_UPLOAD_MB, MAX_LIBRARY_UPLOAD_FILES,
   type LibraryKindId,
 } from "@/lib/upload-accept";
+import { recordUpload } from "@/lib/upload-log";
 
 type ItemState = {
   name: string;
