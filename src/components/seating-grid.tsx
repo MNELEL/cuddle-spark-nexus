@@ -32,7 +32,11 @@ import {
   emptyHistory, recordChange, undo as undoHistory, redo as redoHistory,
   canUndo, canRedo, type SeatHistory, type SeatSnapshot,
 } from "@/lib/seat-history";
-import { printSeatingLayout, exportSeatingPdf, printSeatKey, type SeatingPrintCell } from "@/lib/print-seating";
+import {
+  printSeatingLayout, exportSeatingPdf, printSeatKey, PAPER_SIZE_LABELS,
+  DEFAULT_SEATING_PRINT_OPTIONS, type SeatingPrintCell, type SeatingPrintOptions,
+  type PaperSize, type PaperOrientation,
+} from "@/lib/print-seating";
 
 type Student = {
   id: string; class_id: string; name: string;
@@ -642,6 +646,22 @@ export function SeatingGrid({ classId }: { classId: string }) {
   });
 
   // בניית נתוני ההדפסה מהמצב הנוכחי של הגריד
+  const printOptsKey = `seating-print-opts:${classId}`;
+  const [printOpts, setPrintOpts] = useState<SeatingPrintOptions>(DEFAULT_SEATING_PRINT_OPTIONS);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(printOptsKey);
+      if (raw) setPrintOpts({ ...DEFAULT_SEATING_PRINT_OPTIONS, ...JSON.parse(raw) });
+      else setPrintOpts(DEFAULT_SEATING_PRINT_OPTIONS);
+    } catch { /* התעלם מנתונים פגומים */ }
+  }, [printOptsKey]);
+  const updatePrintOpts = (patch: Partial<SeatingPrintOptions>) =>
+    setPrintOpts((prev) => {
+      const next = { ...prev, ...patch };
+      try { localStorage.setItem(printOptsKey, JSON.stringify(next)); } catch { /* אחסון חסום */ }
+      return next;
+    });
+
   const buildPrintInput = () => {
     const cells: Record<string, SeatingPrintCell> = {};
     for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
@@ -658,6 +678,7 @@ export function SeatingGrid({ classId }: { classId: string }) {
       className: cls?.name ?? "כיתה",
       rows, cols, cells,
       unseated: unseated.map((s) => s.name),
+      options: printOpts,
     };
   };
 
@@ -671,7 +692,7 @@ export function SeatingGrid({ classId }: { classId: string }) {
   const handlePdf = async () => {
     setPdfBusy(true);
     try {
-      await exportSeatingPdf("seating-grid-canvas", `seating-${cls?.name ?? "class"}.pdf`);
+      await exportSeatingPdf("seating-grid-canvas", `seating-${cls?.name ?? "class"}.pdf`, printOpts);
       toast.success("קובץ ה-PDF הורד");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "ייצוא ה-PDF נכשל");
@@ -792,6 +813,81 @@ export function SeatingGrid({ classId }: { classId: string }) {
             <Button size="sm" variant="ghost" onClick={handlePdf} disabled={pdfBusy} title="ייצוא הפריסה ל-PDF">
               {pdfBusy ? <Loader2 className="ms-1 h-4 w-4 animate-spin" /> : <FileDown className="ms-1 h-4 w-4" />} PDF
             </Button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button size="sm" variant="ghost" title="הגדרות הדפסה" aria-label="הגדרות הדפסה">
+                  <Settings2 className="ms-1 h-4 w-4" /> הגדרות הדפסה
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" dir="rtl" className="w-80 space-y-3 text-sm">
+                <div className="font-semibold">הגדרות הדפסה</div>
+                <div className="space-y-1">
+                  <Label htmlFor="print-paper">גודל נייר</Label>
+                  <select
+                    id="print-paper"
+                    value={printOpts.paperSize}
+                    onChange={(e) => updatePrintOpts({ paperSize: e.target.value as PaperSize })}
+                    className="w-full rounded-md border bg-background px-2 py-1.5 text-sm"
+                  >
+                    {(Object.keys(PAPER_SIZE_LABELS) as PaperSize[]).map((p) => (
+                      <option key={p} value={p}>{PAPER_SIZE_LABELS[p]}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="print-orientation">כיוון הדף</Label>
+                  <select
+                    id="print-orientation"
+                    value={printOpts.orientation}
+                    onChange={(e) => updatePrintOpts({ orientation: e.target.value as PaperOrientation })}
+                    className="w-full rounded-md border bg-background px-2 py-1.5 text-sm"
+                  >
+                    <option value="landscape">לרוחב</option>
+                    <option value="portrait">לאורך</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="print-margin">שוליים (מ״מ)</Label>
+                  <Input
+                    id="print-margin"
+                    type="number"
+                    min={0}
+                    max={40}
+                    value={printOpts.marginMm}
+                    onChange={(e) => updatePrintOpts({ marginMm: Number(e.target.value) })}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="print-title">כותרת מותאמת אישית</Label>
+                  <Input
+                    id="print-title"
+                    value={printOpts.title ?? ""}
+                    placeholder={`פריסת הושבה — ${cls?.name ?? "כיתה"}`}
+                    onChange={(e) => updatePrintOpts({ title: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="print-footer">כותרת תחתונה</Label>
+                  <Input
+                    id="print-footer"
+                    value={printOpts.footer ?? ""}
+                    placeholder="הופק במערכת ClassAlign Studio"
+                    onChange={(e) => updatePrintOpts({ footer: e.target.value })}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="print-positions">הצגת מספרי מקום בכל תא</Label>
+                  <Switch
+                    id="print-positions"
+                    checked={printOpts.showPositions !== false}
+                    onCheckedChange={(v) => updatePrintOpts({ showPositions: v })}
+                  />
+                </div>
+                <Button size="sm" variant="ghost" onClick={() => updatePrintOpts(DEFAULT_SEATING_PRINT_OPTIONS)}>
+                  איפוס להגדרות ברירת המחדל
+                </Button>
+              </PopoverContent>
+            </Popover>
             <Popover>
               <PopoverTrigger asChild>
                 <Button size="sm" variant={a11y ? "default" : "ghost"} aria-pressed={a11y} aria-label="הגדרות נגישות">
