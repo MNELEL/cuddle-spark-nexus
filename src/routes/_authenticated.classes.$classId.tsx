@@ -334,6 +334,18 @@ function parentSortName(s: Student): string {
   return (s.father_name?.trim() || s.mother_name?.trim() || "");
 }
 
+/**
+ * שם פרטי / שם משפחה למיון. אם העמודות ריקות (תלמידים שנוצרו לפני
+ * הפיצול לשם פרטי ושם משפחה) נגזור אותם מהשם המלא, אחרת המיון
+ * לפי שם משפחה היה יוצא זהה למיון לפי שם פרטי.
+ */
+function nameParts(s: Student): { first: string; last: string } {
+  const parts = (s.name ?? "").trim().split(/\s+/).filter(Boolean);
+  const first = s.first_name?.trim() || parts[0] || "";
+  const last = s.last_name?.trim() || (parts.length > 1 ? parts.slice(1).join(" ") : "");
+  return { first, last };
+}
+
 function sortStudents(
   students: Student[],
   key: SortKey,
@@ -343,9 +355,19 @@ function sortStudents(
   const rows = [...students];
   switch (key) {
     case "first_name":
-      return rows.sort((a, b) => he(a.first_name?.trim() || a.name, b.first_name?.trim() || b.name));
+      return rows.sort((a, b) => {
+        const pa = nameParts(a); const pb = nameParts(b);
+        return he(pa.first, pb.first) || he(pa.last, pb.last);
+      });
     case "last_name":
-      return rows.sort((a, b) => he(a.last_name?.trim() || a.name, b.last_name?.trim() || b.name));
+      return rows.sort((a, b) => {
+        const pa = nameParts(a); const pb = nameParts(b);
+        // מי שאין לו שם משפחה יורד לסוף הרשימה
+        if (!pa.last && !pb.last) return he(pa.first, pb.first);
+        if (!pa.last) return 1;
+        if (!pb.last) return -1;
+        return he(pa.last, pb.last) || he(pa.first, pb.first);
+      });
     case "parent_name":
       return rows.sort((a, b) => {
         const pa = parentSortName(a);
