@@ -5,6 +5,7 @@ import { BookOpen, Link2, Link2Off } from "lucide-react";
 import { getClassLibraryLink } from "@/lib/class-assignments.functions";
 import { Button } from "@/components/ui/button";
 import { ConnectLibraryDialog } from "@/components/connect-library-dialog";
+import { LibraryLinkInfo } from "@/components/library-link-info";
 
 /** Shows whether the class is connected to the library through a lesson or a bulletin. */
 export function ClassLibraryStatus({ classId }: { classId: string }) {
@@ -22,12 +23,16 @@ export function ClassLibraryStatus({ classId }: { classId: string }) {
         data.connected ? "border-emerald-500/40 bg-emerald-500/5" : "border-amber/40 bg-amber/10"
       }`}
     >
-      <span className="flex items-center gap-2">
+      <span className="flex items-start gap-2">
         {data.connected ? (
-          <Link2 className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+          <Link2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" aria-hidden="true" />
         ) : (
-          <Link2Off className="h-4 w-4 text-amber" aria-hidden="true" />
+          <Link2Off className="mt-0.5 h-4 w-4 shrink-0 text-amber" aria-hidden="true" />
         )}
+        <span className="flex items-center gap-1 font-semibold">
+          חיבור לכיתה
+          <LibraryLinkInfo classId={classId} />
+        </span>
         {data.connected ? (
           <span>
             חומרי הוראה מהספרייה משויכים לכיתה — {data.lessonCount} שיעורים ו-{data.bulletinCount} עלונים (דפי קשר להורים)

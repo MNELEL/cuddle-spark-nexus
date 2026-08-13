@@ -46,6 +46,14 @@ type Student = {
 };
 
 const seatKey = (r: number, c: number) => `${r}:${c}`;
+/** רוחב אובייקט בעמודות — תמיד בין 1 ל-6 */
+const objSpan = (o: RoomObject) => Math.max(1, Math.min(6, o.span ?? 1));
+/** כל המשבצות שאובייקט תופס (רצף מחובר על פני כמה מקומות) */
+const objCells = (o: RoomObject) => {
+  const keys: string[] = [];
+  for (let i = 0; i < objSpan(o); i++) keys.push(seatKey(o.row, o.col + i));
+  return keys;
+};
 
 export const ROOM_OBJECT_META: Record<RoomObjectType, { label: string; icon: typeof Star; className: string }> = {
   board: { label: "לוח מחיק", icon: Presentation, className: "bg-slate-700 text-white" },
@@ -96,7 +104,7 @@ function DraggableStudent({ student, id, highlight, onClick, groupColor }: { stu
 
 function Seat({
   row, col, hidden, child, onToggleHide, onToggleLock, lockedChild, highlight, onSelect, groupColor,
-  roomObject, onDeleteObject,
+  roomObject, onDeleteObject, onUpdateObject, seatNumber, maxSpan,
   a11y, focused, grabbedId, onFocusSeat, seatRef,
 }: {
   row: number; col: number; hidden: boolean; child: Student | null;
@@ -106,6 +114,11 @@ function Seat({
   groupColor?: string | null;
   roomObject?: RoomObject | null;
   onDeleteObject?: (id: string) => void;
+  onUpdateObject?: (id: string, patch: { label?: string; span?: number }) => void;
+  /** מספר מקום ישיבה — רק למשבצות ישיבה אמיתיות (אובייקטים ומוסתרים לא נספרים) */
+  seatNumber?: number | null;
+  /** הרוחב המקסימלי האפשרי לאובייקט במשבצת הזו */
+  maxSpan?: number;
   a11y?: boolean;
   focused?: boolean;
   grabbedId?: string | null;
@@ -144,10 +157,13 @@ function Seat({
       aria-label={a11y ? seatLabel : undefined}
       aria-selected={a11y && !!child && highlight === "self"}
       onFocus={onFocusSeat}
+      style={{
+        ...(groupColor ? { background: `linear-gradient(135deg, ${groupColor}1a, transparent 60%)`, borderColor: `${groupColor}55` } : {}),
+        ...(roomObject && objSpan(roomObject) > 1 ? { gridColumn: `span ${objSpan(roomObject)} / span ${objSpan(roomObject)}` } : {}),
+      }}
       className={`group relative flex aspect-[4/3] items-center justify-center rounded-md border bg-card p-1 transition-colors ${
         isOver ? "border-primary bg-primary/10" : "border-border"
       } ${a11y && focused ? "outline outline-2 outline-offset-2 outline-primary z-10" : ""} ${a11y ? "focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-primary focus:z-10" : ""} ${grabbedId && !child ? "ring-2 ring-primary/60" : ""}`}
-      style={groupColor ? { background: `linear-gradient(135deg, ${groupColor}1a, transparent 60%)`, borderColor: `${groupColor}55` } : undefined}
     >
       <div className="absolute top-0.5 left-0.5 flex gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
         {child && (
@@ -170,8 +186,20 @@ function Seat({
             <X className="h-3 w-3" />
           </button>
         )}
+        {roomObject && onUpdateObject && (
+          <RoomObjectEditor obj={roomObject} maxSpan={maxSpan ?? 1} onSave={(patch) => onUpdateObject(roomObject.id, patch)} />
+        )}
       </div>
-      <span className="absolute bottom-0.5 right-1 text-[9px] text-muted-foreground">{row + 1},{col + 1}</span>
+      {roomObject ? (
+        <span className="absolute bottom-0.5 right-1 text-[9px] text-muted-foreground">אובייקט</span>
+      ) : (
+        <span
+          className="absolute bottom-0.5 right-1 text-[9px] font-semibold text-muted-foreground"
+          title={`מקום ${seatNumber} · שורה ${row + 1} עמודה ${col + 1}`}
+        >
+          מקום {seatNumber}
+        </span>
+      )}
       {child ? (
         <DraggableStudent student={child} id={`student:${child.id}`} highlight={highlight} onClick={onSelect} groupColor={groupColor} />
       ) : roomObject ? (
@@ -180,6 +208,55 @@ function Seat({
         <span className="text-[10px] text-muted-foreground">ריק</span>
       )}
     </div>
+  );
+}
+
+/** עריכת שם האובייקט והרוחב שלו (רצף מחובר על פני כמה מקומות) */
+function RoomObjectEditor({
+  obj, maxSpan, onSave,
+}: { obj: RoomObject; maxSpan: number; onSave: (patch: { label?: string; span?: number }) => void }) {
+  const meta = ROOM_OBJECT_META[obj.type];
+  const [label, setLabel] = useState(obj.label ?? "");
+  const [span, setSpan] = useState(objSpan(obj));
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button type="button" aria-label="ערוך אובייקט" title="ערוך שם ורוחב" className="rounded p-0.5 hover:bg-accent">
+          <Settings2 className="h-3 w-3" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-64 space-y-3" dir="rtl" align="start">
+        <div className="space-y-1">
+          <Label htmlFor={`obj-label-${obj.id}`} className="text-xs">שם האובייקט</Label>
+          <Input
+            id={`obj-label-${obj.id}`}
+            value={label}
+            placeholder={meta.label}
+            maxLength={60}
+            onChange={(e) => setLabel(e.target.value)}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor={`obj-span-${obj.id}`} className="text-xs">רוחב (מספר מקומות ברצף)</Label>
+          <select
+            id={`obj-span-${obj.id}`}
+            className="h-9 w-full rounded-md border bg-background px-2 text-sm"
+            value={span}
+            onChange={(e) => setSpan(Number(e.target.value))}
+          >
+            {Array.from({ length: Math.max(1, Math.min(6, maxSpan)) }).map((_, i) => (
+              <option key={i + 1} value={i + 1}>{i + 1}</option>
+            ))}
+          </select>
+          <p className="text-[11px] text-muted-foreground">
+            רוחב גדול מ-1 יוצר אובייקט מחובר (למשל ארון או לוח) שנפרס על פני כמה מקומות. מקומות שנתפסים כך אינם מקבלים מספר מקום.
+          </p>
+        </div>
+        <Button size="sm" className="w-full" onClick={() => onSave({ label: label.trim(), span })}>
+          <Check className="ms-1 h-4 w-4" /> שמור
+        </Button>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -375,12 +452,32 @@ export function SeatingGrid({ classId }: { classId: string }) {
     for (const o of roomObjects) m.set(seatKey(o.row, o.col), o);
     return m;
   }, [roomObjects]);
+  /** כל משבצת שאובייקט תופס (כולל המשך של רצף מחובר) → האובייקט עצמו */
+  const objectCover = useMemo(() => {
+    const m = new Map<string, RoomObject>();
+    for (const o of roomObjects) for (const k of objCells(o)) m.set(k, o);
+    return m;
+  }, [roomObjects]);
   // Seats that must never receive a student: hidden seats + cells taken by room objects.
   const blockedSet = useMemo(() => {
     const s = new Set<string>(hiddenSet);
-    for (const o of roomObjects) s.add(seatKey(o.row, o.col));
+    for (const o of roomObjects) for (const k of objCells(o)) s.add(k);
     return s;
   }, [hiddenSet, roomObjects]);
+  /**
+   * מספור מקומות הישיבה: רק משבצות ישיבה אמיתיות מקבלות מספר רץ (1,2,3...).
+   * מושבים מוסתרים ומשבצות שאובייקט תופס אינם נספרים כלל.
+   */
+  const seatNumbers = useMemo(() => {
+    const m = new Map<string, number>();
+    let n = 0;
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      const k = seatKey(r, c);
+      if (blockedSet.has(k)) continue;
+      m.set(k, ++n);
+    }
+    return m;
+  }, [rows, cols, blockedSet]);
   const [editEnv, setEditEnv] = useState(false);
   const saveObjectsM = useMutation({
     mutationFn: (next: RoomObject[]) => updateClassFn({ data: { id: classId, room_objects: next } }),
@@ -390,16 +487,40 @@ export function SeatingGrid({ classId }: { classId: string }) {
   const addObject = (type: RoomObjectType, r: number, c: number) => {
     if (hiddenSet.has(seatKey(r, c))) { toast.error("לא ניתן להניח במושב מוסתר"); return; }
     if (seated.get(seatKey(r, c))) { toast.error("המשבצת תפוסה על ידי תלמיד"); return; }
-    if (objectAt.get(seatKey(r, c))) { toast.error("המשבצת תפוסה על ידי אובייקט"); return; }
+    if (objectCover.get(seatKey(r, c))) { toast.error("המשבצת תפוסה על ידי אובייקט"); return; }
     const id = `obj_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
     saveObjectsM.mutate([...roomObjects, { id, type, row: r, col: c }]);
   };
   const moveObject = (id: string, r: number, c: number) => {
-    if (hiddenSet.has(seatKey(r, c))) { toast.error("לא ניתן להניח במושב מוסתר"); return; }
-    if (seated.get(seatKey(r, c))) { toast.error("המשבצת תפוסה"); return; }
-    const other = objectAt.get(seatKey(r, c));
-    if (other && other.id !== id) { toast.error("המשבצת תפוסה"); return; }
+    const current = roomObjects.find((o) => o.id === id);
+    const span = current ? objSpan(current) : 1;
+    if (c + span > cols) { toast.error("אין מספיק מקום ברצף — קרב את האובייקט או צמצם את הרוחב"); return; }
+    for (let i = 0; i < span; i++) {
+      const k = seatKey(r, c + i);
+      if (hiddenSet.has(k)) { toast.error("לא ניתן להניח במושב מוסתר"); return; }
+      if (seated.get(k)) { toast.error("המשבצת תפוסה"); return; }
+      const other = objectCover.get(k);
+      if (other && other.id !== id) { toast.error("המשבצת תפוסה"); return; }
+    }
     saveObjectsM.mutate(roomObjects.map((o) => o.id === id ? { ...o, row: r, col: c } : o));
+  };
+  /** עדכון שם/רוחב של אובייקט, כולל בדיקה שהרצף לא חורג ולא דורך על תלמיד או אובייקט אחר */
+  const updateObject = (id: string, patch: { label?: string; span?: number }) => {
+    const current = roomObjects.find((o) => o.id === id);
+    if (!current) return;
+    const span = Math.max(1, Math.min(6, patch.span ?? objSpan(current)));
+    if (current.col + span > cols) { toast.error("הרוחב חורג מגבול הכיתה"); return; }
+    for (let i = 1; i < span; i++) {
+      const k = seatKey(current.row, current.col + i);
+      if (hiddenSet.has(k)) { toast.error("הרצף עובר על מושב מוסתר"); return; }
+      if (seated.get(k)) { toast.error("הרצף עובר על מושב של תלמיד"); return; }
+      const other = objectCover.get(k);
+      if (other && other.id !== id) { toast.error("הרצף עובר על אובייקט אחר"); return; }
+    }
+    const label = patch.label?.trim();
+    saveObjectsM.mutate(
+      roomObjects.map((o) => o.id === id ? { ...o, span, ...(label ? { label } : { label: undefined }) } : o),
+    );
   };
   const deleteObject = (id: string) => {
     saveObjectsM.mutate(roomObjects.filter((o) => o.id !== id));
@@ -957,12 +1078,25 @@ export function SeatingGrid({ classId }: { classId: string }) {
             style={{ gridTemplateColumns: `repeat(${cols}, minmax(0,1fr))` }}
           >
             {Array.from({ length: rows }).flatMap((_, r) =>
-              Array.from({ length: cols }).map((__, c) => {
+              Array.from({ length: cols }).flatMap((__, c) => {
                 const child = seated.get(seatKey(r, c)) ?? null;
                 const obj = objectAt.get(seatKey(r, c)) ?? null;
+                const cover = objectCover.get(seatKey(r, c)) ?? null;
+                // משבצת שהיא המשך של אובייקט מחובר — לא מרנדרים, האובייקט נפרס עליה
+                if (cover && !obj) return [];
+                // כמה מקומות פנויים יש מכאן ועד סוף השורה — הרוחב המקסימלי לאובייקט
+                let maxSpan = 1;
+                if (obj) {
+                  for (let i = 1; i < 6 && c + i < cols; i++) {
+                    const k = seatKey(r, c + i);
+                    const other = objectCover.get(k);
+                    if (hiddenSet.has(k) || seated.get(k) || (other && other.id !== obj.id)) break;
+                    maxSpan = i + 1;
+                  }
+                }
                 const hl = child ? highlightMap.get(child.id) ?? null : null;
                 const gc = child ? studentColor.get(child.id) ?? null : null;
-                return (
+                return [(
                   <Seat key={`${r}-${c}`} row={r} col={c}
                     hidden={hiddenSet.has(seatKey(r, c))}
                     child={child}
@@ -970,7 +1104,10 @@ export function SeatingGrid({ classId }: { classId: string }) {
                     highlight={hl}
                     groupColor={gc}
                     roomObject={obj}
+                    seatNumber={seatNumbers.get(seatKey(r, c)) ?? null}
+                    maxSpan={maxSpan}
                     onDeleteObject={editEnv ? deleteObject : undefined}
+                    onUpdateObject={editEnv ? updateObject : undefined}
                     onSelect={() => child && setSelectedId((cur) => cur === child.id ? null : child.id)}
                     onToggleHide={() => hideM.mutate({ row: r, col: c })}
                     onToggleLock={() => child && lockM.mutate({ id: child.id, locked: !child.seat_locked })}
@@ -984,7 +1121,7 @@ export function SeatingGrid({ classId }: { classId: string }) {
                       else seatRefs.current.delete(k);
                     }}
                   />
-                );
+                )];
               }),
             )}
           </div>

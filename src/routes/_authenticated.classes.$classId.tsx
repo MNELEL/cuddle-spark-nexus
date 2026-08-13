@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
@@ -24,6 +24,9 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ClassTeacherName } from "@/components/class-teacher-name";
 import { ClassLibraryStatus } from "@/components/class-library-status";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -142,8 +145,18 @@ function YearChain({ classId }: { classId: string }) {
   );
 }
 
+type ClassSearch = { q?: string; field?: string; tab?: string };
+const CLASS_TABS = ["students", "relations", "groups", "seating", "tracking", "crm", "lessons"] as const;
+
 export const Route = createFileRoute("/_authenticated/classes/$classId")({
   component: ClassDetail,
+  // המסננים והטאב נשמרים בכתובת עצמה, כדי שאפשר יהיה לשמור מצב, לשתף קישור
+  // ולחזור אחורה בלי לאבד את החיפוש.
+  validateSearch: (s: Record<string, unknown>): ClassSearch => ({
+    q: typeof s.q === "string" ? s.q : undefined,
+    field: typeof s.field === "string" ? s.field : undefined,
+    tab: typeof s.tab === "string" ? s.tab : undefined,
+  }),
   loader: async ({ params }) => {
     const { getClass } = await import("@/lib/classes.functions");
     try {
@@ -183,10 +196,24 @@ type Student = {
 
 function ClassDetail() {
   const { classId } = Route.useParams();
+  const search = Route.useSearch();
+  const navigate = useNavigate({ from: Route.fullPath });
   const validClass = isValidClassId(classId);
   // Entering a class should immediately show the seating map — that is what the
-  // teacher looks at first when walking into the room.
-  const [tab, setTab] = useState("seating");
+  // teacher looks at first when walking into the room; the URL may override it.
+  const tab = CLASS_TABS.includes(search.tab as (typeof CLASS_TABS)[number])
+    ? (search.tab as string)
+    : "seating";
+  const setTab = (t: string) =>
+    void navigate({ search: (prev) => ({ ...prev, tab: t }), replace: true });
+  const query = search.q ?? "";
+  const searchField: SearchField = (search.field && search.field in SEARCH_FIELDS)
+    ? (search.field as SearchField)
+    : "full_name";
+  const setQuery = (q: string) =>
+    void navigate({ search: (prev) => ({ ...prev, q: q || undefined }), replace: true });
+  const setSearchField = (f: SearchField) =>
+    void navigate({ search: (prev) => ({ ...prev, field: f === "full_name" ? undefined : f }), replace: true });
   useEffect(() => { if (validClass) recordClassVisit(classId); }, [classId, validClass]);
   const getC = useServerFn(getClass);
   const listS = useServerFn(listStudents);
@@ -278,7 +305,15 @@ function ClassDetail() {
 
         <TabsContent value="students" className="mt-4">
           <div className="mb-3"><ImportExportBar classId={classId} /></div>
-          <StudentsTab classId={classId} students={students as Student[]} scoreInputs={scoreInputs} />
+          <StudentsTab
+            classId={classId}
+            students={students as Student[]}
+            scoreInputs={scoreInputs}
+            query={query}
+            searchField={searchField}
+            onQueryChange={setQuery}
+            onSearchFieldChange={setSearchField}
+          />
         </TabsContent>
 
         <TabsContent value="relations" className="mt-4">
@@ -458,33 +493,42 @@ function UpcomingBirthdays({ students }: { students: Student[] }) {
 }
 
 function StudentsTab({
-  classId, students, scoreInputs,
+  classId, students, scoreInputs, query, searchField, onQueryChange, onSearchFieldChange,
 }: {
   classId: string; students: Student[];
   scoreInputs?: { grades: { student_id: string; value: number; max_value: number }[]; attendance: { student_id: string; status: string }[]; behavior: { student_id: string; points: number }[] };
+  query: string;
+  searchField: SearchField;
+  onQueryChange: (q: string) => void;
+  onSearchFieldChange: (f: SearchField) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Student | null>(null);
   const [fileFor, setFileFor] = useState<Student | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("first_name");
-  const [searchField, setSearchField] = useState<SearchField>("full_name");
-  const [query, setQuery] = useState("");
   useEffect(() => {
     const saved = localStorage.getItem(sortStorageKey(classId));
     if (saved && saved in SORT_OPTIONS) setSortKey(saved as SortKey);
+  }, [classId]);
+  // ברירת מחדל מה-localStorage רק כשאין פרמטר בכתובת
+  useEffect(() => {
+    if (searchField !== "full_name") return;
     const savedField = localStorage.getItem(searchStorageKey(classId));
-    if (savedField && savedField in SEARCH_FIELDS) setSearchField(savedField as SearchField);
+    if (savedField && savedField in SEARCH_FIELDS && savedField !== "full_name") {
+      onSearchFieldChange(savedField as SearchField);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [classId]);
   const changeSort = (k: SortKey) => {
     setSortKey(k);
     localStorage.setItem(sortStorageKey(classId), k);
   };
   const changeSearchField = (f: SearchField) => {
-    setSearchField(f);
+    onSearchFieldChange(f);
     localStorage.setItem(searchStorageKey(classId), f);
   };
   const resetFilters = () => {
-    setQuery("");
+    onQueryChange("");
     changeSearchField("full_name");
     changeSort("first_name");
   };
@@ -538,11 +582,25 @@ function StudentsTab({
             </SelectContent>
           </Select>
         </div>
-        <Button variant="outline" size="sm" onClick={doPrint}><Printer className="ms-1 h-4 w-4" /> הדפסה</Button>
-        <Button variant="outline" size="sm" onClick={doCopy}><Copy className="ms-1 h-4 w-4" /> העתק שמות</Button>
-        <Button variant="outline" size="sm" disabled={handoffM.isPending} onClick={() => handoffM.mutate()}>
-          <FileText className="ms-1 h-4 w-4" /> {handoffM.isPending ? "מכין…" : "מסמך מסירה PDF"}
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm">
+              <MoreHorizontal className="ms-1 h-4 w-4" /> פעולות נוספות
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-52 text-right">
+            <DropdownMenuLabel>פעולות על הרשימה</DropdownMenuLabel>
+            <DropdownMenuItem onClick={doPrint}>
+              <Printer className="ms-1 h-4 w-4" /> הדפסת הרשימה
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => void doCopy()}>
+              <Copy className="ms-1 h-4 w-4" /> העתקת שמות
+            </DropdownMenuItem>
+            <DropdownMenuItem disabled={handoffM.isPending} onClick={() => handoffM.mutate()}>
+              <FileText className="ms-1 h-4 w-4" /> {handoffM.isPending ? "מכין…" : "מסמך מסירה PDF"}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
           <DialogTrigger asChild>
             <Button><Plus className="ms-1 h-4 w-4" /> הוסף תלמיד</Button>
@@ -561,7 +619,7 @@ function StudentsTab({
               className="h-9 rounded-xl text-sm"
               placeholder={`חיפוש לפי ${SEARCH_FIELDS[searchField]}…`}
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => onQueryChange(e.target.value)}
             />
           </div>
           <div>

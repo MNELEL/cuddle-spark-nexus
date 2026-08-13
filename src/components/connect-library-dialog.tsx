@@ -11,6 +11,7 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { LibraryLinkExplanation } from "@/components/library-link-info";
 
 type Target = "lesson" | "bulletin";
 
@@ -82,6 +83,9 @@ export function ConnectLibraryDialog({ classId }: { classId: string }) {
             בחר חומר הוראה מהספרייה, ואת השיעור או העלון שאליו הוא יחובר. החיבור נבדק מול הכיתה לפני השמירה.
           </DialogDescription>
         </DialogHeader>
+        <div className="rounded-xl border bg-muted/30 p-3">
+          <LibraryLinkExplanation classId={classId} />
+        </div>
 
         <div className="space-y-4">
           <div>
