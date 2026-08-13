@@ -30,21 +30,25 @@ export function ClassLibraryStatus({ classId }: { classId: string }) {
         )}
         {data.connected ? (
           <span>
-            הספרייה מחוברת לכיתה — {data.lessonCount} שיעורים ו-{data.bulletinCount} עלונים מקושרים לחומרי ההוראה.
+            חומרי הוראה מהספרייה משויכים לכיתה — {data.lessonCount} שיעורים ו-{data.bulletinCount} עלונים (דפי קשר להורים)
+            כבר מפנים לחומר מהספרייה, כך שכל מי שנכנס לשיעור או לעלון רואה מיד את החומר הנלמד.
           </span>
         ) : (
-          <span>הספרייה עדיין לא מחוברת לכיתה. חבר חומר הוראה דרך שיעור במערכת השבועית או דרך עלון.</span>
+          <span>
+            עדיין לא שויך שום חומר הוראה מהספרייה לכיתה הזו. שיוך חומר מאפשר לפתוח את החומר ישירות מתוך השיעור
+            במערכת השבועית, או לצרף אותו לעלון (דף הקשר) שנשלח להורים.
+          </span>
         )}
       </span>
       <div className="flex shrink-0 gap-2">
         <ConnectLibraryDialog classId={classId} />
         <Button asChild variant="outline" size="sm" className="rounded-xl">
           <Link to="/weekly-schedule/$classId" params={{ classId }}>
-            <BookOpen className="ms-1 h-4 w-4" aria-hidden="true" /> חבר דרך שיעור
+            <BookOpen className="ms-1 h-4 w-4" aria-hidden="true" /> שייך דרך שיעור במערכת
           </Link>
         </Button>
         <Button asChild variant="ghost" size="sm" className="rounded-xl">
-          <Link to="/bulletins/$classId" params={{ classId }}>חבר דרך עלון</Link>
+          <Link to="/bulletins/$classId" params={{ classId }}>שייך דרך עלון להורים</Link>
         </Button>
       </div>
     </div>
