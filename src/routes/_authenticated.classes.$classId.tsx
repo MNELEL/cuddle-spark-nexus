@@ -255,9 +255,18 @@ function ClassDetail() {
     ? (search.field as SearchField)
     : "full_name";
   const setQuery = (q: string) =>
-    void navigate({ search: (prev) => ({ ...prev, q: q || undefined }), replace: true });
+    // כל שינוי בסינון מאפס את הדף כדי שהמצב בכתובת יישאר מדויק
+    void navigate({ search: (prev) => ({ ...prev, q: q || undefined, page: undefined }), replace: true });
   const setSearchField = (f: SearchField) =>
-    void navigate({ search: (prev) => ({ ...prev, field: f === "full_name" ? undefined : f }), replace: true });
+    void navigate({ search: (prev) => ({ ...prev, field: f === "full_name" ? undefined : f, page: undefined }), replace: true });
+  const sortKey: SortKey = (search.sort && search.sort in SORT_OPTIONS)
+    ? (search.sort as SortKey)
+    : "first_name";
+  const setSortKey = (k: SortKey) =>
+    void navigate({ search: (prev) => ({ ...prev, sort: k === "first_name" ? undefined : k, page: undefined }), replace: true });
+  const page = Math.max(1, search.page ?? 1);
+  const setPage = (p: number) =>
+    void navigate({ search: (prev) => ({ ...prev, page: p > 1 ? p : undefined }), replace: true });
   useEffect(() => { if (validClass) recordClassVisit(classId); }, [classId, validClass]);
   const getC = useServerFn(getClass);
   const listS = useServerFn(listStudents);
@@ -357,6 +366,10 @@ function ClassDetail() {
             searchField={searchField}
             onQueryChange={setQuery}
             onSearchFieldChange={setSearchField}
+            sortKey={sortKey}
+            onSortChange={setSortKey}
+            page={page}
+            onPageChange={setPage}
           />
         </TabsContent>
 
