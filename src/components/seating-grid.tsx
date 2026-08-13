@@ -646,6 +646,22 @@ export function SeatingGrid({ classId }: { classId: string }) {
   });
 
   // בניית נתוני ההדפסה מהמצב הנוכחי של הגריד
+  const printOptsKey = `seating-print-opts:${classId}`;
+  const [printOpts, setPrintOpts] = useState<SeatingPrintOptions>(DEFAULT_SEATING_PRINT_OPTIONS);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(printOptsKey);
+      if (raw) setPrintOpts({ ...DEFAULT_SEATING_PRINT_OPTIONS, ...JSON.parse(raw) });
+      else setPrintOpts(DEFAULT_SEATING_PRINT_OPTIONS);
+    } catch { /* התעלם מנתונים פגומים */ }
+  }, [printOptsKey]);
+  const updatePrintOpts = (patch: Partial<SeatingPrintOptions>) =>
+    setPrintOpts((prev) => {
+      const next = { ...prev, ...patch };
+      try { localStorage.setItem(printOptsKey, JSON.stringify(next)); } catch { /* אחסון חסום */ }
+      return next;
+    });
+
   const buildPrintInput = () => {
     const cells: Record<string, SeatingPrintCell> = {};
     for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
