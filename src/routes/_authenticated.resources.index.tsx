@@ -29,6 +29,11 @@ import {
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { KODESH_SUBJECTS } from "@/lib/kodesh-subjects";
 import {
   listResources, upsertResource, deleteResource, generateResourceWithAI,
@@ -363,6 +368,35 @@ function ResourcesPage() {
       qc.invalidateQueries({ queryKey: ["teaching-resources"] });
       toast.success("נמחק");
       setEditing(null);
+    },
+  });
+
+  const bulkDeleteMut = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const rows = ids
+        .map((id) => resources.find((r) => r.id === id))
+        .filter((r): r is ResourceRow => Boolean(r));
+      let success = 0;
+      let failed = 0;
+      const errors: string[] = [];
+      for (const r of rows) {
+        try {
+          await del({ data: { id: r.id, file_path: r.file_path } });
+          success++;
+        } catch (e) {
+          failed++;
+          const msg = e instanceof Error ? e.message : "שגיאה לא ידועה";
+          if (!errors.includes(msg)) errors.push(msg);
+        }
+      }
+      return { success, failed, errors };
+    },
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["teaching-resources"] });
+      setSelectedIds([]);
+      if (res.failed === 0) toast.success(`נמחקו ${res.success} חומרים`);
+      else if (res.success === 0) toast.error(`המחיקה נכשלה: ${res.failed} חומרים לא נמחקו`, { description: res.errors.join(" · ") });
+      else toast(`נמחקו ${res.success} חומרים, ${res.failed} נכשלו`, { description: res.errors.join(" · ") });
     },
   });
 
@@ -838,6 +872,31 @@ function ResourcesPage() {
                         : <FileArchive className="ms-1 h-4 w-4" />}
                       הורדה מרוכזת (ZIP)
                     </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="sm" variant="destructive" disabled={bulkDeleteMut.isPending}>
+                          {bulkDeleteMut.isPending
+                            ? <Loader2 className="ms-1 h-4 w-4 animate-spin" />
+                            : <Trash2 className="ms-1 h-4 w-4" />}
+                          מחק את הנבחרים
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent dir="rtl">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>למחוק את החומרים הנבחרים?</AlertDialogTitle>
+                          <AlertDialogDescription>פעולה זו תמחק לצמיתות {selectedIds.length} חומרים מהספרייה.</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>ביטול</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => bulkDeleteMut.mutate(selectedIds)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            מחק
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
               )}
@@ -881,6 +940,7 @@ function ResourcesPage() {
                 onEdit={() => setEditing(r)}
                 onVariant={(src) => { setAiSource(src); setAiOpen(true); }}
                 onToggleFavorite={() => favMut.mutate({ id: r.id, is_favorite: !r.is_favorite })}
+                onDelete={(r) => deleteMut.mutate(r)}
               />
             ))}
           </div>
@@ -1000,7 +1060,7 @@ function ResourcesPage() {
 /* -------------------- card -------------------- */
 
 function ResourceCard({
-  resource, onView, onEdit, onVariant, onToggleFavorite,
+  resource, onView, onEdit, onVariant, onToggleFavorite, onDelete,
   usageCount = 0, analyzing = false, onAnalyze, selected = false, onToggleSelected,
   variant = "grid",
 }: {
@@ -1009,6 +1069,7 @@ function ResourceCard({
   onEdit: () => void;
   onVariant: (r: ResourceRow) => void;
   onToggleFavorite: () => void;
+  onDelete?: (r: ResourceRow) => void;
   usageCount?: number;
   analyzing?: boolean;
   onAnalyze?: () => void;
@@ -1019,6 +1080,7 @@ function ResourceCard({
   const hasText = Boolean(resource.content?.original_text?.trim());
   const compact = variant === "list";
   const thumbs = variant === "thumbs";
+  const [deleteOpen, setDeleteOpen] = useState(false);
   return (
     <div
       role="button"
@@ -1119,6 +1181,35 @@ function ResourceCard({
           >
             {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <ScanText className="h-4 w-4" />}
           </Button>
+        )}
+        {onDelete && (
+          <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+            <AlertDialogTrigger asChild>
+              <Button
+                size="sm" variant="ghost"
+                className="text-destructive transition-colors hover:bg-destructive/10 motion-reduce:transition-none"
+                onClick={(e) => e.stopPropagation()}
+                aria-label={`מחק את "${resource.title}"`}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent dir="rtl">
+              <AlertDialogHeader>
+                <AlertDialogTitle>למחוק את החומר?</AlertDialogTitle>
+                <AlertDialogDescription>פעולה זו תמחק לצמיתות את "{resource.title}" מהספרייה.</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setDeleteOpen(false)}>ביטול</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => { onDelete(resource); setDeleteOpen(false); }}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  מחק
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         )}
       </div>
     </div>
