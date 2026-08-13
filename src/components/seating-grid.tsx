@@ -662,6 +662,7 @@ export function SeatingGrid({ classId }: { classId: string }) {
       className: cls?.name ?? "כיתה",
       rows, cols, cells,
       unseated: unseated.map((s) => s.name),
+      options: printOpts,
     };
   };
 
