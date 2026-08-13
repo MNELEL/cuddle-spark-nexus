@@ -70,13 +70,55 @@ function ActionBtn({ icon: Icon, label, variant = "outline" }: { icon: typeof Up
 
 function ClassActionGrid({ classId, onSeating }: { classId: string; onSeating: () => void }) {
   return (
+    // הכפתורים מרוכזים לקבוצות לפי נושא (הושבה / ספרייה / דוחות) כדי להפחית עומס
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
       <Button size="sm" className="w-full justify-start transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none motion-reduce:hover:translate-y-0" onClick={onSeating}>
         <LayoutGrid className="ms-1 h-4 w-4 shrink-0" />
         <span className="truncate">סידור הושבה</span>
       </Button>
-      <Link to="/ingest" search={{ classId }}><ActionBtn icon={Upload} label="העלאה חכמה" /></Link>
-      <Link to="/daily/$classId" params={{ classId }}><ActionBtn icon={FileText} label="סיכום יומי" /></Link>
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="sm" className="w-full justify-start">
+            <Library className="ms-1 h-4 w-4 shrink-0" />
+            <span className="truncate">ספרייה וחומרים</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56 text-right">
+          <DropdownMenuLabel>ספרייה וחומרים</DropdownMenuLabel>
+          <DropdownMenuItem asChild>
+            <Link to="/ingest" search={{ classId }}><Upload className="ms-1 h-4 w-4" /> העלאה חכמה</Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to="/resources"><Library className="ms-1 h-4 w-4" /> ספריית חומרי הוראה</Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to="/weekly-schedule/$classId" params={{ classId }}><CalendarDays className="ms-1 h-4 w-4" /> מערכת שבועית</Link>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="sm" className="w-full justify-start">
+            <FileText className="ms-1 h-4 w-4 shrink-0" />
+            <span className="truncate">דוחות וקשר</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56 text-right">
+          <DropdownMenuLabel>דוחות וקשר עם הורים</DropdownMenuLabel>
+          <DropdownMenuItem asChild>
+            <Link to="/daily/$classId" params={{ classId }}><FileText className="ms-1 h-4 w-4" /> סיכום יומי</Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to="/reports/$classId" params={{ classId }}><TrendingUp className="ms-1 h-4 w-4" /> דוחות כיתה</Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to="/bulletins/$classId" params={{ classId }}><MessageSquare className="ms-1 h-4 w-4" /> עלון להורים</Link>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
       <Button variant="outline" size="sm" className="w-full justify-start transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none motion-reduce:hover:translate-y-0" onClick={openCommandPalette}>
         <MoreHorizontal className="ms-1 h-4 w-4 shrink-0" />
         <span className="truncate">עוד כלים</span>
