@@ -386,6 +386,24 @@ export function LibraryBulkUpload({ open, onClose }: { open: boolean; onClose: (
         </div>
 
         {items.length > 0 && (
+          <>
+          {(() => {
+            const done = items.filter((it) => it.status === "done" || it.status === "error").length;
+            return (
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>{done} מתוך {items.length} הושלמו</span>
+                  <span>{items.filter((it) => it.status === "done").length} הצליחו</span>
+                </div>
+                <div
+                  className="h-1.5 w-full overflow-hidden rounded-full bg-muted"
+                  role="progressbar" aria-valuemin={0} aria-valuemax={items.length} aria-valuenow={done}
+                >
+                  <div className="h-full bg-primary transition-all" style={{ width: `${(done / items.length) * 100}%` }} />
+                </div>
+              </div>
+            );
+          })()}
           <ul className="space-y-1 text-xs" aria-live="polite">
             {items.map((it, i) => (
               <li
@@ -419,6 +437,7 @@ export function LibraryBulkUpload({ open, onClose }: { open: boolean; onClose: (
               </li>
             ))}
           </ul>
+          </>
         )}
         <DialogFooter>
           <Button
@@ -439,7 +458,7 @@ export function LibraryBulkUpload({ open, onClose }: { open: boolean; onClose: (
             {running
               ? <Loader2 className="ms-1 h-4 w-4 animate-spin" />
               : <Sparkles className="ms-1 h-4 w-4" />}
-            העלה + ניתוח AI
+            {tab === "files" && items.some((it) => it.status === "error") ? "המשך העלאה + ניתוח AI" : "העלה + ניתוח AI"}
           </Button>
         </DialogFooter>
       </DialogContent>
