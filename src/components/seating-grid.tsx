@@ -788,10 +788,10 @@ export function SeatingGrid({ classId }: { classId: string }) {
     for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
       const k = seatKey(r, c);
       const child = seated.get(k);
-      const obj = objectAt.get(k);
+      const obj = objectCover.get(k);
       cells[printSeatKey(r, c)] =
         child ? { kind: "student", name: child.name, locked: child.seat_locked }
-        : obj ? { kind: "object", label: ROOM_OBJECT_META[obj.type]?.label ?? "אובייקט" }
+        : obj ? { kind: "object", label: obj.label || ROOM_OBJECT_META[obj.type]?.label || "אובייקט" }
         : hiddenSet.has(k) ? { kind: "hidden" }
         : { kind: "empty" };
     }
