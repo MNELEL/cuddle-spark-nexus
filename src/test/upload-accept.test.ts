@@ -1,8 +1,22 @@
 import { describe, expect, it } from "vitest";
 import {
   ACCEPT_IMAGE, ACCEPT_LIBRARY_ALL, ACCEPT_RESOURCE, ACCEPT_ROSTER, ACCEPT_SMART,
-  ACCEPT_SPREADSHEET, LIBRARY_KIND_ACCEPT, describeAccept, validateUploadFile,
+  ACCEPT_SPREADSHEET, LIBRARY_KIND_ACCEPT, describeAccept, describeAcceptDetailed, validateUploadFile,
 } from "@/lib/upload-accept";
+
+describe("describeAcceptDetailed", () => {
+  it("מחזיר מערך סוגים ומסונכרן עם describeAccept", () => {
+    const kinds = describeAcceptDetailed(ACCEPT_RESOURCE);
+    expect(kinds).toContain("PDF");
+    expect(kinds).toContain("Word");
+    expect(kinds).toContain("תמונה");
+    expect(kinds.join(", ")).toBe(describeAccept(ACCEPT_RESOURCE));
+  });
+
+  it("מחזיר מערך ריק כשאין התאמה", () => {
+    expect(describeAcceptDetailed("")).toEqual([]);
+  });
+});
 
 const file = (name: string, type: string, size = 1024) =>
   ({ name, type, size }) as unknown as File;
