@@ -371,6 +371,35 @@ function ResourcesPage() {
     },
   });
 
+  const bulkDeleteMut = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const rows = ids
+        .map((id) => resources.find((r) => r.id === id))
+        .filter((r): r is ResourceRow => Boolean(r));
+      let success = 0;
+      let failed = 0;
+      const errors: string[] = [];
+      for (const r of rows) {
+        try {
+          await del({ data: { id: r.id, file_path: r.file_path } });
+          success++;
+        } catch (e) {
+          failed++;
+          const msg = e instanceof Error ? e.message : "שגיאה לא ידועה";
+          if (!errors.includes(msg)) errors.push(msg);
+        }
+      }
+      return { success, failed, errors };
+    },
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["teaching-resources"] });
+      setSelectedIds([]);
+      if (res.failed === 0) toast.success(`נמחקו ${res.success} חומרים`);
+      else if (res.success === 0) toast.error(`המחיקה נכשלה: ${res.failed} חומרים לא נמחקו`, { description: res.errors.join(" · ") });
+      else toast(`נמחקו ${res.success} חומרים, ${res.failed} נכשלו`, { description: res.errors.join(" · ") });
+    },
+  });
+
   return (
     <div className="mx-auto max-w-7xl space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
