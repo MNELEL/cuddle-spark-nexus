@@ -551,6 +551,7 @@ function UpcomingBirthdays({ students }: { students: Student[] }) {
 
 function StudentsTab({
   classId, students, scoreInputs, query, searchField, onQueryChange, onSearchFieldChange,
+  sortKey, onSortChange, page, onPageChange,
 }: {
   classId: string; students: Student[];
   scoreInputs?: { grades: { student_id: string; value: number; max_value: number }[]; attendance: { student_id: string; status: string }[]; behavior: { student_id: string; points: number }[] };
@@ -558,14 +559,21 @@ function StudentsTab({
   searchField: SearchField;
   onQueryChange: (q: string) => void;
   onSearchFieldChange: (f: SearchField) => void;
+  sortKey: SortKey;
+  onSortChange: (k: SortKey) => void;
+  page: number;
+  onPageChange: (p: number) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Student | null>(null);
   const [fileFor, setFileFor] = useState<Student | null>(null);
-  const [sortKey, setSortKey] = useState<SortKey>("first_name");
+  // המיון נשמר בכתובת; ה-localStorage הוא ברירת מחדל בלבד כשאין פרמטר
   useEffect(() => {
     const saved = localStorage.getItem(sortStorageKey(classId));
-    if (saved && saved in SORT_OPTIONS) setSortKey(saved as SortKey);
+    if (saved && saved in SORT_OPTIONS && saved !== "first_name" && sortKey === "first_name") {
+      onSortChange(saved as SortKey);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [classId]);
   // ברירת מחדל מה-localStorage רק כשאין פרמטר בכתובת
   useEffect(() => {
@@ -577,7 +585,7 @@ function StudentsTab({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [classId]);
   const changeSort = (k: SortKey) => {
-    setSortKey(k);
+    onSortChange(k);
     localStorage.setItem(sortStorageKey(classId), k);
   };
   const changeSearchField = (f: SearchField) => {
@@ -603,6 +611,10 @@ function StudentsTab({
     return searchField === "first_name" ? first : searchField === "last_name" ? (last || "—") : (s.name ?? "");
   });
   const isDirty = query.trim().length > 0 || searchField !== "full_name" || sortKey !== "first_name";
+  const PAGE_SIZE = 25;
+  const pageCount = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  const safePage = Math.min(Math.max(1, page), pageCount);
+  const pageRows = sorted.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
   const className = "רשימת תלמידים";
   const profilesFn = useServerFn(listClassProfiles);
   const handoffM = useMutation({
