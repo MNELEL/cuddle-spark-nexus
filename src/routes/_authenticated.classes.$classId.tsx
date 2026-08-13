@@ -330,6 +330,28 @@ type SortKey = keyof typeof SORT_OPTIONS;
 
 function sortStorageKey(classId: string) { return `students-sort:${classId}`; }
 
+/* ---- search field scope ---- */
+
+const SEARCH_FIELDS = {
+  full_name: "שם מלא",
+  first_name: "שם פרטי",
+  last_name: "שם משפחה",
+} as const;
+type SearchField = keyof typeof SEARCH_FIELDS;
+
+function searchStorageKey(classId: string) { return `students-search-field:${classId}`; }
+
+function matchesSearch(s: Student, field: SearchField, term: string): boolean {
+  const t = term.trim().toLowerCase();
+  if (!t) return true;
+  const { first, last } = nameParts(s);
+  const hay =
+    field === "first_name" ? first :
+    field === "last_name" ? last :
+    (s.name ?? "");
+  return hay.toLowerCase().includes(t);
+}
+
 function parentSortName(s: Student): string {
   return (s.father_name?.trim() || s.mother_name?.trim() || "");
 }
