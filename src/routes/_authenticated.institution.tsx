@@ -421,6 +421,8 @@ function TeachersTab({ canEdit }: { canEdit: boolean }) {
                     </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-1">
+                  {canEdit && (
+                  <>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -428,6 +430,14 @@ function TeachersTab({ canEdit }: { canEdit: boolean }) {
                     onClick={() => setRenameTarget({ userId: t.userId, name: t.name })}
                   >
                     <Pencil className="me-1 h-3.5 w-3.5" aria-hidden="true" /> שינוי שם
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="rounded-xl"
+                    onClick={() => setNotesTarget({ userId: t.userId, name: t.name, notes: t.teachingNotes })}
+                  >
+                    סגנון הוראה והערות
                   </Button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
@@ -448,8 +458,15 @@ function TeachersTab({ canEdit }: { canEdit: boolean }) {
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
+                  </>
+                  )}
                   </div>
                 </div>
+                {t.teachingNotes && (
+                  <p className="mt-1 whitespace-pre-wrap rounded-xl bg-muted/50 p-2 text-xs text-muted-foreground">
+                    <span className="font-medium">סגנון הוראה והערות: </span>{t.teachingNotes}
+                  </p>
+                )}
                 {t.style && (
                   <Accordion type="single" collapsible>
                     <AccordionItem value="style" className="border-0">
