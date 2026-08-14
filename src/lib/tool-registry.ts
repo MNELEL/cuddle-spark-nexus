@@ -83,6 +83,7 @@ export const TOOLS: ToolEntry[] = [
   { to: "/map", section: "settings", requires: "any", icon: "Map", label: "מפת המערכת", desc: "כל המסכים והכלים בעברית, בלחיצה אחת — מותאם לכיתה שלך" },
   { to: "/settings", section: "settings", requires: "any", icon: "Settings", label: "מרכז ההגדרות", desc: "אבטחה וקוד PIN, העדפות תזכורות, מיתוג המוסד ומצב המנוי" },
   { to: "/settings/theme", section: "settings", requires: "any", icon: "Palette", label: "ערכות נושא", desc: "תצוגה מקדימה ושמירה של ערכת הנושא — חלה בכל המכשירים" },
+  { to: "/overview", section: "settings", requires: "admin_or_principal", icon: "LayoutDashboard", label: "דשבורד מוסדי מרוכז", desc: "תמונת מצב: כיתות, מלמדים, משימות פתוחות והתקדמות" },
   { to: "/institution", section: "settings", requires: "admin_or_principal", icon: "Building2", label: "לוח המוסד", desc: "כיתות, מלמדים, צוות ונתוני המוסד" },
   { to: "/user-management", section: "settings", requires: "admin_or_principal", icon: "ShieldCheck", label: "ניהול משתמשים", desc: "הרשאות, בקשות גישה, מוסדות ותקופות ניסיון" },
 ];
