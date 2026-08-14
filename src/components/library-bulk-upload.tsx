@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Loader2, UploadCloud, CheckCircle2, AlertTriangle, FileText, Sparkles,
-  Image as ImageIcon, Music, Film, Presentation, FolderOpen, Mic, X,
+  Image as ImageIcon, Music, Film, Presentation, FolderOpen, Mic, X, RotateCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -79,9 +79,78 @@ export function LibraryBulkUpload({ open, onClose }: { open: boolean; onClose: (
   const [pending, setPending] = useState<File[]>([]);
   const [pasteTitle, setPasteTitle] = useState("");
   const [pasteText, setPasteText] = useState("");
+  // אינדקסים של פריטים שמנסים מחדש כרגע — ריצה מקבילה ועצמאית לכל קובץ
+  const [retrying, setRetrying] = useState<number[]>([]);
 
   const update = (i: number, p: Partial<ItemState>) =>
     setItems((prev) => prev.map((it, idx) => (idx === i ? { ...it, ...p } : it)));
+
+  /** העלאה + יצירה + ניתוח של קובץ בודד. מחזיר true בהצלחה. */
+  const uploadOne = async (file: File, i: number): Promise<boolean> => {
+    const { data: auth } = await supabase.auth.getUser();
+    const uid = auth.user?.id;
+    if (!uid) {
+      toast.error("נדרשת התחברות מחדש");
+      update(i, { status: "error", note: "נדרשת התחברות מחדש" });
+      return false;
+    }
+    try {
+      update(i, { status: "uploading", note: undefined });
+      const path = `${uid}/${Date.now()}-${i}-${cleanName(file.name)}`;
+      const up = await supabase.storage.from("teaching-resources").upload(path, file, {
+        contentType: file.type || "application/octet-stream",
+        upsert: false,
+      });
+      if (up.error) throw new Error(up.error.message);
+      const title = file.name.replace(/\.[^.]+$/, "").slice(0, 200) || "חומר חדש";
+      const { id } = await createFn({
+        data: {
+          title,
+          file_path: path,
+          mime_type: file.type || "",
+          subject,
+          resource_type: resourceType,
+        },
+      });
+      update(i, { status: "analyzing" });
+      try {
+        const res = await analyzeFn({ data: { id, force: false } });
+        update(i, {
+          status: "done",
+          note: res.ocr_added
+            ? `חולצו ${res.ocr_chars.toLocaleString("he-IL")} תווים · סווג אוטומטית`
+            : "נשמר וסווג",
+        });
+      } catch {
+        update(i, { status: "done", note: "נשמר בספרייה — הניתוח האוטומטי לא הצליח" });
+      }
+      recordUpload({
+        name: file.name, sizeBytes: file.size, mimeType: file.type || "",
+        status: "success", resourceId: id, filePath: path,
+      });
+      return true;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "העלאה נכשלה";
+      update(i, { status: "error", note: message });
+      recordUpload({
+        name: file.name, sizeBytes: file.size, mimeType: file.type || "",
+        status: "error", error: message,
+      });
+      return false;
+    }
+  };
+
+  /** ניסיון חוזר נקודתי לפריט בודד — עצמאי ומקבילי, בלי לגעת ב-pending */
+  const retryOne = async (i: number) => {
+    const file = items[i]?.file;
+    if (!file || retrying.includes(i)) return;
+    setRetrying((prev) => [...prev, i]);
+    try {
+      await uploadOne(file, i);
+    } finally {
+      setRetrying((prev) => prev.filter((x) => x !== i));
+    }
+  };
 
   const pickFiles = (kindAccept: string) => {
     setAccept(kindAccept);
@@ -134,52 +203,10 @@ export function LibraryBulkUpload({ open, onClose }: { open: boolean; onClose: (
     const failed: File[] = [];
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      try {
-        update(i, { status: "uploading" });
-        const path = `${uid}/${Date.now()}-${i}-${cleanName(file.name)}`;
-        const up = await supabase.storage.from("teaching-resources").upload(path, file, {
-          contentType: file.type || "application/octet-stream",
-          upsert: false,
-        });
-        if (up.error) throw new Error(up.error.message);
-        const title = file.name.replace(/\.[^.]+$/, "").slice(0, 200) || "חומר חדש";
-        const { id } = await createFn({
-          data: {
-            title,
-            file_path: path,
-            mime_type: file.type || "",
-            subject,
-            resource_type: resourceType,
-          },
-        });
-        update(i, { status: "analyzing" });
-        try {
-          const res = await analyzeFn({ data: { id, force: false } });
-          update(i, {
-            status: "done",
-            note: res.ocr_added
-              ? `חולצו ${res.ocr_chars.toLocaleString("he-IL")} תווים · סווג אוטומטית`
-              : "נשמר וסווג",
-          });
-        } catch {
-          update(i, { status: "done", note: "נשמר בספרייה — הניתוח האוטומטי לא הצליח" });
-        }
-        ok++;
-        recordUpload({
-          name: file!.name, sizeBytes: file!.size, mimeType: file!.type || "",
-          status: "success", resourceId: id, filePath: path,
-        });
-      } catch (e) {
-        const message = e instanceof Error ? e.message : "העלאה נכשלה";
-        update(i, { status: "error", note: message });
-        if (file) {
-          recordUpload({
-            name: file.name, sizeBytes: file.size, mimeType: file.type || "",
-            status: "error", error: message,
-          });
-        }
-        if (file) failed.push(file);
-      }
+      if (!file) continue;
+      const success = await uploadOne(file, i);
+      if (success) ok++;
+      else failed.push(file);
     }
 
     setRunning(false);
@@ -443,6 +470,21 @@ export function LibraryBulkUpload({ open, onClose }: { open: boolean; onClose: (
                   {it.status === "error" && (
                     <>
                       <AlertTriangle className="h-3 w-3 text-destructive" /> {it.note}
+                      {it.file && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 px-2 text-xs"
+                          disabled={retrying.includes(i)}
+                          onClick={() => void retryOne(i)}
+                        >
+                          {retrying.includes(i)
+                            ? <Loader2 className="ms-1 h-3 w-3 animate-spin" />
+                            : <RotateCcw className="ms-1 h-3 w-3" />}
+                          נסה שוב
+                        </Button>
+                      )}
                     </>
                   )}
                 </span>
