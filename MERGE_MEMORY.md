@@ -1,7 +1,7 @@
 # MERGE_MEMORY.md
 > מסמך זיכרון קבוע לפרויקט מיזוג האפליקציות. עדכן אותו בכל שיחה חדשה כדי לא לאבד החלטות.
 > יעד סופי: **Lovable**. הפרויקט החי: **"הכיתה שלי"** (שם קודם: Harmony Hub; repo: `cuddle-spark-nexus`), פרויקט Lovable ID `2734475a-1431-4ef2-8175-67b8af357276`.
-
+*עדכון אחרון:* 14 באוגוסט 2026,
 **עדכון אחרון:** 12 באוגוסט 2026, ערב — ראה סעיף 15: הורץ `list_edits` על הפרויקט ואותרו **17 קומיטים לא-מתועדים** בין הקומיט האחרון שתועד בסעיף 14 (13:41) ל-HEAD בפועל (20:10, אותו יום). כל קומיט נבדק ישירות מול `get_diff`. נמצאו שלושה מסכים חדשים שלא היו מתועדים כלל — מפת מערכת (`/map`), דף קשר מוסדי (`/contact-sheet` + `/contact` ציבורי), ודף קשר שבועי להורים (`/weekly-sheet`) — וכן הרחבה משמעותית לספריית חומרי ההוראה (העלאה מרובה עם OCR, עורך סיווג/תגיות, עורך OCR, חומרים דומים, הורדה מרוכזת ל-ZIP). נמצא גם קובץ תכנון חדש `docs/ROADMAP.md` (11/8) שמחליף את `plan.md` שנמחק — אומת ש"PDF widow-control" מ-`plan.md` הישן כבר מיושם בפועל ב-`pdf-builder.ts`. **מסקנת מפתח: תיעוד "עדכון אחרון" בראש הקובץ אינו ערובה שאין קומיטים נוספים אחריו באותו יום — יש להריץ `list_edits` בתחילת כל שיחה.** לפני כן, באותה שיחה: אומת מול קוד ש"תוכנית תצוגה מקדימה + היסטוריית עלונים ונעילה" (11/8) בוצעה במלואה — preview דיאלוג, publish/unpublish, היסטוריית גרסאות, וייצוא טקסט לעלון ולתעודות — ולא נדרשה בנייה נוספת.
 
 **היסטוריה קודמת (12/8, מוקדם יותר):** ראה סעיף 14: אומת מול קוד חי ש"תוכנית פישוט ספריית חומרי הוראה" (original_text, שמירת קובץ מקור, resource_chunks, UI מפושט) הייתה **כבר מיושמת במלואה**, נמנעה בנייה כפולה מיותרת. נוסף בפועל רק הפער האמיתי: הצעת נושא (topic) ואוסף (collection) אוטומטית ב-/ingest לחומרי לימוד, עם ולידציה בצד השרת נגד המצאת מזהים. קודם לכן, 11 באוגוסט 2026 — בוצע ניקוי ה-notifications היתומות: הוחזר קובץ tombstone/no-op למיגרציה `20260808225907` (גרסה שהייתה רשומה ב-DB בלי קובץ בריפו), אומת שאין שאריות DB (`%notif%` = רק `class_notifications`) ואין שורות יתומות ב-`class_notifications`, וסעיפי 12.0/12.3 עודכנו — הפריט סומן כ**סגור** ולא כחוב פתוח. קודם לכן: יושרו סעיפים 10.1, 10.3 ו-11.3 מול סעיף 12: קבוצה C נסגרה במלואה (התראת ארכוב כיתה דרך `class_notifications`, תשתית טסטי vitest/RLS, וחיבור ה-trial ל-UI), ו-11.3 סומן כתיעוד היסטורי של 8/8 בלבד. קודם לכן: עודכן סעיף 13 (עמוד ההגדרות המאוחד) מול קוד חי: תועד שתוכן ההגדרות הוזז בפועל מ-/toolkit ל-/settings ולא נשאר כפול, ונוספו לשוניות ההגדרות ו-/settings/theme. קודם לכן: עודכן סעיף 12.4.1 עם ספירת טסטים מדויקת נכון להיום (כולל rls-student-profiles המורחב ו-rollover-copy המתוקן), ותאריך סעיף 12.4.4 אומת ל-11/8.
@@ -526,3 +526,108 @@ Test suite ל-RLS ולהעתקת תלמידים — נבדק: אין תשתית 
 ### מסקנה לפעם הבאה
 
 אישור נוסף לעיקרון הקבוע: אפילו כשקומיט אחרון מתועד נראה "טרי" (אותו יום), יכולים להיות עשרות קומיטים נוספים מעבר לו באותו יום. יש להריץ `list_edits` בתחילת כל שיחה משמעותית ולא להסתמך על "עדכון אחרון" בראש הקובץ כאינדיקציה למצב האמיתי.
+---
+
+## 16. Retry נקודתי לקובץ בודד — ספריית חומרי הוראה, 14/8/2026 (commit `45fed75e`)
+
+### רקע — בדיקה מול קוד חי לפני תכנון
+
+הפריט הפתוח "per-file detailed error display during upload, allowed file types/size/page limits sourced from a central constant, progress bar, and per-file retry without stopping the full upload" נבדק מול `src/components/library-bulk-upload.tsx` ו-`src/lib/upload-accept.ts` לפני תכנון. נמצא שרוב הפריט **כבר מיושם**:
+- מקור אמת מרכזי לגבולות — `MAX_LIBRARY_UPLOAD_MB`/`MAX_LIBRARY_UPLOAD_FILES` ב-`upload-accept.ts`, מוצג בממשק.
+- שגיאה לפי קובץ — `note` על כל שורה עם `AlertTriangle`.
+- Progress bar — קיים, `role="progressbar"` עם ספירה חיה.
+- Retry — היה קיים כבר, אך **רק גורף**: קבצים שנכשלו נשארו ב-`pending`, וכפתור "המשך העלאה" שלח את כולם יחד מחדש.
+
+הפער האמיתי היחיד: retry לקובץ בודד, עצמאי, בלי לדרוש הרצה מחדש של כל מה שנכשל.
+
+### מה בוצע
+
+`src/components/library-bulk-upload.tsx` בלבד — ללא migration, ללא קבצים חדשים:
+
+- **`uploadOne(file, i)`** — הלוגיקה של קובץ בודד (Storage upload → `createUploadedResource` → `analyzeExistingResource` → `recordUpload`) חולצה מתוך הלולאה שהייתה ב-`uploadFiles`, בלי לשנות התנהגות. מחזירה `boolean` הצלחה/כשלון.
+- **`uploadFiles`** ממשיכה לרוץ ברצף על כל הקבצים דרך `uploadOne` — זהה להתנהגות הקודמת.
+- **`retryOne(i)`** — פונקציה חדשה, עצמאית: מריצה מחדש `uploadOne` רק לפריט אחד. מצב `retrying` (מערך אינדקסים ב-state) מאפשר כמה ריצות retry מקביליות בו-זמנית, כל אחת עצמאית — לא נעילה הדדית.
+- **כפתור "נסה שוב"** (`RotateCcw`, בהשראת התבנית הקיימת ב-`security-settings.tsx`) מופיע רק בשורות עם `status === "error"`. בזמן ריצה — הופך לספינר ומושבת **רק עבור עצמו**; שאר הכפתורים ברשימה נשארים פעילים.
+- `pending`, כפתור "המשך העלאה" הגורף, וה-toast המסכם בסוף `uploadFiles` — **ללא שינוי**, כמתוכנן. ה-retry הנקודתי עובד ישירות מול `items` ולא נוגע ב-`pending`.
+
+Type-checking עבר (`tsgo --noEmit`). עלות: 1.9 קרדיטים.
+
+### מצב מעודכן של הפריט "per-file upload UX" ב"על האופק"
+
+✅ **בוצע במלואו** — כל ארבעת חלקי הפריט (שגיאות מפורטות, גבולות ממקור מרכזי, progress bar, retry בודד) קיימים כעת. לא נותר חוב פתוח בנושא זה.
+---
+
+## 17. סבב עבודה — 14/8/2026: retry נקודתי, עדכון gap-analysis, Phase B rebrand, ודחייה מכוונת של Playwright e2e ובדיקת 3D
+
+### רקע — פתיחת השיחה
+
+השיחה נפתחה עם `list_edits` (2 עמודים, 59 קומיטים) והשוואה מול `MERGE_MEMORY.md` — נמצא **תיעוד תקין ומעודכן**: הקוד החי תאם בדיוק את הרשום עד commit `479f4580` (13/8, 18:46). זו הפעם הראשונה שאין פער נסתר בפתיחת שיחה. נבדק גם Base44 (classflow, appId `69efc0a68bae1b1d07582eda`) דרך `list_entity_schemas` — 40 entities, זהה למתועד בסעיף 4, ללא שינוי מאז 4/8.
+
+### 17.1 Retry נקודתי לקובץ בודד — ספריית חומרי הוראה (commit `45fed75e`)
+
+הפריט הפתוח "per-file upload UX" (שגיאות מפורטות, גבולות ממקור מרכזי, progress bar, retry לקובץ בודד) נבדק מול `src/components/library-bulk-upload.tsx` ו-`src/lib/upload-accept.ts` לפני תכנון. נמצא שלושה מתוך ארבעה חלקים **כבר קיימים** (`MAX_LIBRARY_UPLOAD_MB`/`MAX_LIBRARY_UPLOAD_FILES` ב-`upload-accept.ts`, שגיאה לפי קובץ, progress bar). הפער האמיתי היחיד: retry היה קיים רק כגורף (כל ה-`pending` יחד), לא נקודתי.
+
+**מה בוצע** — `src/components/library-bulk-upload.tsx` בלבד:
+- `uploadOne(file, i)` חולצה מתוך `uploadFiles` — אותה לוגיקה (Storage → `createUploadedResource` → `analyzeExistingResource` → `recordUpload`), ללא שינוי התנהגות.
+- `retryOne(i)` חדשה — מריצה מחדש קובץ בודד, עצמאית ומקבילית (מצב `retrying: number[]`), בלי לגעת ב-`pending`.
+- כפתור "נסה שוב" (`RotateCcw`) מופיע רק בשורות `error`, הופך לספינר ומושבת רק עבור עצמו בזמן ריצה.
+- `pending`, כפתור "המשך העלאה" הגורף, וה-toast המסכם — ללא שינוי.
+
+Type-check עבר. עלות: 1.9 קרדיטים. **הפריט "per-file upload UX" סגור במלואו.**
+
+### 17.2 עדכון docs/lms-gap-analysis.md (commit `107f0592`)
+
+עדכון תיעוד בלבד — נבדק מול MERGE_MEMORY סעיפים 15-16 לפני עריכה:
+- שורת "עודכן לאחרונה" → 14/8/2026.
+- סעיף 3: שורת "מנגנון שיתוף משאבים" עודכנה לשקף את שדרוג הספרייה (bulk upload+OCR, עורך סיווג, עורך OCR, חומרים דומים, ZIP, retry נקודתי) — נשאר ⚠️ כי עדיין אין שיתוף בין-מוסדי, רק תוספת הבהרה. נוספה שורה חדשה "העלאה וניתוח אוטומטי מתקדם" (✅).
+- סעיף 5: נוספו שלוש שורות חדשות שלא היו מתועדות כלל — מפת מערכת (`/map`), דף קשר מוסדי (`/contact-sheet`+`/contact`), דף קשר שבועי להורים (`/weekly-sheet`).
+- שום שורה אחרת לא נגעה — הפערים האמיתיים (Google Classroom, push/SMS, צ'אט צוות, iOS/offline, report builder) נשארו בדיוק כפי שהיו.
+
+עלות: 1.1 קרדיטים.
+
+### 17.3 בדיקת ביצועי 3D במכשירים חלשים — נמצא שאין פער (ללא שינוי קוד)
+
+`plan.md` המקורי (סעיף 4, "שיפור ביצועים בתצוגה התלת-ממדית") תכנן `dpr`, `frameloop="demand"`, hook נפרד `use-device-perf.ts`, ו-`React.lazy`+`Suspense` על Canvas — **בהנחה שגויה שהתצוגה בנויה ב-Three.js/R3F**. נבדק מול `src/routes/_authenticated.classes.$classId.display.tsx` בפועל: התצוגה בנויה **כולה ב-CSS 3D transforms**, לא Three.js (מאשר את מה שכבר תועד בסעיף 9). לארכיטקטורה הזו כבר קיים טיפול שקול:
+- `detectLowPower()` — inline, שקול ל-hook המתוכנן: בודק `prefers-reduced-motion`, `hardwareConcurrency<=4`, `deviceMemory<=4`, `saveData`, רשת 2G.
+- במצב low-power: מבטל טרנזישן, מקטין `perspective` (1800px לעומת 1250px), משבית tooltip ציון צף, מבטל backdrop-blur ב-HUD.
+- `rAF`-throttled slider drags, `contentVisibility:auto` + `containIntrinsicSize` על כל תא — render-skipping דפדפני, בלי Canvas בכלל.
+
+**מסקנה: אין פער אמיתי לביצוע.** הפריט "3D performance optimization for low-end devices" נסגר כ**לא-רלוונטי** (המשימה המקורית תוכננה נגד ארכיטקטורה שלא נבנתה בפועל) ולא כ"בוצע" או "פתוח".
+
+### 17.4 Phase B rebrand — MCP name + תווית theme (commit `b99c8385`)
+
+בדיקה מקדימה גילתה ש-Phase B מורכב משלוש שכבות נפרדות, לא שתיים כפי שתועד קודם:
+1. **MCP server name/title/instructions** (`src/lib/mcp/index.ts`) — מזהה טכני בלבד, בטוח לשינוי.
+2. **CSS theme `id: "classalign"`** (`src/hooks/use-theme.tsx`) — **לא מזהה טכני-בלבד**: נשמר בפועל בטבלת `theme_preference` (DB) וב-`localStorage` (`classpro-theme` key) עבור כל משתמש שבחר את ה-theme הזה. שינוי ה-`id` היה שובר את הבחירה השמורה של כל מורה שבחר אותו. גם התגלה ש-`hakita-sheli` theme כבר קיים כ-theme נפרד ועדכני יותר לצד `classalign` — שניהם פעילים במקביל במכוון, לא כפילות בטעות.
+3. **`localStorage` key `"classpro-theme"`** — שריד משם קודם עוד יותר ("ClassPro") שלא היה מתועד כלל.
+
+**החלטה שאושרה על ידי מיכאל:** לבצע רק (1) ו-(2)-כתווית-בלבד:
+- MCP: `name: "harmony-hub"` → `"hakita-sheli"`, `title: "Harmony Hub"` → `"הכיתה שלי"`, `instructions` עודכן ("HaKita Sheli ('My Classroom')" במקום "Harmony Hub (ClassAlign Studio)"). `issuer`/`projectRef`/OAuth — ללא שינוי.
+- Theme: `label` של הרשומה `id: "classalign"` שונה מ-"מודרני מובייל" ל-**"טורקיז"**, ה-`description` נוקה מהמילים "מודרני מובייל". **ה-`id` עצמו נשאר `"classalign"` ללא שינוי** — אין סיכון לבחירות שמורות קיימות.
+
+**במכוון לא נגעו (לא חוב פתוח — החלטת ארכיטקטורה):**
+- `id: "classalign"` עצמו נשאר. שינויו דורש migration של `theme_preference` + טיפול בערכי `localStorage` ישנים אצל לקוחות — לא בוצע כי אין צורך אמיתי (ה-theme פעיל ותקין, רק השם ההיסטורי שלו נוקה).
+- `THEME_STORAGE_KEY = "classpro-theme"` — שריד לשם "ClassPro" ההיסטורי. לא נוגעים בו מאותה סיבה (ישבור העדפות מקומיות שמורות בלי תועלת אמיתית).
+- Phase C rebrand (כתובות מייל `reminders@notifications.classalign.app` וכו') — עדיין **חסום** על אימות דומיין ב-Resend, לא ניתן לביצוע מהצד הזה.
+
+Type-check עבר, MCP manifest נבנה מחדש בהצלחה. עלות: 1 קרדיט.
+
+### 17.5 Playwright e2e ל-/settings — נדחה במכוון (לא בוצע, לא חוב)
+
+תוכנן לעומק לפני שהוחלט לדחות: משתמש טסט בתבנית `createTestUser`/`deleteTestUser` הקיימת (`src/test/helpers.ts` — משתמש זמני נוצר/נמחק בכל הרצה, לא משתמש קבוע), הרצה נגד `dist/` דרך `wrangler dev` (אותו מנגנון בדיוק כמו `scripts/lighthouse.mjs`, לא `bun run dev`), היקף בינוני (טעינה+לשוניות+flow שינוי PIN עם retry). אומת: אין Playwright בפרויקט כלל (`package.json` נבדק — רק vitest), ו-CI secrets (`SUPABASE_URL`/`SUPABASE_PUBLISHABLE_KEY`/`SUPABASE_SERVICE_ROLE_KEY`) **כבר קיימים בפועל** ב-repo — הפריט הישן "GitHub Actions secrets setup" שתועד ב"על האופק" **אינו רלוונטי עוד**, ה-secrets כבר מחוברים ומשמשים את `notifications-guard`/`student-profiles-guard`/`build`.
+
+**החלטה מפורשת:** לא לבנות כרגע. הנימוק שהוצג ואושר: זו רשת ביטחון למניעת רגרסיות עתידיות, לא תיקון לבעיה קיימת; אין תלות של שום קוד אחר בה; עלות התחזוקה (repo ללא צוות QA ייעודי) לא הצדיקה את ההשקעה מול פריטים אחרים. **לחזור לזה רק אם ייצפו רגרסיות חוזרות ב-/settings בפועל** — לא מתוזמן מראש.
+
+### 17.6 מצב מעודכן של "על האופק" אחרי סבב זה
+
+| פריט | סטטוס לפני | סטטוס אחרי 14/8 |
+|---|---|---|
+| Per-file upload UX (ספרייה) | פתוח | ✅ **סגור במלואו** (17.1) |
+| docs/lms-gap-analysis.md מיושן | פתוח | ✅ **מעודכן** (17.2) |
+| 3D performance על מכשירים חלשים | לא אומת | ✅ **אין פער — סגור כלא-רלוונטי** (17.3) |
+| Phase B rebrand (MCP + theme) | פתוח | ✅ **בוצע בהיקף שאושר** — MCP name מלא, theme label בלבד; `id`/`localStorage key` הושארו במכוון (17.4) |
+| Phase C rebrand (כתובות מייל) | חסום ב-Resend | **עדיין חסום** — ללא שינוי, לא ניתן לפעולה מכאן |
+| Playwright e2e ל-/settings | פתוח | **נדחה במכוון** — לא מתוזמן, לא חוב (17.5) |
+| GitHub Actions secrets setup | פתוח (ישן) | ✅ **כבר קיים בפועל** — התגלה אגב בדיקת Playwright (17.5), הפריט בעצמו היה מיושן |
+
+**נותר פתוח בפועל, לביקור הבא:** רק Phase C (חסום חיצונית, לא תלוי בעבודת קוד).
