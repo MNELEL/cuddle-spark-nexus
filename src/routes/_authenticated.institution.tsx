@@ -352,6 +352,7 @@ function TeachersTab({ canEdit }: { canEdit: boolean }) {
     <Card className="rounded-2xl">
       <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <CardTitle className="text-base">מלמדי המוסד</CardTitle>
+        {canEdit && (
         <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setEmailError(null); }}>
           <DialogTrigger asChild>
             <Button className="rounded-xl">
@@ -396,6 +397,7 @@ function TeachersTab({ canEdit }: { canEdit: boolean }) {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        )}
       </CardHeader>
       <CardContent>
         {teachersQ.isLoading ? (
