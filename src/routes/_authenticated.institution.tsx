@@ -502,6 +502,7 @@ function TeachersTab({ canEdit }: { canEdit: boolean }) {
       </CardContent>
 
       <Dialog open={renameTarget !== null} onOpenChange={(o) => !o && setRenameTarget(null)}>
+        {/* rename dialog */}
         <DialogContent dir="rtl">
           <DialogHeader>
             <DialogTitle>שינוי שם המלמד</DialogTitle>
