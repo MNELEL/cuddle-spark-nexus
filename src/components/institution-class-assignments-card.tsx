@@ -8,22 +8,22 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   assignClassToTeacher,
   detachClassFromMyInstitution,
   listInstitutionClassAssignments,
   listInstitutionTeachers,
+  reattachClassToMyInstitution,
   type TeacherClassRow,
 } from "@/lib/institution-teachers.functions";
+
+/** Seconds the undo action stays available after a class is removed. */
+const UNDO_SECONDS = 8;
 
 /** Which teacher teaches which class, with assign / detach actions for admins. */
 export function InstitutionClassAssignmentsCard({ canEdit }: { canEdit: boolean }) {
@@ -32,9 +32,13 @@ export function InstitutionClassAssignmentsCard({ canEdit }: { canEdit: boolean 
   const teachersFn = useServerFn(listInstitutionTeachers);
   const assignFn = useServerFn(assignClassToTeacher);
   const detachFn = useServerFn(detachClassFromMyInstitution);
+  const reattachFn = useServerFn(reattachClassToMyInstitution);
 
   const [editing, setEditing] = useState<TeacherClassRow | null>(null);
   const [teacherId, setTeacherId] = useState("");
+  const [detaching, setDetaching] = useState<TeacherClassRow | null>(null);
+  const [reason, setReason] = useState("");
+  const [reasonError, setReasonError] = useState("");
 
   const rowsQ = useQuery({ queryKey: ["institution-class-assignments"], queryFn: () => listFn() });
   const teachersQ = useQuery({
@@ -57,9 +61,27 @@ export function InstitutionClassAssignmentsCard({ canEdit }: { canEdit: boolean 
   });
 
   const detachM = useMutation({
-    mutationFn: (classId: string) => detachFn({ data: { classId } }),
-    onSuccess: () => { invalidate(); toast.success("הכיתה הוסרה מהמוסד"); },
+    mutationFn: (v: { classId: string; reason: string }) => detachFn({ data: v }),
+    onSuccess: (_r, v) => {
+      invalidate();
+      setDetaching(null);
+      setReason("");
+      toast.success("הכיתה הוסרה מהמוסד", {
+        description: `אפשר לבטל את הפעולה בתוך ${UNDO_SECONDS} שניות.`,
+        duration: UNDO_SECONDS * 1000,
+        action: {
+          label: "ביטול הפעולה",
+          onClick: () => undoM.mutate(v.classId),
+        },
+      });
+    },
     onError: (e) => toast.error(e instanceof Error ? e.message : "הסרת הכיתה נכשלה"),
+  });
+
+  const undoM = useMutation({
+    mutationFn: (classId: string) => reattachFn({ data: { classId } }),
+    onSuccess: () => { invalidate(); toast.success("ההסרה בוטלה — הכיתה חזרה למוסד"); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "ביטול ההסרה נכשל"),
   });
 
   const rows = rowsQ.data ?? [];
@@ -116,25 +138,14 @@ export function InstitutionClassAssignmentsCard({ canEdit }: { canEdit: boolean 
                           >
                             שינוי מלמד
                           </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="sm" className="rounded-xl text-destructive">
-                                <Unlink className="me-1 h-3.5 w-3.5" aria-hidden="true" /> הסר מהמוסד
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent dir="rtl">
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>להסיר את הכיתה {c.name} מהמוסד?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  הכיתה, התלמידים והנתונים יישארו אצל המלמד — רק השיוך למוסד יוסר.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>ביטול</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => detachM.mutate(c.id)}>הסר</AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="rounded-xl text-destructive"
+                            onClick={() => { setDetaching(c); setReason(""); setReasonError(""); }}
+                          >
+                            <Unlink className="me-1 h-3.5 w-3.5" aria-hidden="true" /> הסר מהמוסד
+                          </Button>
                         </div>
                       )}
                     </li>
@@ -150,6 +161,52 @@ export function InstitutionClassAssignmentsCard({ canEdit }: { canEdit: boolean 
           </p>
         )}
       </CardContent>
+
+      <Dialog
+        open={detaching !== null}
+        onOpenChange={(o) => { if (!o) { setDetaching(null); setReasonError(""); } }}
+      >
+        <DialogContent dir="rtl">
+          <DialogHeader>
+            <DialogTitle>להסיר את הכיתה {detaching?.name} מהמוסד?</DialogTitle>
+            <DialogDescription>
+              הכיתה, התלמידים והנתונים יישארו אצל המלמד — רק השיוך למוסד יוסר. הכיתה תיעלם מדוחות
+              המוסד ומהדשבורד המרוכז. נא לציין מדוע — ההסבר נשמר ביומן השינויים.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="detach-reason">סיבת ההסרה</Label>
+            <Textarea
+              id="detach-reason"
+              value={reason}
+              onChange={(e) => { setReason(e.target.value); setReasonError(""); }}
+              placeholder="למשל: המלמד עבר למוסד אחר / הכיתה נסגרה באמצע השנה"
+              className="rounded-xl"
+              rows={3}
+            />
+            {reasonError && <p className="text-xs text-destructive">{reasonError}</p>}
+            <p className="text-xs text-muted-foreground">
+              לאחר ההסרה תוצג הודעה עם אפשרות ביטול מהירה למשך {UNDO_SECONDS} שניות.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" className="rounded-xl" onClick={() => setDetaching(null)}>ביטול</Button>
+            <Button
+              variant="destructive"
+              className="rounded-xl"
+              disabled={detachM.isPending}
+              onClick={() => {
+                if (!detaching) return;
+                if (reason.trim().length < 3) { setReasonError("נא לפרט את הסיבה (3 תווים לפחות)"); return; }
+                detachM.mutate({ classId: detaching.id, reason: reason.trim() });
+              }}
+            >
+              {detachM.isPending && <Loader2 className="me-1 h-4 w-4 animate-spin" aria-hidden="true" />}
+              הסר מהמוסד
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={editing !== null} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent dir="rtl">

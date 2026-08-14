@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { AUDIT_SOURCE_INSTITUTIONS } from "@/lib/audit-sources";
 
 type InstitutionScope = { institutionId: string; role: "admin" | "principal" };
 
@@ -318,7 +319,14 @@ export const assignClassToTeacher = createServerFn({ method: "POST" })
 /** Removes a class from the institution without touching its data or owner. */
 export const detachClassFromMyInstitution = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ classId: z.string().uuid("מזהה כיתה לא תקין") }).parse(d))
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        classId: z.string().uuid("מזהה כיתה לא תקין"),
+        reason: z.string().trim().min(3, "נא לפרט את הסיבה (3 תווים לפחות)").max(500, "הסבר ארוך מדי"),
+      })
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const scope = await requireAdminScope(supabase, userId);
@@ -330,5 +338,66 @@ export const detachClassFromMyInstitution = createServerFn({ method: "POST" })
       .eq("id", data.classId)
       .eq("institution_id", scope.institutionId);
     if (error) { console.error("[DB Error]", error); throw new Error("הסרת הכיתה מהמוסד נכשלה. נסה שוב."); }
+
+    const { logInfo } = await import("@/lib/logger.server");
+    await logInfo("כיתה הוסרה מהמוסד", {
+      source: AUDIT_SOURCE_INSTITUTIONS,
+      userId,
+      context: {
+        action: "institution.detach_class",
+        institution_id: scope.institutionId,
+        class_id: data.classId,
+        reason: data.reason,
+      },
+    });
+    return { ok: true as const };
+  });
+
+/** Undo for a just-detached class: re-attaches it to the caller's institution. */
+export const reattachClassToMyInstitution = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ classId: z.string().uuid("מזהה כיתה לא תקין") }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const scope = await requireAdminScope(supabase, userId);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: cls, error: cErr } = await supabaseAdmin
+      .from("classes")
+      .select("id, institution_id, owner_id")
+      .eq("id", data.classId)
+      .maybeSingle();
+    if (cErr) { console.error("[DB Error]", cErr); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    if (!cls) throw new Error("הכיתה לא נמצאה");
+    if (cls.institution_id && cls.institution_id !== scope.institutionId) {
+      throw new Error("הכיתה שויכה בינתיים למוסד אחר");
+    }
+
+    const { data: role, error: rErr } = await supabaseAdmin
+      .from("user_roles")
+      .select("id")
+      .eq("user_id", cls.owner_id)
+      .eq("institution_id", scope.institutionId)
+      .limit(1)
+      .maybeSingle();
+    if (rErr) { console.error("[DB Error]", rErr); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    if (!role) throw new Error("המלמד של הכיתה אינו משויך למוסד שלך");
+
+    const { error } = await supabaseAdmin
+      .from("classes")
+      .update({ institution_id: scope.institutionId })
+      .eq("id", data.classId);
+    if (error) { console.error("[DB Error]", error); throw new Error("ביטול ההסרה נכשל. נסה שוב."); }
+
+    const { logInfo } = await import("@/lib/logger.server");
+    await logInfo("בוטלה הסרת כיתה מהמוסד", {
+      source: AUDIT_SOURCE_INSTITUTIONS,
+      userId,
+      context: {
+        action: "institution.reattach_class",
+        institution_id: scope.institutionId,
+        class_id: data.classId,
+      },
+    });
     return { ok: true as const };
   });
