@@ -162,8 +162,53 @@ export function InstitutionClassAssignmentsCard({ canEdit }: { canEdit: boolean 
         )}
       </CardContent>
 
+      <Dialog
+        open={detaching !== null}
+        onOpenChange={(o) => { if (!o) { setDetaching(null); setReasonError(""); } }}
+      >
+        <DialogContent dir="rtl">
+          <DialogHeader>
+            <DialogTitle>להסיר את הכיתה {detaching?.name} מהמוסד?</DialogTitle>
+            <DialogDescription>
+              הכיתה, התלמידים והנתונים יישארו אצל המלמד — רק השיוך למוסד יוסר. הכיתה תיעלם מדוחות
+              המוסד ומהדשבורד המרוכז. נא לציין מדוע — ההסבר נשמר ביומן השינויים.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="detach-reason">סיבת ההסרה</Label>
+            <Textarea
+              id="detach-reason"
+              value={reason}
+              onChange={(e) => { setReason(e.target.value); setReasonError(""); }}
+              placeholder="למשל: המלמד עבר למוסד אחר / הכיתה נסגרה באמצע השנה"
+              className="rounded-xl"
+              rows={3}
+            />
+            {reasonError && <p className="text-xs text-destructive">{reasonError}</p>}
+            <p className="text-xs text-muted-foreground">
+              לאחר ההסרה תוצג הודעה עם אפשרות ביטול מהירה למשך {UNDO_SECONDS} שניות.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" className="rounded-xl" onClick={() => setDetaching(null)}>ביטול</Button>
+            <Button
+              variant="destructive"
+              className="rounded-xl"
+              disabled={detachM.isPending}
+              onClick={() => {
+                if (!detaching) return;
+                if (reason.trim().length < 3) { setReasonError("נא לפרט את הסיבה (3 תווים לפחות)"); return; }
+                detachM.mutate({ classId: detaching.id, reason: reason.trim() });
+              }}
+            >
+              {detachM.isPending && <Loader2 className="me-1 h-4 w-4 animate-spin" aria-hidden="true" />}
+              הסר מהמוסד
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={editing !== null} onOpenChange={(o) => !o && setEditing(null)}>
-        {null}
         <DialogContent dir="rtl">
           <DialogHeader>
             <DialogTitle>שיוך הכיתה {editing?.name} למלמד</DialogTitle>
