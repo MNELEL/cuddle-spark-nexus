@@ -537,6 +537,42 @@ function TeachersTab({ canEdit }: { canEdit: boolean }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={notesTarget !== null} onOpenChange={(o) => !o && setNotesTarget(null)}>
+        <DialogContent dir="rtl">
+          <DialogHeader>
+            <DialogTitle>סגנון הוראה והערות — {notesTarget?.name}</DialogTitle>
+            <DialogDescription>
+              תיעוד פנימי של המוסד: סגנון ההוראה, חוזקות, מקצועות מועדפים והערות ליווי. גלוי למנהלי המוסד בלבד.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="teacher-notes">הערות</Label>
+            <Textarea
+              id="teacher-notes"
+              className="min-h-32 rounded-xl"
+              maxLength={2000}
+              placeholder="לדוגמה: מלמד גמרא בגישת חברותות, מצטיין בהעברת סוגיות מורכבות, זקוק לתמיכה בניהול כיתה גדולה."
+              value={notesTarget?.notes ?? ""}
+              onChange={(e) => setNotesTarget((prev) => (prev ? { ...prev, notes: e.target.value } : prev))}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" className="rounded-xl" onClick={() => setNotesTarget(null)}>ביטול</Button>
+            <Button
+              className="rounded-xl"
+              disabled={notesM.isPending}
+              onClick={() => {
+                if (!notesTarget) return;
+                notesM.mutate({ userId: notesTarget.userId, notes: notesTarget.notes });
+              }}
+            >
+              {notesM.isPending && <Loader2 className="me-1 h-4 w-4 animate-spin" aria-hidden="true" />}
+              שמירה
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
