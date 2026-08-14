@@ -167,3 +167,98 @@ export const listMyInstitutionAudit = createServerFn({ method: "GET" })
       };
     });
   });
+export type InstitutionDashboard = {
+  institutionName: string;
+  role: "admin" | "principal";
+  activeClasses: number;
+  archivedClasses: number;
+  teachers: number;
+  students: number;
+  pendingAccessRequests: number;
+  pendingTrialRequests: number;
+  draftBulletins: number;
+  progress: Array<{
+    classId: string;
+    className: string;
+    teacherName: string;
+    totalUnits: number;
+    completedUnits: number;
+  }>;
+};
+
+/** Single institution-wide snapshot for the /overview dashboard. */
+export const getInstitutionDashboard = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<InstitutionDashboard> => {
+    const { supabase, userId } = context;
+    const scope = await requireScope(supabase, userId);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const [{ data: inst }, { data: classes, error: cErr }, { data: roles, error: rErr }] = await Promise.all([
+      supabase.from("institutions").select("name").eq("id", scope.institutionId).maybeSingle(),
+      supabaseAdmin.from("classes").select("id, name, status, owner_id").eq("institution_id", scope.institutionId),
+      supabaseAdmin.from("user_roles").select("user_id, role").eq("institution_id", scope.institutionId),
+    ]);
+    if (cErr) { console.error("[DB Error]", cErr); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    if (rErr) { console.error("[DB Error]", rErr); throw new Error("הפעולה נכשלה. נסה שוב."); }
+
+    const rows = classes ?? [];
+    const classIds = rows.map((c) => c.id);
+
+    const ownerIds = Array.from(new Set(rows.map((c) => c.owner_id)));
+    const names: Record<string, string> = {};
+    if (ownerIds.length > 0) {
+      const { data: profiles } = await supabaseAdmin
+        .from("profiles").select("id, display_name").in("id", ownerIds);
+      for (const p of profiles ?? []) names[p.id] = p.display_name ?? "";
+    }
+
+    let students = 0;
+    let draftBulletins = 0;
+    const unitTotals: Record<string, { total: number; done: number }> = {};
+    if (classIds.length > 0) {
+      const [{ count: sCount }, { count: bCount }, { data: units }] = await Promise.all([
+        supabaseAdmin.from("students").select("id", { count: "exact", head: true }).in("class_id", classIds),
+        supabaseAdmin.from("weekly_bulletins").select("id", { count: "exact", head: true })
+          .in("class_id", classIds).neq("status", "published"),
+        supabaseAdmin.from("curriculum_units").select("class_id, status").in("class_id", classIds),
+      ]);
+      students = sCount ?? 0;
+      draftBulletins = bCount ?? 0;
+      for (const u of units ?? []) {
+        const bucket = (unitTotals[u.class_id] ??= { total: 0, done: 0 });
+        bucket.total += 1;
+        if (u.status === "completed") bucket.done += 1;
+      }
+    }
+
+    const [{ count: accessCount }, { count: trialCount }] = await Promise.all([
+      supabaseAdmin.from("access_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
+      supabaseAdmin.from("trial_extension_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
+    ]);
+
+    const progress = rows
+      .filter((c) => c.status !== "archived")
+      .map((c) => ({
+        classId: c.id,
+        className: c.name,
+        teacherName: names[c.owner_id] || "מלמד ללא שם",
+        totalUnits: unitTotals[c.id]?.total ?? 0,
+        completedUnits: unitTotals[c.id]?.done ?? 0,
+      }))
+      .sort((a, b) => b.totalUnits - a.totalUnits);
+
+    return {
+      institutionName: inst?.name ?? "המוסד שלי",
+      role: scope.role,
+      activeClasses: rows.filter((c) => c.status !== "archived").length,
+      archivedClasses: rows.filter((c) => c.status === "archived").length,
+      teachers: new Set((roles ?? []).filter((r) => r.role === "teacher").map((r) => r.user_id)).size,
+      students,
+      pendingAccessRequests: accessCount ?? 0,
+      pendingTrialRequests: trialCount ?? 0,
+      draftBulletins,
+      progress,
+    };
+  });
