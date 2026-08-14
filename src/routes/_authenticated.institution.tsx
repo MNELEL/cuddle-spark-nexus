@@ -20,6 +20,8 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { InstitutionStaffCard } from "@/components/institution-staff-card";
+import { InstitutionClassAssignmentsCard } from "@/components/institution-class-assignments-card";
+import { Textarea } from "@/components/ui/textarea";
 import { renameInstitutionTeacher } from "@/lib/institution-staff.functions";
 import { Search, ChevronLeft, Pencil, Building2, Users, GraduationCap, Archive, UserPlus, Loader2 } from "lucide-react";
 import {
@@ -32,6 +34,7 @@ import {
   listInstitutionTeachers,
   inviteTeacherToInstitution,
   removeTeacherFromInstitution,
+  updateTeacherNotes,
 } from "@/lib/institution-teachers.functions";
 
 export const Route = createFileRoute("/_authenticated/institution")({
@@ -260,7 +263,10 @@ function InstitutionDashboardPage() {
         </TabsContent>
 
         <TabsContent value="teachers">
-          <TeachersTab />
+          <div className="space-y-6">
+            <TeachersTab canEdit={institution.role === "admin"} />
+            <InstitutionClassAssignmentsCard canEdit={institution.role === "admin"} />
+          </div>
         </TabsContent>
 
         <TabsContent value="staff">
@@ -271,13 +277,15 @@ function InstitutionDashboardPage() {
   );
 }
 
-function TeachersTab() {
+function TeachersTab({ canEdit }: { canEdit: boolean }) {
   const qc = useQueryClient();
   const fetchTeachers = useServerFn(listInstitutionTeachers);
   const invite = useServerFn(inviteTeacherToInstitution);
   const remove = useServerFn(removeTeacherFromInstitution);
   const rename = useServerFn(renameInstitutionTeacher);
+  const saveNotes = useServerFn(updateTeacherNotes);
   const [renameTarget, setRenameTarget] = useState<{ userId: string; name: string } | null>(null);
+  const [notesTarget, setNotesTarget] = useState<{ userId: string; name: string; notes: string } | null>(null);
 
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
@@ -318,6 +326,16 @@ function TeachersTab() {
       void qc.invalidateQueries({ queryKey: ["institution-classes"] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "עדכון השם נכשל"),
+  });
+
+  const notesM = useMutation({
+    mutationFn: (v: { userId: string; notes: string }) => saveNotes({ data: { teacherId: v.userId, notes: v.notes } }),
+    onSuccess: () => {
+      toast.success("ההערות נשמרו");
+      setNotesTarget(null);
+      void qc.invalidateQueries({ queryKey: ["institution-teachers"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "שמירת ההערות נכשלה"),
   });
 
   function submitInvite() {

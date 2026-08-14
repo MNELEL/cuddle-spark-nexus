@@ -2928,6 +2928,7 @@ export type Database = {
           id: string
           institution_id: string | null
           role: Database["public"]["Enums"]["app_role"]
+          teaching_notes: string | null
           updated_at: string
           user_id: string
         }
@@ -2936,6 +2937,7 @@ export type Database = {
           id?: string
           institution_id?: string | null
           role: Database["public"]["Enums"]["app_role"]
+          teaching_notes?: string | null
           updated_at?: string
           user_id: string
         }
@@ -2944,6 +2946,7 @@ export type Database = {
           id?: string
           institution_id?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          teaching_notes?: string | null
           updated_at?: string
           user_id?: string
         }
