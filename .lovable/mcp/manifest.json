@@ -11,9 +11,9 @@
   },
   "mcp": {
     "server": {
-      "name": "harmony-hub",
+      "name": "hakita-sheli",
       "version": "0.1.0",
-      "title": "Harmony Hub"
+      "title": "הכיתה שלי"
     },
     "tools": [
       {
