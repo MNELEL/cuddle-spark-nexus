@@ -163,6 +163,7 @@ export function InstitutionClassAssignmentsCard({ canEdit }: { canEdit: boolean 
       </CardContent>
 
       <Dialog open={editing !== null} onOpenChange={(o) => !o && setEditing(null)}>
+        {null}
         <DialogContent dir="rtl">
           <DialogHeader>
             <DialogTitle>שיוך הכיתה {editing?.name} למלמד</DialogTitle>
