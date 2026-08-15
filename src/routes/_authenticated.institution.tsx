@@ -35,7 +35,10 @@ import {
   inviteTeacherToInstitution,
   removeTeacherFromInstitution,
   updateTeacherNotes,
+  findUserByEmail,
+  type FoundUser,
 } from "@/lib/institution-teachers.functions";
+import { assignRole } from "@/lib/user-roles.functions";
 
 export const Route = createFileRoute("/_authenticated/institution")({
   component: InstitutionDashboardPage,
@@ -264,7 +267,7 @@ function InstitutionDashboardPage() {
 
         <TabsContent value="teachers">
           <div className="space-y-6">
-            <TeachersTab canEdit={institution.role === "admin"} />
+            <TeachersTab canEdit={institution.role === "admin"} institutionId={institution.id} />
             <InstitutionClassAssignmentsCard canEdit={institution.role === "admin"} />
           </div>
         </TabsContent>
@@ -277,19 +280,27 @@ function InstitutionDashboardPage() {
   );
 }
 
-function TeachersTab({ canEdit }: { canEdit: boolean }) {
+function TeachersTab({ canEdit, institutionId }: { canEdit: boolean; institutionId: string }) {
   const qc = useQueryClient();
   const fetchTeachers = useServerFn(listInstitutionTeachers);
   const invite = useServerFn(inviteTeacherToInstitution);
   const remove = useServerFn(removeTeacherFromInstitution);
   const rename = useServerFn(renameInstitutionTeacher);
   const saveNotes = useServerFn(updateTeacherNotes);
+  const findUser = useServerFn(findUserByEmail);
+  const attachRole = useServerFn(assignRole);
   const [renameTarget, setRenameTarget] = useState<{ userId: string; name: string } | null>(null);
   const [notesTarget, setNotesTarget] = useState<{ userId: string; name: string; notes: string } | null>(null);
 
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState<string | null>(null);
+
+  const [attachOpen, setAttachOpen] = useState(false);
+  const [searchEmail, setSearchEmail] = useState("");
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [searched, setSearched] = useState(false);
+  const [foundUser, setFoundUser] = useState<FoundUser | null>(null);
 
   const teachersQ = useQuery({
     queryKey: ["institution-teachers"],
@@ -338,6 +349,45 @@ function TeachersTab({ canEdit }: { canEdit: boolean }) {
     onError: (e) => toast.error(e instanceof Error ? e.message : "שמירת ההערות נכשלה"),
   });
 
+  const searchM = useMutation({
+    mutationFn: (value: string) => findUser({ data: { email: value } }),
+    onSuccess: (res) => {
+      setFoundUser(res ?? null);
+      setSearched(true);
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "החיפוש נכשל"),
+  });
+
+  const attachM = useMutation({
+    mutationFn: (targetId: string) =>
+      attachRole({ data: { user_id: targetId, role: "teacher", institution_id: institutionId } }),
+    onSuccess: () => {
+      toast.success("המלמד שויך למוסד");
+      resetAttach();
+      setAttachOpen(false);
+      void qc.invalidateQueries({ queryKey: ["institution-teachers"] });
+      void qc.invalidateQueries({ queryKey: ["institution-class-assignments"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "שיוך המלמד נכשל"),
+  });
+
+  function resetAttach() {
+    setSearchEmail("");
+    setSearchError(null);
+    setSearched(false);
+    setFoundUser(null);
+  }
+
+  function submitSearch() {
+    const value = searchEmail.trim();
+    if (!value) { setSearchError("נדרשת כתובת מייל"); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value)) { setSearchError("כתובת מייל לא תקינה"); return; }
+    setSearchError(null);
+    setSearched(false);
+    setFoundUser(null);
+    searchM.mutate(value);
+  }
+
   function submitInvite() {
     const value = email.trim();
     if (!value) { setEmailError("נדרשת כתובת מייל"); return; }
@@ -353,6 +403,7 @@ function TeachersTab({ canEdit }: { canEdit: boolean }) {
       <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <CardTitle className="text-base">מלמדי המוסד</CardTitle>
         {canEdit && (
+        <div className="flex flex-wrap items-center gap-2">
         <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setEmailError(null); }}>
           <DialogTrigger asChild>
             <Button className="rounded-xl">
@@ -397,6 +448,70 @@ function TeachersTab({ canEdit }: { canEdit: boolean }) {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        <Dialog open={attachOpen} onOpenChange={(v) => { setAttachOpen(v); if (!v) resetAttach(); }}>
+          <DialogTrigger asChild>
+            <Button variant="outline" className="rounded-xl">
+              <Search className="me-1 h-4 w-4" aria-hidden="true" /> שייך מלמד קיים
+            </Button>
+          </DialogTrigger>
+          <DialogContent dir="rtl">
+            <DialogHeader>
+              <DialogTitle>שיוך מלמד קיים למוסד</DialogTitle>
+              <DialogDescription>
+                חפש לפי כתובת המייל של חשבון קיים במערכת, ושייך אותו כמלמד במוסד שלך.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2">
+              <Label htmlFor="attach-email">כתובת מייל</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="attach-email"
+                  type="email"
+                  dir="ltr"
+                  maxLength={255}
+                  className="rounded-xl"
+                  placeholder="teacher@example.com"
+                  value={searchEmail}
+                  onChange={(e) => { setSearchEmail(e.target.value); setSearchError(null); }}
+                  onKeyDown={(e) => { if (e.key === "Enter") submitSearch(); }}
+                  aria-invalid={Boolean(searchError)}
+                  aria-describedby={searchError ? "attach-email-error" : undefined}
+                />
+                <Button className="rounded-xl" onClick={submitSearch} disabled={searchM.isPending}>
+                  {searchM.isPending && <Loader2 className="me-1 h-4 w-4 animate-spin" aria-hidden="true" />}
+                  חפש
+                </Button>
+              </div>
+              {searchError && (
+                <p id="attach-email-error" className="text-sm text-destructive">{searchError}</p>
+              )}
+
+              {searched && !foundUser && (
+                <p className="text-sm text-muted-foreground">לא נמצא משתמש עם אימייל זה במערכת</p>
+              )}
+              {foundUser && (
+                <div className="rounded-xl border p-3 text-sm">
+                  <p className="font-medium">{foundUser.displayName}</p>
+                  <p dir="ltr" className="text-muted-foreground">{foundUser.email}</p>
+                  {foundUser.alreadyTeacherHere ? (
+                    <p className="mt-2 text-muted-foreground">המשתמש כבר מלמד במוסד זה</p>
+                  ) : (
+                    <Button
+                      className="mt-3 rounded-xl"
+                      onClick={() => attachM.mutate(foundUser.id)}
+                      disabled={attachM.isPending}
+                    >
+                      {attachM.isPending && <Loader2 className="me-1 h-4 w-4 animate-spin" aria-hidden="true" />}
+                      שייך למוסד
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+        </div>
         )}
       </CardHeader>
       <CardContent>
