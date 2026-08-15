@@ -640,8 +640,8 @@ function StudentsTab({
   };
 
   return (
-
     <div className="space-y-3">
+
       <div className="flex flex-wrap justify-end gap-2">
         <div className="me-auto flex items-center gap-2">
           <Label htmlFor="students-sort" className="text-xs text-muted-foreground">מיון</Label>
