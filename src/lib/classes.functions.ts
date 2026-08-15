@@ -5,6 +5,12 @@ import { logInfo } from "@/lib/logger.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { previousGradeName, defaultAcademicYear } from "@/lib/year-rollover";
+import {
+  type ClassMetrics,
+  EMPTY_METRICS,
+  examWindow,
+  summarizeClasses,
+} from "@/lib/classes-overview";
 
 const ARCHIVED_MSG = "הכיתה בארכיון — החזר אותה לפעילות כדי לערוך";
 
@@ -38,6 +44,59 @@ export const listClasses = createServerFn({ method: "GET" })
       .order("created_at", { ascending: false });
     if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return data ?? [];
+  });
+
+/**
+ * Classes plus the light metrics the home screen shows: student count per
+ * class, draft weekly bulletins and exams in the next two weeks. Three
+ * batched queries — no per-class round trips. RLS already scopes the rows.
+ */
+export const getClassesOverview = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: classes, error } = await context.supabase
+      .from("classes")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+
+    const rows = classes ?? [];
+    const ids = rows.map((c) => c.id);
+    const perClass: Record<string, ClassMetrics> = {};
+    for (const id of ids) perClass[id] = { ...EMPTY_METRICS };
+
+    if (ids.length > 0) {
+      const { from, to } = examWindow();
+      const [students, bulletins, events] = await Promise.all([
+        context.supabase.from("students").select("id, class_id").in("class_id", ids),
+        context.supabase.from("weekly_bulletins").select("id, class_id").in("class_id", ids).eq("status", "draft"),
+        context.supabase
+          .from("class_events")
+          .select("id, class_id, type, date")
+          .in("class_id", ids)
+          .in("type", ["exam", "special_exam"])
+          .gte("date", from)
+          .lte("date", to),
+      ]);
+      if (students.error) console.error("[DB Error]", students.error);
+      if (bulletins.error) console.error("[DB Error]", bulletins.error);
+      if (events.error) console.error("[DB Error]", events.error);
+
+      for (const s of students.data ?? []) {
+        const m = perClass[s.class_id];
+        if (m) m.studentCount += 1;
+      }
+      for (const b of bulletins.data ?? []) {
+        const m = perClass[b.class_id];
+        if (m) m.draftBulletins += 1;
+      }
+      for (const e of events.data ?? []) {
+        const m = perClass[e.class_id];
+        if (m) m.upcomingExams += 1;
+      }
+    }
+
+    return { classes: rows, perClass, stats: summarizeClasses(rows, perClass) };
   });
 
 export const createClass = createServerFn({ method: "POST" })
