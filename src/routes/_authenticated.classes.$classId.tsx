@@ -616,6 +616,8 @@ function StudentsTab({
   const safePage = Math.min(Math.max(1, page), pageCount);
   const pageRows = sorted.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
   const className = "רשימת תלמידים";
+  const sortLabel = SORT_OPTIONS[sortKey];
+  const printTitle = `${className} · מיון: ${sortLabel}`;
   const profilesFn = useServerFn(listClassProfiles);
   const handoffM = useMutation({
     mutationFn: async () => {
@@ -629,15 +631,16 @@ function StudentsTab({
 
   const doPrint = () => {
     if (!students.length) return toast.error("אין תלמידים");
-    printList(className, [{ title: className, items: students.map((s) => s.name) }]);
+    printList(printTitle, [{ title: printTitle, items: sorted.map((s) => s.name) }]);
   };
   const doCopy = async () => {
     if (!students.length) return toast.error("אין תלמידים");
-    await navigator.clipboard.writeText(copyList([{ title: className, items: students.map((s) => s.name) }]));
+    await navigator.clipboard.writeText(copyList([{ title: printTitle, items: sorted.map((s) => s.name) }]));
     toast.success("הועתק");
   };
 
   return (
+
     <div className="space-y-3">
       <div className="flex flex-wrap justify-end gap-2">
         <div className="me-auto flex items-center gap-2">
