@@ -214,6 +214,53 @@ const notesSchema = z.object({
   notes: z.string().max(2000, "ההערה ארוכה מדי"),
 });
 
+export type FoundUser = {
+  id: string;
+  email: string | null;
+  displayName: string;
+  alreadyTeacherHere: boolean;
+};
+
+/**
+ * Looks up a single existing account by exact (case-insensitive) email so an
+ * admin can attach it to the institution. Never returns a user list.
+ */
+export const findUserByEmail = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => inviteSchema.parse(d))
+  .handler(async ({ data, context }): Promise<FoundUser | null> => {
+    const { supabase, userId } = context;
+    const scope = await requireAdminScope(supabase, userId);
+
+    const wanted = data.email.trim().toLowerCase();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: users, error } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+    if (error) { console.error("[Auth Error]", error); throw new Error("החיפוש נכשל. נסה שוב."); }
+
+    const found = (users.users ?? []).find((u) => (u.email ?? "").toLowerCase() === wanted);
+    if (!found) return null;
+
+    const { data: roles, error: rErr } = await supabaseAdmin
+      .from("user_roles")
+      .select("id")
+      .eq("user_id", found.id)
+      .eq("role", "teacher")
+      .eq("institution_id", scope.institutionId)
+      .limit(1);
+    if (rErr) { console.error("[DB Error]", rErr); throw new Error("החיפוש נכשל. נסה שוב."); }
+
+    return {
+      id: found.id,
+      email: found.email ?? null,
+      displayName:
+        (found.user_metadata?.["display_name"] as string | undefined) ??
+        found.email?.split("@")[0] ??
+        "משתמש",
+      alreadyTeacherHere: (roles ?? []).length > 0,
+    };
+  });
+
 /** Free-text teaching style / notes kept per teacher on their institution role row. */
 export const updateTeacherNotes = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
