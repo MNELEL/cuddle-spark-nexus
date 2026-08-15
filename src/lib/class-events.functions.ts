@@ -68,14 +68,40 @@ export const upsertClassEvent = createServerFn({ method: "POST" })
       notes: data.notes ?? null,
       color: data.color ?? null,
     };
+
+    const translateError = (err: any): string | null => {
+      const msg = String(err?.message ?? "");
+      if (msg.includes("CLASS_ARCHIVED_READONLY")) {
+        return "הכיתה בארכיון — החזר אותה לפעילות כדי להוסיף אירועים";
+      }
+      if (err?.code === "23502") {
+        return "פג תוקף החיבור שלך — רענן את הדף והתחבר מחדש";
+      }
+      if (
+        err?.code === "42501" ||
+        msg.toLowerCase().includes("permission denied") ||
+        msg.toLowerCase().includes("insufficient privilege")
+      ) {
+        return "אין לך הרשאה להוסיף אירוע לכיתה זו";
+      }
+      return null;
+    };
+
     if (data.id) {
       const { error } = await context.supabase.from("class_events").update(payload).eq("id", data.id);
-      if (error) throw new Error("עדכון האירוע נכשל.");
+      if (error) {
+        console.error("[class_events upsert]", error);
+        throw new Error(translateError(error) ?? "עדכון האירוע נכשל.");
+      }
       return { ok: true as const, id: data.id };
     }
     const { data: row, error } = await context.supabase
       .from("class_events").insert(payload).select("id").single();
-    if (error || !row) throw new Error("יצירת האירוע נכשלה.");
+    if (error || !row) {
+      console.error("[class_events upsert]", error);
+      const fallback = error ? (translateError(error) ?? "יצירת האירוע נכשלה.") : "יצירת האירוע נכשלה.";
+      throw new Error(fallback);
+    }
     return { ok: true as const, id: row.id };
   });
 
