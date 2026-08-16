@@ -187,3 +187,89 @@ export const listRoleAuditLog = createServerFn({ method: "GET" })
       };
     });
   });
+
+const deleteInstitutionSchema = z.object({
+  institution_id: z.string().uuid(),
+});
+
+/**
+ * Deletes an institution. Blocked while classes are still attached so no
+ * teacher loses data by accident; role assignments are detached automatically.
+ */
+export const deleteInstitution = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => deleteInstitutionSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await verifyAdmin(supabase, userId);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: inst, error: instError } = await supabaseAdmin
+      .from("institutions")
+      .select("id, name")
+      .eq("id", data.institution_id)
+      .maybeSingle();
+    if (instError) throw new Error(instError.message);
+    if (!inst) throw new Error("המוסד לא נמצא");
+
+    const { count: classCount, error: classError } = await supabaseAdmin
+      .from("classes")
+      .select("id", { count: "exact", head: true })
+      .eq("institution_id", data.institution_id);
+    if (classError) throw new Error(classError.message);
+    if ((classCount ?? 0) > 0) {
+      throw new Error(
+        `לא ניתן למחוק את המוסד: משויכות אליו ${classCount} כיתות. נתק אותן קודם בטבלת שיוכי הכיתות.`,
+      );
+    }
+
+    const { error: rolesError } = await supabaseAdmin
+      .from("user_roles")
+      .delete()
+      .eq("institution_id", data.institution_id);
+    if (rolesError) throw new Error(rolesError.message);
+
+    const { error: deleteError } = await supabaseAdmin
+      .from("institutions")
+      .delete()
+      .eq("id", data.institution_id);
+    if (deleteError) throw new Error(deleteError.message);
+
+    const { logInfo } = await import("@/lib/logger.server");
+    await logInfo(`נמחק מוסד: ${inst.name}`, {
+      source: AUDIT_SOURCE_INSTITUTIONS,
+      userId,
+      context: { action: "institution.delete", institution_id: inst.id, name: inst.name },
+    });
+
+    return { ok: true, name: inst.name };
+  });
+
+const legacyListRoleAuditLog = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    await verifyAdmin(supabase, userId);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data, error } = await supabaseAdmin
+      .from("app_logs")
+      .select("id, level, message, context, source, created_at")
+      .in("source", [AUDIT_SOURCE_INSTITUTIONS, AUDIT_SOURCE_ROLES, AUDIT_SOURCE_STUDENT_PROFILES])
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (error) throw new Error(error.message);
+
+    return (data ?? []).map((row) => {
+      const ctx = (row.context ?? {}) as Record<string, unknown>;
+      return {
+        id: row.id,
+        message: row.message,
+        action: typeof ctx["action"] === "string" ? (ctx["action"] as string) : "",
+        source: row.source ?? "",
+        createdAt: row.created_at,
+      };
+    });
+  });
