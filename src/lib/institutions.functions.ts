@@ -245,31 +245,3 @@ export const deleteInstitution = createServerFn({ method: "POST" })
 
     return { ok: true, name: inst.name };
   });
-
-const legacyListRoleAuditLog = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { supabase, userId } = context;
-    await verifyAdmin(supabase, userId);
-
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-    const { data, error } = await supabaseAdmin
-      .from("app_logs")
-      .select("id, level, message, context, source, created_at")
-      .in("source", [AUDIT_SOURCE_INSTITUTIONS, AUDIT_SOURCE_ROLES, AUDIT_SOURCE_STUDENT_PROFILES])
-      .order("created_at", { ascending: false })
-      .limit(20);
-    if (error) throw new Error(error.message);
-
-    return (data ?? []).map((row) => {
-      const ctx = (row.context ?? {}) as Record<string, unknown>;
-      return {
-        id: row.id,
-        message: row.message,
-        action: typeof ctx["action"] === "string" ? (ctx["action"] as string) : "",
-        source: row.source ?? "",
-        createdAt: row.created_at,
-      };
-    });
-  });
