@@ -31,6 +31,8 @@ import { SemesterTargetsPanel } from "@/components/schedule/semester-targets-pan
 import { MonthView, YearView } from "@/components/schedule/month-year-views";
 import { hebrewDayLabel, parashaForWeek } from "@/lib/parasha";
 import { printHtmlTable } from "@/lib/print-schedule";
+import { slotAllowed, timeLabel } from "@/lib/recurring-rules";
+import { RecurringRulesPanel } from "@/components/schedule/recurring-rules-panel";
 
 export const Route = createFileRoute("/_authenticated/weekly-schedule/$classId")({
   component: WeeklySchedulePage,
@@ -63,6 +65,9 @@ function subjectColor(subject: string | null, map: Map<string, string>): string 
 }
 
 function pad2(n: number) { return String(n).padStart(2, "0"); }
+const MINUTES = [0, 15, 30, 45] as const;
+type Minute = (typeof MINUTES)[number];
+
 function isoDate(d: Date) { return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; }
 function getWeekStart(d: Date): Date {
   const r = new Date(d);
@@ -78,6 +83,7 @@ function LessonChip({ lesson, color, onDelete, libraryItem }: {
 }) {
   return (
     <div className={`group relative rounded-xl border px-2 py-1.5 text-xs ${color}`} style={{ minHeight: 52 }}>
+      <div className="font-mono-tabular text-[10px] opacity-70">{timeLabel(lesson.hour, lesson.minute)}</div>
       <div className="font-semibold leading-tight line-clamp-2">{lesson.title}</div>
       {lesson.subject && <div className="mt-0.5 truncate opacity-70">{lesson.subject}</div>}
       {libraryItem && (
@@ -111,10 +117,10 @@ function DraggableLesson({ lesson, color, onDelete, libraryItem }: {
   );
 }
 
-function DroppableCell({ dayKey, hour, children, onClickEmpty }: {
-  dayKey: WeeklyDayKey; hour: number; children: ReactNode; onClickEmpty: () => void;
+function DroppableCell({ dayKey, hour, minute, children, onClickEmpty }: {
+  dayKey: WeeklyDayKey; hour: number; minute: number; children: ReactNode; onClickEmpty: () => void;
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id: `cell-${dayKey}-${hour}`, data: { dayKey, hour } });
+  const { setNodeRef, isOver } = useDroppable({ id: `cell-${dayKey}-${hour}-${minute}`, data: { dayKey, hour, minute } });
   return (
     <div
       ref={setNodeRef}
