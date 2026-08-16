@@ -1,10 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { effectiveRulesFor, slotAllowed, type RecurringRule } from "@/lib/recurring-rules";
 
 const dateStr = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const dayKey = z.enum(["sun", "mon", "tue", "wed", "thu", "fri", "sat"]);
 const uuid = z.string().uuid();
+const minuteVal = z.union([z.literal(0), z.literal(15), z.literal(30), z.literal(45)]);
 
 export type SchedDayKey = z.infer<typeof dayKey>;
 
@@ -22,6 +24,7 @@ export type TemplateSlot = {
   class_id: string;
   day_key: SchedDayKey;
   hour: number;
+  minute: number;
   duration: number;
   title: string;
   subject: string | null;
@@ -37,6 +40,7 @@ export type ScheduleTask = {
   subject: string | null;
   date: string;
   hour: number | null;
+  minute: number | null;
   notes: string | null;
   done: boolean;
   done_at: string | null;
@@ -137,9 +141,10 @@ export const listTemplateSlots = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<TemplateSlot[]> => {
     const { data: rows, error } = await context.supabase
       .from("schedule_template_slots")
-      .select("id,class_id,day_key,hour,duration,title,subject,notes,library_item_id")
+      .select("id,class_id,day_key,hour,minute,duration,title,subject,notes,library_item_id")
       .eq("class_id", data.classId)
-      .order("hour", { ascending: true });
+      .order("hour", { ascending: true })
+      .order("minute", { ascending: true });
     if (error) {
       console.error("[template list]", error);
       throw new Error("טעינת המערכת הקבועה נכשלה.");
@@ -156,6 +161,7 @@ export const upsertTemplateSlot = createServerFn({ method: "POST" })
         classId: uuid,
         dayKey,
         hour: z.number().int().min(6).max(22),
+        minute: minuteVal.default(0),
         duration: z.number().int().min(1).max(4).default(1),
         title: z.string().min(1).max(200),
         subject: z.string().max(100).nullable().optional(),
@@ -169,6 +175,7 @@ export const upsertTemplateSlot = createServerFn({ method: "POST" })
       class_id: data.classId,
       day_key: data.dayKey,
       hour: data.hour,
+      minute: data.minute,
       duration: data.duration,
       title: data.title.trim(),
       subject: data.subject?.trim() || null,
@@ -220,7 +227,7 @@ export const applyTemplateToWeeks = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: slots, error: slotErr } = await context.supabase
       .from("schedule_template_slots")
-      .select("day_key,hour,duration,title,subject,notes,library_item_id")
+      .select("day_key,hour,minute,duration,title,subject,notes,library_item_id")
       .eq("class_id", data.classId);
     if (slotErr) {
       console.error("[template apply read]", slotErr);
@@ -228,9 +235,24 @@ export const applyTemplateToWeeks = createServerFn({ method: "POST" })
     }
     if (!slots?.length) throw new Error("המערכת הקבועה ריקה — הוסיפו שיעורים לפני ההחלה.");
 
+    // Recurring rules (weekly day / Rosh Chodesh) are enforced here: a day
+    // marked "no school" is skipped entirely, and slots starting at/after an
+    // early-end time (or before a late-start time) are dropped.
+    const { data: ruleRows, error: ruleErr } = await context.supabase
+      .from("recurring_schedule_rules")
+      .select("id,class_id,kind,day_key,effect,hour,minute,label,active")
+      .eq("class_id", data.classId)
+      .eq("active", true);
+    if (ruleErr) {
+      console.error("[template apply rules]", ruleErr);
+      throw new Error("טעינת הכללים הקבועים נכשלה.");
+    }
+    const rules = (ruleRows ?? []) as RecurringRule[];
+
     const dayIndex: Record<string, number> = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
     const skip = new Set(data.skipDates);
-    const rows: { class_id: string; week_start: string; day_key: string; hour: number; duration: number; title: string; subject: string | null; notes: string | null; library_item_id: string | null }[] = [];
+    const rows: { class_id: string; week_start: string; day_key: string; hour: number; minute: number; duration: number; title: string; subject: string | null; notes: string | null; library_item_id: string | null }[] = [];
+    let skippedByRules = 0;
 
     for (const weekStart of data.weekStarts) {
       if (data.replace) {
@@ -249,11 +271,14 @@ export const applyTemplateToWeeks = createServerFn({ method: "POST" })
         base.setDate(base.getDate() + (dayIndex[s.day_key] ?? 0));
         const iso = base.toISOString().slice(0, 10);
         if (skip.has(iso)) continue;
+        const effect = effectiveRulesFor(rules, iso);
+        if (!slotAllowed(effect, s.hour, s.minute ?? 0)) { skippedByRules++; continue; }
         rows.push({
           class_id: data.classId,
           week_start: weekStart,
           day_key: s.day_key,
           hour: s.hour,
+          minute: s.minute ?? 0,
           duration: s.duration,
           title: s.title,
           subject: s.subject,
@@ -262,16 +287,16 @@ export const applyTemplateToWeeks = createServerFn({ method: "POST" })
         });
       }
     }
-    if (!rows.length) return { ok: true as const, inserted: 0 };
+    if (!rows.length) return { ok: true as const, inserted: 0, skippedByRules };
     const { error } = await context.supabase
       .from("weekly_lessons")
-      .upsert(rows, { onConflict: "class_id,week_start,day_key,hour" });
+      .upsert(rows, { onConflict: "class_id,week_start,day_key,hour,minute" });
     if (error) {
       console.error("[template apply insert]", error);
       throw new Error("החלת המערכת על השבועות נכשלה.");
     
     }
-    return { ok: true as const, inserted: rows.length };
+    return { ok: true as const, inserted: rows.length, skippedByRules };
   });
 
 /* ------------------------ calendar overrides ------------------------ */
@@ -355,7 +380,7 @@ export const listScheduleTasks = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<ScheduleTask[]> => {
     const { data: rows, error } = await context.supabase
       .from("schedule_tasks")
-      .select("id,class_id,kind,title,subject,date,hour,notes,done,done_at,curriculum_unit_id")
+      .select("id,class_id,kind,title,subject,date,hour,minute,notes,done,done_at,curriculum_unit_id")
       .eq("class_id", data.classId)
       .gte("date", data.from)
       .lte("date", data.to)
@@ -379,6 +404,7 @@ export const upsertScheduleTask = createServerFn({ method: "POST" })
         subject: z.string().max(100).nullable().optional(),
         date: dateStr,
         hour: z.number().int().min(6).max(22).nullable().optional(),
+        minute: minuteVal.nullable().optional(),
         notes: z.string().max(2000).nullable().optional(),
       })
       .parse(d),
@@ -391,6 +417,7 @@ export const upsertScheduleTask = createServerFn({ method: "POST" })
       subject: data.subject?.trim() || null,
       date: data.date,
       hour: data.hour ?? null,
+      minute: data.hour == null ? null : (data.minute ?? 0),
       notes: data.notes ?? null,
     };
     const q = data.id

@@ -31,6 +31,8 @@ import { SemesterTargetsPanel } from "@/components/schedule/semester-targets-pan
 import { MonthView, YearView } from "@/components/schedule/month-year-views";
 import { hebrewDayLabel, parashaForWeek } from "@/lib/parasha";
 import { printHtmlTable } from "@/lib/print-schedule";
+import { slotAllowed, timeLabel } from "@/lib/recurring-rules";
+import { RecurringRulesPanel } from "@/components/schedule/recurring-rules-panel";
 
 export const Route = createFileRoute("/_authenticated/weekly-schedule/$classId")({
   component: WeeklySchedulePage,
@@ -63,6 +65,9 @@ function subjectColor(subject: string | null, map: Map<string, string>): string 
 }
 
 function pad2(n: number) { return String(n).padStart(2, "0"); }
+const MINUTES = [0, 15, 30, 45] as const;
+type Minute = (typeof MINUTES)[number];
+
 function isoDate(d: Date) { return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; }
 function getWeekStart(d: Date): Date {
   const r = new Date(d);
@@ -78,6 +83,7 @@ function LessonChip({ lesson, color, onDelete, libraryItem }: {
 }) {
   return (
     <div className={`group relative rounded-xl border px-2 py-1.5 text-xs ${color}`} style={{ minHeight: 52 }}>
+      <div className="font-mono-tabular text-[10px] opacity-70">{timeLabel(lesson.hour, lesson.minute)}</div>
       <div className="font-semibold leading-tight line-clamp-2">{lesson.title}</div>
       {lesson.subject && <div className="mt-0.5 truncate opacity-70">{lesson.subject}</div>}
       {libraryItem && (
@@ -218,11 +224,15 @@ function WeeklySchedulePage() {
     setActiveLesson((lessons as WeeklyLesson[]).find((l) => l.id === lessonId) ?? null);
   };
   const onDragEnd = (e: DragEndEvent) => {
-    setActiveLesson(null);
     const lessonId = (e.active.data.current as { lessonId?: string } | undefined)?.lessonId;
+    const dragged = activeLesson;
+    setActiveLesson(null);
     const over = e.over?.data.current as { dayKey?: WeeklyDayKey; hour?: number } | undefined;
     if (!lessonId || !over?.dayKey || over.hour === undefined) return;
-    moveM.mutate({ data: { id: lessonId, dayKey: over.dayKey, hour: over.hour } });
+    // Dragging changes day/hour only — the lesson keeps its exact minute
+    // (e.g. a 14:15 lesson dropped on 15:00 becomes 15:15).
+    const minute = (dragged?.minute ?? 0) as 0 | 15 | 30 | 45;
+    moveM.mutate({ data: { id: lessonId, dayKey: over.dayKey, hour: over.hour, minute } });
   };
 
   const openNew = (day: WeeklyDayKey, hour: number) => setDialog({ open: true, day, hour, editing: null });
@@ -339,8 +349,10 @@ function WeeklySchedulePage() {
                         {DAYS.map((day, i) => {
                           const cellLessons = byCell.get(`${day.key}-${hour}`) ?? [];
                           const off = !year.isTeachingDate(weekDates[i]!);
+                          // Blocked by a recurring rule (early end / late start).
+                          const blocked = !off && !slotAllowed(year.rulesForDate(weekDates[i]!), hour, 0);
                           return (
-                            <div key={day.key} className={off ? "opacity-60" : ""}>
+                            <div key={day.key} className={off ? "opacity-60" : blocked ? "opacity-50" : ""} title={blocked ? "מחוץ לשעות הלימוד לפי כלל קבוע" : undefined}>
                               <DroppableCell dayKey={day.key} hour={hour} onClickEmpty={() => openNew(day.key, hour)}>
                                 {cellLessons.map((l) => (
                                   <div key={l.id} data-no-cell onClick={() => openEdit(l)}>
@@ -442,8 +454,9 @@ function WeeklySchedulePage() {
           <SemesterTargetsPanel classId={classId} />
         </TabsContent>
 
-        <TabsContent value="settings" className="mt-4">
+        <TabsContent value="settings" className="mt-4 space-y-4">
           <CalendarSettingsPanel classId={classId} year={year} />
+          <RecurringRulesPanel classId={classId} />
         </TabsContent>
       </Tabs>
 
@@ -470,12 +483,13 @@ function LessonForm({ classId, weekKey, day, hour, hours, editing, resources, on
   resources: { id: string; title: string }[];
   onClose: () => void;
   onSave: (payload: {
-    id?: string; classId: string; weekStart: string; dayKey: WeeklyDayKey; hour: number;
+    id?: string; classId: string; weekStart: string; dayKey: WeeklyDayKey; hour: number; minute: Minute;
     duration: 1 | 2; title: string; subject: string | null; notes: string | null; libraryItemId: string | null;
   }) => void;
 }) {
   const [dayKey, setDayKey] = useState<WeeklyDayKey>(editing?.day_key ?? day);
   const [hourVal, setHourVal] = useState(editing?.hour ?? hour);
+  const [minuteVal, setMinuteVal] = useState<Minute>(((editing?.minute ?? 0) as Minute));
   const [title, setTitle] = useState(editing?.title ?? "");
   const [subject, setSubject] = useState(editing?.subject ?? "");
   const [duration, setDuration] = useState<1 | 2>((editing?.duration as 1 | 2) ?? 1);
@@ -486,7 +500,7 @@ function LessonForm({ classId, weekKey, day, hour, hours, editing, resources, on
     if (!title.trim()) { toast.error("חובה להזין כותרת"); return; }
     onSave({
       id: editing?.id,
-      classId, weekStart: weekKey, dayKey, hour: hourVal, duration,
+      classId, weekStart: weekKey, dayKey, hour: hourVal, minute: minuteVal, duration,
       title: title.trim(), subject: subject.trim() || null, notes: notes || null,
       libraryItemId: libraryItemId === "none" ? null : libraryItemId,
     });
@@ -506,11 +520,18 @@ function LessonForm({ classId, weekKey, day, hour, hours, editing, resources, on
               </Select>
             </div>
             <div>
-              <Label>שעה</Label>
-              <Select value={String(hourVal)} onValueChange={(v) => setHourVal(Number(v))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{hours.map((h) => <SelectItem key={h} value={String(h)}>{pad2(h)}:00</SelectItem>)}</SelectContent>
-              </Select>
+              <Label>שעה מדויקת</Label>
+              <div className="flex items-center gap-1">
+                <Select value={String(hourVal)} onValueChange={(v) => setHourVal(Number(v))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{hours.map((h) => <SelectItem key={h} value={String(h)}>{pad2(h)}</SelectItem>)}</SelectContent>
+                </Select>
+                <span aria-hidden>:</span>
+                <Select value={String(minuteVal)} onValueChange={(v) => setMinuteVal(Number(v) as Minute)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{MINUTES.map((m) => <SelectItem key={m} value={String(m)}>{pad2(m)}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
           <div>

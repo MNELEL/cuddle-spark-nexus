@@ -7,6 +7,8 @@ import {
 } from "@/lib/schedule-planning.functions";
 import { addDays, holidaysInRange, isoDate, weekStartOf } from "@/lib/parasha";
 import { dayKeyOf, expandOverrides } from "@/components/schedule/schedule-context";
+import { listRecurringRules } from "@/lib/recurring-rules.functions";
+import { effectiveRulesFor, type DayRuleEffect, type RecurringRule } from "@/lib/recurring-rules";
 
 /** School year bounds (Aug 1 → Jul 31) unless the class configured its own. */
 function defaultYearBounds(today = new Date()) {
@@ -18,6 +20,7 @@ export function useScheduleYear(classId: string) {
   const settingsFn = useServerFn(getScheduleSettings);
   const overridesFn = useServerFn(listCalendarOverrides);
   const notesFn = useServerFn(listWeekNotes);
+  const rulesFn = useServerFn(listRecurringRules);
 
   const { data: settings } = useQuery({
     queryKey: ["schedule-settings", classId],
@@ -30,6 +33,10 @@ export function useScheduleYear(classId: string) {
   const { data: weekNotes = [] } = useQuery({
     queryKey: ["week-notes", classId],
     queryFn: () => notesFn({ data: { classId } }),
+  });
+  const { data: recurringRules = [] } = useQuery({
+    queryKey: ["recurring-rules", classId],
+    queryFn: () => rulesFn({ data: { classId } }),
   });
 
   const bounds = useMemo(() => {
@@ -62,6 +69,11 @@ export function useScheduleYear(classId: string) {
     [settings],
   );
 
+  const rules = useMemo(() => (recurringRules as RecurringRule[]).filter((r) => r.active), [recurringRules]);
+
+  /** Merged effect of every recurring rule that matches this date. */
+  const rulesForDate = (iso: string): DayRuleEffect => effectiveRulesFor(rules, iso);
+
   /** Is this a normal teaching day for the class? */
   const isTeachingDate = (iso: string): boolean => {
     const d = new Date(`${iso}T00:00:00`);
@@ -70,6 +82,7 @@ export function useScheduleYear(classId: string) {
     if (!activeDays.has(dayKeyOf(d))) return false;
     if (ovr.some((o) => o.type === "institution_break" || o.type === "unexpected_closure" || o.type === "holiday")) return false;
     if (holidayByDate.get(iso)?.noSchool) return false;
+    if (effectiveRulesFor(rules, iso).noSchool) return false;
     return true;
   };
 
@@ -81,7 +94,7 @@ export function useScheduleYear(classId: string) {
     }
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bounds.start, bounds.end, overrideByDate, holidayByDate, activeDays]);
+  }, [bounds.start, bounds.end, overrideByDate, holidayByDate, activeDays, rules]);
 
   const weekStarts = useMemo(() => {
     const out: string[] = [];
@@ -102,6 +115,8 @@ export function useScheduleYear(classId: string) {
     holidayByDate,
     overrideByDate,
     activeDays,
+    rules: recurringRules as RecurringRule[],
+    rulesForDate,
     isTeachingDate,
     teachingDates,
     weekStarts,
