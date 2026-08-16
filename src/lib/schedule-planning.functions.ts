@@ -380,7 +380,7 @@ export const listScheduleTasks = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<ScheduleTask[]> => {
     const { data: rows, error } = await context.supabase
       .from("schedule_tasks")
-      .select("id,class_id,kind,title,subject,date,hour,notes,done,done_at,curriculum_unit_id")
+      .select("id,class_id,kind,title,subject,date,hour,minute,notes,done,done_at,curriculum_unit_id")
       .eq("class_id", data.classId)
       .gte("date", data.from)
       .lte("date", data.to)
@@ -404,6 +404,7 @@ export const upsertScheduleTask = createServerFn({ method: "POST" })
         subject: z.string().max(100).nullable().optional(),
         date: dateStr,
         hour: z.number().int().min(6).max(22).nullable().optional(),
+        minute: minuteVal.nullable().optional(),
         notes: z.string().max(2000).nullable().optional(),
       })
       .parse(d),
@@ -416,6 +417,7 @@ export const upsertScheduleTask = createServerFn({ method: "POST" })
       subject: data.subject?.trim() || null,
       date: data.date,
       hour: data.hour ?? null,
+      minute: data.hour == null ? null : (data.minute ?? 0),
       notes: data.notes ?? null,
     };
     const q = data.id
