@@ -5,6 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const dateStr = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const dayKey = z.enum(["sun", "mon", "tue", "wed", "thu", "fri", "sat"]);
 const uuid = z.string().uuid();
+const minuteVal = z.union([z.literal(0), z.literal(15), z.literal(30), z.literal(45)]);
 
 export type SchedDayKey = z.infer<typeof dayKey>;
 
@@ -22,6 +23,7 @@ export type TemplateSlot = {
   class_id: string;
   day_key: SchedDayKey;
   hour: number;
+  minute: number;
   duration: number;
   title: string;
   subject: string | null;
@@ -37,6 +39,7 @@ export type ScheduleTask = {
   subject: string | null;
   date: string;
   hour: number | null;
+  minute: number | null;
   notes: string | null;
   done: boolean;
   done_at: string | null;
@@ -137,9 +140,10 @@ export const listTemplateSlots = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<TemplateSlot[]> => {
     const { data: rows, error } = await context.supabase
       .from("schedule_template_slots")
-      .select("id,class_id,day_key,hour,duration,title,subject,notes,library_item_id")
+      .select("id,class_id,day_key,hour,minute,duration,title,subject,notes,library_item_id")
       .eq("class_id", data.classId)
-      .order("hour", { ascending: true });
+      .order("hour", { ascending: true })
+      .order("minute", { ascending: true });
     if (error) {
       console.error("[template list]", error);
       throw new Error("טעינת המערכת הקבועה נכשלה.");
@@ -156,6 +160,7 @@ export const upsertTemplateSlot = createServerFn({ method: "POST" })
         classId: uuid,
         dayKey,
         hour: z.number().int().min(6).max(22),
+        minute: minuteVal.default(0),
         duration: z.number().int().min(1).max(4).default(1),
         title: z.string().min(1).max(200),
         subject: z.string().max(100).nullable().optional(),
@@ -169,6 +174,7 @@ export const upsertTemplateSlot = createServerFn({ method: "POST" })
       class_id: data.classId,
       day_key: data.dayKey,
       hour: data.hour,
+      minute: data.minute,
       duration: data.duration,
       title: data.title.trim(),
       subject: data.subject?.trim() || null,
