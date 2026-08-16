@@ -117,10 +117,10 @@ function DraggableLesson({ lesson, color, onDelete, libraryItem }: {
   );
 }
 
-function DroppableCell({ dayKey, hour, minute, children, onClickEmpty }: {
-  dayKey: WeeklyDayKey; hour: number; minute: number; children: ReactNode; onClickEmpty: () => void;
+function DroppableCell({ dayKey, hour, children, onClickEmpty }: {
+  dayKey: WeeklyDayKey; hour: number; children: ReactNode; onClickEmpty: () => void;
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id: `cell-${dayKey}-${hour}-${minute}`, data: { dayKey, hour, minute } });
+  const { setNodeRef, isOver } = useDroppable({ id: `cell-${dayKey}-${hour}`, data: { dayKey, hour } });
   return (
     <div
       ref={setNodeRef}
@@ -224,11 +224,15 @@ function WeeklySchedulePage() {
     setActiveLesson((lessons as WeeklyLesson[]).find((l) => l.id === lessonId) ?? null);
   };
   const onDragEnd = (e: DragEndEvent) => {
-    setActiveLesson(null);
     const lessonId = (e.active.data.current as { lessonId?: string } | undefined)?.lessonId;
+    const dragged = activeLesson;
+    setActiveLesson(null);
     const over = e.over?.data.current as { dayKey?: WeeklyDayKey; hour?: number } | undefined;
     if (!lessonId || !over?.dayKey || over.hour === undefined) return;
-    moveM.mutate({ data: { id: lessonId, dayKey: over.dayKey, hour: over.hour } });
+    // Dragging changes day/hour only — the lesson keeps its exact minute
+    // (e.g. a 14:15 lesson dropped on 15:00 becomes 15:15).
+    const minute = (dragged?.minute ?? 0) as 0 | 15 | 30 | 45;
+    moveM.mutate({ data: { id: lessonId, dayKey: over.dayKey, hour: over.hour, minute } });
   };
 
   const openNew = (day: WeeklyDayKey, hour: number) => setDialog({ open: true, day, hour, editing: null });
