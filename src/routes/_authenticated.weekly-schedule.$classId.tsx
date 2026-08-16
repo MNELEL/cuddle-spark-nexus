@@ -452,8 +452,9 @@ function WeeklySchedulePage() {
           <SemesterTargetsPanel classId={classId} />
         </TabsContent>
 
-        <TabsContent value="settings" className="mt-4">
+        <TabsContent value="settings" className="mt-4 space-y-4">
           <CalendarSettingsPanel classId={classId} year={year} />
+          <RecurringRulesPanel classId={classId} />
         </TabsContent>
       </Tabs>
 
@@ -480,12 +481,13 @@ function LessonForm({ classId, weekKey, day, hour, hours, editing, resources, on
   resources: { id: string; title: string }[];
   onClose: () => void;
   onSave: (payload: {
-    id?: string; classId: string; weekStart: string; dayKey: WeeklyDayKey; hour: number;
+    id?: string; classId: string; weekStart: string; dayKey: WeeklyDayKey; hour: number; minute: Minute;
     duration: 1 | 2; title: string; subject: string | null; notes: string | null; libraryItemId: string | null;
   }) => void;
 }) {
   const [dayKey, setDayKey] = useState<WeeklyDayKey>(editing?.day_key ?? day);
   const [hourVal, setHourVal] = useState(editing?.hour ?? hour);
+  const [minuteVal, setMinuteVal] = useState<Minute>(((editing?.minute ?? 0) as Minute));
   const [title, setTitle] = useState(editing?.title ?? "");
   const [subject, setSubject] = useState(editing?.subject ?? "");
   const [duration, setDuration] = useState<1 | 2>((editing?.duration as 1 | 2) ?? 1);
@@ -496,7 +498,7 @@ function LessonForm({ classId, weekKey, day, hour, hours, editing, resources, on
     if (!title.trim()) { toast.error("חובה להזין כותרת"); return; }
     onSave({
       id: editing?.id,
-      classId, weekStart: weekKey, dayKey, hour: hourVal, duration,
+      classId, weekStart: weekKey, dayKey, hour: hourVal, minute: minuteVal, duration,
       title: title.trim(), subject: subject.trim() || null, notes: notes || null,
       libraryItemId: libraryItemId === "none" ? null : libraryItemId,
     });
@@ -516,11 +518,18 @@ function LessonForm({ classId, weekKey, day, hour, hours, editing, resources, on
               </Select>
             </div>
             <div>
-              <Label>שעה</Label>
-              <Select value={String(hourVal)} onValueChange={(v) => setHourVal(Number(v))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{hours.map((h) => <SelectItem key={h} value={String(h)}>{pad2(h)}:00</SelectItem>)}</SelectContent>
-              </Select>
+              <Label>שעה מדויקת</Label>
+              <div className="flex items-center gap-1">
+                <Select value={String(hourVal)} onValueChange={(v) => setHourVal(Number(v))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{hours.map((h) => <SelectItem key={h} value={String(h)}>{pad2(h)}</SelectItem>)}</SelectContent>
+                </Select>
+                <span aria-hidden>:</span>
+                <Select value={String(minuteVal)} onValueChange={(v) => setMinuteVal(Number(v) as Minute)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{MINUTES.map((m) => <SelectItem key={m} value={String(m)}>{pad2(m)}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
           <div>
