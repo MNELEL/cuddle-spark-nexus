@@ -417,7 +417,23 @@ export const deleteClass = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    await assertClassEditable(context.supabase, data.id);
+    // Archived classes are read-only, but deleting them must stay possible:
+    // lift the archive flag first (allowed by the guard trigger) and then delete.
+    const { data: existing } = await context.supabase
+      .from("classes")
+      .select("status")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (existing?.status === "archived") {
+      const { error: unarchiveError } = await context.supabase
+        .from("classes")
+        .update({ status: "active", updated_at: new Date().toISOString() })
+        .eq("id", data.id);
+      if (unarchiveError) {
+        console.error("[DB Error]", unarchiveError);
+        throw new Error("הפעולה נכשלה. נסה שוב.");
+      }
+    }
     const { error } = await context.supabase.from("classes").delete().eq("id", data.id);
     if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return { ok: true };
