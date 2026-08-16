@@ -888,9 +888,25 @@ function StudentRow({
             <FolderOpen className="h-4 w-4" />
           </Button>
           <Button variant="ghost" size="icon" aria-label={`ערוך את ${student.name}`} onClick={onEdit}><Pencil className="h-4 w-4" /></Button>
-          <Button variant="ghost" size="icon" aria-label={`מחק את ${student.name}`} className="text-destructive" onClick={() => removeM.mutate()}>
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="icon" aria-label={`מחק את ${student.name}`} className="text-destructive">
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent dir="rtl">
+              <AlertDialogHeader>
+                <AlertDialogTitle>למחוק את {student.name}?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  פעולה זו תמחק לצמיתות את התלמיד, הפרטים האישיים, הציונים, התעודות, התגמולים והקשרים שלו מהכיתה. לא ניתן לבטל פעולה זו.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>ביטול</AlertDialogCancel>
+                <AlertDialogAction onClick={() => removeM.mutate()}>מחק תלמיד</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </CardContent>
     </Card>
