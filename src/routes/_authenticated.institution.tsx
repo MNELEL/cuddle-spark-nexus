@@ -486,12 +486,14 @@ function TeachersTab({ canEdit, institutionId }: { canEdit: boolean; institution
                   onKeyDown={(e) => { if (e.key === "Enter") submitSearch(); }}
                   aria-invalid={Boolean(searchError)}
                   aria-describedby={searchError ? "attach-email-error" : undefined}
+                  disabled={searchM.isPending || attachM.isPending}
                 />
-                <Button className="rounded-xl" onClick={submitSearch} disabled={searchM.isPending}>
+                <Button className="rounded-xl" onClick={submitSearch} disabled={searchM.isPending || attachM.isPending}>
                   {searchM.isPending && <Loader2 className="me-1 h-4 w-4 animate-spin" aria-hidden="true" />}
                   חפש
                 </Button>
               </div>
+
               {searchError && (
                 <p id="attach-email-error" className="text-sm text-destructive">{searchError}</p>
               )}
