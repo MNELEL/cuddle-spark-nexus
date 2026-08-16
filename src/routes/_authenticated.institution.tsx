@@ -363,12 +363,16 @@ function TeachersTab({ canEdit, institutionId }: { canEdit: boolean; institution
   const attachM = useMutation({
     mutationFn: (targetId: string) =>
       attachRole({ data: { user_id: targetId, role: "teacher", institution_id: institutionId } }),
-    onSuccess: () => {
+    onSuccess: (_, targetId) => {
       toast.success("המלמד שויך למוסד");
-      resetAttach();
-      setAttachOpen(false);
+      setAttachedId(targetId);
       void qc.invalidateQueries({ queryKey: ["institution-teachers"] });
       void qc.invalidateQueries({ queryKey: ["institution-class-assignments"] });
+      // סוגרים את הדיאלוג אחרי השיוך, אך שומרים את מזהה השיוך למניעת ניסיונות חוזרים
+      window.setTimeout(() => {
+        setAttachOpen(false);
+        resetAttach();
+      }, 900);
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "שיוך המלמד נכשל"),
   });
@@ -378,6 +382,7 @@ function TeachersTab({ canEdit, institutionId }: { canEdit: boolean; institution
     setSearchError(null);
     setSearched(false);
     setFoundUser(null);
+    setAttachedId(null);
   }
 
   function submitSearch() {
@@ -387,8 +392,10 @@ function TeachersTab({ canEdit, institutionId }: { canEdit: boolean; institution
     setSearchError(null);
     setSearched(false);
     setFoundUser(null);
+    setAttachedId(null);
     searchM.mutate(value);
   }
+
 
   function submitInvite() {
     const value = email.trim();
