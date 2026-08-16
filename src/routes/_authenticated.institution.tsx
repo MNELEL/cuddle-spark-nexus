@@ -363,8 +363,8 @@ function TeachersTab({ canEdit, institutionId }: { canEdit: boolean; institution
   const attachM = useMutation({
     mutationFn: (targetId: string) =>
       attachRole({ data: { user_id: targetId, role: "teacher", institution_id: institutionId } }),
-    onSuccess: (_, targetId) => {
-      toast.success("המלמד שויך למוסד");
+    onSuccess: (res, targetId) => {
+      toast.success(res?.already ? "המלמד כבר משויך למוסד" : "המלמד שויך למוסד");
       setAttachedId(targetId);
       void qc.invalidateQueries({ queryKey: ["institution-teachers"] });
       void qc.invalidateQueries({ queryKey: ["institution-class-assignments"] });
