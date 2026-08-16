@@ -71,9 +71,13 @@ export const upsertWeeklyLesson = createServerFn({ method: "POST" })
       library_item_id: data.libraryItemId ?? null,
     };
     if (data.id) {
-      const { error } = await context.supabase.from("weekly_lessons").update(payload).eq("id", data.id);
+      const { error } = await context.supabase
+        .from("weekly_lessons")
+        .update(payload)
+        .eq("id", data.id);
       if (error) {
         console.error("[weekly_lessons update]", error);
+        if (error.code === "23505") throw new Error("יש כבר שיעור בשעה הזו — ערוך או מחק אותו קודם.");
         throw new Error("עדכון השיעור נכשל.");
       }
       return { ok: true as const, id: data.id };
@@ -82,6 +86,7 @@ export const upsertWeeklyLesson = createServerFn({ method: "POST" })
       .from("weekly_lessons").insert(payload).select("id").single();
     if (error || !row) {
       console.error("[weekly_lessons insert]", error);
+      if (error?.code === "23505") throw new Error("יש כבר שיעור בשעה הזו — ערוך או מחק אותו קודם.");
       throw new Error("הוספת השיעור נכשלה.");
     }
     return { ok: true as const, id: row.id };
@@ -109,6 +114,7 @@ export const moveWeeklyLesson = createServerFn({ method: "POST" })
       .eq("id", data.id);
     if (error) {
       console.error("[weekly_lessons move]", error);
+      if (error.code === "23505") throw new Error("יש כבר שיעור בשעה הזו — בחר משבצת אחרת.");
       throw new Error("העברת השיעור נכשלה.");
     }
     return { ok: true as const };
