@@ -26,7 +26,8 @@ import {
   RESOURCE_TYPES, RESOURCE_TYPE_LABELS, upsertResource,
   type ResourceType,
 } from "@/lib/teaching-resources.functions";
-import { createUploadedResource } from "@/lib/library-extras.functions";
+import { createUploadedResource, findResourceByHash } from "@/lib/library-extras.functions";
+import { fileContentHash } from "@/lib/file-hash";
 import { analyzeExistingResource } from "@/lib/resource-understanding.functions";
 import {
   LIBRARY_KIND_ACCEPT, validateUploadFile,
@@ -38,8 +39,10 @@ import { recordUpload } from "@/lib/upload-log";
 type ItemState = {
   name: string;
   file?: File;
-  status: "pending" | "uploading" | "analyzing" | "done" | "error";
+  status: "pending" | "uploading" | "analyzing" | "done" | "duplicate" | "error";
   note?: string;
+  /** חומר קיים בספרייה שזוהה כזהה — מפנים אליו במקום לשמור עותק נוסף */
+  existingId?: string;
 };
 
 function cleanName(name: string) {
@@ -67,6 +70,7 @@ export function LibraryBulkUpload({ open, onClose }: { open: boolean; onClose: (
   const inputRef = useRef<HTMLInputElement>(null);
   const folderRef = useRef<HTMLInputElement>(null);
   const createFn = useServerFn(createUploadedResource);
+  const findByHashFn = useServerFn(findResourceByHash);
   const analyzeFn = useServerFn(analyzeExistingResource);
   const saveFn = useServerFn(upsertResource);
   const [items, setItems] = useState<ItemState[]>([]);
@@ -96,6 +100,23 @@ export function LibraryBulkUpload({ open, onClose }: { open: boolean; onClose: (
     }
     try {
       update(i, { status: "uploading", note: undefined });
+      // בדיקת כפילות לפני העלאה — אם הקובץ כבר בספרייה מפנים לעותק הקיים
+      const hash = await fileContentHash(file);
+      if (hash) {
+        const existing = await findByHashFn({ data: { content_hash: hash } }).catch(() => null);
+        if (existing) {
+          update(i, {
+            status: "duplicate",
+            existingId: existing.id,
+            note: `הקובץ כבר קיים בספרייה: "${existing.title}" — לא נשמר עותק נוסף`,
+          });
+          recordUpload({
+            name: file.name, sizeBytes: file.size, mimeType: file.type || "",
+            status: "success", resourceId: existing.id,
+          });
+          return true;
+        }
+      }
       const path = `${uid}/${Date.now()}-${i}-${cleanName(file.name)}`;
       const up = await supabase.storage.from("teaching-resources").upload(path, file, {
         contentType: file.type || "application/octet-stream",
@@ -110,6 +131,7 @@ export function LibraryBulkUpload({ open, onClose }: { open: boolean; onClose: (
           mime_type: file.type || "",
           subject,
           resource_type: resourceType,
+          ...(hash ? { content_hash: hash } : {}),
         },
       });
       update(i, { status: "analyzing" });
