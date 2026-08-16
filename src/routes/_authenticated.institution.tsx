@@ -301,6 +301,8 @@ function TeachersTab({ canEdit, institutionId }: { canEdit: boolean; institution
   const [searchError, setSearchError] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
   const [foundUser, setFoundUser] = useState<FoundUser | null>(null);
+  const [attachedId, setAttachedId] = useState<string | null>(null);
+
 
   const teachersQ = useQuery({
     queryKey: ["institution-teachers"],
@@ -361,12 +363,16 @@ function TeachersTab({ canEdit, institutionId }: { canEdit: boolean; institution
   const attachM = useMutation({
     mutationFn: (targetId: string) =>
       attachRole({ data: { user_id: targetId, role: "teacher", institution_id: institutionId } }),
-    onSuccess: () => {
+    onSuccess: (_, targetId) => {
       toast.success("המלמד שויך למוסד");
-      resetAttach();
-      setAttachOpen(false);
+      setAttachedId(targetId);
       void qc.invalidateQueries({ queryKey: ["institution-teachers"] });
       void qc.invalidateQueries({ queryKey: ["institution-class-assignments"] });
+      // סוגרים את הדיאלוג אחרי השיוך, אך שומרים את מזהה השיוך למניעת ניסיונות חוזרים
+      window.setTimeout(() => {
+        setAttachOpen(false);
+        resetAttach();
+      }, 900);
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "שיוך המלמד נכשל"),
   });
@@ -376,6 +382,7 @@ function TeachersTab({ canEdit, institutionId }: { canEdit: boolean; institution
     setSearchError(null);
     setSearched(false);
     setFoundUser(null);
+    setAttachedId(null);
   }
 
   function submitSearch() {
@@ -385,8 +392,10 @@ function TeachersTab({ canEdit, institutionId }: { canEdit: boolean; institution
     setSearchError(null);
     setSearched(false);
     setFoundUser(null);
+    setAttachedId(null);
     searchM.mutate(value);
   }
+
 
   function submitInvite() {
     const value = email.trim();
@@ -477,12 +486,14 @@ function TeachersTab({ canEdit, institutionId }: { canEdit: boolean; institution
                   onKeyDown={(e) => { if (e.key === "Enter") submitSearch(); }}
                   aria-invalid={Boolean(searchError)}
                   aria-describedby={searchError ? "attach-email-error" : undefined}
+                  disabled={searchM.isPending || attachM.isPending}
                 />
-                <Button className="rounded-xl" onClick={submitSearch} disabled={searchM.isPending}>
+                <Button className="rounded-xl" onClick={submitSearch} disabled={searchM.isPending || attachM.isPending}>
                   {searchM.isPending && <Loader2 className="me-1 h-4 w-4 animate-spin" aria-hidden="true" />}
                   חפש
                 </Button>
               </div>
+
               {searchError && (
                 <p id="attach-email-error" className="text-sm text-destructive">{searchError}</p>
               )}
@@ -496,6 +507,8 @@ function TeachersTab({ canEdit, institutionId }: { canEdit: boolean; institution
                   <p dir="ltr" className="text-muted-foreground">{foundUser.email}</p>
                   {foundUser.alreadyTeacherHere ? (
                     <p className="mt-2 text-muted-foreground">המשתמש כבר מלמד במוסד זה</p>
+                  ) : attachedId === foundUser.id ? (
+                    <p className="mt-2 font-medium text-green-600">המלמד שויך למוסד בהצלחה</p>
                   ) : (
                     <Button
                       className="mt-3 rounded-xl"
@@ -506,6 +519,7 @@ function TeachersTab({ canEdit, institutionId }: { canEdit: boolean; institution
                       שייך למוסד
                     </Button>
                   )}
+
                 </div>
               )}
             </div>
