@@ -301,6 +301,8 @@ function TeachersTab({ canEdit, institutionId }: { canEdit: boolean; institution
   const [searchError, setSearchError] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
   const [foundUser, setFoundUser] = useState<FoundUser | null>(null);
+  const [attachedId, setAttachedId] = useState<string | null>(null);
+
 
   const teachersQ = useQuery({
     queryKey: ["institution-teachers"],
