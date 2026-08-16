@@ -349,8 +349,10 @@ function WeeklySchedulePage() {
                         {DAYS.map((day, i) => {
                           const cellLessons = byCell.get(`${day.key}-${hour}`) ?? [];
                           const off = !year.isTeachingDate(weekDates[i]!);
+                          // Blocked by a recurring rule (early end / late start).
+                          const blocked = !off && !slotAllowed(year.rulesForDate(weekDates[i]!), hour, 0);
                           return (
-                            <div key={day.key} className={off ? "opacity-60" : ""}>
+                            <div key={day.key} className={off ? "opacity-60" : blocked ? "opacity-50" : ""} title={blocked ? "מחוץ לשעות הלימוד לפי כלל קבוע" : undefined}>
                               <DroppableCell dayKey={day.key} hour={hour} onClickEmpty={() => openNew(day.key, hour)}>
                                 {cellLessons.map((l) => (
                                   <div key={l.id} data-no-cell onClick={() => openEdit(l)}>
