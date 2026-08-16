@@ -434,9 +434,13 @@ export const deleteClass = createServerFn({ method: "POST" })
         throw new Error("הפעולה נכשלה. נסה שוב.");
       }
     }
-    const { error } = await context.supabase.from("classes").delete().eq("id", data.id);
-    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
-    return { ok: true };
+    const { error, count } = await context.supabase
+  .from("classes")
+  .delete({ count: "exact" })
+  .eq("id", data.id);
+if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+if (!count) throw new Error("אין לך הרשאה למחוק כיתה זו, או שהיא כבר נמחקה");
+return { ok: true };
   });
 
 export const setClassStatus = createServerFn({ method: "POST" })
