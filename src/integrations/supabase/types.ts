@@ -904,6 +904,7 @@ export type Database = {
         Row: {
           academic_year: string | null
           created_at: string
+          grades_sheet_id: string | null
           grid_cols: number
           grid_rows: number
           hidden_seats: Json
@@ -924,6 +925,7 @@ export type Database = {
         Insert: {
           academic_year?: string | null
           created_at?: string
+          grades_sheet_id?: string | null
           grid_cols?: number
           grid_rows?: number
           hidden_seats?: Json
@@ -944,6 +946,7 @@ export type Database = {
         Update: {
           academic_year?: string | null
           created_at?: string
+          grades_sheet_id?: string | null
           grid_cols?: number
           grid_rows?: number
           hidden_seats?: Json
@@ -2763,6 +2766,7 @@ export type Database = {
         Row: {
           ai_generated: boolean
           content: Json
+          content_hash: string | null
           created_at: string
           description: string
           difficulty: string
@@ -2785,6 +2789,7 @@ export type Database = {
         Insert: {
           ai_generated?: boolean
           content?: Json
+          content_hash?: string | null
           created_at?: string
           description?: string
           difficulty?: string
@@ -2807,6 +2812,7 @@ export type Database = {
         Update: {
           ai_generated?: boolean
           content?: Json
+          content_hash?: string | null
           created_at?: string
           description?: string
           difficulty?: string
