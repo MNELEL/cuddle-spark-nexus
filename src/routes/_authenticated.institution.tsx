@@ -505,6 +505,8 @@ function TeachersTab({ canEdit, institutionId }: { canEdit: boolean; institution
                   <p dir="ltr" className="text-muted-foreground">{foundUser.email}</p>
                   {foundUser.alreadyTeacherHere ? (
                     <p className="mt-2 text-muted-foreground">המשתמש כבר מלמד במוסד זה</p>
+                  ) : attachedId === foundUser.id ? (
+                    <p className="mt-2 font-medium text-green-600">המלמד שויך למוסד בהצלחה</p>
                   ) : (
                     <Button
                       className="mt-3 rounded-xl"
@@ -515,6 +517,7 @@ function TeachersTab({ canEdit, institutionId }: { canEdit: boolean; institution
                       שייך למוסד
                     </Button>
                   )}
+
                 </div>
               )}
             </div>
