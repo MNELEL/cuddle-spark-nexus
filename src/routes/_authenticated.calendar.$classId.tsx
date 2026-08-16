@@ -12,6 +12,10 @@ import {
 import { buildWeeklySummary } from "@/lib/ai-weekly-summary.functions";
 import { listStudents } from "@/lib/students.functions";
 import { hebrewBirthdaysInRange } from "@/lib/hebrew-date";
+import {
+  hebMonthBounds, hebMonthLabel, hebMonthOf, nextHebMonth, prevHebMonth,
+  type HebMonthCursor,
+} from "@/lib/hebrew-months";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -96,17 +100,20 @@ function jewishHolidaysOn(d: Date): string[] {
 function pad2(n: number) { return String(n).padStart(2, "0"); }
 function isoDate(d: Date) { return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; }
 
-function monthGrid(year: number, month: number): Date[] {
-  const first = new Date(year, month, 1);
-  const start = new Date(first);
-  start.setDate(1 - first.getDay()); // back to Sunday
+/**
+ * Grid cells for a *Hebrew* month: from the Sunday on/before the 1st of the
+ * Hebrew month through the Saturday on/after its last day (converted to
+ * Gregorian dates, which is what the cells actually render).
+ */
+function hebMonthGrid(cursor: HebMonthCursor): { cells: Date[]; start: Date; end: Date } {
+  const { start, end } = hebMonthBounds(cursor);
+  const gridStart = new Date(start);
+  gridStart.setDate(start.getDate() - start.getDay());
+  const gridEnd = new Date(end);
+  gridEnd.setDate(end.getDate() + (6 - end.getDay()));
   const cells: Date[] = [];
-  for (let i = 0; i < 42; i++) {
-    const d = new Date(start);
-    d.setDate(start.getDate() + i);
-    cells.push(d);
-  }
-  return cells;
+  for (let d = new Date(gridStart); d <= gridEnd; d.setDate(d.getDate() + 1)) cells.push(new Date(d));
+  return { cells, start, end };
 }
 
 function weekBoundsOf(iso: string): { start: string; end: string } {
@@ -119,7 +126,7 @@ function weekBoundsOf(iso: string): { start: string; end: string } {
 function CalendarPage() {
   const { classId } = Route.useParams();
   const today = new Date();
-  const [cursor, setCursor] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
+  const [cursor, setCursor] = useState<HebMonthCursor>(() => hebMonthOf(today));
   const [dayOpen, setDayOpen] = useState<string | null>(null);
   const [editing, setEditing] = useState<ClassEvent | null>(null);
   const [formOpen, setFormOpen] = useState(false);
@@ -128,23 +135,19 @@ function CalendarPage() {
   const list = useServerFn(listClassEvents);
   const listS = useServerFn(listStudents);
 
-  const year = cursor.getFullYear();
-  const month = cursor.getMonth();
-  const cells = useMemo(() => monthGrid(year, month), [year, month]);
+  const { cells, monthStart, monthEnd } = useMemo(() => {
+    const g = hebMonthGrid(cursor);
+    return { cells: g.cells, monthStart: g.start, monthEnd: g.end };
+  }, [cursor]);
 
-  // The Gregorian month usually spans parts of two Hebrew months (a Hebrew
-  // month rarely aligns with a Gregorian one) — show both if they differ,
-  // e.g. "טבת–שבט תשפ״ו", or just one if the whole Gregorian month happens
-  // to fall in a single Hebrew month.
-  const hebrewMonthRangeLabel = useMemo(() => {
-    const first = new Date(year, month, 1);
-    const last = new Date(year, month + 1, 0);
-    const monthNameFirst = hebrewMonthName(first);
-    const monthNameLast = hebrewMonthName(last);
-    const yearHe = new HDate(first).renderGematriya().split(" ").pop();
-    if (monthNameFirst === monthNameLast) return `${monthNameFirst} ${yearHe}`;
-    return `${monthNameFirst}–${monthNameLast} ${yearHe}`;
-  }, [year, month]);
+  /** Main title: the Hebrew month, e.g. "טֵבֵת תשפ״ז". */
+  const hebTitle = useMemo(() => hebMonthLabel(cursor), [cursor]);
+  /** Secondary line: the Gregorian range the Hebrew month spans. */
+  const gregRangeLabel = useMemo(() => {
+    const a = `${monthStart.getDate()} ${HEBREW_MONTHS[monthStart.getMonth()]}`;
+    const b = `${monthEnd.getDate()} ${HEBREW_MONTHS[monthEnd.getMonth()]} ${monthEnd.getFullYear()}`;
+    return `${a} – ${b}`;
+  }, [monthStart, monthEnd]);
   const gridFrom = isoDate(cells[0]);
   const gridTo = isoDate(cells[cells.length - 1]);
 
@@ -216,14 +219,14 @@ function CalendarPage() {
       <Card>
         <CardHeader className="flex-row items-center justify-between">
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={() => setCursor(new Date(year, month - 1, 1))} aria-label="חודש קודם"><ChevronRight className="h-4 w-4" /></Button>
+            <Button variant="outline" size="icon" onClick={() => setCursor((c) => prevHebMonth(c))} aria-label="חודש עברי קודם"><ChevronRight className="h-4 w-4" /></Button>
             <CardTitle className="min-w-40 text-center">
-              <div>{HEBREW_MONTHS[month]} {year}</div>
-              <div className="text-xs font-normal text-muted-foreground">{hebrewMonthRangeLabel}</div>
+              <div>{hebTitle}</div>
+              <div className="text-xs font-normal text-muted-foreground">{gregRangeLabel}</div>
             </CardTitle>
-            <Button variant="outline" size="icon" onClick={() => setCursor(new Date(year, month + 1, 1))} aria-label="חודש הבא"><ChevronLeft className="h-4 w-4" /></Button>
+            <Button variant="outline" size="icon" onClick={() => setCursor((c) => nextHebMonth(c))} aria-label="חודש עברי הבא"><ChevronLeft className="h-4 w-4" /></Button>
           </div>
-          <Button variant="secondary" size="sm" onClick={() => setCursor(new Date(today.getFullYear(), today.getMonth(), 1))}>היום</Button>
+          <Button variant="secondary" size="sm" onClick={() => setCursor(hebMonthOf(new Date()))}>היום</Button>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-7 gap-1 text-center text-xs text-muted-foreground mb-1">
@@ -232,7 +235,7 @@ function CalendarPage() {
           <div className="grid grid-cols-7 gap-1">
             {cells.map((d) => {
               const iso = isoDate(d);
-              const inMonth = d.getMonth() === month;
+              const inMonth = d >= monthStart && d <= monthEnd;
               const dayEvents = byDay.get(iso) ?? [];
               const hasBirthday = dayEvents.some((e) => e.type === "birthday");
               const holidays = jewishHolidaysOn(d);
