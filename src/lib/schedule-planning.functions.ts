@@ -226,7 +226,7 @@ export const applyTemplateToWeeks = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: slots, error: slotErr } = await context.supabase
       .from("schedule_template_slots")
-      .select("day_key,hour,duration,title,subject,notes,library_item_id")
+      .select("day_key,hour,minute,duration,title,subject,notes,library_item_id")
       .eq("class_id", data.classId);
     if (slotErr) {
       console.error("[template apply read]", slotErr);
@@ -234,9 +234,24 @@ export const applyTemplateToWeeks = createServerFn({ method: "POST" })
     }
     if (!slots?.length) throw new Error("המערכת הקבועה ריקה — הוסיפו שיעורים לפני ההחלה.");
 
+    // Recurring rules (weekly day / Rosh Chodesh) are enforced here: a day
+    // marked "no school" is skipped entirely, and slots starting at/after an
+    // early-end time (or before a late-start time) are dropped.
+    const { data: ruleRows, error: ruleErr } = await context.supabase
+      .from("recurring_schedule_rules")
+      .select("id,class_id,kind,day_key,effect,hour,minute,label,active")
+      .eq("class_id", data.classId)
+      .eq("active", true);
+    if (ruleErr) {
+      console.error("[template apply rules]", ruleErr);
+      throw new Error("טעינת הכללים הקבועים נכשלה.");
+    }
+    const rules = (ruleRows ?? []) as RecurringRule[];
+
     const dayIndex: Record<string, number> = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
     const skip = new Set(data.skipDates);
-    const rows: { class_id: string; week_start: string; day_key: string; hour: number; duration: number; title: string; subject: string | null; notes: string | null; library_item_id: string | null }[] = [];
+    const rows: { class_id: string; week_start: string; day_key: string; hour: number; minute: number; duration: number; title: string; subject: string | null; notes: string | null; library_item_id: string | null }[] = [];
+    let skippedByRules = 0;
 
     for (const weekStart of data.weekStarts) {
       if (data.replace) {
@@ -255,11 +270,14 @@ export const applyTemplateToWeeks = createServerFn({ method: "POST" })
         base.setDate(base.getDate() + (dayIndex[s.day_key] ?? 0));
         const iso = base.toISOString().slice(0, 10);
         if (skip.has(iso)) continue;
+        const effect = effectiveRulesFor(rules, iso);
+        if (!slotAllowed(effect, s.hour, s.minute ?? 0)) { skippedByRules++; continue; }
         rows.push({
           class_id: data.classId,
           week_start: weekStart,
           day_key: s.day_key,
           hour: s.hour,
+          minute: s.minute ?? 0,
           duration: s.duration,
           title: s.title,
           subject: s.subject,
@@ -268,16 +286,16 @@ export const applyTemplateToWeeks = createServerFn({ method: "POST" })
         });
       }
     }
-    if (!rows.length) return { ok: true as const, inserted: 0 };
+    if (!rows.length) return { ok: true as const, inserted: 0, skippedByRules };
     const { error } = await context.supabase
       .from("weekly_lessons")
-      .upsert(rows, { onConflict: "class_id,week_start,day_key,hour" });
+      .upsert(rows, { onConflict: "class_id,week_start,day_key,hour,minute" });
     if (error) {
       console.error("[template apply insert]", error);
       throw new Error("החלת המערכת על השבועות נכשלה.");
     
     }
-    return { ok: true as const, inserted: rows.length };
+    return { ok: true as const, inserted: rows.length, skippedByRules };
   });
 
 /* ------------------------ calendar overrides ------------------------ */
