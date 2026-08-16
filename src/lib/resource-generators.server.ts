@@ -1,4 +1,5 @@
 import { callLovableAI } from "./ai-gateway.server";
+import { assessExtractedText, type TextQualityResult } from "./extracted-text-quality";
 import {
   STUDENT_LEVEL_LABELS, SUMMARY_SCOPE_LABELS, TASK_KIND_LABELS, DIFFICULTY_TEXT,
   type StudentLevel, type SummaryScope, type TaskKind,
@@ -17,6 +18,7 @@ export async function loadResourceContext(supabase: SupabaseLike, resourceId: st
   title: string;
   subject: string;
   grade: string;
+  quality: TextQualityResult;
 }> {
   const { data, error } = await supabase
     .from("teaching_resources")
@@ -27,26 +29,40 @@ export async function loadResourceContext(supabase: SupabaseLike, resourceId: st
 
   const content = (data.content ?? {}) as {
     body?: string;
+    original_text?: string;
     questions?: { q: string; a?: string }[];
     steps?: string[];
+    ai_understanding?: { ocr_confidence?: number };
   };
+  // הטקסט שחולץ (OCR/הדבקה) הוא המקור העיקרי; body הוא גיבוי לחומרים שנוצרו במערכת
+  const sourceText = (content.original_text ?? "").trim() || (content.body ?? "").trim();
   const text = [
     `כותרת: ${data.title}`,
     data.description ? `תיאור: ${data.description}` : "",
     data.subject ? `מקצוע: ${data.subject}` : "",
     data.grade_level ? `כיתה: ${data.grade_level}` : "",
-    content.body ? `תוכן:\n${content.body}` : "",
+    sourceText ? `תוכן:\n${sourceText}` : "",
     content.questions?.length
       ? `שאלות קיימות:\n${content.questions.map((q, i) => `${i + 1}. ${q.q}`).join("\n")}`
       : "",
     content.steps?.length ? `שלבים:\n${content.steps.join("\n")}` : "",
-  ].filter(Boolean).join("\n").slice(0, 8000);
+  ].filter(Boolean).join("\n").slice(0, 12000);
+
+  // אימות איכות לפני שליחה ל-AI. חומר עם שאלות/שלבים מוכנים נחשב תקין גם בלי טקסט ארוך.
+  const hasStructured = Boolean(content.questions?.length || content.steps?.length);
+  const assessed = assessExtractedText(sourceText, {
+    ocrConfidence: content.ai_understanding?.ocr_confidence ?? null,
+  });
+  const quality: TextQualityResult = hasStructured && !assessed.ok
+    ? { ...assessed, ok: true, message: "" }
+    : assessed;
 
   return {
     text,
     title: String(data.title ?? ""),
     subject: String(data.subject ?? ""),
     grade: String(data.grade_level ?? ""),
+    quality,
   };
 }
 
@@ -56,10 +72,11 @@ export async function buildSummary(input: {
   scope: SummaryScope;
   notes: string;
   styleContext?: string;
+  qualityGuard?: string;
 }): Promise<string> {
   const text = await callLovableAI({
     messages: [
-      { role: "system", content: SYSTEM_PROMPT + (input.styleContext ?? "") },
+      { role: "system", content: SYSTEM_PROMPT + (input.styleContext ?? "") + (input.qualityGuard ?? "") },
       {
         role: "user",
         content:
@@ -82,6 +99,7 @@ export async function buildTasks(input: {
   count: number;
   notes: string;
   styleContext?: string;
+  qualityGuard?: string;
 }): Promise<string> {
   const text = await callLovableAI({
     messages: [
@@ -90,7 +108,8 @@ export async function buildTasks(input: {
         content:
           SYSTEM_PROMPT +
           " החזר את המשימות ממוספרות, ואת התשובות בסוף תחת הכותרת 'תשובות'." +
-          (input.styleContext ?? ""),
+          (input.styleContext ?? "") +
+          (input.qualityGuard ?? ""),
       },
       {
         role: "user",
