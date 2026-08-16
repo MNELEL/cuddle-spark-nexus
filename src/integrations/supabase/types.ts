@@ -1877,6 +1877,56 @@ export type Database = {
         }
         Relationships: []
       }
+      recurring_schedule_rules: {
+        Row: {
+          active: boolean
+          class_id: string
+          created_at: string
+          day_key: string | null
+          effect: string
+          hour: number | null
+          id: string
+          kind: string
+          label: string | null
+          minute: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          class_id: string
+          created_at?: string
+          day_key?: string | null
+          effect: string
+          hour?: number | null
+          id?: string
+          kind: string
+          label?: string | null
+          minute?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          class_id?: string
+          created_at?: string
+          day_key?: string | null
+          effect?: string
+          hour?: number | null
+          id?: string
+          kind?: string
+          label?: string | null
+          minute?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_schedule_rules_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reminder_preferences: {
         Row: {
           created_at: string
@@ -2153,6 +2203,7 @@ export type Database = {
           hour: number | null
           id: string
           kind: string
+          minute: number | null
           notes: string | null
           subject: string | null
           title: string
@@ -2168,6 +2219,7 @@ export type Database = {
           hour?: number | null
           id?: string
           kind?: string
+          minute?: number | null
           notes?: string | null
           subject?: string | null
           title: string
@@ -2183,6 +2235,7 @@ export type Database = {
           hour?: number | null
           id?: string
           kind?: string
+          minute?: number | null
           notes?: string | null
           subject?: string | null
           title?: string
@@ -2214,6 +2267,7 @@ export type Database = {
           hour: number
           id: string
           library_item_id: string | null
+          minute: number
           notes: string | null
           subject: string | null
           title: string
@@ -2227,6 +2281,7 @@ export type Database = {
           hour: number
           id?: string
           library_item_id?: string | null
+          minute?: number
           notes?: string | null
           subject?: string | null
           title: string
@@ -2240,6 +2295,7 @@ export type Database = {
           hour?: number
           id?: string
           library_item_id?: string | null
+          minute?: number
           notes?: string | null
           subject?: string | null
           title?: string
@@ -3080,6 +3136,7 @@ export type Database = {
           hour: number
           id: string
           library_item_id: string | null
+          minute: number
           notes: string | null
           subject: string | null
           title: string
@@ -3095,6 +3152,7 @@ export type Database = {
           hour: number
           id?: string
           library_item_id?: string | null
+          minute?: number
           notes?: string | null
           subject?: string | null
           title: string
@@ -3110,6 +3168,7 @@ export type Database = {
           hour?: number
           id?: string
           library_item_id?: string | null
+          minute?: number
           notes?: string | null
           subject?: string | null
           title?: string
