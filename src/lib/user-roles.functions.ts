@@ -139,6 +139,22 @@ export const assignRole = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     await verifyAdmin(supabase, userId);
 
+    // הגנת idempotency: לחיצה כפולה או שתי בקשות מקבילות לא ייצרו שיוך כפול
+    const existingQuery = supabase
+      .from("user_roles")
+      .select("id")
+      .eq("user_id", data.user_id)
+      .eq("role", data.role);
+    const { data: existing, error: existingError } = await (
+      data.institution_id
+        ? existingQuery.eq("institution_id", data.institution_id)
+        : existingQuery.is("institution_id", null)
+    ).limit(1).maybeSingle();
+    if (existingError) throw new Error(existingError.message);
+    if (existing) {
+      return { ok: true, already: true as const };
+    }
+
     const { error } = await supabase
       .from("user_roles")
       .insert({
@@ -148,7 +164,11 @@ export const assignRole = createServerFn({ method: "POST" })
       })
       .select()
       .single();
-    if (error) throw new Error(error.message);
+    if (error) {
+      // 23505 = הפרת אילוץ ייחודיות — ריצה מקבילית שהקדימה אותנו; זהו מצב תקין
+      if (error.code === "23505") return { ok: true, already: true as const };
+      throw new Error(error.message);
+    }
 
     const { logInfo } = await import("@/lib/logger.server");
     await logInfo(`הוקצה תפקיד ${data.role} למשתמש ${data.user_id}`, {
@@ -162,7 +182,7 @@ export const assignRole = createServerFn({ method: "POST" })
       },
     });
 
-    return { ok: true };
+    return { ok: true, already: false as const };
   });
 
 const removeRoleSchema = z.object({
