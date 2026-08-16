@@ -16,6 +16,17 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   ShieldCheck,
   Loader2,
   ArrowLeft,
@@ -43,6 +54,7 @@ import {
   listInstitutionClasses,
   listRoleAuditLog,
   attachTeacherClassesToInstitution,
+  deleteInstitution,
 } from "@/lib/institutions.functions";
 import { TrialApprovalsCard } from "@/components/trial-approvals-card";
 import { AccessRequestForm } from "@/components/access-request-form";
@@ -87,6 +99,7 @@ function UserManagementPage() {
   const listInstitutionsFn = useServerFn(listInstitutions);
   const createInstitutionFn = useServerFn(createInstitution);
   const listInstitutionClassesFn = useServerFn(listInstitutionClasses);
+  const deleteInstitutionFn = useServerFn(deleteInstitution);
   const listAuditLogFn = useServerFn(listRoleAuditLog);
   const queryClient = useQueryClient();
 
@@ -141,6 +154,20 @@ function UserManagementPage() {
     },
     onError: (err) => {
       toast.error(err instanceof Error ? err.message : "יצירת המוסד נכשלה");
+    },
+  });
+
+  const deleteInstitutionMutation = useMutation({
+    mutationFn: async (id: string) => await deleteInstitutionFn({ data: { institution_id: id } }),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["institutions"] });
+      queryClient.invalidateQueries({ queryKey: ["users-with-roles"] });
+      queryClient.invalidateQueries({ queryKey: ["role-audit-log"] });
+      setClassesInstitution("");
+      toast.success(`המוסד ${res.name} נמחק`);
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "מחיקת המוסד נכשלה");
     },
   });
 
