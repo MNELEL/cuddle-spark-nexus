@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
-import { ArrowRight, Printer, MessageCircle, Mail, FileDown, Sparkles } from "lucide-react";
+import { ArrowRight, Printer, MessageCircle, Mail, FileDown, Sparkles, Sheet, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { buildClassReport } from "@/lib/reports.functions";
+import { exportClassGradesToSheet } from "@/lib/sheets-export.functions";
 import { TEACHER_LABEL } from "@/lib/kodesh-subjects";
 import { buildClassReportPdf } from "@/lib/pdf/class-report-pdf";
 import { downloadPdfBlob } from "@/lib/pdf/pdf-builder";
@@ -37,6 +38,8 @@ function monthAgo() {
 function ReportsPage() {
   const { classId } = Route.useParams();
   const build = useServerFn(buildClassReport);
+  const exportSheet = useServerFn(exportClassGradesToSheet);
+  const [sheetBusy, setSheetBusy] = useState(false);
   const [from, setFrom] = useState(monthAgo());
   const [to, setTo] = useState(today());
   const [studentFilter, setStudentFilter] = useState<string>("all");
@@ -65,6 +68,26 @@ function ReportsPage() {
   }, [data, filtered]);
 
   const onPrint = () => window.print();
+  const onSheets = async () => {
+    if (sheetBusy) return;
+    setSheetBusy(true);
+    try {
+      const res = await exportSheet({ data: { classId, from, to } });
+      toast.success(
+        res.created
+          ? `נוצר גיליון Google Sheets עם ${res.students} תלמידים`
+          : `הגיליון הקיים עודכן (${res.students} תלמידים)`,
+        {
+          action: { label: "פתח גיליון", onClick: () => window.open(res.url, "_blank", "noopener") },
+          duration: 10000,
+        },
+      );
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "הייצוא ל-Google Sheets נכשל");
+    } finally {
+      setSheetBusy(false);
+    }
+  };
   const onPdf = async () => {
     if (!data) { toast.error("אין נתונים"); return; }
     try {
@@ -136,6 +159,10 @@ function ReportsPage() {
             <Button variant="outline" onClick={onEmail}><Mail className="ms-1 h-4 w-4" /> מייל</Button>
             <Button variant="outline" onClick={onWhatsApp}><MessageCircle className="ms-1 h-4 w-4" /> וואטסאפ</Button>
             <Button variant="outline" onClick={onPdf}><FileDown className="ms-1 h-4 w-4" /> הורד PDF</Button>
+            <Button variant="outline" onClick={onSheets} disabled={sheetBusy}>
+              {sheetBusy ? <Loader2 className="ms-1 h-4 w-4 animate-spin" /> : <Sheet className="ms-1 h-4 w-4" />}
+              ייצוא ל-Google Sheets
+            </Button>
             <Button onClick={onPrint}><Printer className="ms-1 h-4 w-4" /> הדפס / PDF</Button>
           </div>
         </CardContent>

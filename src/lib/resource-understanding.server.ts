@@ -5,6 +5,7 @@
  */
 import { callLovableAI } from "./ai-gateway.server";
 import { indexResourceChunks } from "./resource-chunks.server";
+import { assessExtractedText } from "./extracted-text-quality";
 import { RESOURCE_TYPES, type ResourceRow } from "./teaching-resources.functions";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -21,6 +22,8 @@ export type UnderstandResult = {
   suggested_grade: string;
   tags: string[];
   ocr_confidence: number;
+  /** אימות איכות הטקסט שחולץ — נשמר עם החומר ומשמש לפני הפקת שאלות/סיכומים */
+  text_quality: { ok: boolean; score: number; issues: string[]; message: string };
 };
 
 function toBase64(buf: Uint8Array): string {
@@ -115,6 +118,8 @@ export async function understandResource(
   const nextText = shouldReplaceText ? ocr : existingText;
   const mergedTags = [...new Set([...(res.tags ?? []), ...aiTags])].slice(0, 25);
 
+  const quality = assessExtractedText(nextText, { ocrConfidence: confidence });
+
   const nextContent = {
     ...content,
     original_text: nextText,
@@ -124,6 +129,9 @@ export async function understandResource(
       suggested_type: suggestedType,
       ocr_confidence: confidence,
       ocr_reviewed: false,
+      text_quality_ok: quality.ok,
+      text_quality_score: quality.score,
+      text_quality_issues: quality.issues,
       at: new Date().toISOString(),
     },
   };
@@ -154,5 +162,11 @@ export async function understandResource(
     suggested_grade: suggestedGrade,
     tags: mergedTags,
     ocr_confidence: confidence,
+    text_quality: {
+      ok: quality.ok,
+      score: quality.score,
+      issues: quality.issues,
+      message: quality.message,
+    },
   };
 }

@@ -189,6 +189,7 @@ export const createUploadedResource = createServerFn({ method: "POST" })
         mime_type: z.string().max(120).default(""),
         subject: z.string().max(80).default(""),
         resource_type: z.string().max(40).default(""),
+        content_hash: z.string().regex(/^[a-f0-9]{64}$/).optional(),
       })
       .parse(d),
   )
@@ -202,6 +203,7 @@ export const createUploadedResource = createServerFn({ method: "POST" })
         mime_type: data.mime_type || null,
         subject: data.subject || null,
         resource_type: data.resource_type || "other",
+        content_hash: data.content_hash ?? null,
         content: { source_kind: "upload" },
         source_prompt: "מקור: העלאה מרובה לספרייה",
       } as never)
@@ -212,6 +214,47 @@ export const createUploadedResource = createServerFn({ method: "POST" })
       throw new Error("שמירת החומר נכשלה");
     }
     return { id: (ins as { id: string }).id };
+  });
+
+export type ExistingResourceMatch = {
+  id: string;
+  title: string;
+  created_at: string;
+  resource_type: string;
+  subject: string;
+};
+
+/**
+ * בדיקה אם קובץ זהה (לפי טביעת אצבע SHA-256) כבר קיים בספרייה של המלמד.
+ * מחזיר את החומר הקיים כדי שנפנה אליו במקום לשמור עותק נוסף.
+ */
+export const findResourceByHash = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z.object({ content_hash: z.string().regex(/^[a-f0-9]{64}$/, "טביעת אצבע לא תקינה") }).parse(d),
+  )
+  .handler(async ({ data, context }): Promise<ExistingResourceMatch | null> => {
+    const { data: row, error } = await context.supabase
+      .from("teaching_resources")
+      .select("id,title,created_at,resource_type,subject")
+      .eq("owner_id", context.userId)
+      .eq("content_hash", data.content_hash)
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (error) {
+      console.error("[DB Error]", error);
+      return null; // בדיקת הכפילות לא תחסום העלאה תקינה
+    }
+    if (!row) return null;
+    const r = row as ExistingResourceMatch;
+    return {
+      id: r.id,
+      title: r.title ?? "",
+      created_at: r.created_at,
+      resource_type: r.resource_type ?? "other",
+      subject: r.subject ?? "",
+    };
   });
 
 /** קישורים חתומים להורדה מרוכזת (הדפדפן אורז ל-ZIP). */

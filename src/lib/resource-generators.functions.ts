@@ -16,10 +16,12 @@ export const generateResourceSummary = createServerFn({ method: "POST" })
     const { loadResourceContext, buildSummary } = await import("./resource-generators.server");
     const { buildStyleContextString } = await import("./teacher-style.functions");
     const ctx = await loadResourceContext(context.supabase, data.resourceId);
+    if (!ctx.quality.ok) throw new Error(ctx.quality.message);
     const styleContext = await buildStyleContextString(context.supabase, context.userId);
     return {
       text: await buildSummary({
         source: ctx.text, level: data.level, scope: data.scope, notes: data.notes, styleContext,
+        qualityGuard: ctx.quality.promptGuard,
       }),
     };
   });
@@ -42,9 +44,14 @@ export const generateResourceTasks = createServerFn({ method: "POST" })
     }
     const { loadResourceContext, buildTasks } = await import("./resource-generators.server");
     const { buildStyleContextString } = await import("./teacher-style.functions");
-    const source = data.resourceId
-      ? (await loadResourceContext(context.supabase, data.resourceId)).text
-      : `נושא חופשי: ${data.topic}`;
+    let source = `נושא חופשי: ${data.topic}`;
+    let qualityGuard = "";
+    if (data.resourceId) {
+      const ctx = await loadResourceContext(context.supabase, data.resourceId);
+      if (!ctx.quality.ok) throw new Error(ctx.quality.message);
+      source = ctx.text;
+      qualityGuard = ctx.quality.promptGuard;
+    }
     const styleContext = await buildStyleContextString(context.supabase, context.userId);
     return {
       text: await buildTasks({
@@ -55,6 +62,7 @@ export const generateResourceTasks = createServerFn({ method: "POST" })
         count: data.count,
         notes: data.notes,
         styleContext,
+        qualityGuard,
       }),
     };
   });
