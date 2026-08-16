@@ -449,7 +449,9 @@ export function LibraryBulkUpload({ open, onClose }: { open: boolean; onClose: (
         {items.length > 0 && (
           <>
           {(() => {
-            const done = items.filter((it) => it.status === "done" || it.status === "error").length;
+            const done = items.filter(
+              (it) => it.status === "done" || it.status === "error" || it.status === "duplicate",
+            ).length;
             return (
               <div className="space-y-1">
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -484,6 +486,21 @@ export function LibraryBulkUpload({ open, onClose }: { open: boolean; onClose: (
                     </>
                   )}
                   {it.status === "pending" && "בהמתנה"}
+                  {it.status === "duplicate" && (
+                    <>
+                      <Copy className="h-3 w-3 text-amber" /> {it.note}
+                      {it.existingId && (
+                        <a
+                          href={`/resources/${it.existingId}`}
+                          target="_blank"
+                          rel="noopener"
+                          className="font-medium text-primary hover:underline"
+                        >
+                          פתח את הקיים
+                        </a>
+                      )}
+                    </>
+                  )}
                   {it.status === "done" && (
                     <>
                       <CheckCircle2 className="h-3 w-3 text-emerald-500" /> {it.note}
