@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Loader2, UploadCloud, CheckCircle2, AlertTriangle, FileText, Sparkles,
-  Image as ImageIcon, Music, Film, Presentation, FolderOpen, Mic, X, RotateCcw,
+  Image as ImageIcon, Music, Film, Presentation, FolderOpen, Mic, X, RotateCcw, Copy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
