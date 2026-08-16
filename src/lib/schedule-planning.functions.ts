@@ -178,9 +178,10 @@ export const upsertTemplateSlot = createServerFn({ method: "POST" })
     const q = data.id
       ? context.supabase.from("schedule_template_slots").update(payload).eq("id", data.id)
       : context.supabase.from("schedule_template_slots").insert(payload);
-    const { error } = await q;
+const { error } = await q;
     if (error) {
       console.error("[template upsert]", error);
+      if (error.code === "23505") throw new Error("יש כבר שיעור בשעה הזו במערכת הקבועה — ערוך או מחק אותו קודם.");
       throw new Error("שמירת שיעור במערכת הקבועה נכשלה.");
     }
     return { ok: true as const };
@@ -262,10 +263,13 @@ export const applyTemplateToWeeks = createServerFn({ method: "POST" })
       }
     }
     if (!rows.length) return { ok: true as const, inserted: 0 };
-    const { error } = await context.supabase.from("weekly_lessons").insert(rows);
+    const { error } = await context.supabase
+      .from("weekly_lessons")
+      .upsert(rows, { onConflict: "class_id,week_start,day_key,hour" });
     if (error) {
       console.error("[template apply insert]", error);
       throw new Error("החלת המערכת על השבועות נכשלה.");
+    
     }
     return { ok: true as const, inserted: rows.length };
   });
