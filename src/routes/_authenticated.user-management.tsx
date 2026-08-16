@@ -425,7 +425,36 @@ function UserManagementPage() {
             <>
               <div className="flex flex-wrap gap-1.5">
                 {pagedInstitutions.map((inst) => (
-                  <Badge key={inst.id} variant="secondary">{inst.name}</Badge>
+                  <Badge key={inst.id} variant="secondary" className="gap-1.5 ps-1.5">
+                    {inst.name}
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <button
+                          type="button"
+                          aria-label={`מחק את המוסד ${inst.name}`}
+                          className="rounded-full p-0.5 text-destructive transition-colors hover:bg-destructive/10 motion-reduce:transition-none"
+                          disabled={deleteInstitutionMutation.isPending}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>למחוק את המוסד {inst.name}?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            כל שיוכי התפקידים למוסד יוסרו. חשבונות המלמדים והכיתות שלהם יישארו כפי
+                            שהם. אם עדיין משויכות כיתות למוסד, יש לנתק אותן קודם.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>ביטול</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => deleteInstitutionMutation.mutate(inst.id)}>
+                            מחק מוסד
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </Badge>
                 ))}
               </div>
               {institutionPages > 1 && (
