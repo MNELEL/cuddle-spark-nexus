@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { InstitutionStaffCard } from "@/components/institution-staff-card";
 import { InstitutionClassAssignmentsCard } from "@/components/institution-class-assignments-card";
+import { TeacherChangeHistory } from "@/components/teacher-change-history";
 import { Textarea } from "@/components/ui/textarea";
 import { renameInstitutionTeacher } from "@/lib/institution-staff.functions";
 import { Search, ChevronLeft, Pencil, Building2, Users, GraduationCap, Archive, UserPlus, Loader2 } from "lucide-react";
@@ -269,6 +270,7 @@ function InstitutionDashboardPage() {
           <div className="space-y-6">
             <TeachersTab canEdit={institution.role === "admin"} institutionId={institution.id} />
             <InstitutionClassAssignmentsCard canEdit={institution.role === "admin"} />
+            <TeacherChangeHistory />
           </div>
         </TabsContent>
 
@@ -347,6 +349,7 @@ function TeachersTab({ canEdit, institutionId }: { canEdit: boolean; institution
       toast.success("ההערות נשמרו");
       setNotesTarget(null);
       void qc.invalidateQueries({ queryKey: ["institution-teachers"] });
+      void qc.invalidateQueries({ queryKey: ["teacher-audit-log"] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "שמירת ההערות נכשלה"),
   });

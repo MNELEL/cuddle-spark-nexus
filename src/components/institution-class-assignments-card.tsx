@@ -52,6 +52,7 @@ export function InstitutionClassAssignmentsCard({ canEdit }: { canEdit: boolean 
     void qc.invalidateQueries({ queryKey: ["institution-classes"] });
     void qc.invalidateQueries({ queryKey: ["institution-teachers"] });
     void qc.invalidateQueries({ queryKey: ["institution-dashboard"] });
+    void qc.invalidateQueries({ queryKey: ["teacher-audit-log"] });
   };
 
   const assignM = useMutation({
