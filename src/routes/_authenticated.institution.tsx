@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { InstitutionStaffCard } from "@/components/institution-staff-card";
 import { InstitutionClassAssignmentsCard } from "@/components/institution-class-assignments-card";
+import { TeacherChangeHistory } from "@/components/teacher-change-history";
 import { Textarea } from "@/components/ui/textarea";
 import { renameInstitutionTeacher } from "@/lib/institution-staff.functions";
 import { Search, ChevronLeft, Pencil, Building2, Users, GraduationCap, Archive, UserPlus, Loader2 } from "lucide-react";
