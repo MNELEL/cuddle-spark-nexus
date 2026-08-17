@@ -269,6 +269,7 @@ function InstitutionDashboardPage() {
           <div className="space-y-6">
             <TeachersTab canEdit={institution.role === "admin"} institutionId={institution.id} />
             <InstitutionClassAssignmentsCard canEdit={institution.role === "admin"} />
+            <TeacherChangeHistory />
           </div>
         </TabsContent>
 
@@ -347,6 +348,7 @@ function TeachersTab({ canEdit, institutionId }: { canEdit: boolean; institution
       toast.success("ההערות נשמרו");
       setNotesTarget(null);
       void qc.invalidateQueries({ queryKey: ["institution-teachers"] });
+      void qc.invalidateQueries({ queryKey: ["teacher-audit-log"] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "שמירת ההערות נכשלה"),
   });
