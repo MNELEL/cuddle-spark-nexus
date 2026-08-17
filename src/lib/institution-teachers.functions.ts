@@ -3,7 +3,8 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { AUDIT_SOURCE_INSTITUTIONS } from "@/lib/audit-sources";
+import { AUDIT_SOURCE_INSTITUTIONS, AUDIT_SOURCE_TEACHERS } from "@/lib/audit-sources";
+import { TEACHER_AUDIT_ACTIONS, type TeacherAuditEntry } from "@/lib/teacher-audit";
 
 type InstitutionScope = { institutionId: string; role: "admin" | "principal" };
 
@@ -270,12 +271,34 @@ export const updateTeacherNotes = createServerFn({ method: "POST" })
     const scope = await requireAdminScope(supabase, userId);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // Previous value first — the audit entry must show what actually changed.
+    const { data: before } = await supabaseAdmin
+      .from("user_roles")
+      .select("teaching_notes")
+      .eq("user_id", data.teacherId)
+      .eq("institution_id", scope.institutionId)
+      .limit(1)
+      .maybeSingle();
+
     const { error } = await supabaseAdmin
       .from("user_roles")
       .update({ teaching_notes: data.notes.trim() || null })
       .eq("user_id", data.teacherId)
       .eq("institution_id", scope.institutionId);
     if (error) { console.error("[DB Error]", error); throw new Error("שמירת ההערות נכשלה. נסה שוב."); }
+
+    const { logInfo } = await import("@/lib/logger.server");
+    await logInfo("עודכנו סגנון הוראה והערות של מלמד", {
+      source: AUDIT_SOURCE_TEACHERS,
+      userId,
+      context: {
+        action: TEACHER_AUDIT_ACTIONS.notes,
+        institution_id: scope.institutionId,
+        teacher_id: data.teacherId,
+        before: (before?.teaching_notes ?? "").slice(0, 1000),
+        after: data.notes.trim().slice(0, 1000),
+      },
+    });
     return { ok: true as const };
   });
 
@@ -338,7 +361,7 @@ export const assignClassToTeacher = createServerFn({ method: "POST" })
 
     const { data: cls, error: cErr } = await supabaseAdmin
       .from("classes")
-      .select("id, institution_id, status")
+      .select("id, name, owner_id, institution_id, status")
       .eq("id", data.classId)
       .maybeSingle();
     if (cErr) { console.error("[DB Error]", cErr); throw new Error("הפעולה נכשלה. נסה שוב."); }
@@ -360,7 +383,87 @@ export const assignClassToTeacher = createServerFn({ method: "POST" })
       .update({ owner_id: data.teacherId })
       .eq("id", data.classId);
     if (error) { console.error("[DB Error]", error); throw new Error("שיוך הכיתה נכשל. נסה שוב."); }
+
+    const { logInfo } = await import("@/lib/logger.server");
+    await logInfo("כיתה שויכה למלמד אחר", {
+      source: AUDIT_SOURCE_TEACHERS,
+      userId,
+      context: {
+        action: TEACHER_AUDIT_ACTIONS.assignClass,
+        institution_id: scope.institutionId,
+        class_id: data.classId,
+        class_name: cls.name,
+        teacher_id: data.teacherId,
+        previous_teacher_id: cls.owner_id,
+      },
+    });
     return { ok: true as const };
+  });
+
+/**
+ * Change history for teacher records of the caller's institution: notes/style
+ * edits and class assignment changes. Any institution manager may read it
+ * (transparency), while only an admin can produce new entries.
+ */
+export const listTeacherAuditLog = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        teacherId: z.string().uuid().nullable().optional(),
+        limit: z.number().int().min(1).max(100).default(30),
+      })
+      .parse(d ?? {}),
+  )
+  .handler(async ({ data, context }): Promise<TeacherAuditEntry[]> => {
+    const { supabase, userId } = context;
+    const scope = await requireScope(supabase, userId);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rows, error } = await supabaseAdmin
+      .from("app_logs")
+      .select("id, message, context, user_id, created_at")
+      .eq("source", AUDIT_SOURCE_TEACHERS)
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (error) { console.error("[DB Error]", error); throw new Error("טעינת היסטוריית השינויים נכשלה."); }
+
+    const scoped = (rows ?? [])
+      .map((r) => ({ row: r, ctx: (r.context ?? {}) as Record<string, unknown> }))
+      .filter(({ ctx }) => ctx["institution_id"] === scope.institutionId)
+      .filter(({ ctx }) => !data.teacherId || ctx["teacher_id"] === data.teacherId || ctx["previous_teacher_id"] === data.teacherId)
+      .slice(0, data.limit);
+
+    const people = Array.from(
+      new Set(
+        scoped.flatMap(({ row, ctx }) =>
+          [row.user_id, ctx["teacher_id"], ctx["previous_teacher_id"]].filter(
+            (v): v is string => typeof v === "string",
+          ),
+        ),
+      ),
+    );
+    const names: Record<string, string> = {};
+    if (people.length > 0) {
+      const { data: profiles } = await supabaseAdmin
+        .from("profiles").select("id, display_name").in("id", people);
+      for (const p of profiles ?? []) names[p.id] = p.display_name ?? "";
+    }
+    const nameOf = (id: unknown) =>
+      typeof id === "string" ? names[id] || "משתמש ללא שם" : null;
+
+    return scoped.map(({ row, ctx }) => ({
+      id: row.id,
+      createdAt: row.created_at,
+      action: typeof ctx["action"] === "string" ? (ctx["action"] as string) : "",
+      message: row.message,
+      actorName: nameOf(row.user_id) ?? "מערכת",
+      teacherName: nameOf(ctx["teacher_id"]),
+      previousTeacherName: nameOf(ctx["previous_teacher_id"]),
+      className: typeof ctx["class_name"] === "string" ? (ctx["class_name"] as string) : null,
+      before: typeof ctx["before"] === "string" ? (ctx["before"] as string) : null,
+      after: typeof ctx["after"] === "string" ? (ctx["after"] as string) : null,
+    }));
   });
 
 /** Removes a class from the institution without touching its data or owner. */
