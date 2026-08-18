@@ -1,48 +1,39 @@
-# רענון מסך "הכיתות שלי"
+# חומרים דומים בספרייה — שדרוג ל-similarity מבוסס chunks
 
-## מה ישתנה מבחינת המלמד
+## מה כבר קיים בקוד (נבדק)
+- `getSimilarResources` ב-`src/lib/library-extras.functions.ts` — כבר מחזירה top-N דומים לחומר נתון, אבל **על בסיס `teaching_resources.embedding` בלבד** דרך ה-RPC `match_resources`, ואם אין embedding היא מייצרת אחד בזמן ריצה מהכותרת/תקציר/טקסט.
+- רכיב `SimilarResources` (`src/components/similar-resources.tsx`) כבר מוצג בעמוד `/resources/$resourceId` (שורה 297).
+- `resource_chunks` מאונדקס ב-HNSW cosine על `embedding` (`resource_chunks_embedding_idx`), וגם `teaching_resources.embedding` מאונדקס. **לא נדרש אינדקס חדש.**
+- ה-RPC `match_resource_chunks` קיים אך ללא סינון owner — ב-`askLibrary` הוא נסמך על RLS.
 
-1. **שורת סטטיסטיקה בראש העמוד** — שלושה מדדים קומפקטיים: סה"כ תלמידים (בכיתות פעילות), כיתות פעילות (מתוך סה"כ), ופעולות ממתינות (עלונים בטיוטה + התראות ארכיון שלא נסגרו).
-2. **כרטיס כיתה מועשר** — מספר תלמידים בפועל במקום/לצד גריד הדקורציה, תג "עלון בטיוטה" ותג "מבחן קרוב" (עד 14 יום) לכיתות שדורשות תשומת לב.
-3. **בורר מיון** — לאחרונה (ברירת מחדל, כמו היום) / לפי שם א-ב / לפי מספר תלמידים (יורד). הבחירה נשמרת ב-localStorage.
-4. **סדר עמוד חדש** — כיתות ראשונות: כותרת → שורת סטטיסטיקה → סרגל חיפוש/מיון/סטטוס → כרטיסי הכיתות. אחרי הכיתות: אשף כיתה חדשה, כרטיס ההתקדמות (Onboarding), כרטיס דשבורד המוסד, וטבלת השיוכים (ClassAssignmentsTable) בתוך אזור מתקפל ("ניהול ושיוכים") בתחתית. באנר התראות הארכיון נשאר למעלה כי הוא דורש פעולה.
+## מצב הנתונים בפועל
+67 חומרים, מהם 7 עם embedding ברמת מסמך; 3 chunks בלבד, על 3 חומרים. כלומר היום ה-similarity מכסה חלק קטן מהספרייה — הפער האמיתי הוא כיסוי אינדוקס, לא רק האלגוריתם.
 
-## נתונים — מה נבדק ומה נדרש
+## מה נבנה
+1. **RPC חדש `match_similar_resources(p_resource_id, p_owner, p_match_count)`** (SECURITY DEFINER, `search_path=public`, מאמת ש-`p_owner = auth.uid()`):
+   - מחשב מרכז (centroid) של ה-chunks של החומר: `avg(embedding)` → `vector`.
+   - משווה מול centroid של chunks של חומרים אחרים של אותו owner (`group by resource_id`) עם `OPERATOR(extensions.<=>)`, מחזיר `resource_id, similarity`, ללא ה-resource עצמו.
+   - GRANT EXECUTE ל-`authenticated` בלבד.
+2. **`findSimilarResources` ב-`library-extras.functions.ts`** (`requireSupabaseAuth`), קלט `{ id, limit 1..12 }`, פלט זהה ל-`SimilarResource` הקיים:
+   - שלב א׳: RPC ה-chunks (הכי מדויק).
+   - שלב ב׳ (fallback): הלוגיקה הקיימת של `match_resources` על embedding המסמך.
+   - שלב ג׳: fallback לא-סמנטי — חומרים של אותו owner באותו `subject`/`resource_type` או עם תגיות משותפות, מסומנים בציון דמיון נמוך.
+   - סינון סף מינימלי (למשל ‎0.2‎) כדי לא להציג "דומים" רועשים.
+   `getSimilarResources` תישאר כ-alias דק לאחור.
+3. **UI**
+   - `SimilarResources` תעבור לקרוא ל-`findSimilarResources`, ותקבל prop `variant` (`card` | `compact`).
+   - הרכיב יוצג גם ב-`ResourceViewerDialog` בתוך `/resources` (גרסה compact, בתחתית הדיאלוג), בנוסף לעמוד הפריט הקיים.
+   - מצב ריק ידידותי: "עדיין אין חומרים דומים — ככל שתעלה עוד חומרים ההמלצות ישתפרו", עם רמז כשלחומר עצמו אין טקסט מאונדקס ("הפעל אינדוקס/OCR כדי לקבל המלצות").
+4. **כיסוי אינדוקס** — כפתור/פעולה "אנדקס חומר לחיפוש" בכרטיס החומר שמפעילה את `indexResourceChunks` הקיים על `original_text`, כדי לסגור את הפער של 3 מתוך 67.
 
-`listClasses` מחזיר כרגע `select("*")` מ-`classes` בלבד: אין בו מספר תלמידים ואין מידע על עלונים. לכן המדדים החדשים לא ניתנים לחישוב מהנתונים הקיימים בלקוח.
+## Edge cases
+- אין chunks ואין embedding → fallback מטא-דאטה, ואם גם זה ריק → הרכיב לא מוצג.
+- `original_text` קצר מדי (< ~200 תווים) → לא נשלח ל-embedding, נופלים ל-fallback.
+- חומר נמחק בין השאילתות → מסננים מזהים שלא חזרו מ-`teaching_resources`, בלי לזרוק שגיאה.
+- כפילויות מ-hash זהה → אם `content_hash` זהה, מציגים אחד ומסמנים "עותק זהה".
+- כשל ב-Gateway (מפסק זרם / 402) → מחזירים `[]` בשקט, בלי לשבור את העמוד.
 
-הטבלאות הדרושות כבר קיימות עם השדות הנחוצים — **אין צורך בשינוי סכמה או מיגרציה**:
-- `students.class_id` — לספירת תלמידים לכל כיתה.
-- `weekly_bulletins.class_id` + `weekly_bulletins.status` (`draft` / `published`) — לתג "עלון בטיוטה".
-- `class_events.class_id`, `event_type` (`exam` / `special_exam`), ותאריך האירוע — לתג "מבחן קרוב".
-
-## תכנון טכני
-
-### 1. `src/lib/classes.functions.ts`
-פונקציית שרת חדשה `getClassesOverview` (במקום להרחיב את `listClasses`, כדי לא לשנות את החוזה של כל הצרכנים הקיימים):
-- קוראת ל-`listClasses` הקיים או שולפת את אותן שורות, ואז שלוש שאילתות מקובצות עם `.in("class_id", ids)`:
-  - `students` → `select("id, class_id")`, ספירה בזיכרון לפי `class_id`.
-  - `weekly_bulletins` → `select("class_id").eq("status", "draft")`.
-  - `class_events` → `select("class_id, event_type, <date>").in("event_type", ["exam","special_exam"])` בטווח היום עד +14 יום.
-- מחזירה `{ classes, stats: { totalStudents, activeClasses, totalClasses, pendingActions }, perClass: Record<classId, { studentCount, draftBulletins, upcomingExams }> }`.
-- RLS קיים כבר מגדיר מה המלמד רואה, ולכן אין צורך בהרשאות חדשות; שלוש שאילתות מקובצות בלבד — לא N+1.
-
-### 2. `src/routes/_authenticated.classes.index.tsx` (עיקר השינוי)
-- להחליף את `useQuery(["classes"])` בקריאה ל-`getClassesOverview` (`queryKey: ["classes-overview"]`), ולהמשיך להזרים את `classes` לאותה לוגיקת סינון קיימת. מוטציות מחיקה/ארכיון יבטלו גם את המפתח החדש.
-- `StatsRow` — שלושה מדדים inline (טקסט + מספר `font-mono-tabular`), עם Skeleton בזמן טעינה.
-- מיון: `useState<"recent"|"name"|"students">` + `Select` קטן ליד לשוניות הסטטוס; comparator ב-`useMemo` הקיים (recent = לוגיקת `rank` הקיימת, name = `localeCompare("he")`, students = מספר תלמידים יורד).
-- כרטיס כיתה: להוסיף שורת "N תלמידים" ותגי `Badge` ל"עלון בטיוטה" / "מבחן קרוב" לפי `perClass`. `SeatFillGrid` מצטמצם לרמז ויזואלי קטן (או מוסר מהכרטיס) כדי לפנות מקום לנתון האמיתי — אחליט לפי הצפיפות בפועל ואשמור על מבט עקבי.
-- סידור מחדש של ה-JSX לפי הסדר שלמעלה; `ClassAssignmentsTable` וכרטיס המוסד עוברים לתחתית תוך שימוש ב-`Collapsible` הקיים ב-`components/ui`.
-
-### 3. בדיקות
-בדיקת יחידה קטנה על פונקציות המיון/סיכום (אם אחלץ אותן ל-`src/lib/classes-overview.ts` כפונקציות טהורות) + הרצת `check-route-links` ו-`tsgo` כרגיל.
-
-## קבצים שישתנו
-- `src/routes/_authenticated.classes.index.tsx` — עיקר השינוי (סדר, סטטיסטיקה, מיון, תגים).
-- `src/lib/classes.functions.ts` — הוספת `getClassesOverview`.
-- `src/lib/classes-overview.ts` (חדש, קטן) — comparators וחישובי סיכום טהורים לבדיקה.
-- `src/test/classes-overview.test.ts` (חדש) — בדיקות למיון ולסיכומים.
-
-## מה לא ישתנה
-- אין מיגרציות, אין שינוי סכמה, אין שינוי RLS/GRANT.
-- `listClasses` נשאר כפי שהוא לכל שאר הצרכנים.
+## פרטים טכניים
+- מיגרציה אחת: פונקציית RPC + GRANT (אין טבלה חדשה, אין אינדקס חדש).
+- אין קריאות AI חדשות בנתיב הקריאה כשיש chunks — ההשוואה כולה ב-Postgres.
+- בדיקה: וידוא שהחומר עצמו לא מופיע בתוצאות ושחומר של owner אחר לא דולף.
