@@ -1,39 +1,59 @@
-# חומרים דומים בספרייה — שדרוג ל-similarity מבוסס chunks
+# גל 1 — שיפורי עמוד הדוחות והספרייה
 
-## מה כבר קיים בקוד (נבדק)
-- `getSimilarResources` ב-`src/lib/library-extras.functions.ts` — כבר מחזירה top-N דומים לחומר נתון, אבל **על בסיס `teaching_resources.embedding` בלבד** דרך ה-RPC `match_resources`, ואם אין embedding היא מייצרת אחד בזמן ריצה מהכותרת/תקציר/טקסט.
-- רכיב `SimilarResources` (`src/components/similar-resources.tsx`) כבר מוצג בעמוד `/resources/$resourceId` (שורה 297).
-- `resource_chunks` מאונדקס ב-HNSW cosine על `embedding` (`resource_chunks_embedding_idx`), וגם `teaching_resources.embedding` מאונדקס. **לא נדרש אינדקס חדש.**
-- ה-RPC `match_resource_chunks` קיים אך ללא סינון owner — ב-`askLibrary` הוא נסמך על RLS.
+בדקתי את הקוד החי. חלק ניכר מהסעיפים כבר קיים חלקית — להלן מה בפועל יש, מה חסר, ומה נבנה.
 
-## מצב הנתונים בפועל
-67 חומרים, מהם 7 עם embedding ברמת מסמך; 3 chunks בלבד, על 3 חומרים. כלומר היום ה-similarity מכסה חלק קטן מהספרייה — הפער האמיתי הוא כיסוי אינדוקס, לא רק האלגוריתם.
+## מצב קיים (נבדק בקוד)
+- `src/routes/_authenticated.reports.$classId.tsx` (254 שורות): כבר יש טווח תאריכים (`from`/`to`), סינון תלמיד בודד, כפתור "הדפס / PDF" (`window.print()`), הורדת PDF (`buildClassReportPdf`), ייצוא ל-Google Sheets, שיתוף בוואטסאפ/מייל/העתקה, ובלוק `<style>` פנימי עם `@media print` (מסתיר `.no-print`, `header[role=banner]`, `nav`, `@page A4 16mm`).
+- `src/lib/pdf/class-report-pdf.ts` (119 שורות) + `src/lib/pdf/pdf-builder.ts`: מחולל PDF עברי עם `drawBrandHeader`, `section/subSection/table`, `drawFooter` — כבר מסודר למדי.
+- `src/lib/reports.functions.ts`: `buildClassReport` מחשב דוח לפי דרישה. **אין** שמירה של "הדוח האחרון" בבסיס הנתונים.
+- הדוח ה-AI נמצא בעמוד נפרד `/pedagogical/$classId` (`buildPedagogicalReport`) — הוא זה שדורש ולידציה לפני הפעלה, לא `/reports`.
+- `src/styles.css` (405 שורות): יש בלוקי `@media print` ממוקדים ל-`.reward-chart-print-area` ול-`.resource-print-area` בלבד — **אין** בלוק גלובלי לדוחות; הכיסוי היום נשען על ה-`<style>` המקומי בעמוד.
+- ספרייה `src/routes/_authenticated.resources.index.tsx` (1862 שורות): בכרטיס יש כבר תגית "נוצר ב-AI" (`ai_generated`), תגית "אין טקסט לחיפוש", כפתור OCR/ניתוח, **וכפתור מחיקה לכל פריט עם AlertDialog** (שורות ~1193-1220) וגם מחיקה מרובה.
+- קבוצות תלמידים קיימות: טבלאות `groups`/`student_groups` + `src/lib/groups.functions.ts`.
 
-## מה נבנה
-1. **RPC חדש `match_similar_resources(p_resource_id, p_owner, p_match_count)`** (SECURITY DEFINER, `search_path=public`, מאמת ש-`p_owner = auth.uid()`):
-   - מחשב מרכז (centroid) של ה-chunks של החומר: `avg(embedding)` → `vector`.
-   - משווה מול centroid של chunks של חומרים אחרים של אותו owner (`group by resource_id`) עם `OPERATOR(extensions.<=>)`, מחזיר `resource_id, similarity`, ללא ה-resource עצמו.
-   - GRANT EXECUTE ל-`authenticated` בלבד.
-2. **`findSimilarResources` ב-`library-extras.functions.ts`** (`requireSupabaseAuth`), קלט `{ id, limit 1..12 }`, פלט זהה ל-`SimilarResource` הקיים:
-   - שלב א׳: RPC ה-chunks (הכי מדויק).
-   - שלב ב׳ (fallback): הלוגיקה הקיימת של `match_resources` על embedding המסמך.
-   - שלב ג׳: fallback לא-סמנטי — חומרים של אותו owner באותו `subject`/`resource_type` או עם תגיות משותפות, מסומנים בציון דמיון נמוך.
-   - סינון סף מינימלי (למשל ‎0.2‎) כדי לא להציג "דומים" רועשים.
-   `getSimilarResources` תישאר כ-alias דק לאחור.
-3. **UI**
-   - `SimilarResources` תעבור לקרוא ל-`findSimilarResources`, ותקבל prop `variant` (`card` | `compact`).
-   - הרכיב יוצג גם ב-`ResourceViewerDialog` בתוך `/resources` (גרסה compact, בתחתית הדיאלוג), בנוסף לעמוד הפריט הקיים.
-   - מצב ריק ידידותי: "עדיין אין חומרים דומים — ככל שתעלה עוד חומרים ההמלצות ישתפרו", עם רמז כשלחומר עצמו אין טקסט מאונדקס ("הפעל אינדוקס/OCR כדי לקבל המלצות").
-4. **כיסוי אינדוקס** — כפתור/פעולה "אנדקס חומר לחיפוש" בכרטיס החומר שמפעילה את `indexResourceChunks` הקיים על `original_text`, כדי לסגור את הפער של 3 מתוך 67.
+## מה נבנה, סעיף-סעיף
 
-## Edge cases
-- אין chunks ואין embedding → fallback מטא-דאטה, ואם גם זה ריק → הרכיב לא מוצג.
-- `original_text` קצר מדי (< ~200 תווים) → לא נשלח ל-embedding, נופלים ל-fallback.
-- חומר נמחק בין השאילתות → מסננים מזהים שלא חזרו מ-`teaching_resources`, בלי לזרוק שגיאה.
-- כפילויות מ-hash זהה → אם `content_hash` זהה, מציגים אחד ומסמנים "עותק זהה".
-- כשל ב-Gateway (מפסק זרם / 402) → מחזירים `[]` בשקט, בלי לשבור את העמוד.
+**1. כפתור "הדפס דוח" ממוקד (שיפור של קיים)**
+כפתור ההדפסה יסמן את גוף הדוח כאזור הדפסה (`report-print-area` על `#report-printable`) ויוסיף class לגוף המסמך לפני `window.print()`, כך שההדפסה תכלול רק את ה-container. הכפתור יפוצל: "הדפס דוח" (נייטיבי) ו-"הורד PDF" (הקיים).
+
+**2. Preview של הדוח האחרון בדשבורד (חדש)**
+אין "דוח אחרון" שמור, ולכן:
+- `localStorage` ישמור את פרמטרי הדוח האחרון (classId, from, to, סינון) בעת יצירה — בלי מיגרציה.
+- רכיב חדש `src/components/last-report-preview.tsx` שיטען מחדש את הדוח דרך `buildClassReport` עם אותם פרמטרים ויציג 4 מדדי מפתח (מספר תלמידים, ממוצע כיתה, אחוז נוכחות, מאזן התנהגות) + קישור "לדוח המלא".
+- ימוקם בראש `/classes` (מסך הבית של המלמד) ליד הכיתה הקבועה, ובנוסף בכרטיס בעמוד הכיתה.
+
+**3. סינון מורחב בעמוד הדוחות (הרחבת קיים)**
+נשמרים טווח התאריכים והתלמיד; נוסף:
+- קיצורי טווח: "שבוע", "חודש", "סמסטר", "שנה".
+- **סינון לפי קבוצת תלמידים** דרך `listGroups` הקיים — בחירת קבוצה תצמצם את רשימת התלמידים בדוח, בהדפסה וב-PDF.
+- ולידציה: `from <= to`, וטווח מקסימלי סביר, עם הודעה בעברית.
+- סנכרון הסינון ל-URL search params כדי שאפשר לשתף/לרענן.
+
+**4. `@media print` גלובלי (חדש ב-styles.css)**
+בלוק חדש בסגנון הקיים: `body:has(.report-print-area)` מסתיר `header`, `nav`, `aside`, `footer`, `[data-slot="toast"]`/sonner, כפתורים צפים ו-`.no-print`; מאפס רקעים לבנים, מבטל צללים/ריווח מיותר, `@page { size: A4; margin: 14mm }`, `break-inside: avoid` לכל סקציית תלמיד. ה-`<style>` המקומי בעמוד יוסר לטובת זה. **תלוי בסעיף 1** (אותו class).
+
+**5. שיפור ה-PDF (שיפור של קיים)**
+ב-`class-report-pdf.ts`: כותרת עליונה עקבית עם שם המוסד והמלמד מ-`brand_settings`, שורת מטא אחת עם התקופה והסינון שהופעל, גדלי פונט אחידים לכל הסקציות, ריווח קבוע בין תלמידים, "אין נתונים" מובלט, מספור עמודים "עמוד X מתוך Y" ב-`drawFooter`, וטבלת סיכום כיתתית בעמוד הראשון. QA חזותי: המרת ה-PDF לתמונות ובדיקה של חיתוכים/חפיפות/RTL.
+
+**6. ולידציה והודעות שגיאה לדוח ה-AI (הרחבת קיים ב-/pedagogical)**
+- חסימת הפעלה כשאין תלמידים בכיתה, כשאין נתונים בטווח, או כשהטווח לא תקין — עם הודעה מסבירה במקום קריאה מבוזבזת ל-AI.
+- טיפול מפורש בכשלי Gateway: 402 (אין קרדיטים), 429 (עומס — נסה שוב בעוד רגע), מפסק זרם פתוח, 5xx — כל אחד עם טקסט עברי ברור בכרטיס שגיאה בתוך העמוד (לא רק toast) + כפתור "נסה שוב".
+
+**7. Badge "עבר ניתוח AI" בכרטיסי הספרייה (חדש; ה-badge הקיים הוא אחר)**
+התגית הקיימת היא "נוצר ב-AI" (`ai_generated`). נוסיף תגית נפרדת המבוססת על `content.ai_understanding` (סיכום/הקשרים/OCR שנעשה) — למשל "נותח ב-AI" עם tooltip שמציג את הסיכום הקצר, ולחיצה פותחת את החומר בטאב התובנות. אין צורך במיגרציה — השדה כבר קיים ב-JSONB. בנוסף מסנן "רק חומרים שנותחו" בסרגל הסינון.
+
+**8. כפתור מחיקה מהיר בכרטיס (כבר קיים)**
+קיים במלואו כולל Confirmation Modal (`AlertDialog`) גם לפריט בודד וגם למחיקה מרובה. לא נבנה מחדש; רק שיפור זעיר — הצגת שם הקובץ ומספר הגרסאות שיימחקו בטקסט האישור.
+
+## תלויות וחפיפות
+- 1 + 4 — אותו מנגנון class להדפסה; נעשים יחד.
+- 2 תלוי במבנה `ClassReport` הקיים ובכך שאין דוח שמור (לכן localStorage + חישוב מחדש).
+- 3 מזין את 1, 4 ו-5 (הסינון חייב להשתקף בהדפסה וב-PDF).
+- 6 שייך לעמוד `/pedagogical`, לא ל-`/reports` — עצמאי.
+- 7 תלוי ב-`content.ai_understanding` שכבר קיים; 8 כבר קיים.
 
 ## פרטים טכניים
-- מיגרציה אחת: פונקציית RPC + GRANT (אין טבלה חדשה, אין אינדקס חדש).
-- אין קריאות AI חדשות בנתיב הקריאה כשיש chunks — ההשוואה כולה ב-Postgres.
-- בדיקה: וידוא שהחומר עצמו לא מופיע בתוצאות ושחומר של owner אחר לא דולף.
+- אין מיגרציות ואין טבלאות חדשות בגל הזה.
+- קבצים שיישתנו: `_authenticated.reports.$classId.tsx`, `_authenticated.pedagogical.$classId.tsx`, `styles.css`, `lib/pdf/class-report-pdf.ts`, `lib/pdf/pdf-builder.ts`, `_authenticated.resources.index.tsx`, `_authenticated.classes.index.tsx`.
+- קבצים חדשים: `src/components/last-report-preview.tsx`, `src/lib/last-report.ts` (עזר localStorage).
+- בדיקות: יחידה ללוגיקת הסינון (טווח + קבוצה) ולבניית שורות ה-PDF, ובדיקת ה-print CSS דרך snapshot של ה-classNames.
