@@ -168,7 +168,7 @@ function ReportsPage() {
         </CardContent>
       </Card>
 
-      <div id="report-printable" className="space-y-4 bg-card rounded-2xl border p-8 print:border-0 print:shadow-none print:p-0">
+      <div id="report-printable" className="report-print-area space-y-4 bg-card rounded-2xl border p-8 print:border-0 print:shadow-none print:p-0">
         <header className="border-b pb-4">
           <h1 className="font-display text-3xl font-bold">דוח כיתה — {data?.class.name ?? "..."}</h1>
           <p className="mt-1 text-sm text-muted-foreground font-mono-tabular">
@@ -242,14 +242,6 @@ function ReportsPage() {
         </div>
       </div>
 
-      <style>{`
-        @media print {
-          body { background: white !important; }
-          .no-print, header[role="banner"], nav { display: none !important; }
-          #report-printable { box-shadow: none !important; }
-          @page { size: A4; margin: 16mm; }
-        }
-      `}</style>
     </div>
   );
 }
