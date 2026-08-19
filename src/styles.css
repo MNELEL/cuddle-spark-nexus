@@ -403,3 +403,80 @@
     page-break-inside: avoid;
   }
 }
+
+/* ---- הדפסת דוח כיתה (A4, RTL, ממוקד באזור הדוח בלבד) ---- */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 14mm;
+  }
+
+  body:has(.report-print-area) {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  /* הסתרת כל מה שאינו הדוח: ניווט, סיידבר, כותרות עליונות, כפתורים צפים */
+  body:has(.report-print-area) header,
+  body:has(.report-print-area) footer,
+  body:has(.report-print-area) nav,
+  body:has(.report-print-area) aside,
+  body:has(.report-print-area) [data-sidebar],
+  body:has(.report-print-area) [data-slot="sidebar"],
+  body:has(.report-print-area) [data-slot="toaster"],
+  body:has(.report-print-area) [data-radix-popper-content-wrapper],
+  body:has(.report-print-area) .no-print {
+    display: none !important;
+  }
+
+  /* אזור הדוח בלבד — פרוס על כל רוחב העמוד */
+  .report-print-area {
+    direction: rtl;
+    position: static !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: #fff !important;
+    color: #000 !important;
+    box-shadow: none !important;
+    font-size: 11pt;
+  }
+
+  .report-print-area * {
+    box-shadow: none !important;
+    background-image: none !important;
+    color: #000 !important;
+  }
+
+  .report-print-area section,
+  .report-print-area table,
+  .report-print-area tr {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .report-print-area section {
+    border: 1px solid #ccc !important;
+    background: #fff !important;
+    margin-bottom: 6mm;
+  }
+
+  .report-print-area h1 { font-size: 18pt; }
+  .report-print-area h2 { font-size: 13pt; }
+  .report-print-area h3 { font-size: 10.5pt; }
+
+  .report-print-area [data-slot="badge"] {
+    border: 1px solid #999 !important;
+    background: #fff !important;
+  }
+
+  .report-print-area thead {
+    display: table-header-group;
+  }
+  .report-print-area th,
+  .report-print-area td {
+    border-bottom: 1px solid #e2e2e2 !important;
+  }
+}
