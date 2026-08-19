@@ -13,6 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { buildClassReport } from "@/lib/reports.functions";
+import { listGroups } from "@/lib/groups.functions";
 import { exportClassGradesToSheet } from "@/lib/sheets-export.functions";
 import { TEACHER_LABEL } from "@/lib/kodesh-subjects";
 import { buildClassReportPdf } from "@/lib/pdf/class-report-pdf";
@@ -38,22 +39,45 @@ function monthAgo() {
 function ReportsPage() {
   const { classId } = Route.useParams();
   const build = useServerFn(buildClassReport);
+  const loadGroups = useServerFn(listGroups);
   const exportSheet = useServerFn(exportClassGradesToSheet);
   const [sheetBusy, setSheetBusy] = useState(false);
   const [from, setFrom] = useState(monthAgo());
   const [to, setTo] = useState(today());
   const [studentFilter, setStudentFilter] = useState<string>("all");
+  const [groupFilter, setGroupFilter] = useState<string>("all");
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["report", classId, from, to],
     queryFn: () => build({ data: { classId, from, to } }),
   });
 
+  const { data: groupsData } = useQuery({
+    queryKey: ["groups", classId],
+    queryFn: () => loadGroups({ data: { classId } }),
+  });
+
+  const groupMemberIds = useMemo(() => {
+    if (groupFilter === "all" || !groupsData) return null;
+    return new Set(
+      groupsData.memberships
+        .filter((m) => m.group_id === groupFilter)
+        .map((m) => m.student_id),
+    );
+  }, [groupFilter, groupsData]);
+
+  const groupName = useMemo(
+    () => groupsData?.groups.find((g) => g.id === groupFilter)?.name ?? null,
+    [groupsData, groupFilter],
+  );
+
   const filtered = useMemo(() => {
     if (!data) return [];
-    if (studentFilter === "all") return data.students;
-    return data.students.filter((s) => s.id === studentFilter);
-  }, [data, studentFilter]);
+    let list = data.students;
+    if (groupMemberIds) list = list.filter((s) => groupMemberIds.has(s.id));
+    if (studentFilter !== "all") list = list.filter((s) => s.id === studentFilter);
+    return list;
+  }, [data, studentFilter, groupMemberIds]);
 
   const shareText = useMemo(() => {
     if (!data) return "";
@@ -91,10 +115,8 @@ function ReportsPage() {
   const onPdf = async () => {
     if (!data) { toast.error("אין נתונים"); return; }
     try {
-      const filtered = studentFilter === "all"
-        ? data
-        : { ...data, students: data.students.filter((s) => s.id === studentFilter) };
-      const { blob, filename } = await buildClassReportPdf({ report: filtered });
+      const scoped = { ...data, students: filtered };
+      const { blob, filename } = await buildClassReportPdf({ report: scoped });
       downloadPdfBlob(blob, filename);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "ייצוא ה-PDF נכשל");
@@ -142,12 +164,24 @@ function ReportsPage() {
             <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
           </div>
           <div className="min-w-[200px]">
+            <Label>קבוצה</Label>
+            <Select value={groupFilter} onValueChange={(v) => { setGroupFilter(v); setStudentFilter("all"); }}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">כל הקבוצות</SelectItem>
+                {(groupsData?.groups ?? []).map((g) => (
+                  <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="min-w-[200px]">
             <Label>תלמיד</Label>
             <Select value={studentFilter} onValueChange={setStudentFilter}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">כל הכיתה</SelectItem>
-                {(data?.students ?? []).map((s) => (
+                {(groupMemberIds ? (data?.students ?? []).filter((s) => groupMemberIds.has(s.id)) : (data?.students ?? [])).map((s) => (
                   <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                 ))}
               </SelectContent>
@@ -173,6 +207,8 @@ function ReportsPage() {
           <h1 className="font-display text-3xl font-bold">דוח כיתה — {data?.class.name ?? "..."}</h1>
           <p className="mt-1 text-sm text-muted-foreground font-mono-tabular">
             תקופה: {from} — {to} · הופק: {today()} · {TEACHER_LABEL} המלמד
+            {groupName ? ` · קבוצה: ${groupName}` : ""}
+            {` · ${filtered.length} תלמידים`}
           </p>
         </header>
 
