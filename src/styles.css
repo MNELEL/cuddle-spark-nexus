@@ -417,16 +417,24 @@
   }
 
   /* הסתרת כל מה שאינו הדוח: ניווט, סיידבר, כותרות עליונות, כפתורים צפים */
-  body:has(.report-print-area) header,
-  body:has(.report-print-area) footer,
-  body:has(.report-print-area) nav,
-  body:has(.report-print-area) aside,
+  body:has(.report-print-area) header:not(.report-print-area header),
+  body:has(.report-print-area) footer:not(.report-print-area footer),
+  body:has(.report-print-area) nav:not(.report-print-area nav),
+  body:has(.report-print-area) aside:not(.report-print-area aside),
   body:has(.report-print-area) [data-sidebar],
   body:has(.report-print-area) [data-slot="sidebar"],
   body:has(.report-print-area) [data-slot="toaster"],
   body:has(.report-print-area) [data-radix-popper-content-wrapper],
   body:has(.report-print-area) .no-print {
     display: none !important;
+  }
+
+  /* רקע לבן לכל העוטפים של אזור הדוח */
+  body:has(.report-print-area),
+  body:has(.report-print-area) #app,
+  body:has(.report-print-area) main,
+  body:has(.report-print-area) main * {
+    background-color: #fff !important;
   }
 
   /* אזור הדוח בלבד — פרוס על כל רוחב העמוד */
@@ -470,6 +478,12 @@
   .report-print-area [data-slot="badge"] {
     border: 1px solid #999 !important;
     background: #fff !important;
+  }
+  .report-print-area [data-slot="badge"],
+  .report-print-area [class*="badge"] {
+    border: 1px solid #999 !important;
+    background: #fff !important;
+    color: #000 !important;
   }
 
   .report-print-area thead {
