@@ -37,6 +37,7 @@ import { Route as AuthenticatedMapRouteImport } from './routes/_authenticated.ma
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated.onboarding'
 import { Route as AuthenticatedOverviewRouteImport } from './routes/_authenticated.overview'
 import { Route as AuthenticatedQuestionsRouteImport } from './routes/_authenticated.questions'
+import { Route as AuthenticatedScheduleRulesRouteImport } from './routes/_authenticated.schedule-rules'
 import { Route as AuthenticatedSoundBoardRouteImport } from './routes/_authenticated.sound-board'
 import { Route as AuthenticatedSoundTestRouteImport } from './routes/_authenticated.sound-test'
 import { Route as AuthenticatedToolkitRouteImport } from './routes/_authenticated.toolkit'
@@ -241,6 +242,12 @@ const AuthenticatedQuestionsRoute = AuthenticatedQuestionsRouteImport.update({
   path: '/questions',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedScheduleRulesRoute =
+  AuthenticatedScheduleRulesRouteImport.update({
+    id: '/schedule-rules',
+    path: '/schedule-rules',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedSoundBoardRoute = AuthenticatedSoundBoardRouteImport.update({
   id: '/sound-board',
   path: '/sound-board',
@@ -605,6 +612,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/overview': typeof AuthenticatedOverviewRoute
   '/questions': typeof AuthenticatedQuestionsRoute
+  '/schedule-rules': typeof AuthenticatedScheduleRulesRoute
   '/sound-board': typeof AuthenticatedSoundBoardRoute
   '/sound-test': typeof AuthenticatedSoundTestRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
@@ -689,6 +697,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/overview': typeof AuthenticatedOverviewRoute
   '/questions': typeof AuthenticatedQuestionsRoute
+  '/schedule-rules': typeof AuthenticatedScheduleRulesRoute
   '/sound-board': typeof AuthenticatedSoundBoardRoute
   '/sound-test': typeof AuthenticatedSoundTestRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
@@ -778,6 +787,7 @@ export interface FileRoutesById {
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/overview': typeof AuthenticatedOverviewRoute
   '/_authenticated/questions': typeof AuthenticatedQuestionsRoute
+  '/_authenticated/schedule-rules': typeof AuthenticatedScheduleRulesRoute
   '/_authenticated/sound-board': typeof AuthenticatedSoundBoardRoute
   '/_authenticated/sound-test': typeof AuthenticatedSoundTestRoute
   '/_authenticated/toolkit': typeof AuthenticatedToolkitRoute
@@ -868,6 +878,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/overview'
     | '/questions'
+    | '/schedule-rules'
     | '/sound-board'
     | '/sound-test'
     | '/toolkit'
@@ -952,6 +963,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/overview'
     | '/questions'
+    | '/schedule-rules'
     | '/sound-board'
     | '/sound-test'
     | '/toolkit'
@@ -1040,6 +1052,7 @@ export interface FileRouteTypes {
     | '/_authenticated/onboarding'
     | '/_authenticated/overview'
     | '/_authenticated/questions'
+    | '/_authenticated/schedule-rules'
     | '/_authenticated/sound-board'
     | '/_authenticated/sound-test'
     | '/_authenticated/toolkit'
@@ -1323,6 +1336,13 @@ declare module '@tanstack/react-router' {
       path: '/questions'
       fullPath: '/questions'
       preLoaderRoute: typeof AuthenticatedQuestionsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/schedule-rules': {
+      id: '/_authenticated/schedule-rules'
+      path: '/schedule-rules'
+      fullPath: '/schedule-rules'
+      preLoaderRoute: typeof AuthenticatedScheduleRulesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/sound-board': {
@@ -1766,6 +1786,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedOverviewRoute: typeof AuthenticatedOverviewRoute
   AuthenticatedQuestionsRoute: typeof AuthenticatedQuestionsRoute
+  AuthenticatedScheduleRulesRoute: typeof AuthenticatedScheduleRulesRoute
   AuthenticatedSoundBoardRoute: typeof AuthenticatedSoundBoardRoute
   AuthenticatedSoundTestRoute: typeof AuthenticatedSoundTestRoute
   AuthenticatedToolkitRoute: typeof AuthenticatedToolkitRoute
@@ -1809,6 +1830,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedOverviewRoute: AuthenticatedOverviewRoute,
   AuthenticatedQuestionsRoute: AuthenticatedQuestionsRoute,
+  AuthenticatedScheduleRulesRoute: AuthenticatedScheduleRulesRoute,
   AuthenticatedSoundBoardRoute: AuthenticatedSoundBoardRoute,
   AuthenticatedSoundTestRoute: AuthenticatedSoundTestRoute,
   AuthenticatedToolkitRoute: AuthenticatedToolkitRoute,
