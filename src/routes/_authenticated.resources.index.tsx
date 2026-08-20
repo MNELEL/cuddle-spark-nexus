@@ -1148,6 +1148,15 @@ function ResourceCard({
             <Download className="h-2.5 w-2.5" /> הועלה כקובץ
           </Badge>
         )}
+        {resource.content?.ai_understanding?.summary && (
+          <Badge
+            variant="outline"
+            className="gap-0.5 border-emerald-500/40 bg-emerald-500/10 text-[10px] text-emerald-700 dark:text-emerald-300"
+            title="החומר עבר ניתוח וסיווג אוטומטי עם AI"
+          >
+            <Sparkles className="h-2.5 w-2.5" /> נותח ב-AI
+          </Badge>
+        )}
         {resource.subject && <Badge variant="secondary" className="text-[10px]">{resource.subject}</Badge>}
         {resource.grade_level && <Badge variant="secondary" className="text-[10px]">כיתה {resource.grade_level}</Badge>}
         {!compact && usageCount > 0 && (
