@@ -13,12 +13,14 @@ export type ClassReportPdfArgs = {
   report: ClassReport;
   teacherName?: string;
   schoolName?: string;
+  /** Optional student-group filter shown as a subtitle. */
+  groupName?: string | null;
 };
 
 export type ClassReportPdfResult = { blob: Blob; filename: string };
 
 export async function buildClassReportPdf(args: ClassReportPdfArgs): Promise<ClassReportPdfResult> {
-  const { report, teacherName, schoolName } = args;
+  const { report, teacherName, schoolName, groupName } = args;
   await ensurePdfBrandLoaded();
   const hd = await createHebrewDoc();
 
@@ -31,6 +33,7 @@ export async function buildClassReportPdf(args: ClassReportPdfArgs): Promise<Cla
 
   drawBrandHeader(hd, {
     title: `דוח כיתה — ${report.class.name}`,
+    subtitle: groupName ? `קבוצה: ${groupName}` : undefined,
     meta,
   });
 
