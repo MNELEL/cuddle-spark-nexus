@@ -18,6 +18,7 @@ import { exportClassGradesToSheet } from "@/lib/sheets-export.functions";
 import { TEACHER_LABEL } from "@/lib/kodesh-subjects";
 import { buildClassReportPdf } from "@/lib/pdf/class-report-pdf";
 import { downloadPdfBlob } from "@/lib/pdf/pdf-builder";
+import { useBrand } from "@/hooks/use-brand";
 
 export const Route = createFileRoute("/_authenticated/reports/$classId")({
   head: () => ({
@@ -38,6 +39,7 @@ function monthAgo() {
 
 function ReportsPage() {
   const { classId } = Route.useParams();
+  const { brand } = useBrand();
   const build = useServerFn(buildClassReport);
   const loadGroups = useServerFn(listGroups);
   const exportSheet = useServerFn(exportClassGradesToSheet);
@@ -114,9 +116,15 @@ function ReportsPage() {
   };
   const onPdf = async () => {
     if (!data) { toast.error("אין נתונים"); return; }
+    if (filtered.length === 0) { toast.error("אין תלמידים בסינון הנוכחי — שנה את הטווח או את הקבוצה"); return; }
     try {
       const scoped = { ...data, students: filtered };
-      const { blob, filename } = await buildClassReportPdf({ report: scoped });
+      const { blob, filename } = await buildClassReportPdf({
+        report: scoped,
+        schoolName: brand.school_name || undefined,
+        teacherName: brand.teacher_name_default || undefined,
+        groupName: groupName,
+      });
       downloadPdfBlob(blob, filename);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "ייצוא ה-PDF נכשל");

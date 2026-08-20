@@ -1148,6 +1148,15 @@ function ResourceCard({
             <Download className="h-2.5 w-2.5" /> הועלה כקובץ
           </Badge>
         )}
+        {resource.content?.ai_understanding?.summary && (
+          <Badge
+            variant="outline"
+            className="gap-0.5 border-emerald-500/40 bg-emerald-500/10 text-[10px] text-emerald-700 dark:text-emerald-300"
+            title="החומר עבר ניתוח וסיווג אוטומטי עם AI"
+          >
+            <Sparkles className="h-2.5 w-2.5" /> נותח ב-AI
+          </Badge>
+        )}
         {resource.subject && <Badge variant="secondary" className="text-[10px]">{resource.subject}</Badge>}
         {resource.grade_level && <Badge variant="secondary" className="text-[10px]">כיתה {resource.grade_level}</Badge>}
         {!compact && usageCount > 0 && (
@@ -1678,6 +1687,7 @@ function AIGeneratorDialog({
   const [resourceType, setResourceType] = useState<ResourceType>("worksheet");
   const [subject, setSubject] = useState("");
   const [gradeLevel, setGradeLevel] = useState("");
+  const [errors, setErrors] = useState<string[]>([]);
 
   // Prefill from source resource when opening as a "variant"
   useEffect(() => {
@@ -1716,6 +1726,26 @@ function AIGeneratorDialog({
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
   });
+
+  /** All required fields must be filled before the request is sent. */
+  const validate = (): string[] => {
+    const list: string[] = [];
+    if (!resourceType) list.push("יש לבחור סוג חומר");
+    if (!subject.trim()) list.push("יש לבחור מקצוע");
+    if (!gradeLevel.trim()) list.push("יש לבחור כיתה");
+    if (prompt.trim().length < 10) list.push("יש לתאר את החומר הרצוי (10 תווים לפחות)");
+    return list;
+  };
+
+  const onSubmit = () => {
+    const list = validate();
+    setErrors(list);
+    if (list.length) {
+      toast.error("לא ניתן ליצור את הדוח — יש להשלים את השדות החסרים");
+      return;
+    }
+    m.mutate();
+  };
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
@@ -1769,10 +1799,23 @@ function AIGeneratorDialog({
               onChange={(e) => setPrompt(e.target.value)}
             />
           </div>
+          {errors.length > 0 && (
+            <div role="alert" className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
+              <div className="font-semibold">חסרים פרטים ליצירת החומר:</div>
+              <ul className="mt-1 list-disc space-y-0.5 pe-4">
+                {errors.map((e) => <li key={e}>{e}</li>)}
+              </ul>
+            </div>
+          )}
+          {m.isError && (
+            <div role="alert" className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
+              הבקשה נכשלה: {m.error instanceof Error ? m.error.message : "שגיאה לא ידועה"} — נסה שוב או שנה את התיאור.
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>ביטול</Button>
-          <Button disabled={prompt.trim().length < 5 || m.isPending} onClick={() => m.mutate()}>
+          <Button disabled={m.isPending} onClick={onSubmit}>
             {m.isPending ? <Loader2 className="ms-1 h-4 w-4 animate-spin" /> : <Sparkles className="ms-1 h-4 w-4" />}
             צור
           </Button>
