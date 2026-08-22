@@ -19,6 +19,7 @@ import { TEACHER_LABEL } from "@/lib/kodesh-subjects";
 import { buildClassReportPdf } from "@/lib/pdf/class-report-pdf";
 import { downloadPdfBlob } from "@/lib/pdf/pdf-builder";
 import { useBrand } from "@/hooks/use-brand";
+import { PdfPreviewModal } from "@/components/pdf-preview-modal";
 
 export const Route = createFileRoute("/_authenticated/reports/$classId")({
   head: () => ({
