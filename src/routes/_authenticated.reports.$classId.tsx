@@ -116,18 +116,30 @@ function ReportsPage() {
       setSheetBusy(false);
     }
   };
+  /** בניית ה-PDF עם הסינון והמיתוג הנוכחיים — משותפת להורדה ולתצוגה מקדימה. */
+  const buildPdf = async () => {
+    if (!data) throw new Error("אין נתונים");
+    if (filtered.length === 0) throw new Error("אין תלמידים בסינון הנוכחי — שנה את הטווח או את הקבוצה");
+    const scoped = { ...data, students: filtered };
+    return buildClassReportPdf({
+      report: scoped,
+      schoolName: brand.school_name || undefined,
+      teacherName: brand.teacher_name_default || undefined,
+      groupName: groupName,
+    });
+  };
   const onPdf = async () => {
-    if (!data) { toast.error("אין נתונים"); return; }
-    if (filtered.length === 0) { toast.error("אין תלמידים בסינון הנוכחי — שנה את הטווח או את הקבוצה"); return; }
     try {
-      const scoped = { ...data, students: filtered };
-      const { blob, filename } = await buildClassReportPdf({
-        report: scoped,
-        schoolName: brand.school_name || undefined,
-        teacherName: brand.teacher_name_default || undefined,
-        groupName: groupName,
-      });
+      const { blob, filename } = await buildPdf();
       downloadPdfBlob(blob, filename);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "ייצוא ה-PDF נכשל");
+    }
+  };
+  const onPreview = async () => {
+    try {
+      await buildPdf(); // ולידציה מוקדמת — תצוגה מקדימה תיפתח רק כשיש נתונים
+      setPreviewOpen(true);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "ייצוא ה-PDF נכשל");
     }
