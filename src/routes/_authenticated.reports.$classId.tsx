@@ -301,6 +301,12 @@ function ReportsPage() {
         </div>
       </div>
 
+      <PdfPreviewModal
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        build={buildPdf}
+        title={`דוח כיתה — ${data?.class.name ?? ""}`}
+      />
     </div>
   );
 }
