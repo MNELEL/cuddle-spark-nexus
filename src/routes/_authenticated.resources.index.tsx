@@ -10,7 +10,7 @@ import {
   ChevronRight, ChevronLeft,
 } from "lucide-react";
 import { Rows3, LayoutGrid, Image as ImageIcon } from "lucide-react";
-import { UploadCloud, FileArchive } from "lucide-react";
+import { UploadCloud, FileArchive, HardDrive } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
