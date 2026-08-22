@@ -19,6 +19,7 @@ import { TEACHER_LABEL } from "@/lib/kodesh-subjects";
 import { buildClassReportPdf } from "@/lib/pdf/class-report-pdf";
 import { downloadPdfBlob } from "@/lib/pdf/pdf-builder";
 import { useBrand } from "@/hooks/use-brand";
+import { PdfPreviewModal } from "@/components/pdf-preview-modal";
 
 export const Route = createFileRoute("/_authenticated/reports/$classId")({
   head: () => ({
@@ -48,6 +49,7 @@ function ReportsPage() {
   const [to, setTo] = useState(today());
   const [studentFilter, setStudentFilter] = useState<string>("all");
   const [groupFilter, setGroupFilter] = useState<string>("all");
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["report", classId, from, to],
@@ -114,18 +116,30 @@ function ReportsPage() {
       setSheetBusy(false);
     }
   };
+  /** בניית ה-PDF עם הסינון והמיתוג הנוכחיים — משותפת להורדה ולתצוגה מקדימה. */
+  const buildPdf = async () => {
+    if (!data) throw new Error("אין נתונים");
+    if (filtered.length === 0) throw new Error("אין תלמידים בסינון הנוכחי — שנה את הטווח או את הקבוצה");
+    const scoped = { ...data, students: filtered };
+    return buildClassReportPdf({
+      report: scoped,
+      schoolName: brand.school_name || undefined,
+      teacherName: brand.teacher_name_default || undefined,
+      groupName: groupName,
+    });
+  };
   const onPdf = async () => {
-    if (!data) { toast.error("אין נתונים"); return; }
-    if (filtered.length === 0) { toast.error("אין תלמידים בסינון הנוכחי — שנה את הטווח או את הקבוצה"); return; }
     try {
-      const scoped = { ...data, students: filtered };
-      const { blob, filename } = await buildClassReportPdf({
-        report: scoped,
-        schoolName: brand.school_name || undefined,
-        teacherName: brand.teacher_name_default || undefined,
-        groupName: groupName,
-      });
+      const { blob, filename } = await buildPdf();
       downloadPdfBlob(blob, filename);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "ייצוא ה-PDF נכשל");
+    }
+  };
+  const onPreview = async () => {
+    try {
+      await buildPdf(); // ולידציה מוקדמת — תצוגה מקדימה תיפתח רק כשיש נתונים
+      setPreviewOpen(true);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "ייצוא ה-PDF נכשל");
     }
@@ -201,6 +215,7 @@ function ReportsPage() {
             <Button variant="outline" onClick={onEmail}><Mail className="ms-1 h-4 w-4" /> מייל</Button>
             <Button variant="outline" onClick={onWhatsApp}><MessageCircle className="ms-1 h-4 w-4" /> וואטסאפ</Button>
             <Button variant="outline" onClick={onPdf}><FileDown className="ms-1 h-4 w-4" /> הורד PDF</Button>
+            <Button variant="outline" onClick={onPreview}><FileDown className="ms-1 h-4 w-4" /> תצוגה מקדימה</Button>
             <Button variant="outline" onClick={onSheets} disabled={sheetBusy}>
               {sheetBusy ? <Loader2 className="ms-1 h-4 w-4 animate-spin" /> : <Sheet className="ms-1 h-4 w-4" />}
               ייצוא ל-Google Sheets
@@ -286,6 +301,12 @@ function ReportsPage() {
         </div>
       </div>
 
+      <PdfPreviewModal
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        build={buildPdf}
+        title={`דוח כיתה — ${data?.class.name ?? ""}`}
+      />
     </div>
   );
 }

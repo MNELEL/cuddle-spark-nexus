@@ -285,6 +285,8 @@ function WeeklySchedulePage() {
         </p>
       </div>
 
+      <RecurringRulesSummary classId={classId} />
+
       <Tabs value={view} onValueChange={setView}>
         <TabsList className="flex-wrap">
           <TabsTrigger value="day">יומי</TabsTrigger>

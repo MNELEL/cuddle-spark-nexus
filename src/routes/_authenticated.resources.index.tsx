@@ -10,7 +10,7 @@ import {
   ChevronRight, ChevronLeft,
 } from "lucide-react";
 import { Rows3, LayoutGrid, Image as ImageIcon } from "lucide-react";
-import { UploadCloud, FileArchive } from "lucide-react";
+import { UploadCloud, FileArchive, HardDrive } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,6 +50,7 @@ import { analyzeExistingResource, getResourceUsageCounts } from "@/lib/resource-
 import { getResourceDownloadLinks } from "@/lib/library-extras.functions";
 import { downloadResourcesZip } from "@/lib/zip-download";
 import { LibraryBulkUpload } from "@/components/library-bulk-upload";
+import { GoogleDrivePanel } from "@/components/drive/google-drive-panel";
 import { ResourceThumb } from "@/components/resource-thumb";
 import { Wand2 } from "lucide-react";
 import { WeeklyPaceCard } from "@/components/weekly-pace-card";
@@ -188,6 +189,7 @@ function ResourcesPage() {
   const [pageSize, setPageSize] = useState(24);
   const [pageIndex, setPageIndex] = useState(0);
   const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
+  const [driveOpen, setDriveOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
 
@@ -444,6 +446,9 @@ function ResourcesPage() {
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setBulkUploadOpen(true)}>
                 <UploadCloud className="ms-1 h-4 w-4" /> העלאת כמה קבצים יחד (OCR אוטומטי)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setDriveOpen(true)}>
+                <HardDrive className="ms-1 h-4 w-4" /> ייבוא תיקייה מ-Google Drive
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link to="/resources/upload-log">
@@ -1031,6 +1036,7 @@ function ResourcesPage() {
       />
 
       <LibraryBulkUpload open={bulkUploadOpen} onClose={() => setBulkUploadOpen(false)} />
+      <GoogleDrivePanel open={driveOpen} onClose={() => setDriveOpen(false)} />
 
       {/* מחולל סיכום מותאם */}
       <Dialog open={summaryOpen} onOpenChange={setSummaryOpen}>

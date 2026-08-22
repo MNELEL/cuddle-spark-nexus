@@ -14,7 +14,7 @@ import {
 import {
   Play, Pause, RotateCcw, Shuffle, ChevronRight, ChevronLeft, Mic, MicOff, Wrench, Settings, BellRing,
   Music, Trophy, Dices, ClipboardList, ScanText, Wand2, Award, TrendingUp, FileText, Palette, Mail,
-  Globe2, CalendarDays, LineChart, BookOpen, Library, MessageSquare, Sparkles, Building2, ShieldCheck, Map, LayoutDashboard,
+  Globe2, CalendarDays, CalendarClock, LineChart, BookOpen, Library, MessageSquare, Sparkles, Building2, ShieldCheck, Map, LayoutDashboard,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToolAccess } from "@/hooks/use-tool-access";
@@ -121,7 +121,7 @@ function ToolkitPage() {
 
 /* ---------- Tool link cards ---------- */
 const ICONS: Record<string, typeof Wrench> = {
-  BellRing, Music, CalendarDays, Globe2, Trophy, Dices, MessageSquare, ClipboardList, LineChart,
+  BellRing, Music, CalendarDays, CalendarClock, Globe2, Trophy, Dices, MessageSquare, ClipboardList, LineChart,
   Library, Wand2, ScanText, TrendingUp, Award, Palette, FileText, Sparkles, Mail, Settings,
   Building2, ShieldCheck, BookOpen, Wrench, Map, LayoutDashboard,
 };
