@@ -49,6 +49,7 @@ function ReportsPage() {
   const [to, setTo] = useState(today());
   const [studentFilter, setStudentFilter] = useState<string>("all");
   const [groupFilter, setGroupFilter] = useState<string>("all");
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["report", classId, from, to],
