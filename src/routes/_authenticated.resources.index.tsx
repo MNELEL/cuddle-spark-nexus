@@ -50,6 +50,7 @@ import { analyzeExistingResource, getResourceUsageCounts } from "@/lib/resource-
 import { getResourceDownloadLinks } from "@/lib/library-extras.functions";
 import { downloadResourcesZip } from "@/lib/zip-download";
 import { LibraryBulkUpload } from "@/components/library-bulk-upload";
+import { GoogleDrivePanel } from "@/components/drive/google-drive-panel";
 import { ResourceThumb } from "@/components/resource-thumb";
 import { Wand2 } from "lucide-react";
 import { WeeklyPaceCard } from "@/components/weekly-pace-card";
