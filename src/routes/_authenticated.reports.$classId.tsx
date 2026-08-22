@@ -215,6 +215,7 @@ function ReportsPage() {
             <Button variant="outline" onClick={onEmail}><Mail className="ms-1 h-4 w-4" /> מייל</Button>
             <Button variant="outline" onClick={onWhatsApp}><MessageCircle className="ms-1 h-4 w-4" /> וואטסאפ</Button>
             <Button variant="outline" onClick={onPdf}><FileDown className="ms-1 h-4 w-4" /> הורד PDF</Button>
+            <Button variant="outline" onClick={onPreview}><FileDown className="ms-1 h-4 w-4" /> תצוגה מקדימה</Button>
             <Button variant="outline" onClick={onSheets} disabled={sheetBusy}>
               {sheetBusy ? <Loader2 className="ms-1 h-4 w-4 animate-spin" /> : <Sheet className="ms-1 h-4 w-4" />}
               ייצוא ל-Google Sheets
