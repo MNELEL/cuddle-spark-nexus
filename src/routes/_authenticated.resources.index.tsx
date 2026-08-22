@@ -189,6 +189,7 @@ function ResourcesPage() {
   const [pageSize, setPageSize] = useState(24);
   const [pageIndex, setPageIndex] = useState(0);
   const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
+  const [driveOpen, setDriveOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
 
