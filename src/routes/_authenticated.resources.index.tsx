@@ -1036,6 +1036,7 @@ function ResourcesPage() {
       />
 
       <LibraryBulkUpload open={bulkUploadOpen} onClose={() => setBulkUploadOpen(false)} />
+      <GoogleDrivePanel open={driveOpen} onClose={() => setDriveOpen(false)} />
 
       {/* מחולל סיכום מותאם */}
       <Dialog open={summaryOpen} onOpenChange={setSummaryOpen}>
