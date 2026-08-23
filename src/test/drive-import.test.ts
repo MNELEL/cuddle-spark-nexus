@@ -1,42 +1,42 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import { partitionDriveFiles, type DriveFile } from "@/lib/drive.server";
-
-const file = (over: Partial<DriveFile>): DriveFile => ({
-  id: "f1",
-  name: "doc.pdf",
-  mimeType: "application/pdf",
-  size: 1024,
-  modifiedTime: "2026-08-01T10:00:00Z",
-  isFolder: false,
-  ...over,
-});
+import { partitionDriveFiles, driveFileName, driveFileMime } from "@/lib/drive.server";
 
 describe("partitionDriveFiles", () => {
-  it("sorts folders first, then files, then skipped (unsupported)", () => {
-    const { folders, files, skipped } = partitionDriveFiles([
-      file({ id: "a", name: "a.xyz", mimeType: "application/octet-stream" }),
-      file({ id: "b", name: "folder", mimeType: "application/vnd.google-apps.folder", isFolder: true }),
-      file({ id: "c", name: "c.pdf" }),
+  it("splits folders from files and sorts both alphabetically", () => {
+    const { folders, files } = partitionDriveFiles([
+      { id: "a", name: "ז.pdf", mimeType: "application/pdf", size: "1024" },
+      { id: "b", name: "תיקייה", mimeType: "application/vnd.google-apps.folder" },
+      { id: "c", name: "א.pdf", mimeType: "application/pdf", size: "2048" },
     ]);
     expect(folders.map((f) => f.id)).toEqual(["b"]);
-    expect(files.map((f) => f.id)).toEqual(["c"]);
-    expect(skipped.map((f) => f.id)).toEqual(["a"]);
+    expect(files.map((f) => f.id)).toEqual(["c", "a"]);
   });
 
-  it("keeps native Google docs as importable (exported server-side)", () => {
-    const { files } = partitionDriveFiles([
-      file({ id: "g", mimeType: "application/vnd.google-apps.document" }),
-    ]);
-    expect(files.map((f) => f.id)).toEqual(["g"]);
+  it("returns empty lists for an empty folder", () => {
+    const { folders, files } = partitionDriveFiles([]);
+    expect(folders).toEqual([]);
+    expect(files).toEqual([]);
+  });
+});
+
+describe("Google-native export mapping", () => {
+  it("exports Docs/Slides to PDF with an adjusted file name", () => {
+    const doc = { id: "g", name: "שיעור גמרא", mimeType: "application/vnd.google-apps.document" };
+    expect(driveFileMime(doc)).toBe("application/pdf");
+    expect(driveFileName(doc)).toBe("שיעור גמרא.pdf");
   });
 
-  it("skips empty folders and unsupported mime types", () => {
-    const { skipped } = partitionDriveFiles([
-      file({ id: "x", mimeType: "application/vnd.google-apps.shortcut" }),
-      file({ id: "y", mimeType: "image/png" }), // תמונות לא נתמכות בייבוא
-    ]);
-    expect(skipped).toHaveLength(2);
+  it("exports Sheets to xlsx", () => {
+    const sheet = { id: "s", name: "מעקב נוכחות", mimeType: "application/vnd.google-apps.spreadsheet" };
+    expect(driveFileMime(sheet)).toBe("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    expect(driveFileName(sheet)).toBe("מעקב נוכחות.xlsx");
+  });
+
+  it("passes regular files through unchanged", () => {
+    const pdf = { id: "p", name: "דף עבודה.pdf", mimeType: "application/pdf" };
+    expect(driveFileMime(pdf)).toBe("application/pdf");
+    expect(driveFileName(pdf)).toBe("דף עבודה.pdf");
   });
 });
 
