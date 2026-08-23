@@ -33,6 +33,7 @@ import { hebrewDayLabel, parashaForWeek } from "@/lib/parasha";
 import { printHtmlTable } from "@/lib/print-schedule";
 import { slotAllowed, timeLabel } from "@/lib/recurring-rules";
 import { RecurringRulesPanel } from "@/components/schedule/recurring-rules-panel";
+import { RecurringRulesSummary } from "@/components/schedule/recurring-rules-summary";
 
 export const Route = createFileRoute("/_authenticated/weekly-schedule/$classId")({
   component: WeeklySchedulePage,
