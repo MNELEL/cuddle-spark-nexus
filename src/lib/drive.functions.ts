@@ -35,7 +35,7 @@ export const importDriveFile = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<DriveImportResult> => {
     const f: DriveFile = { id: data.file.id, name: data.file.name, mimeType: data.file.mimeType, size: null, modifiedTime: null };
-    const { context: supabase, userId } = context;
+    const { supabase, userId } = context;
     try {
       const { bytes, name, mime } = await driveDownloadFile(f);
 
