@@ -79,8 +79,65 @@ export type ParentView = {
     recap_questions: { question: string; answer: string }[];
     weekly_riddle: string; weekly_riddle_answer: string;
     activities: string[];
+    /** Aggregate only — raw parent comments are never exposed to other parents. */
+    parent_feedbacks_summary: { avg: number; count: number };
   }[];
 };
+
+type StoredFeedback = { rating?: unknown; comment?: unknown; submitted_at?: unknown; student_id?: unknown };
+
+/** Average/count of the ratings stored in a bulletin's `parent_feedbacks` jsonb array. */
+function summarizeFeedbacks(raw: unknown): { avg: number; count: number } {
+  const rows = Array.isArray(raw) ? (raw as StoredFeedback[]) : [];
+  const ratings = rows
+    .map((r) => Number(r?.rating))
+    .filter((n) => Number.isFinite(n) && n >= 1 && n <= 5);
+  if (ratings.length === 0) return { avg: 0, count: 0 };
+  const sum = ratings.reduce((s, n) => s + n, 0);
+  return { avg: Math.round((sum / ratings.length) * 10) / 10, count: ratings.length };
+}
+
+/** Parent star feedback on a weekly bulletin, authorized by the share token. */
+export const submitBulletinFeedback = createServerFn({ method: "POST" })
+  .inputValidator((d) =>
+    z.object({
+      token: z.string().min(10).max(64),
+      bulletinId: z.string().uuid(),
+      rating: z.number().int().min(1).max(5),
+      comment: z.string().max(300).optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: t, error: te } = await supabaseAdmin
+      .from("parent_share_tokens").select("class_id,student_id,revoked").eq("token", data.token).maybeSingle();
+    if (te) { console.error("[DB Error]", te); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    if (!t || t.revoked) throw new Error("הקישור אינו פעיל");
+
+    // The bulletin must belong to the class the token was issued for.
+    const { data: bul, error: be } = await supabaseAdmin
+      .from("weekly_bulletins").select("id,parent_feedbacks")
+      .eq("id", data.bulletinId).eq("class_id", t.class_id).maybeSingle();
+    if (be) { console.error("[DB Error]", be); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    if (!bul) throw new Error("העלון אינו זמין");
+
+    const existing = Array.isArray(bul.parent_feedbacks) ? (bul.parent_feedbacks as unknown[]) : [];
+    const entry = {
+      rating: data.rating,
+      comment: data.comment?.trim() || null,
+      submitted_at: new Date().toISOString(),
+      student_id: t.student_id ?? null,
+    };
+    const { error: ue } = await supabaseAdmin
+      .from("weekly_bulletins")
+      .update({ parent_feedbacks: [...existing, entry] as never })
+      .eq("id", data.bulletinId);
+    if (ue) { console.error("[DB Error]", ue); throw new Error("הפעולה נכשלה. נסה שוב."); }
+
+    return { ok: true as const, summary: summarizeFeedbacks([...existing, entry]) };
+  });
+
 
 export const getParentView = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ token: z.string().min(10).max(64) }).parse(d))
