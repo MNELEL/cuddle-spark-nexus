@@ -91,6 +91,11 @@ function ParentPage() {
                       <div className="mt-1">{b.weekly_riddle}</div>
                     </div>
                   )}
+                  <BulletinFeedback
+                    token={token}
+                    bulletinId={b.id}
+                    summary={b.parent_feedbacks_summary}
+                  />
                 </CardContent>
               </Card>
             ))}
@@ -127,5 +132,84 @@ function Stat({ icon: Icon, label, value }: { icon: React.ComponentType<{ classN
       <div className="flex items-center gap-2 text-xs text-muted-foreground"><Icon className="h-4 w-4 text-amber" /> {label}</div>
       <div className="mt-1 font-display text-3xl font-bold">{value}</div>
     </CardContent></Card>
+  );
+}
+/** Star feedback form for one bulletin; swaps to a thank-you note after sending. */
+function BulletinFeedback({
+  token, bulletinId, summary,
+}: { token: string; bulletinId: string; summary: { avg: number; count: number } }) {
+  const submit = useServerFn(submitBulletinFeedback);
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  if (sent) {
+    return (
+      <div className="mt-3 rounded-2xl bg-amber/10 p-4 text-center">
+        <div className="flex items-center justify-center gap-2 font-display font-bold text-amber">
+          <CheckCircle2 className="h-5 w-5" aria-hidden="true" /> תודה על המשוב!
+        </div>
+        <p className="mt-1 text-sm text-muted-foreground">המשוב נשלח לרב המלמד.</p>
+      </div>
+    );
+  }
+
+  async function onSend() {
+    if (rating < 1) { toast.error("בחרו דירוג בכוכבים"); return; }
+    setSending(true);
+    try {
+      await submit({ data: { token, bulletinId, rating, comment: comment.trim() || undefined } });
+      setSent(true);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "שליחת המשוב נכשלה");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <div className="mt-3 space-y-2 rounded-2xl bg-amber/10 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="font-display text-sm font-bold">מה דעתכם על העלון?</span>
+        {summary.count > 0 && (
+          <span className="font-mono-tabular text-xs text-muted-foreground">
+            ממוצע {summary.avg} · {summary.count} משובים
+          </span>
+        )}
+      </div>
+      <div className="flex items-center gap-1" role="radiogroup" aria-label="דירוג בכוכבים">
+        {[1, 2, 3, 4, 5].map((n) => (
+          <button
+            key={n}
+            type="button"
+            role="radio"
+            aria-checked={rating === n}
+            aria-label={`${n} כוכבים`}
+            onClick={() => setRating(n)}
+            className="rounded p-0.5 transition-transform hover:scale-110"
+          >
+            <Star
+              className={`h-6 w-6 ${n <= rating ? "fill-amber text-amber" : "text-muted-foreground"}`}
+              aria-hidden="true"
+            />
+          </button>
+        ))}
+      </div>
+      <Textarea
+        value={comment}
+        onChange={(e) => setComment(e.target.value.slice(0, 300))}
+        maxLength={300}
+        rows={2}
+        placeholder="הערה קצרה (אופציונלי)"
+        className="bg-background text-sm"
+      />
+      <div className="flex items-center justify-between gap-2">
+        <span className="font-mono-tabular text-xs text-muted-foreground">{comment.length}/300</span>
+        <Button size="sm" onClick={onSend} disabled={sending || rating < 1}>
+          <Send className="ms-1 h-4 w-4" aria-hidden="true" /> שלח משוב
+        </Button>
+      </div>
+    </div>
   );
 }
