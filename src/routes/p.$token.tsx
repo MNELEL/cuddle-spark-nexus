@@ -1,10 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { getParentView } from "@/lib/parents.functions";
+import { useState } from "react";
+import { toast } from "sonner";
+import { getParentView, submitBulletinFeedback } from "@/lib/parents.functions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, GraduationCap, Calendar, BookOpen, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Trophy, GraduationCap, Calendar, BookOpen, Sparkles, Star, Send, CheckCircle2 } from "lucide-react";
+
 
 export const Route = createFileRoute("/p/$token")({
   component: ParentPage,
