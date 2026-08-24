@@ -186,7 +186,7 @@ export const getParentView = createServerFn({ method: "POST" })
           .gte("date", since).order("date", { ascending: false }).limit(120)
       : Promise.resolve({ data: [], error: null } as const);
     const bulQ = supabaseAdmin.from("weekly_bulletins")
-      .select("id,title,start_date,end_date,digest_summary,study_points,recap_questions,weekly_riddle,weekly_riddle_answer,activities")
+      .select("id,title,start_date,end_date,digest_summary,study_points,recap_questions,weekly_riddle,weekly_riddle_answer,activities,parent_feedbacks")
       .eq("class_id", t.class_id).order("start_date", { ascending: false }).limit(8);
 
     const [g, a, b, bul] = await Promise.all([gradesQ, attQ, behQ, bulQ]);
@@ -210,6 +210,7 @@ export const getParentView = createServerFn({ method: "POST" })
       weekly_riddle: r.weekly_riddle,
       weekly_riddle_answer: r.weekly_riddle_answer,
       activities: Array.isArray(r.activities) ? (r.activities as unknown[]).map(String) : [],
+      parent_feedbacks_summary: summarizeFeedbacks(r.parent_feedbacks),
     }));
 
     return {
