@@ -3065,6 +3065,7 @@ export type Database = {
           honored_students: Json
           id: string
           notes: string
+          parent_feedbacks: Json
           published_at: string | null
           recap_questions: Json
           special_notices: Json
@@ -3088,6 +3089,7 @@ export type Database = {
           honored_students?: Json
           id?: string
           notes?: string
+          parent_feedbacks?: Json
           published_at?: string | null
           recap_questions?: Json
           special_notices?: Json
@@ -3111,6 +3113,7 @@ export type Database = {
           honored_students?: Json
           id?: string
           notes?: string
+          parent_feedbacks?: Json
           published_at?: string | null
           recap_questions?: Json
           special_notices?: Json
