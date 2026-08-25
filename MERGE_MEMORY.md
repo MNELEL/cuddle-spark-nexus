@@ -691,3 +691,44 @@ Type-check עבר, MCP manifest נבנה מחדש בהצלחה. עלות: 1 קר
 ### מסקנה לפעם הבאה
 
 שוב אושר העיקרון הקבוע: 8 קומיטים לא-מתועדים תפסו על הפרש של כ-9 ימים בין ביקורים. יש להריץ `list_edits` בתחילת כל שיחה, גם כשה"עדכון אחרון" בראש הקובץ נראה תואם לתאריך הנוכחי.
+
+---
+
+## 19. דירוג כוכבים מהורים על העלון השבועי — סגירת פער Base44 #2 (23/8/2026, commit `e57646bc`)
+
+### רקע
+
+השוואה ישירה מול Base44 (`list_entity_schemas`, `WeeklyBulletin.parent_feedbacks`) אישרה שהפער היחיד שתועד בסעיף 2.1 ("קשר הורים... פער יחיד: אין דירוג/פידבק כוכבים") עדיין פתוח בפועל. אומת מול קוד חי (`src/lib/parents.functions.ts`, `src/routes/p.$token.tsx`) לפני תכנון — `getParentView` לא כלל שום שדה feedback.
+
+### מה בוצע
+
+- **Migration ידנית (הורצה על ידי מיכאל, לא דרך send_message):** `ALTER TABLE weekly_bulletins ADD COLUMN parent_feedbacks jsonb NOT NULL DEFAULT '[]'::jsonb;` — עמודה בודדת, בדפוס זהה לעמודות jsonb קיימות אחרות בטבלה (`study_points`, `recap_questions`, `activities`). ללא טבלה נפרדת, ללא RLS חדש (הטבלה כבר מוגנת דרך `owner_id`).
+- **`src/lib/parents.functions.ts`:**
+  - `submitBulletinFeedback(token, bulletinId, rating, comment?)` — server function ציבורית חדשה: מאמתת טוקן תקף ולא-revoked, מאמתת שה-`bulletinId` שייך ל-`class_id` של הטוקן, מוסיפה (append) רשומה `{ rating, comment, submitted_at, student_id }` למערך.
+  - `getParentView` מורחב: כל bulletin כולל כעת `parent_feedbacks_summary: { avg, count }` בלבד — **לא** את התוכן הגולמי (הגנת פרטיות בין הורים).
+- **`src/routes/p.$token.tsx`:** רכיב `BulletinFeedback` חדש מתחת לכל כרטיס עלון — 5 כוכבים לחיצים (`role="radiogroup"`, `aria-checked`, `aria-label`), textarea עד 300 תווים, מצב "תודה" אחרי שליחה (state מקומי, בלי רענון עמוד). עיצוב תואם לקיים (`bg-amber/10`, `font-display`, `rounded-2xl`).
+
+### אומת מול `get_diff` (לא רק תקציר טקסטואלי של הסוכן)
+
+הבנייה תאמה במדויק את התוכנית. **שני שינויים נוספים לא-מבוקשים** הוזרקו יחד עם הבנייה, לא קשורים למשוב הורים:
+1. `previewAuthStorage.ts` + שינוי ב-`client.ts` — נראה כמו עדכון תשתית פלטפורמה סטנדרטי (broker שיתוף session בין preview surfaces), לא קוד שהתבקש.
+2. `hebrew-months-rules.test.ts` (133 שורות, טסטים לניווט חודשים עברי + `recurring_rules`) — לא קשור לבקשה, כנראה נדבק מעבודה מקבילה אחרת בפרויקט (ראה סעיף 18.2, מסך `/schedule-rules`).
+
+**לביקור הבא:** לוודא ש-`previewAuthStorage` לא משפיע על טוקן ההורה (storage נפרד, כנראה בטוח), ולוודא ש-`hebrew-months-rules.test.ts` עובר ב-CI.
+
+### סטטוס מעודכן
+
+| פריט | סטטוס לפני | סטטוס אחרי 23/8 |
+|---|---|---|
+| דירוג/פידבק כוכבים מהורים (Base44 gap #2) | פתוח (מתועד בסעיף 2.1 מאז תחילת המסמך) | ✅ **סגור** (19) |
+
+**פערי Base44 שנותרו פתוחים לבדיקה (מתוך השוואת `list_entity_schemas` ב-23/8):**
+- `OrchestratorInsight` — מנוע briefing יומי (ניטור נוכחות/ציונים/איחורים/מעורבות הורים + המלצת פעולה). **הפער המשמעותי ביותר שנותר**, מתוכנן לסבב הבא.
+- `CertificateTemplate.analyzed_layout` — ניתוח תבנית תעודה אוטומטי מתמונה.
+- `SeatingArrangement.satisfaction_score` — ציון שביעות רצון מחושב למערך הושבה.
+- `TeacherMeeting` — יומן פגישות 1:1 מובנה בין הנהלה למורה (מעבר להיסטוריית שינויים שכבר קיימת, סעיף 18.3).
+- `StudentPortfolioItem.academic_year` — תיוג תיק תלמיד לפי שנה (ארכיון רב-שנתי, מעבר לפרופיל התלמיד הנוכחי).
+
+### מסקנה לפעם הבאה
+
+השוואה ישירה מול `list_entity_schemas` של Base44 (ולא רק קריאת MERGE_MEMORY) חשפה במדויק אילו שדות/entities אין להם מקבילה — שיטה יעילה יותר מניחוש. להמשיך להשתמש בה בסבבי השוואה עתידיים מול Base44.
