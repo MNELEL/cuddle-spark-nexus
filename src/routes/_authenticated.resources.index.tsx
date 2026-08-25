@@ -1733,13 +1733,11 @@ function AIGeneratorDialog({
     onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
   });
 
-  /** All required fields must be filled before the request is sent. */
+  /** Only the essentials are required; מקצוע/כיתה אופציונליים. */
   const validate = (): string[] => {
     const list: string[] = [];
     if (!resourceType) list.push("יש לבחור סוג חומר");
-    if (!subject.trim()) list.push("יש לבחור מקצוע");
-    if (!gradeLevel.trim()) list.push("יש לבחור כיתה");
-    if (prompt.trim().length < 10) list.push("יש לתאר את החומר הרצוי (10 תווים לפחות)");
+    if (prompt.trim().length < 5) list.push("יש לתאר את החומר הרצוי (5 תווים לפחות)");
     return list;
   };
 
@@ -1747,7 +1745,7 @@ function AIGeneratorDialog({
     const list = validate();
     setErrors(list);
     if (list.length) {
-      toast.error("לא ניתן ליצור את הדוח — יש להשלים את השדות החסרים");
+      toast.error("לא ניתן ליצור את החומר — יש להשלים את השדות החסרים");
       return;
     }
     m.mutate();
