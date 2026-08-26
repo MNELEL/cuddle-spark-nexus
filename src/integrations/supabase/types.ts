@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.17"
   }
   public: {
     Tables: {
@@ -1166,6 +1166,41 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_summaries: {
+        Row: {
+          class_id: string
+          created_at: string
+          created_by: string
+          date: string
+          id: string
+          notes: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          created_by?: string
+          date: string
+          id?: string
+          notes?: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          created_by?: string
+          date?: string
+          id?: string
+          notes?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_summaries_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       discipline_events: {
         Row: {
           category: string
@@ -1766,6 +1801,62 @@ export type Database = {
           user_agent?: string | null
         }
         Relationships: []
+      }
+      pending_updates: {
+        Row: {
+          class_id: string
+          created_at: string
+          created_by: string
+          id: string
+          intent: string
+          original_text: string | null
+          payload: Json
+          review_notes: string | null
+          reviewed_at: string | null
+          source: string
+          status: string
+          student_name: string | null
+          summary: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          intent: string
+          original_text?: string | null
+          payload?: Json
+          review_notes?: string | null
+          reviewed_at?: string | null
+          source?: string
+          status?: string
+          student_name?: string | null
+          summary: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          intent?: string
+          original_text?: string | null
+          payload?: Json
+          review_notes?: string | null
+          reviewed_at?: string | null
+          source?: string
+          status?: string
+          student_name?: string | null
+          summary?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pending_updates_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       poll_votes: {
         Row: {
@@ -2772,6 +2863,53 @@ export type Database = {
             columns: ["class_id"]
             isOneToOne: false
             referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teacher_notes: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          is_resolved: boolean
+          related_student_id: string | null
+          related_student_name: string | null
+          resolved_at: string | null
+          tags: string[]
+          type: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          is_resolved?: boolean
+          related_student_id?: string | null
+          related_student_name?: string | null
+          resolved_at?: string | null
+          tags?: string[]
+          type?: string
+          user_id?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_resolved?: boolean
+          related_student_id?: string | null
+          related_student_name?: string | null
+          resolved_at?: string | null
+          tags?: string[]
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teacher_notes_related_student_id_fkey"
+            columns: ["related_student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
             referencedColumns: ["id"]
           },
         ]
