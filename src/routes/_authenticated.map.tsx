@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Map as MapIcon, Check, School, Search, FileDown, Info, Loader2 } from "lucide-react";
+import { Map as MapIcon, Check, School, Search, FileDown, Info, Loader2, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
