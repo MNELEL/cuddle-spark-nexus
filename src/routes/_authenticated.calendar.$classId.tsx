@@ -300,7 +300,10 @@ function CalendarPage() {
           onSaved={() => { setFormOpen(false); setEditing(null); }}
         />
       )}
+
+      <AiAssistantDock classId={classId} />
     </div>
+
   );
 }
 
