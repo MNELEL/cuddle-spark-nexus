@@ -14,7 +14,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { HomeQuickNav } from "@/components/home-quick-nav";
 import { listClasses } from "@/lib/classes.functions";
 import { useToolAccess } from "@/hooks/use-tool-access";
-import { MAP_SECTIONS, type MapItem } from "@/lib/system-map";
+import { MAP_SECTIONS, buildSuperSections, type MapItem } from "@/lib/system-map";
 
 export const Route = createFileRoute("/_authenticated/map")({
   component: SystemMapPage,
