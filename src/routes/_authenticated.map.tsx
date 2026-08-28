@@ -56,6 +56,26 @@ function SystemMapPage() {
   }, [query, category, canSeeAdmin]);
 
   const resultCount = visible.reduce((a, s) => a + s.items.length, 0);
+  const superSections = useMemo(() => buildSuperSections(visible), [visible]);
+
+  // כשמחפשים או מסננים — ההורים של התוצאות נפתחים אוטומטית; אחרת הכול סגור.
+  const searching = query.trim() !== "" || category !== "all";
+  const [openSupersManual, setOpenSupersManual] = useState<string[]>([]);
+  const [openSubsManual, setOpenSubsManual] = useState<string[]>([]);
+  const autoSupers = searching ? superSections.map((s) => s.title) : [];
+  const autoSubs = searching
+    ? superSections.flatMap((sup) => sup.sections.map((s) => `${sup.title}|${s.title}`))
+    : [];
+  const openSupers = searching ? autoSupers : openSupersManual;
+  const openSubs = searching ? autoSubs : openSubsManual;
+
+  function toggleSuper(title: string) {
+    setOpenSupersManual((p) => (p.includes(title) ? p.filter((t) => t !== title) : [...p, title]));
+  }
+  function toggleSub(key: string) {
+    setOpenSubsManual((p) => (p.includes(key) ? p.filter((t) => t !== key) : [...p, key]));
+  }
+
 
   async function handleExport() {
     setExporting(true);
