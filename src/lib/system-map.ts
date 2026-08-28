@@ -14,6 +14,48 @@ export type MapItem = {
 
 export type MapSection = { title: string; items: MapItem[] };
 
+/** קטגוריית-על: אוסף של קטגוריות משנה (לפי הכותרות ב-MAP_SECTIONS). */
+export type MapSuperSection = { title: string; sectionTitles: string[] };
+
+/** קבוצות דו-רמתיות למסך /map — קטגוריית-על → קטגוריות משנה → מסכים. */
+export const MAP_SUPER_SECTIONS: MapSuperSection[] = [
+  { title: "ניהול הכיתה", sectionTitles: ["ניהול הכיתה יום־יום"] },
+  { title: "הערכה ומבחנים", sectionTitles: ["הערכה, ציונים ומבחנים"] },
+  { title: "מוטיבציה וקשר הורים", sectionTitles: ["מוטיבציה ופרסים", "קשר עם ההורים"] },
+  { title: "חומרי הוראה וכלים", sectionTitles: ["חומרי הוראה וכלי שיעור"] },
+  { title: "תלמידים וייבוא", sectionTitles: ["תלמידים, ייבוא ומעבר שנה"] },
+  { title: "הגדרות וניהול", sectionTitles: ["הגדרות ואבטחה"] },
+];
+
+/**
+ * בונה את המבנה הדו-רמתי מתוך רשימת קטגוריות (בדרך כלל אחרי סינון/חיפוש).
+ * קטגוריה שאינה משויכת לקטגוריית-על מקבלת קטגוריית-על משלה, כדי שלא ייעלמו מסכים.
+ */
+export function buildSuperSections(
+  sections: MapSection[],
+): { title: string; sections: MapSection[]; count: number }[] {
+  const byTitle = new Map(sections.map((s) => [s.title, s]));
+  const used = new Set<string>();
+  const out: { title: string; sections: MapSection[]; count: number }[] = [];
+
+  for (const sup of MAP_SUPER_SECTIONS) {
+    const subs: MapSection[] = [];
+    for (const t of sup.sectionTitles) {
+      const s = byTitle.get(t);
+      if (s && s.items.length > 0) { subs.push(s); used.add(t); }
+    }
+    if (subs.length > 0) {
+      out.push({ title: sup.title, sections: subs, count: subs.reduce((a, s) => a + s.items.length, 0) });
+    }
+  }
+  for (const s of sections) {
+    if (used.has(s.title) || s.items.length === 0) continue;
+    out.push({ title: s.title, sections: [s], count: s.items.length });
+  }
+  return out;
+}
+
+
 export const MAP_SECTIONS: MapSection[] = [
   {
     title: "ניהול הכיתה יום־יום",

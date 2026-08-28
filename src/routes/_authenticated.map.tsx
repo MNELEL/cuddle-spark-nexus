@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Map as MapIcon, Check, School, Search, FileDown, Info, Loader2 } from "lucide-react";
+import { Map as MapIcon, Check, School, Search, FileDown, Info, Loader2, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { HomeQuickNav } from "@/components/home-quick-nav";
 import { listClasses } from "@/lib/classes.functions";
 import { useToolAccess } from "@/hooks/use-tool-access";
-import { MAP_SECTIONS, type MapItem } from "@/lib/system-map";
+import { MAP_SECTIONS, buildSuperSections, type MapItem } from "@/lib/system-map";
 
 export const Route = createFileRoute("/_authenticated/map")({
   component: SystemMapPage,
@@ -56,6 +56,26 @@ function SystemMapPage() {
   }, [query, category, canSeeAdmin]);
 
   const resultCount = visible.reduce((a, s) => a + s.items.length, 0);
+  const superSections = useMemo(() => buildSuperSections(visible), [visible]);
+
+  // כשמחפשים או מסננים — ההורים של התוצאות נפתחים אוטומטית; אחרת הכול סגור.
+  const searching = query.trim() !== "" || category !== "all";
+  const [openSupersManual, setOpenSupersManual] = useState<string[]>([]);
+  const [openSubsManual, setOpenSubsManual] = useState<string[]>([]);
+  const autoSupers = searching ? superSections.map((s) => s.title) : [];
+  const autoSubs = searching
+    ? superSections.flatMap((sup) => sup.sections.map((s) => `${sup.title}|${s.title}`))
+    : [];
+  const openSupers = searching ? autoSupers : openSupersManual;
+  const openSubs = searching ? autoSubs : openSubsManual;
+
+  function toggleSuper(title: string) {
+    setOpenSupersManual((p) => (p.includes(title) ? p.filter((t) => t !== title) : [...p, title]));
+  }
+  function toggleSub(key: string) {
+    setOpenSubsManual((p) => (p.includes(key) ? p.filter((t) => t !== key) : [...p, key]));
+  }
+
 
   async function handleExport() {
     setExporting(true);
@@ -150,18 +170,65 @@ function SystemMapPage() {
           </Card>
         )}
 
-        {visible.map((section) => (
-          <Card key={section.title}>
-            <CardHeader className="pb-2">
-              <CardTitle as="h2" className="text-base">{section.title}</CardTitle>
-            </CardHeader>
-            <CardContent className="divide-y">
-              {section.items.map((it) => (
-                <MapRow key={`${section.title}-${it.to}-${it.label}`} item={it} classId={activeClassId} />
-              ))}
-            </CardContent>
-          </Card>
-        ))}
+        {superSections.map((sup) => {
+          const supOpen = openSupers.includes(sup.title);
+          return (
+            <Card key={sup.title}>
+              <CardHeader className="pb-2">
+                <button
+                  type="button"
+                  onClick={() => toggleSuper(sup.title)}
+                  aria-expanded={supOpen}
+                  className="flex w-full items-center justify-between gap-2 text-start"
+                >
+                  <CardTitle as="h2" className="text-base">{sup.title}</CardTitle>
+                  <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                    {sup.count} מסכים
+                    <ChevronDown
+                      className={`h-4 w-4 transition-transform ${supOpen ? "rotate-180" : ""}`}
+                      aria-hidden="true"
+                    />
+                  </span>
+                </button>
+              </CardHeader>
+              {supOpen && (
+                <CardContent className="space-y-2">
+                  {sup.sections.map((section) => {
+                    const subKey = `${sup.title}|${section.title}`;
+                    const subOpen = openSubs.includes(subKey);
+                    return (
+                      <div key={subKey} className="rounded-lg border">
+                        <button
+                          type="button"
+                          onClick={() => toggleSub(subKey)}
+                          aria-expanded={subOpen}
+                          className="flex w-full items-center justify-between gap-2 px-3 py-2 text-start"
+                        >
+                          <span className="text-sm font-medium">{section.title}</span>
+                          <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                            {section.items.length}
+                            <ChevronDown
+                              className={`h-4 w-4 transition-transform ${subOpen ? "rotate-180" : ""}`}
+                              aria-hidden="true"
+                            />
+                          </span>
+                        </button>
+                        {subOpen && (
+                          <div className="divide-y border-t px-3">
+                            {section.items.map((it) => (
+                              <MapRow key={`${section.title}-${it.to}-${it.label}`} item={it} classId={activeClassId} />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </CardContent>
+              )}
+            </Card>
+          );
+        })}
+
 
         <p className="text-center text-xs text-muted-foreground">
           לא מצאת משהו? כל הכלים מרוכזים גם ב<Link to="/toolkit" className="text-primary underline">ארגז הכלים</Link>.

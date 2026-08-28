@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { AiAssistantDock } from "@/components/ai-assistant-dock";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
@@ -374,7 +375,10 @@ function DailySummaryPage() {
           studentName={composer.name}
         />
       )}
+
+      <AiAssistantDock classId={classId} />
     </div>
+
   );
 }
 

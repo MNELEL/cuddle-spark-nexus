@@ -24,6 +24,9 @@ export const SITE_HOST = "hakitasheli.lovable.app";
 const ALLOWED_HOSTS = [
   SITE_HOST,
   "lovable.dev",
+  // שער המחברים של Lovable — נקרא מקוד צד-שרת בלבד (Drive / Sheets).
+  "connector-gateway.lovable.dev",
+
   "docs.lovable.dev",
   "netfree.link",
   "www.netfree.link",
