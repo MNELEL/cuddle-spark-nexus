@@ -12,7 +12,6 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { HomeQuickNav } from "@/components/home-quick-nav";
 import { listClasses } from "@/lib/classes.functions";
 import { parashaForWeek, weekStartOf } from "@/lib/parasha";
 import {
@@ -96,7 +95,6 @@ function WeeklySheetPage() {
           מלא את הספק החומר של השבוע, המבחנים וההודעות — והמערכת מפיקה דף קשר מוכן להדפסה:
           שער, עמוד הספק ודף חתימת הורים עם שדות הערכה. הפרטים נשמרים אצלך לשבוע הבא.
         </p>
-        <div className="mt-2"><HomeQuickNav /></div>
       </div>
 
       <Card>

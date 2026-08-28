@@ -11,7 +11,6 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { HomeQuickNav } from "@/components/home-quick-nav";
 import { listClasses } from "@/lib/classes.functions";
 import { useToolAccess } from "@/hooks/use-tool-access";
 import { MAP_SECTIONS, buildSuperSections, type MapItem } from "@/lib/system-map";
@@ -99,7 +98,6 @@ function SystemMapPage() {
           <p className="text-sm text-muted-foreground">
             כל מה שיש במערכת, בעברית ובלחיצה אחת. בחר את הכיתה שלך — וכל פריט יפתח את המסך שלה.
           </p>
-          <div className="mt-2"><HomeQuickNav /></div>
         </div>
 
         <Card>
