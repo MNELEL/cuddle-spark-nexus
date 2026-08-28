@@ -374,7 +374,10 @@ function DailySummaryPage() {
           studentName={composer.name}
         />
       )}
+
+      <AiAssistantDock classId={classId} />
     </div>
+
   );
 }
 
