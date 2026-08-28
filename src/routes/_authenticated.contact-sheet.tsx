@@ -11,7 +11,6 @@ import { Label } from "@/components/ui/label";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { HomeQuickNav } from "@/components/home-quick-nav";
 import { listClasses } from "@/lib/classes.functions";
 import {
   listContactEntries, saveContactEntry, saveContactEntries, deleteContactEntry,
@@ -129,7 +128,6 @@ function ContactSheetPage() {
         <p className="text-sm text-muted-foreground">
           כל אנשי הקשר של המוסד במקום אחד — הנהלה, צוות, ספקים, בריאות וחירום. אפשר להזין תבנית מוכנה ולהפיק דף להדפסה.
         </p>
-        <div className="mt-2"><HomeQuickNav /></div>
       </div>
 
       <Card>

@@ -16,7 +16,6 @@ import { ReminderPreferencesCard } from "@/components/reminder-preferences-card"
 import { SecuritySettings } from "@/components/security-settings";
 import { ThemePickerCard } from "@/components/theme-picker-card";
 import { SettingsTabs, SETTINGS_TAB_LABELS, type SettingsTabId } from "@/components/settings-tabs";
-import { HomeQuickNav } from "@/components/home-quick-nav";
 import { TOOLS } from "@/lib/tool-registry";
 import { useBrand } from "@/hooks/use-brand";
 import { isAdmin } from "@/lib/user-roles.functions";
@@ -75,7 +74,6 @@ function SettingsPage() {
         <p className="text-sm text-muted-foreground">
           כל ההגדרות האישיות והמוסדיות במקום אחד — מיתוג, אבטחה, תזכורות ומצב המנוי.
         </p>
-        <div className="mt-2"><HomeQuickNav /></div>
       </div>
 
       <SettingsTabs active={tab} />
