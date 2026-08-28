@@ -202,7 +202,7 @@ export function AiAssistantDock({ classId }: { classId: string }) {
               onKeyDown={(e) => {
                 if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); send(); }
               }}
-              placeholder='נסה: "מי נעדר השבוע יותר מפעמיים?" · "תיעוד היום: סיימנו פרק ב\'" · "אירוע חריג לשמואל"'
+              placeholder={'נסה: "מי נעדר השבוע יותר מפעמיים?" · "תיעוד היום: סיימנו פרק ב\'" · "אירוע חריג לשמואל"'}
               rows={4}
               className="pe-20"
               aria-label="בקשה לעוזר הרב"
