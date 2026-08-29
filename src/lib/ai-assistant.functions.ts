@@ -2,6 +2,10 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { callLovableAI } from "./ai-gateway.server";
+import {
+  normalizeAssistantReply, buildSourceLinks, type AssistantSourceLink,
+} from "./assistant-reply";
+
 
 const ParamValue = z.union([z.string(), z.number(), z.boolean(), z.null()]);
 
