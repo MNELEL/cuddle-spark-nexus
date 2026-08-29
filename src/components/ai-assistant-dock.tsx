@@ -259,10 +259,34 @@ export function AiAssistantDock({ classId }: { classId: string }) {
               <CardContent className="space-y-2 py-3">
                 <p className="whitespace-pre-wrap text-sm">{reply.answer}</p>
                 {reply.mode === "read" && reply.sources.length > 0 && (
-                  <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
-                    <BookOpen className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                    מבוסס על: {reply.sources.join(" · ")}
-                  </p>
+                  <div className="space-y-1.5">
+                    <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                      <BookOpen className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                      מבוסס על: {reply.sources.join(" · ")}
+                    </p>
+                    {reply.sourceLinks.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {reply.sourceLinks.map((l) => (
+                          <Button
+                            key={l.to}
+                            asChild
+                            size="sm"
+                            variant="outline"
+                            className="h-auto py-1 text-xs font-normal"
+                          >
+                            <Link
+                              to={l.to as never}
+                              params={{ classId } as never}
+                              onClick={() => setOpen(false)}
+                            >
+                              <ExternalLink className="ms-1 h-3 w-3" aria-hidden="true" />
+                              {l.label}
+                            </Link>
+                          </Button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -279,26 +303,26 @@ export function AiAssistantDock({ classId }: { classId: string }) {
                   </Button>
                 </div>
               </div>
+              {readyCount < pending.length && (
+                <p className="flex items-center gap-1.5 px-1 text-xs text-destructive">
+                  <AlertCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  {pending.length - readyCount} פעולות חסרות פרטים — השלם אותן כאן ואשר, בלי לחזור למסך הסקירה.
+                </p>
+              )}
               {pending.map((a, i) => (
-                <Card key={i}>
-                  <CardContent className="flex items-center justify-between gap-2 py-2">
-                    <div className="min-w-0 flex-1">
-                      <div className="text-xs font-medium text-primary">{KIND_LABELS[a.kind] ?? a.kind}</div>
-                      <div className="text-sm">{a.summary}</div>
-                      {readableParams(a) && (
-                        <div className="text-xs text-muted-foreground">{readableParams(a)}</div>
-                      )}
-                    </div>
-                    <div className="flex gap-1 shrink-0">
-                      <Button size="icon" variant="outline" aria-label="אשר פעולה" onClick={() => exec.mutate(a, { onSuccess: () => setPending((p) => p.filter((_, j) => j !== i)) })}>
-                        <Check className="h-4 w-4" />
-                      </Button>
-                      <Button size="icon" variant="ghost" aria-label="דחה פעולה" onClick={() => setPending((p) => p.filter((_, j) => j !== i))}>
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                <PendingActionCard
+                  key={i}
+                  action={a}
+                  students={reply?.students ?? []}
+                  busy={exec.isPending}
+                  onChange={(next) => setPending((p) => p.map((x, j) => (j === i ? next : x)))}
+                  onApprove={(next) =>
+                    exec.mutate(next, {
+                      onSuccess: () => setPending((p) => p.filter((_, j) => j !== i)),
+                    })
+                  }
+                  onReject={() => setPending((p) => p.filter((_, j) => j !== i))}
+                />
               ))}
             </div>
           )}
@@ -307,3 +331,122 @@ export function AiAssistantDock({ classId }: { classId: string }) {
     </Dialog>
   );
 }
+
+/** כרטיס פעולה לסקירה — עם עריכה מהירה של שדות חסרים ואישור מחדש במקום. */
+function PendingActionCard({
+  action, students, busy, onChange, onApprove, onReject,
+}: {
+  action: AssistantAction;
+  students: { id: string; name: string }[];
+  busy: boolean;
+  onChange: (next: AssistantAction) => void;
+  onApprove: (next: AssistantAction) => void;
+  onReject: () => void;
+}) {
+  const missing = missingRequiredFields(action.kind, action.params);
+  const [editing, setEditing] = useState(missing.length > 0);
+  const fields = fieldsForKind(action.kind);
+  const ready = missing.length === 0;
+
+  function setParam(key: string, value: string) {
+    onChange({ ...action, params: { ...action.params, [key]: value } });
+  }
+
+  return (
+    <Card className={ready ? undefined : "border-destructive/50"}>
+      <CardContent className="space-y-2 py-2">
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <div className="text-xs font-medium text-primary">{KIND_LABELS[action.kind] ?? action.kind}</div>
+            <div className="text-sm">{action.summary}</div>
+            {readableParams(action) && (
+              <div className="text-xs text-muted-foreground">{readableParams(action)}</div>
+            )}
+            {!ready && (
+              <div className="text-xs text-destructive">
+                חסר: {missing.map((f) => f.label).join(", ")}
+              </div>
+            )}
+          </div>
+          <div className="flex shrink-0 gap-1">
+            <Button
+              size="icon"
+              variant="ghost"
+              aria-label={editing ? "סגור עריכה" : "ערוך פרטי פעולה"}
+              aria-expanded={editing}
+              onClick={() => setEditing((v) => !v)}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button
+              size="icon"
+              variant="outline"
+              aria-label={ready ? "אשר פעולה" : "השלם את השדות החסרים כדי לאשר"}
+              disabled={!ready || busy}
+              onClick={() => onApprove(action)}
+            >
+              <Check className="h-4 w-4" />
+            </Button>
+            <Button size="icon" variant="ghost" aria-label="דחה פעולה" onClick={onReject}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        {editing && (
+          <div className="grid gap-2 rounded-md border bg-muted/30 p-2 sm:grid-cols-2">
+            {fields.map((f) => {
+              const value = String(action.params[f.key] ?? "");
+              const id = `${action.kind}-${f.key}-${action.summary.slice(0, 8)}`;
+              const options = f.key === "student_id"
+                ? students.map((s) => ({ value: s.id, label: s.name }))
+                : f.options ?? [];
+              return (
+                <div key={f.key} className="space-y-1">
+                  <Label htmlFor={id} className="text-xs">
+                    {f.label}{f.required ? " *" : ""}
+                  </Label>
+                  {f.type === "select" ? (
+                    <select
+                      id={id}
+                      value={value}
+                      onChange={(e) => setParam(f.key, e.target.value)}
+                      className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                    >
+                      <option value="">בחר…</option>
+                      {options.map((o) => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                    </select>
+                  ) : f.type === "textarea" ? (
+                    <Textarea
+                      id={id}
+                      rows={2}
+                      value={value}
+                      placeholder={f.placeholder}
+                      onChange={(e) => setParam(f.key, e.target.value)}
+                    />
+                  ) : (
+                    <Input
+                      id={id}
+                      type={f.type === "number" ? "number" : f.type === "date" ? "date" : "text"}
+                      value={value}
+                      placeholder={f.placeholder}
+                      onChange={(e) => setParam(f.key, e.target.value)}
+                    />
+                  )}
+                </div>
+              );
+            })}
+            <div className="sm:col-span-2 flex justify-end">
+              <Button size="sm" disabled={!ready || busy} onClick={() => onApprove(action)}>
+                <Check className="ms-1 h-4 w-4" /> שמור ואשר
+              </Button>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
