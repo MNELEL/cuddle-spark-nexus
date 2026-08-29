@@ -167,44 +167,23 @@ export const assistantQuery = createServerFn({ method: "POST" })
       if (r.success) actions.push(r.data);
     }
 
-    const clarify = typeof parsed.clarify === "string" && parsed.clarify.trim()
-      ? parsed.clarify.trim().slice(0, 300)
-      : null;
-    const clarifyOptions = (parsed.clarifyOptions ?? [])
-      .filter((o): o is string => typeof o === "string" && o.trim().length > 0)
-      .slice(0, 4)
-      .map((o) => o.trim().slice(0, 80));
-
-    let mode: AssistantReply["mode"] =
-      parsed.mode === "read" || parsed.mode === "write" || parsed.mode === "clarify"
-        ? parsed.mode
-        : actions.length > 0 ? "write" : "read";
-    // עקביות: אין פעולות ואין שאלה → תשובת קריאה.
-    if (mode === "clarify" && !clarify) mode = actions.length > 0 ? "write" : "read";
-    if (mode === "write" && actions.length === 0) mode = clarify ? "clarify" : "read";
-
-    const sources = (parsed.sources ?? [])
-      .filter((s): s is string => typeof s === "string" && s.trim().length > 0)
-      .slice(0, 6)
-      .map((s) => s.trim().slice(0, 120));
-    if (mode === "read" && sources.length === 0) {
-      sources.push(
+    const normalized = normalizeAssistantReply<AssistantAction>(parsed, {
+      actions,
+      fallbackSources: [
         `${students.length} תלמידים`,
         `${attendance.length} רישומי נוכחות`,
         `${grades.length} ציונים`,
         `${behavior.length + discipline.length} רישומי התנהגות`,
-      );
-    }
+      ],
+    });
 
     return {
-      mode,
-      answer: parsed.answer ?? (clarify ? "" : "(אין תשובה)"),
-      actions: mode === "clarify" ? [] : actions,
-      clarify: mode === "clarify" ? clarify : null,
-      clarifyOptions: mode === "clarify" ? clarifyOptions : [],
-      sources,
+      ...normalized,
+      sourceLinks: buildSourceLinks(normalized.sources),
+      students: students.map((s) => ({ id: s.id, name: s.name })),
     };
   });
+
 
 /** Execute an action approved by the user. */
 export const executeAssistantAction = createServerFn({ method: "POST" })
