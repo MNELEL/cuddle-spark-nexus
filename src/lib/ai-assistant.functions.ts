@@ -43,7 +43,12 @@ export type AssistantReply = {
   clarifyOptions: string[];
   /** על מה התשובה מבוססת — מוצג מתחת לתשובת קריאה. */
   sources: string[];
+  /** קישורים למסכים שבהם אפשר לאמת את המקורות. */
+  sourceLinks: AssistantSourceLink[];
+  /** רשימת תלמידי הכיתה, לעריכה מהירה של פעולות בכרטיס הסקירה. */
+  students: { id: string; name: string }[];
 };
+
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
