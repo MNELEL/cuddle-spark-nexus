@@ -1649,6 +1649,66 @@ export type Database = {
           },
         ]
       }
+      orchestrator_insights: {
+        Row: {
+          action_link: string | null
+          class_id: string
+          created_at: string
+          description: string
+          id: string
+          insight_type: string
+          is_dismissed: boolean
+          owner_id: string
+          severity: string
+          student_id: string | null
+          suggested_action: string | null
+          title: string
+        }
+        Insert: {
+          action_link?: string | null
+          class_id: string
+          created_at?: string
+          description: string
+          id?: string
+          insight_type?: string
+          is_dismissed?: boolean
+          owner_id: string
+          severity: string
+          student_id?: string | null
+          suggested_action?: string | null
+          title: string
+        }
+        Update: {
+          action_link?: string | null
+          class_id?: string
+          created_at?: string
+          description?: string
+          id?: string
+          insight_type?: string
+          is_dismissed?: boolean
+          owner_id?: string
+          severity?: string
+          student_id?: string | null
+          suggested_action?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orchestrator_insights_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orchestrator_insights_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pacing_recalc_log: {
         Row: {
           ai_recommendation: string | null
