@@ -1,11 +1,17 @@
 import { useState, useRef, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Mic, MicOff, Send, Check, X, Loader2, HelpCircle, BookOpen } from "lucide-react";
+import {
+  Sparkles, Mic, MicOff, Send, Check, X, Loader2, HelpCircle, BookOpen,
+  ExternalLink, AlertCircle, Pencil,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
@@ -14,6 +20,7 @@ import {
   assistantQuery, executeAssistantAction,
   type AssistantAction, type AssistantActionKind, type AssistantReply,
 } from "@/lib/ai-assistant.functions";
+import { fieldsForKind, missingRequiredFields, isActionReady } from "@/lib/assistant-actions";
 
 type SR = {
   lang: string;
@@ -150,13 +157,15 @@ export function AiAssistantDock({ classId }: { classId: string }) {
 
   useEffect(() => () => { recRef.current?.stop(); }, []);
 
+  const readyCount = pending.filter((a) => isActionReady(a.kind, a.params)).length;
+
   async function approveAll() {
-    const items = [...pending];
+    const items = pending.filter((a) => isActionReady(a.kind, a.params));
     let done = 0;
     for (const a of items) {
       try { await exec.mutateAsync(a); done++; } catch { /* keep going */ }
     }
-    setPending([]);
+    setPending((p) => p.filter((a) => !isActionReady(a.kind, a.params)));
     setReply((r) => (r ? { ...r, answer: `${done} מתוך ${items.length} הפעולות בוצעו`, mode: "read" } : r));
   }
 

@@ -20,9 +20,9 @@ const SEVERITY_STYLES: Record<string, { wrapper: string; label: string; badge: s
     badge: "bg-destructive text-destructive-foreground",
   },
   medium: {
-    wrapper: "border-warning/40 bg-warning/5",
+    wrapper: "border-accent/50 bg-accent/10",
     label: "בינוני",
-    badge: "bg-warning text-warning-foreground",
+    badge: "bg-accent text-accent-foreground",
   },
   low: {
     wrapper: "border-border bg-muted/40",

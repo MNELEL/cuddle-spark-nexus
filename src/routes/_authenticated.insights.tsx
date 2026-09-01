@@ -15,6 +15,7 @@ import {
 import { toast } from "sonner";
 import { getStyleProfile, recomputeStyleProfile } from "@/lib/teacher-style.functions";
 import { RESOURCE_TYPE_LABELS, type ResourceType } from "@/lib/teaching-resources.functions";
+import { DailyBriefingCard } from "@/components/daily-briefing-card";
 
 export const Route = createFileRoute("/_authenticated/insights")({
   component: InsightsPage,
@@ -91,23 +92,26 @@ function InsightsPage() {
 
   if (!profile || profile.resource_count === 0) {
     return (
-      <div className="mx-auto max-w-2xl space-y-6 py-10 text-center">
-        <div className="flex justify-center">
-          <div className="rounded-full bg-primary/10 p-6">
-            <Sparkles className="h-10 w-10 text-primary" />
+      <div className="mx-auto max-w-2xl space-y-6 py-10" dir="rtl">
+        <DailyBriefingCard />
+        <div className="space-y-6 text-center">
+          <div className="flex justify-center">
+            <div className="rounded-full bg-primary/10 p-6">
+              <Sparkles className="h-10 w-10 text-primary" />
+            </div>
           </div>
+          <div>
+            <h1 className="text-2xl font-bold">תובנות מורה</h1>
+            <p className="mt-2 text-muted-foreground">
+              הניתוח האישי נבנה אוטומטית ככל שתיצור יותר חומרי לימוד, דפי עבודה ומצגות.
+              ברגע שיהיו לך מספיק חומרים במערכת — כאן יופיעו המקצועות המועדפים, סגנון הכתיבה, קצב היצירה ומילות המפתח שלך.
+            </p>
+          </div>
+          <Button onClick={() => recomputeMut.mutate()} disabled={recomputeMut.isPending} aria-busy={recomputeMut.isPending}>
+            <RefreshCw className={`ms-2 h-4 w-4 ${recomputeMut.isPending ? "animate-spin" : ""}`} aria-hidden />
+            רענן ניתוח עכשיו
+          </Button>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold">תובנות מורה</h1>
-          <p className="mt-2 text-muted-foreground">
-            הניתוח האישי נבנה אוטומטית ככל שתיצור יותר חומרי לימוד, דפי עבודה ומצגות.
-            ברגע שיהיו לך מספיק חומרים במערכת — כאן יופיעו המקצועות המועדפים, סגנון הכתיבה, קצב היצירה ומילות המפתח שלך.
-          </p>
-        </div>
-        <Button onClick={() => recomputeMut.mutate()} disabled={recomputeMut.isPending} aria-busy={recomputeMut.isPending}>
-          <RefreshCw className={`ms-2 h-4 w-4 ${recomputeMut.isPending ? "animate-spin" : ""}`} aria-hidden />
-          רענן ניתוח עכשיו
-        </Button>
         <p className="sr-only" role="status" aria-live="polite">
           {recomputeMut.isPending ? "מרענן את הניתוח…" : ""}
         </p>
@@ -137,6 +141,8 @@ function InsightsPage() {
           </p>
         </div>
       </div>
+
+      <DailyBriefingCard />
 
       {profile.last_ai_summary && (
         <Card className="border-primary/30 bg-gradient-to-bl from-primary/10 to-transparent">
