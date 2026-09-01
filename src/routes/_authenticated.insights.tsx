@@ -15,6 +15,7 @@ import {
 import { toast } from "sonner";
 import { getStyleProfile, recomputeStyleProfile } from "@/lib/teacher-style.functions";
 import { RESOURCE_TYPE_LABELS, type ResourceType } from "@/lib/teaching-resources.functions";
+import { DailyBriefingCard } from "@/components/daily-briefing-card";
 
 export const Route = createFileRoute("/_authenticated/insights")({
   component: InsightsPage,
