@@ -21,6 +21,7 @@ import {
   type AssistantAction, type AssistantActionKind, type AssistantReply,
 } from "@/lib/ai-assistant.functions";
 import { fieldsForKind, missingRequiredFields, isActionReady } from "@/lib/assistant-actions";
+import { AssistantSnapshotTable } from "@/components/assistant-snapshot-table";
 
 type SR = {
   lang: string;
@@ -267,6 +268,9 @@ export function AiAssistantDock({ classId }: { classId: string }) {
             <Card className="border-amber/30 bg-amber/5">
               <CardContent className="space-y-2 py-3">
                 <p className="whitespace-pre-wrap text-sm">{reply.answer}</p>
+                {reply.mode === "read" && (
+                  <AssistantSnapshotTable rows={reply.snapshot ?? []} />
+                )}
                 {reply.mode === "read" && reply.sources.length > 0 && (
                   <div className="space-y-1.5">
                     <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
