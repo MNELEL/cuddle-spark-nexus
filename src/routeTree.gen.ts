@@ -37,6 +37,7 @@ import { Route as AuthenticatedMapRouteImport } from './routes/_authenticated.ma
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated.onboarding'
 import { Route as AuthenticatedOverviewRouteImport } from './routes/_authenticated.overview'
 import { Route as AuthenticatedQuestionsRouteImport } from './routes/_authenticated.questions'
+import { Route as AuthenticatedReviewRouteImport } from './routes/_authenticated.review'
 import { Route as AuthenticatedScheduleRulesRouteImport } from './routes/_authenticated.schedule-rules'
 import { Route as AuthenticatedSoundBoardRouteImport } from './routes/_authenticated.sound-board'
 import { Route as AuthenticatedSoundTestRouteImport } from './routes/_authenticated.sound-test'
@@ -240,6 +241,11 @@ const AuthenticatedOverviewRoute = AuthenticatedOverviewRouteImport.update({
 const AuthenticatedQuestionsRoute = AuthenticatedQuestionsRouteImport.update({
   id: '/questions',
   path: '/questions',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedReviewRoute = AuthenticatedReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedScheduleRulesRoute =
@@ -612,6 +618,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/overview': typeof AuthenticatedOverviewRoute
   '/questions': typeof AuthenticatedQuestionsRoute
+  '/review': typeof AuthenticatedReviewRoute
   '/schedule-rules': typeof AuthenticatedScheduleRulesRoute
   '/sound-board': typeof AuthenticatedSoundBoardRoute
   '/sound-test': typeof AuthenticatedSoundTestRoute
@@ -697,6 +704,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/overview': typeof AuthenticatedOverviewRoute
   '/questions': typeof AuthenticatedQuestionsRoute
+  '/review': typeof AuthenticatedReviewRoute
   '/schedule-rules': typeof AuthenticatedScheduleRulesRoute
   '/sound-board': typeof AuthenticatedSoundBoardRoute
   '/sound-test': typeof AuthenticatedSoundTestRoute
@@ -787,6 +795,7 @@ export interface FileRoutesById {
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/overview': typeof AuthenticatedOverviewRoute
   '/_authenticated/questions': typeof AuthenticatedQuestionsRoute
+  '/_authenticated/review': typeof AuthenticatedReviewRoute
   '/_authenticated/schedule-rules': typeof AuthenticatedScheduleRulesRoute
   '/_authenticated/sound-board': typeof AuthenticatedSoundBoardRoute
   '/_authenticated/sound-test': typeof AuthenticatedSoundTestRoute
@@ -878,6 +887,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/overview'
     | '/questions'
+    | '/review'
     | '/schedule-rules'
     | '/sound-board'
     | '/sound-test'
@@ -963,6 +973,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/overview'
     | '/questions'
+    | '/review'
     | '/schedule-rules'
     | '/sound-board'
     | '/sound-test'
@@ -1052,6 +1063,7 @@ export interface FileRouteTypes {
     | '/_authenticated/onboarding'
     | '/_authenticated/overview'
     | '/_authenticated/questions'
+    | '/_authenticated/review'
     | '/_authenticated/schedule-rules'
     | '/_authenticated/sound-board'
     | '/_authenticated/sound-test'
@@ -1336,6 +1348,13 @@ declare module '@tanstack/react-router' {
       path: '/questions'
       fullPath: '/questions'
       preLoaderRoute: typeof AuthenticatedQuestionsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/review': {
+      id: '/_authenticated/review'
+      path: '/review'
+      fullPath: '/review'
+      preLoaderRoute: typeof AuthenticatedReviewRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/schedule-rules': {
@@ -1786,6 +1805,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedOverviewRoute: typeof AuthenticatedOverviewRoute
   AuthenticatedQuestionsRoute: typeof AuthenticatedQuestionsRoute
+  AuthenticatedReviewRoute: typeof AuthenticatedReviewRoute
   AuthenticatedScheduleRulesRoute: typeof AuthenticatedScheduleRulesRoute
   AuthenticatedSoundBoardRoute: typeof AuthenticatedSoundBoardRoute
   AuthenticatedSoundTestRoute: typeof AuthenticatedSoundTestRoute
@@ -1830,6 +1850,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedOverviewRoute: AuthenticatedOverviewRoute,
   AuthenticatedQuestionsRoute: AuthenticatedQuestionsRoute,
+  AuthenticatedReviewRoute: AuthenticatedReviewRoute,
   AuthenticatedScheduleRulesRoute: AuthenticatedScheduleRulesRoute,
   AuthenticatedSoundBoardRoute: AuthenticatedSoundBoardRoute,
   AuthenticatedSoundTestRoute: AuthenticatedSoundTestRoute,

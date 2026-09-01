@@ -99,6 +99,8 @@ export const NAV_EXEMPT_ROUTES = [
   "/resources/$resourceId",
   // נפתח מתפריט ההעלאה בספרייה
   "/resources/upload-log",
+  // נפתח מקישור בכרטיס "תובנות יומיות" ב-/insights
+  "/review",
 ] as const;
 
 export function toolByPath(path: string): ToolEntry | undefined {
