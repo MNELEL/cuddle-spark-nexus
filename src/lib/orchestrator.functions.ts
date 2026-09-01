@@ -1,7 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { evaluateAttendanceDecline, describeDecline } from "./attendance-decline";
+import {
+  evaluateAttendanceDecline, describeDecline,
+  evaluateAbsenceStreak, describeAbsenceStreak,
+} from "./attendance-decline";
+import { evaluateGradeDecline, describeGradeDecline } from "./grade-decline";
 
 export type DailyInsight = {
   id: string;
