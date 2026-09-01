@@ -61,7 +61,7 @@ export const generateDailyBriefing = createServerFn({ method: "POST" })
     type NewInsight = {
       owner_id: string;
       class_id: string;
-      student_id: string;
+      student_id: string | null;
       insight_type: string;
       severity: "medium" | "high";
       title: string;
@@ -72,9 +72,11 @@ export const generateDailyBriefing = createServerFn({ method: "POST" })
 
     const pending: NewInsight[] = [];
     let scanned = 0;
+    const today = new Date().toISOString().slice(0, 10);
+    const spikeFrom = isoDaysAgo(14);
 
     for (const cls of activeClasses) {
-      const [studentsRes, attRes, gradesRes] = await Promise.all([
+      const [studentsRes, attRes, gradesRes, behRes, discRes, bulletinRes] = await Promise.all([
         supabase.from("students").select("id,name").eq("class_id", cls.id),
         supabase
           .from("attendance")
@@ -86,16 +88,102 @@ export const generateDailyBriefing = createServerFn({ method: "POST" })
           .select("student_id,date,value,max_value")
           .eq("class_id", cls.id)
           .gte("date", baseFrom),
+        supabase
+          .from("behavior_points")
+          .select("student_id,date,points")
+          .eq("class_id", cls.id)
+          .gte("date", baseFrom),
+        supabase
+          .from("discipline_events")
+          .select("student_id,date,type,severity")
+          .eq("class_id", cls.id)
+          .gte("date", baseFrom),
+        supabase
+          .from("weekly_bulletins")
+          .select("start_date,status,published_at")
+          .eq("class_id", cls.id)
+          .gte("start_date", isoDaysAgo(90)),
       ]);
-      if (studentsRes.error || attRes.error || gradesRes.error) {
-        console.error("[DB Error]", studentsRes.error ?? attRes.error ?? gradesRes.error);
+      const clsErr =
+        studentsRes.error || attRes.error || gradesRes.error ||
+        behRes.error || discRes.error || bulletinRes.error;
+      if (clsErr) {
+        console.error("[DB Error]", clsErr);
         throw new Error("הסריקה נכשלה. נסה שוב.");
       }
 
       const students = studentsRes.data ?? [];
       const rows = attRes.data ?? [];
       const gradeRows = gradesRes.data ?? [];
+      const behaviorRows = behRes.data ?? [];
+      const disciplineRows = discRes.data ?? [];
+      const bulletinRows = bulletinRes.data ?? [];
       scanned += students.length;
+
+      /* ---- סיגנלים ברמת הכיתה ---- */
+      if (students.length > 0) {
+        const attGap = evaluateAttendanceGap(rows.map((r) => r.date), today);
+        if (attGap) {
+          pending.push({
+            owner_id: userId, class_id: cls.id, student_id: null,
+            insight_type: "attendance_gap", severity: attGap.severity,
+            title: `נוכחות לא נרשמה - ${cls.name}`,
+            description: describeGap(attGap, "נוכחות"),
+            suggested_action: "השלם את רישום הנוכחות בימים החסרים",
+            action_link: `/classes/${cls.id}?tab=tracking`,
+          });
+        }
+
+        const gradeGap = evaluateGradesGap(gradeRows.map((g) => g.date), today);
+        if (gradeGap) {
+          pending.push({
+            owner_id: userId, class_id: cls.id, student_id: null,
+            insight_type: "grades_gap", severity: gradeGap.severity,
+            title: `לא נרשמו ציונים - ${cls.name}`,
+            description: describeGap(gradeGap, "ציונים"),
+            suggested_action: "הזן ציונים למבחנים ולבחנים האחרונים",
+            action_link: `/classes/${cls.id}?tab=grades`,
+          });
+        }
+
+        const bulletinGap = evaluateBulletinGap(
+          bulletinRows
+            .filter((b) => b.status === "published" || b.published_at)
+            .map((b) => (b.published_at ? b.published_at.slice(0, 10) : b.start_date)),
+          today,
+        );
+        if (bulletinGap) {
+          pending.push({
+            owner_id: userId, class_id: cls.id, student_id: null,
+            insight_type: "bulletin_gap", severity: bulletinGap.severity,
+            title: `עלון שבועי לא פורסם - ${cls.name}`,
+            description: describeGap(bulletinGap, "עלון שבועי"),
+            suggested_action: "הפק ופרסם את העלון השבועי להורים",
+            action_link: `/bulletin/${cls.id}`,
+          });
+        }
+
+        // ירידה בממוצע הכיתתי — כל ציוני הכיתה, שבוע אחרון מול החלון שלפניו.
+        const classRecent = gradeRows.filter((g) => g.date >= recentFrom);
+        const classBase = gradeRows.filter((g) => g.date < recentFrom);
+        const classDecline = evaluateGradeDecline(classRecent, classBase);
+        if (classDecline && classRecent.length >= students.length) {
+          pending.push({
+            owner_id: userId, class_id: cls.id, student_id: null,
+            insight_type: "class_grade_decline", severity: classDecline.severity,
+            title: `ירידה בממוצע הכיתתי - ${cls.name}`,
+            description: describeGradeDecline(classDecline),
+            suggested_action: "שקול חזרה כיתתית על החומר האחרון",
+            action_link: `/analytics/${cls.id}`,
+          });
+        }
+
+        const classAvg = gradeAverage(classRecent);
+        if (classAvg !== null) {
+          // מידע לוגי בלבד — עוזר לאבחון סריקות בלוגים.
+          console.info(`[briefing] class=${cls.id} recentAvg=${Math.round(classAvg)}`);
+        }
+      }
 
       for (const st of students) {
         const mine = rows.filter((r) => r.student_id === st.id);
