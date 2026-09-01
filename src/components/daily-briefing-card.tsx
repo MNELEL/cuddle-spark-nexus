@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, Link } from "@tanstack/react-router";
 import { AlertCircle, Bell, CheckCircle2, RefreshCw, X } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +12,7 @@ import {
   dismissInsight,
   type DailyInsight,
 } from "@/lib/orchestrator.functions";
+import { listPendingUpdates } from "@/lib/pending-updates.functions";
 
 const SEVERITY_STYLES: Record<string, { wrapper: string; label: string; badge: string }> = {
   high: {
