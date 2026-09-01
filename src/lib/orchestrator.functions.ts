@@ -5,7 +5,14 @@ import {
   evaluateAttendanceDecline, describeDecline,
   evaluateAbsenceStreak, describeAbsenceStreak,
 } from "./attendance-decline";
-import { evaluateGradeDecline, describeGradeDecline } from "./grade-decline";
+import { evaluateGradeDecline, describeGradeDecline, gradeAverage } from "./grade-decline";
+import {
+  evaluateBehaviorDecline, describeBehaviorDecline,
+  evaluateDisciplineSpike, describeDisciplineSpike,
+} from "./behavior-signals";
+import {
+  evaluateAttendanceGap, evaluateGradesGap, evaluateBulletinGap, describeGap,
+} from "./data-gaps";
 
 export type DailyInsight = {
   id: string;
