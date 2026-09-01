@@ -1,7 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { evaluateAttendanceDecline, describeDecline } from "./attendance-decline";
+import {
+  evaluateAttendanceDecline, describeDecline,
+  evaluateAbsenceStreak, describeAbsenceStreak,
+} from "./attendance-decline";
+import { evaluateGradeDecline, describeGradeDecline } from "./grade-decline";
 
 export type DailyInsight = {
   id: string;
@@ -63,21 +67,27 @@ export const generateDailyBriefing = createServerFn({ method: "POST" })
     let scanned = 0;
 
     for (const cls of activeClasses) {
-      const [studentsRes, attRes] = await Promise.all([
+      const [studentsRes, attRes, gradesRes] = await Promise.all([
         supabase.from("students").select("id,name").eq("class_id", cls.id),
         supabase
           .from("attendance")
           .select("student_id,date,status")
           .eq("class_id", cls.id)
           .gte("date", baseFrom),
+        supabase
+          .from("grades")
+          .select("student_id,date,value,max_value")
+          .eq("class_id", cls.id)
+          .gte("date", baseFrom),
       ]);
-      if (studentsRes.error || attRes.error) {
-        console.error("[DB Error]", studentsRes.error ?? attRes.error);
+      if (studentsRes.error || attRes.error || gradesRes.error) {
+        console.error("[DB Error]", studentsRes.error ?? attRes.error ?? gradesRes.error);
         throw new Error("הסריקה נכשלה. נסה שוב.");
       }
 
       const students = studentsRes.data ?? [];
       const rows = attRes.data ?? [];
+      const gradeRows = gradesRes.data ?? [];
       scanned += students.length;
 
       for (const st of students) {
@@ -86,19 +96,55 @@ export const generateDailyBriefing = createServerFn({ method: "POST" })
         const base = mine.filter((r) => r.date < recentFrom).map((r) => r.status);
 
         const decline = evaluateAttendanceDecline(recent, base);
-        if (!decline) continue;
+        if (decline) {
+          pending.push({
+            owner_id: userId,
+            class_id: cls.id,
+            student_id: st.id,
+            insight_type: "attendance_decline",
+            severity: decline.severity,
+            title: `ירידה בנוכחות - ${st.name}`,
+            description: describeDecline(decline),
+            suggested_action: "בדוק מה קרה בשבוע האחרון וצור קשר עם ההורים",
+            action_link: `/classes/${cls.id}?tab=tracking`,
+          });
+        }
 
-        pending.push({
-          owner_id: userId,
-          class_id: cls.id,
-          student_id: st.id,
-          insight_type: "attendance_decline",
-          severity: decline.severity,
-          title: `ירידה בנוכחות - ${st.name}`,
-          description: describeDecline(decline),
-          suggested_action: "בדוק מה קרה בשבוע האחרון וצור קשר עם ההורים",
-          action_link: `/classes/${cls.id}?tab=tracking`,
-        });
+        // היעדרות רצופה — סיגנל נפרד, גם כשאין ירידה מול הבסיס.
+        const streak = evaluateAbsenceStreak(mine.map((r) => ({ date: r.date, status: r.status })));
+        if (streak) {
+          pending.push({
+            owner_id: userId,
+            class_id: cls.id,
+            student_id: st.id,
+            insight_type: "absence_streak",
+            severity: streak.severity,
+            title: `היעדרות רצופה - ${st.name}`,
+            description: describeAbsenceStreak(streak),
+            suggested_action: "התקשר להורים לבדוק את סיבת ההיעדרות",
+            action_link: `/classes/${cls.id}?tab=tracking`,
+          });
+        }
+
+        // ירידה בציונים — 7 ימים אחרונים מול החלון שלפניהם.
+        const myGrades = gradeRows.filter((g) => g.student_id === st.id);
+        const gDecline = evaluateGradeDecline(
+          myGrades.filter((g) => g.date >= recentFrom),
+          myGrades.filter((g) => g.date < recentFrom),
+        );
+        if (gDecline) {
+          pending.push({
+            owner_id: userId,
+            class_id: cls.id,
+            student_id: st.id,
+            insight_type: "grade_decline",
+            severity: gDecline.severity,
+            title: `ירידה בציונים - ${st.name}`,
+            description: describeGradeDecline(gDecline),
+            suggested_action: "בדוק אילו נושאים קשים לו והצע חזרה ממוקדת",
+            action_link: `/analytics/${cls.id}`,
+          });
+        }
       }
     }
 
@@ -108,15 +154,15 @@ export const generateDailyBriefing = createServerFn({ method: "POST" })
     const sinceIso = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     const { data: existing, error: eErr } = await supabase
       .from("orchestrator_insights")
-      .select("student_id")
-      .eq("insight_type", "attendance_decline")
+      .select("student_id,insight_type")
+      .in("insight_type", ["attendance_decline", "absence_streak", "grade_decline"])
       .eq("is_dismissed", false)
       .gte("created_at", sinceIso)
       .in("student_id", pending.map((p) => p.student_id));
     if (eErr) { console.error("[DB Error]", eErr); throw new Error("הסריקה נכשלה. נסה שוב."); }
 
-    const seen = new Set((existing ?? []).map((r) => r.student_id));
-    const toInsert = pending.filter((p) => !seen.has(p.student_id));
+    const seen = new Set((existing ?? []).map((r) => `${r.student_id}|${r.insight_type}`));
+    const toInsert = pending.filter((p) => !seen.has(`${p.student_id}|${p.insight_type}`));
     if (toInsert.length === 0) return { created: 0, scanned };
 
     // אין מדיניות INSERT ללקוח — הכתיבה נעשית בשרת בלבד, עם owner_id מהטוקן.
@@ -184,4 +230,84 @@ export const dismissInsight = createServerFn({ method: "POST" })
     if (error) { console.error("[DB Error]", error); throw new Error("סילוק התובנה נכשל."); }
     if (!updated || updated.length === 0) throw new Error("התובנה לא נמצאה");
     return { ok: true };
+  });
+
+/* -------- מאגר היסטוריה של תלמיד -------- */
+
+export type TimelineKind = "attendance" | "grade" | "behavior" | "discipline" | "parent_call" | "event";
+
+export type TimelineItem = {
+  kind: TimelineKind;
+  date: string;
+  title: string;
+  detail: string;
+};
+
+/**
+ * ציר זמן מאוחד של תלמיד אחד — נוכחות, ציונים, התנהגות, אירועי משמעת,
+ * שיחות עם הורים ואירועי לוח. RLS מוודאת שהמלמד רואה רק את כיתותיו.
+ */
+export const getStudentTimeline = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z.object({
+      studentId: z.string().uuid(),
+      days: z.number().int().min(7).max(365).optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }): Promise<{ studentName: string; items: TimelineItem[] }> => {
+    const { supabase } = context;
+    const fromIso = isoDaysAgo(data.days ?? 120);
+
+    const [stRes, attRes, grRes, behRes, discRes, pcRes, evRes] = await Promise.all([
+      supabase.from("students").select("name").eq("id", data.studentId).maybeSingle(),
+      supabase.from("attendance").select("date,status,notes").eq("student_id", data.studentId).gte("date", fromIso),
+      supabase.from("grades").select("date,subject,value,max_value,notes").eq("student_id", data.studentId).gte("date", fromIso),
+      supabase.from("behavior_points").select("date,category,points,note").eq("student_id", data.studentId).gte("date", fromIso),
+      supabase.from("discipline_events").select("date,type,category,description").eq("student_id", data.studentId).gte("date", fromIso),
+      supabase.from("parent_communications").select("date,channel,subject,summary").eq("student_id", data.studentId).gte("date", fromIso),
+      supabase.from("class_events").select("date,title,type,notes").eq("student_id", data.studentId).gte("date", fromIso),
+    ]);
+
+    const firstErr = stRes.error || attRes.error || grRes.error || behRes.error || discRes.error || pcRes.error || evRes.error;
+    if (firstErr) { console.error("[DB Error]", firstErr); throw new Error("טעינת ההיסטוריה נכשלה."); }
+    if (!stRes.data) throw new Error("התלמיד לא נמצא");
+
+    const STATUS: Record<string, string> = {
+      present: "נוכח", absent: "נעדר", late: "איחור", excused: "מאושר",
+    };
+    const items: TimelineItem[] = [
+      ...(attRes.data ?? []).map((r) => ({
+        kind: "attendance" as const, date: r.date,
+        title: `נוכחות: ${STATUS[r.status] ?? r.status}`,
+        detail: r.notes ?? "",
+      })),
+      ...(grRes.data ?? []).map((r) => ({
+        kind: "grade" as const, date: r.date,
+        title: `ציון${r.subject ? ` ב${r.subject}` : ""}: ${r.value}/${r.max_value ?? 100}`,
+        detail: r.notes ?? "",
+      })),
+      ...(behRes.data ?? []).map((r) => ({
+        kind: "behavior" as const, date: r.date,
+        title: `${r.points >= 0 ? "+" : ""}${r.points} נקודות התנהגות${r.category ? ` · ${r.category}` : ""}`,
+        detail: r.note ?? "",
+      })),
+      ...(discRes.data ?? []).map((r) => ({
+        kind: "discipline" as const, date: r.date,
+        title: `רישום משמעת${r.category ? ` · ${r.category}` : ""}`,
+        detail: r.description ?? "",
+      })),
+      ...(pcRes.data ?? []).map((r) => ({
+        kind: "parent_call" as const, date: r.date,
+        title: `קשר עם ההורים${r.subject ? ` · ${r.subject}` : ""}`,
+        detail: r.summary ?? "",
+      })),
+      ...(evRes.data ?? []).map((r) => ({
+        kind: "event" as const, date: r.date,
+        title: `אירוע בלוח: ${r.title}`,
+        detail: r.notes ?? "",
+      })),
+    ].sort((a, b) => b.date.localeCompare(a.date));
+
+    return { studentName: stRes.data.name ?? "", items };
   });

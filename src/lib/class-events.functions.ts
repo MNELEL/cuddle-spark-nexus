@@ -113,3 +113,48 @@ export const deleteClassEvent = createServerFn({ method: "POST" })
     if (error) throw new Error("מחיקת האירוע נכשלה.");
     return { ok: true as const };
   });
+
+export type UpcomingEvent = ClassEvent & { class_name: string };
+
+/**
+ * אירועי הלוח הקרובים בכל כיתות המלמד המחובר (כולל היום).
+ * משמש את פעמון "אירועים קרובים" שמוצג בכל רחבי האפליקציה.
+ */
+export const listUpcomingEvents = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ days: z.number().int().min(1).max(120).optional() }).parse(d ?? {}))
+  .handler(async ({ data, context }): Promise<UpcomingEvent[]> => {
+    const today = new Date();
+    const from = today.toISOString().slice(0, 10);
+    const until = new Date(today.getTime() + (data.days ?? 14) * 86_400_000)
+      .toISOString().slice(0, 10);
+
+    const { data: rows, error } = await context.supabase
+      .from("class_events")
+      .select("id,class_id,title,type,date,end_date,student_id,notes,color,classes(name,status)")
+      .gte("date", from)
+      .lte("date", until)
+      .order("date", { ascending: true })
+      .limit(60);
+    if (error) {
+      console.error("[class_events upcoming]", error);
+      throw new Error("טעינת האירועים הקרובים נכשלה.");
+    }
+
+    return ((rows ?? []) as unknown as (ClassEvent & { classes: { name: string; status: string | null } | null })[])
+      .filter((r) => r.classes?.status !== "archived")
+      .map(({ classes, ...rest }) => ({ ...rest, class_name: classes?.name ?? "" }));
+  });
+
+/** רשימת הכיתות הפעילות של המלמד — לבחירת כיתה בהוספת אירוע מהירה. */
+export const listMyActiveClasses = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ id: string; name: string }[]> => {
+    const { data: rows, error } = await context.supabase
+      .from("classes")
+      .select("id,name,status")
+      .eq("owner_id", context.userId)
+      .order("name", { ascending: true });
+    if (error) { console.error("[classes list]", error); throw new Error("טעינת הכיתות נכשלה."); }
+    return (rows ?? []).filter((c) => c.status !== "archived").map((c) => ({ id: c.id, name: c.name }));
+  });

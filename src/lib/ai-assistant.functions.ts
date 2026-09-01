@@ -51,6 +51,22 @@ export type AssistantReply = {
   sourceLinks: AssistantSourceLink[];
   /** רשימת תלמידי הכיתה, לעריכה מהירה של פעולות בכרטיס הסקירה. */
   students: { id: string; name: string }[];
+  /** תמונת מצב לכל תלמיד — מוצגת עם חיפוש וסינון מתחת לתשובת קריאה. */
+  snapshot: StudentSnapshot[];
+};
+
+export type StudentSnapshot = {
+  id: string;
+  name: string;
+  /** סטטוס הנוכחות של היום, אם נרשם. */
+  todayStatus: "present" | "absent" | "late" | "excused" | null;
+  /** אחוז נוכחות ב-30 הימים האחרונים (null כשאין רישומים). */
+  attendancePercent: number | null;
+  /** ממוצע ציונים באחוזים ב-30 הימים האחרונים. */
+  gradeAvg: number | null;
+  gradesCount: number;
+  behaviorPoints: number;
+  disciplineCount: number;
 };
 
 
@@ -177,10 +193,32 @@ export const assistantQuery = createServerFn({ method: "POST" })
       ],
     });
 
+    const today = todayIso();
+    const snapshot: StudentSnapshot[] = students.map((s) => {
+      const att = attendance.filter((a) => a.student_id === s.id);
+      const good = att.filter((a) => a.status === "present" || a.status === "late").length;
+      const myGrades = grades.filter((g) => g.student_id === s.id);
+      const pct = myGrades.map((g) => (g.value / (g.max_value && g.max_value > 0 ? g.max_value : 100)) * 100);
+      const todayRow = att.find((a) => a.date === today);
+      return {
+        id: s.id,
+        name: s.name,
+        todayStatus: (todayRow?.status as StudentSnapshot["todayStatus"]) ?? null,
+        attendancePercent: att.length ? Math.round((good / att.length) * 100) : null,
+        gradeAvg: pct.length ? Math.round(pct.reduce((a, b) => a + b, 0) / pct.length) : null,
+        gradesCount: myGrades.length,
+        behaviorPoints: behavior
+          .filter((b) => b.student_id === s.id)
+          .reduce((sum, b) => sum + (Number(b.points) || 0), 0),
+        disciplineCount: discipline.filter((d) => d.student_id === s.id).length,
+      };
+    });
+
     return {
       ...normalized,
       sourceLinks: buildSourceLinks(normalized.sources),
       students: students.map((s) => ({ id: s.id, name: s.name })),
+      snapshot,
     };
   });
 
