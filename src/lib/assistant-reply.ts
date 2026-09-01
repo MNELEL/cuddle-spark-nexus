@@ -20,13 +20,15 @@ export type NormalizedReply<TAction> = {
   sources: string[];
 };
 
-export type RawReply<TAction> = {
+export type RawReply<TAction = unknown> = {
   mode?: unknown;
   answer?: unknown;
   clarify?: unknown;
   clarifyOptions?: unknown[];
   sources?: unknown[];
-  actions?: TAction[];
+  /** הפעולות הגולמיות אינן בשימוש בנירמול — הן מגיעות מאומתות ב-opts.actions. */
+  actions?: unknown[];
+  __action?: TAction;
 };
 
 const isText = (v: unknown): v is string => typeof v === "string" && v.trim().length > 0;
