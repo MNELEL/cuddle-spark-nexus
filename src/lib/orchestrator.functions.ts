@@ -231,3 +231,83 @@ export const dismissInsight = createServerFn({ method: "POST" })
     if (!updated || updated.length === 0) throw new Error("התובנה לא נמצאה");
     return { ok: true };
   });
+
+/* -------- מאגר היסטוריה של תלמיד -------- */
+
+export type TimelineKind = "attendance" | "grade" | "behavior" | "discipline" | "parent_call" | "event";
+
+export type TimelineItem = {
+  kind: TimelineKind;
+  date: string;
+  title: string;
+  detail: string;
+};
+
+/**
+ * ציר זמן מאוחד של תלמיד אחד — נוכחות, ציונים, התנהגות, אירועי משמעת,
+ * שיחות עם הורים ואירועי לוח. RLS מוודאת שהמלמד רואה רק את כיתותיו.
+ */
+export const getStudentTimeline = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z.object({
+      studentId: z.string().uuid(),
+      days: z.number().int().min(7).max(365).optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }): Promise<{ studentName: string; items: TimelineItem[] }> => {
+    const { supabase } = context;
+    const fromIso = isoDaysAgo(data.days ?? 120);
+
+    const [stRes, attRes, grRes, behRes, discRes, pcRes, evRes] = await Promise.all([
+      supabase.from("students").select("name").eq("id", data.studentId).maybeSingle(),
+      supabase.from("attendance").select("date,status,notes").eq("student_id", data.studentId).gte("date", fromIso),
+      supabase.from("grades").select("date,subject,value,max_value,notes").eq("student_id", data.studentId).gte("date", fromIso),
+      supabase.from("behavior_points").select("date,category,points,note").eq("student_id", data.studentId).gte("date", fromIso),
+      supabase.from("discipline_events").select("date,type,category,description").eq("student_id", data.studentId).gte("date", fromIso),
+      supabase.from("parent_communications").select("date,channel,subject,summary").eq("student_id", data.studentId).gte("date", fromIso),
+      supabase.from("class_events").select("date,title,type,notes").eq("student_id", data.studentId).gte("date", fromIso),
+    ]);
+
+    const firstErr = stRes.error || attRes.error || grRes.error || behRes.error || discRes.error || pcRes.error || evRes.error;
+    if (firstErr) { console.error("[DB Error]", firstErr); throw new Error("טעינת ההיסטוריה נכשלה."); }
+    if (!stRes.data) throw new Error("התלמיד לא נמצא");
+
+    const STATUS: Record<string, string> = {
+      present: "נוכח", absent: "נעדר", late: "איחור", excused: "מאושר",
+    };
+    const items: TimelineItem[] = [
+      ...(attRes.data ?? []).map((r) => ({
+        kind: "attendance" as const, date: r.date,
+        title: `נוכחות: ${STATUS[r.status] ?? r.status}`,
+        detail: r.notes ?? "",
+      })),
+      ...(grRes.data ?? []).map((r) => ({
+        kind: "grade" as const, date: r.date,
+        title: `ציון${r.subject ? ` ב${r.subject}` : ""}: ${r.value}/${r.max_value ?? 100}`,
+        detail: r.notes ?? "",
+      })),
+      ...(behRes.data ?? []).map((r) => ({
+        kind: "behavior" as const, date: r.date,
+        title: `${r.points >= 0 ? "+" : ""}${r.points} נקודות התנהגות${r.category ? ` · ${r.category}` : ""}`,
+        detail: r.note ?? "",
+      })),
+      ...(discRes.data ?? []).map((r) => ({
+        kind: "discipline" as const, date: r.date,
+        title: `רישום משמעת${r.category ? ` · ${r.category}` : ""}`,
+        detail: r.description ?? "",
+      })),
+      ...(pcRes.data ?? []).map((r) => ({
+        kind: "parent_call" as const, date: r.date,
+        title: `קשר עם ההורים${r.subject ? ` · ${r.subject}` : ""}`,
+        detail: r.summary ?? "",
+      })),
+      ...(evRes.data ?? []).map((r) => ({
+        kind: "event" as const, date: r.date,
+        title: `אירוע בלוח: ${r.title}`,
+        detail: r.notes ?? "",
+      })),
+    ].sort((a, b) => b.date.localeCompare(a.date));
+
+    return { studentName: stRes.data.name ?? "", items };
+  });
