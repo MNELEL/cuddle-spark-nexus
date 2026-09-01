@@ -107,6 +107,13 @@ export function DailyBriefingCard() {
         </div>
       </CardHeader>
       <CardContent>
+        {pending.length > 0 && (
+          <p className="mb-3 text-xs text-muted-foreground">
+            <Link to="/review" className="underline underline-offset-2 hover:text-foreground">
+              {pending.length} אירועים חריגים ממתינים לאישור
+            </Link>
+          </p>
+        )}
         {isLoading ? (
           <p className="py-4 text-center text-sm text-muted-foreground">טוען תובנות…</p>
         ) : insights.length === 0 ? (
