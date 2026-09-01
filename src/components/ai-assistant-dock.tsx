@@ -157,13 +157,15 @@ export function AiAssistantDock({ classId }: { classId: string }) {
 
   useEffect(() => () => { recRef.current?.stop(); }, []);
 
+  const readyCount = pending.filter((a) => isActionReady(a.kind, a.params)).length;
+
   async function approveAll() {
-    const items = [...pending];
+    const items = pending.filter((a) => isActionReady(a.kind, a.params));
     let done = 0;
     for (const a of items) {
       try { await exec.mutateAsync(a); done++; } catch { /* keep going */ }
     }
-    setPending([]);
+    setPending((p) => p.filter((a) => !isActionReady(a.kind, a.params)));
     setReply((r) => (r ? { ...r, answer: `${done} מתוך ${items.length} הפעולות בוצעו`, mode: "read" } : r));
   }
 
