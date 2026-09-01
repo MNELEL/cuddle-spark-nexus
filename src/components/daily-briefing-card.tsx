@@ -44,6 +44,12 @@ export function DailyBriefingCard() {
     queryFn: () => fetchList(),
   });
 
+  const fetchPending = useServerFn(listPendingUpdates);
+  const { data: pending = [] } = useQuery({
+    queryKey: ["pending-updates"],
+    queryFn: () => fetchPending(),
+  });
+
   const generateMut = useMutation({
     mutationFn: () => runGenerate(),
     onSuccess: (res) => {
