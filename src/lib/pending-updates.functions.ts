@@ -66,7 +66,7 @@ const idInput = z.object({ id: z.string().uuid(), reviewNotes: z.string().max(20
 
 /** בעלות: הכיתה של הפריט חייבת להיות של המלמד המחובר. */
 async function loadOwnedPending(
-  supabase: Awaited<ReturnType<typeof requireSupabaseAuth.server>> extends never ? never : any,
+  supabase: SupabaseClient<Database>,
   id: string,
   userId: string,
 ) {
