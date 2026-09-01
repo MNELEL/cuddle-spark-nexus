@@ -67,21 +67,27 @@ export const generateDailyBriefing = createServerFn({ method: "POST" })
     let scanned = 0;
 
     for (const cls of activeClasses) {
-      const [studentsRes, attRes] = await Promise.all([
+      const [studentsRes, attRes, gradesRes] = await Promise.all([
         supabase.from("students").select("id,name").eq("class_id", cls.id),
         supabase
           .from("attendance")
           .select("student_id,date,status")
           .eq("class_id", cls.id)
           .gte("date", baseFrom),
+        supabase
+          .from("grades")
+          .select("student_id,date,value,max_value")
+          .eq("class_id", cls.id)
+          .gte("date", baseFrom),
       ]);
-      if (studentsRes.error || attRes.error) {
-        console.error("[DB Error]", studentsRes.error ?? attRes.error);
+      if (studentsRes.error || attRes.error || gradesRes.error) {
+        console.error("[DB Error]", studentsRes.error ?? attRes.error ?? gradesRes.error);
         throw new Error("הסריקה נכשלה. נסה שוב.");
       }
 
       const students = studentsRes.data ?? [];
       const rows = attRes.data ?? [];
+      const gradeRows = gradesRes.data ?? [];
       scanned += students.length;
 
       for (const st of students) {
@@ -90,19 +96,55 @@ export const generateDailyBriefing = createServerFn({ method: "POST" })
         const base = mine.filter((r) => r.date < recentFrom).map((r) => r.status);
 
         const decline = evaluateAttendanceDecline(recent, base);
-        if (!decline) continue;
+        if (decline) {
+          pending.push({
+            owner_id: userId,
+            class_id: cls.id,
+            student_id: st.id,
+            insight_type: "attendance_decline",
+            severity: decline.severity,
+            title: `ירידה בנוכחות - ${st.name}`,
+            description: describeDecline(decline),
+            suggested_action: "בדוק מה קרה בשבוע האחרון וצור קשר עם ההורים",
+            action_link: `/classes/${cls.id}?tab=tracking`,
+          });
+        }
 
-        pending.push({
-          owner_id: userId,
-          class_id: cls.id,
-          student_id: st.id,
-          insight_type: "attendance_decline",
-          severity: decline.severity,
-          title: `ירידה בנוכחות - ${st.name}`,
-          description: describeDecline(decline),
-          suggested_action: "בדוק מה קרה בשבוע האחרון וצור קשר עם ההורים",
-          action_link: `/classes/${cls.id}?tab=tracking`,
-        });
+        // היעדרות רצופה — סיגנל נפרד, גם כשאין ירידה מול הבסיס.
+        const streak = evaluateAbsenceStreak(mine.map((r) => ({ date: r.date, status: r.status })));
+        if (streak) {
+          pending.push({
+            owner_id: userId,
+            class_id: cls.id,
+            student_id: st.id,
+            insight_type: "absence_streak",
+            severity: streak.severity,
+            title: `היעדרות רצופה - ${st.name}`,
+            description: describeAbsenceStreak(streak),
+            suggested_action: "התקשר להורים לבדוק את סיבת ההיעדרות",
+            action_link: `/classes/${cls.id}?tab=tracking`,
+          });
+        }
+
+        // ירידה בציונים — 7 ימים אחרונים מול החלון שלפניהם.
+        const myGrades = gradeRows.filter((g) => g.student_id === st.id);
+        const gDecline = evaluateGradeDecline(
+          myGrades.filter((g) => g.date >= recentFrom),
+          myGrades.filter((g) => g.date < recentFrom),
+        );
+        if (gDecline) {
+          pending.push({
+            owner_id: userId,
+            class_id: cls.id,
+            student_id: st.id,
+            insight_type: "grade_decline",
+            severity: gDecline.severity,
+            title: `ירידה בציונים - ${st.name}`,
+            description: describeGradeDecline(gDecline),
+            suggested_action: "בדוק אילו נושאים קשים לו והצע חזרה ממוקדת",
+            action_link: `/analytics/${cls.id}`,
+          });
+        }
       }
     }
 
@@ -112,15 +154,15 @@ export const generateDailyBriefing = createServerFn({ method: "POST" })
     const sinceIso = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     const { data: existing, error: eErr } = await supabase
       .from("orchestrator_insights")
-      .select("student_id")
-      .eq("insight_type", "attendance_decline")
+      .select("student_id,insight_type")
+      .in("insight_type", ["attendance_decline", "absence_streak", "grade_decline"])
       .eq("is_dismissed", false)
       .gte("created_at", sinceIso)
       .in("student_id", pending.map((p) => p.student_id));
     if (eErr) { console.error("[DB Error]", eErr); throw new Error("הסריקה נכשלה. נסה שוב."); }
 
-    const seen = new Set((existing ?? []).map((r) => r.student_id));
-    const toInsert = pending.filter((p) => !seen.has(p.student_id));
+    const seen = new Set((existing ?? []).map((r) => `${r.student_id}|${r.insight_type}`));
+    const toInsert = pending.filter((p) => !seen.has(`${p.student_id}|${p.insight_type}`));
     if (toInsert.length === 0) return { created: 0, scanned };
 
     // אין מדיניות INSERT ללקוח — הכתיבה נעשית בשרת בלבד, עם owner_id מהטוקן.
