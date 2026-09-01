@@ -267,21 +267,31 @@ export const executeAssistantAction = createServerFn({ method: "POST" })
       });
       if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     } else if (kind === "add_incident") {
+      // אירוע חריג אינו נרשם ישירות: הוא נכנס לתור אישור נפרד (מסך /review),
+      // כדי שהרב יבדוק את הניסוח והחומרה לפני שהאירוע נרשם בתיק התלמיד.
       const severityParsed = z.enum(["low", "medium", "high"])
         .safeParse(String(params.severity ?? "medium"));
       if (!severityParsed.success) throw new Error("דרגת חומרה לא תקינה");
-      const severityHe = { low: "קלה", medium: "בינונית", high: "חמורה" }[severityParsed.data];
       const description = String(params.description ?? "").slice(0, 1900);
       if (!description.trim()) throw new Error("חסר תיאור לאירוע החריג");
-      const { error } = await supabase.from("discipline_events").insert({
+
+      const { data: studentRow } = await supabase
+        .from("students").select("name").eq("id", sid).maybeSingle();
+
+      const { error } = await supabase.from("pending_updates").insert({
         class_id: data.classId,
-        student_id: sid,
-        type: "negative",
-        category: String(params.category ?? "incident").slice(0, 80),
-        description: `[אירוע חריג · חומרה ${severityHe}] ${description}`,
-        date: safeDate(params.date),
+        intent: "add_incident",
+        original_text: null,
+        payload: { ...params, severity: severityParsed.data, description },
+        status: "pending",
+        summary: data.action.summary,
+        student_name: studentRow?.name ?? null,
+        source: "assistant",
+        created_by: context.userId,
       });
       if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+      return { ok: true, queuedForReview: true } as const;
+
     } else if (kind === "add_parent_call") {
       const channelParsed = z.enum(["phone", "meeting", "whatsapp", "email"])
         .safeParse(String(params.channel ?? "phone"));
