@@ -67,3 +67,47 @@ export function describeDecline(d: AttendanceDecline): string {
     `ו-${d.baseCount} ימי רישום בחודש שלפניו).`
   );
 }
+
+/* -------- היעדרות רצופה -------- */
+
+/** מספר ימי היעדרות רצופים שמייצר התראה. */
+export const ABSENCE_STREAK_THRESHOLD = 3;
+/** מעל זה ההתראה נחשבת חמורה. */
+export const ABSENCE_STREAK_HIGH = 5;
+
+export type AbsenceStreak = {
+  severity: "medium" | "high";
+  /** אורך הרצף שנמצא. */
+  days: number;
+  /** התאריך האחרון ברצף (הקרוב להיום). */
+  lastDate: string;
+  /** התאריך הראשון ברצף. */
+  firstDate: string;
+};
+
+/**
+ * מזהה רצף היעדרויות בימי הרישום האחרונים.
+ * rows יכולים להגיע בכל סדר — הפונקציה ממיינת לפי תאריך יורד.
+ */
+export function evaluateAbsenceStreak(
+  rows: { date: string; status: AttendanceStatus }[],
+): AbsenceStreak | null {
+  const sorted = [...rows].sort((a, b) => b.date.localeCompare(a.date));
+  const streak: { date: string }[] = [];
+  for (const r of sorted) {
+    if (r.status === "absent") streak.push({ date: r.date });
+    else break;
+  }
+  if (streak.length < ABSENCE_STREAK_THRESHOLD) return null;
+  return {
+    severity: streak.length >= ABSENCE_STREAK_HIGH ? "high" : "medium",
+    days: streak.length,
+    lastDate: streak[0]!.date,
+    firstDate: streak[streak.length - 1]!.date,
+  };
+}
+
+/** תיאור בעברית של רצף ההיעדרויות. */
+export function describeAbsenceStreak(s: AbsenceStreak): string {
+  return `${s.days} ימי היעדרות רצופים (${s.firstDate} עד ${s.lastDate}) — כדאי לבדוק מה קרה.`;
+}
