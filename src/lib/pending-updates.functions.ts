@@ -4,6 +4,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 
+export type PayloadValue = string | number | boolean | null;
+
 /** פריט בתור האישורים — כרגע רק אירועים חריגים (intent = "add_incident"). */
 export type PendingUpdateItem = {
   id: string;
@@ -13,7 +15,7 @@ export type PendingUpdateItem = {
   summary: string;
   student_name: string | null;
   original_text: string | null;
-  payload: Record<string, unknown>;
+  payload: Record<string, PayloadValue>;
   created_at: string;
 };
 
@@ -47,7 +49,7 @@ export const listPendingUpdates = createServerFn({ method: "GET" })
 
     return (data ?? []).map((row) => {
       const cls = row.classes as { name?: string } | null;
-      const payload = row.payload as Record<string, unknown> | null;
+      const payload = row.payload as Record<string, PayloadValue> | null;
       return {
         id: row.id,
         class_id: row.class_id,
