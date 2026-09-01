@@ -92,8 +92,10 @@ function InsightsPage() {
 
   if (!profile || profile.resource_count === 0) {
     return (
-      <div className="mx-auto max-w-2xl space-y-6 py-10 text-center">
+      <div className="mx-auto max-w-2xl space-y-6 py-10" dir="rtl">
+        <DailyBriefingCard />
         <div className="flex justify-center">
+
           <div className="rounded-full bg-primary/10 p-6">
             <Sparkles className="h-10 w-10 text-primary" />
           </div>
