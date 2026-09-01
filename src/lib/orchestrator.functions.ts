@@ -240,24 +240,67 @@ export const generateDailyBriefing = createServerFn({ method: "POST" })
             action_link: `/analytics/${cls.id}`,
           });
         }
+
+        // ירידה בהתנהגות — ממוצע נקודות ההתנהגות לרישום.
+        const myBehavior = behaviorRows.filter((b) => b.student_id === st.id);
+        const bDecline = evaluateBehaviorDecline(
+          myBehavior.filter((b) => b.date >= recentFrom),
+          myBehavior.filter((b) => b.date < recentFrom),
+        );
+        if (bDecline) {
+          pending.push({
+            owner_id: userId,
+            class_id: cls.id,
+            student_id: st.id,
+            insight_type: "behavior_decline",
+            severity: bDecline.severity,
+            title: `ירידה בהתנהגות - ${st.name}`,
+            description: describeBehaviorDecline(bDecline),
+            suggested_action: "שוחח איתו ביחידות ושקול תגבור חיובי",
+            action_link: `/classes/${cls.id}?tab=behavior`,
+          });
+        }
+
+        // ריבוי אירועי משמעת בשבועיים האחרונים.
+        const spike = evaluateDisciplineSpike(
+          disciplineRows.filter((d) => d.student_id === st.id && d.date >= spikeFrom),
+        );
+        if (spike) {
+          pending.push({
+            owner_id: userId,
+            class_id: cls.id,
+            student_id: st.id,
+            insight_type: "discipline_spike",
+            severity: spike.severity,
+            title: `ריבוי אירועי משמעת - ${st.name}`,
+            description: describeDisciplineSpike(spike),
+            suggested_action: "עדכן את ההורים ובנה תוכנית התנהגות ממוקדת",
+            action_link: `/classes/${cls.id}?tab=behavior`,
+          });
+        }
       }
     }
 
     if (pending.length === 0) return { created: 0, scanned };
 
-    // מונע כפילויות: תובנה פעילה מאותו סוג לאותו תלמיד מ-7 הימים האחרונים.
+    // מונע כפילויות: תובנה פעילה מאותו סוג לאותו תלמיד/כיתה מ-7 הימים האחרונים.
     const sinceIso = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     const { data: existing, error: eErr } = await supabase
       .from("orchestrator_insights")
-      .select("student_id,insight_type")
-      .in("insight_type", ["attendance_decline", "absence_streak", "grade_decline"])
+      .select("class_id,student_id,insight_type")
       .eq("is_dismissed", false)
-      .gte("created_at", sinceIso)
-      .in("student_id", pending.map((p) => p.student_id));
+      .gte("created_at", sinceIso);
     if (eErr) { console.error("[DB Error]", eErr); throw new Error("הסריקה נכשלה. נסה שוב."); }
 
-    const seen = new Set((existing ?? []).map((r) => `${r.student_id}|${r.insight_type}`));
-    const toInsert = pending.filter((p) => !seen.has(`${p.student_id}|${p.insight_type}`));
+    const key = (r: { class_id: string; student_id: string | null; insight_type: string }) =>
+      `${r.student_id ?? `class:${r.class_id}`}|${r.insight_type}`;
+    const seen = new Set((existing ?? []).map(key));
+    const toInsert = pending.filter((p) => {
+      const k = key(p);
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
     if (toInsert.length === 0) return { created: 0, scanned };
 
     // אין מדיניות INSERT ללקוח — הכתיבה נעשית בשרת בלבד, עם owner_id מהטוקן.
