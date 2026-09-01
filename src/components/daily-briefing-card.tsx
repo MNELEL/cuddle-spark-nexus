@@ -13,6 +13,7 @@ import {
   type DailyInsight,
 } from "@/lib/orchestrator.functions";
 import { listPendingUpdates } from "@/lib/pending-updates.functions";
+import { StudentHistoryDialog } from "@/components/student-history-dialog";
 
 const SEVERITY_STYLES: Record<string, { wrapper: string; label: string; badge: string }> = {
   high: {
@@ -162,8 +163,8 @@ export function DailyBriefingCard() {
                       <X className="h-4 w-4" aria-hidden />
                     </Button>
                   </div>
-                  {insight.action_link && (
-                    <div className="mt-2 flex justify-start">
+                  <div className="mt-2 flex flex-wrap justify-start gap-2">
+                    {insight.action_link && (
                       <Button
                         variant="secondary"
                         size="sm"
@@ -171,8 +172,14 @@ export function DailyBriefingCard() {
                       >
                         עבור לפעולה
                       </Button>
-                    </div>
-                  )}
+                    )}
+                    {insight.student_id && (
+                      <StudentHistoryDialog
+                        studentId={insight.student_id}
+                        studentName={insight.student_name}
+                      />
+                    )}
+                  </div>
                 </li>
               );
             })}

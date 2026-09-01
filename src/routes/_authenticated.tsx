@@ -16,6 +16,7 @@ import { ThemeSync } from "@/components/theme-sync";
 import { ToolBreadcrumbs } from "@/components/tool-breadcrumbs";
 import { ToolAccessGuard } from "@/components/tool-access-guard";
 import { HomeQuickNav } from "@/components/home-quick-nav";
+import { UpcomingEventsWidget } from "@/components/upcoming-events-widget";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthLayout,
@@ -135,6 +136,7 @@ function AuthLayout() {
           </nav>
           <div className="flex shrink-0 items-center gap-1 sm:gap-3">
             <span className="hidden max-w-[14rem] truncate text-sm text-muted-foreground md:inline">{user.email}</span>
+            <UpcomingEventsWidget />
             <ThemeSwitcher />
             <Button variant="ghost" size="sm" onClick={() => supabase.auth.signOut().then(() => navigate({ to: "/login" }))}>
               <LogOut className="ms-1 h-4 w-4" /> <span className="hidden sm:inline">יציאה</span>
