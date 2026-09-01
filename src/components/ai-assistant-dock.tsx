@@ -1,11 +1,17 @@
 import { useState, useRef, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Mic, MicOff, Send, Check, X, Loader2, HelpCircle, BookOpen } from "lucide-react";
+import {
+  Sparkles, Mic, MicOff, Send, Check, X, Loader2, HelpCircle, BookOpen,
+  ExternalLink, AlertCircle, Pencil,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
@@ -14,6 +20,7 @@ import {
   assistantQuery, executeAssistantAction,
   type AssistantAction, type AssistantActionKind, type AssistantReply,
 } from "@/lib/ai-assistant.functions";
+import { fieldsForKind, missingRequiredFields, isActionReady } from "@/lib/assistant-actions";
 
 type SR = {
   lang: string;
