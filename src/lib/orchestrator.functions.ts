@@ -142,7 +142,7 @@ export const generateDailyBriefing = createServerFn({ method: "POST" })
             title: `לא נרשמו ציונים - ${cls.name}`,
             description: describeGap(gradeGap, "ציונים"),
             suggested_action: "הזן ציונים למבחנים ולבחנים האחרונים",
-            action_link: `/classes/${cls.id}?tab=grades`,
+            action_link: `/classes/${cls.id}?tab=tracking`,
           });
         }
 
@@ -159,7 +159,7 @@ export const generateDailyBriefing = createServerFn({ method: "POST" })
             title: `עלון שבועי לא פורסם - ${cls.name}`,
             description: describeGap(bulletinGap, "עלון שבועי"),
             suggested_action: "הפק ופרסם את העלון השבועי להורים",
-            action_link: `/bulletin/${cls.id}`,
+            action_link: `/bulletins/${cls.id}`,
           });
         }
 
@@ -257,7 +257,7 @@ export const generateDailyBriefing = createServerFn({ method: "POST" })
             title: `ירידה בהתנהגות - ${st.name}`,
             description: describeBehaviorDecline(bDecline),
             suggested_action: "שוחח איתו ביחידות ושקול תגבור חיובי",
-            action_link: `/classes/${cls.id}?tab=behavior`,
+            action_link: `/classes/${cls.id}?tab=tracking`,
           });
         }
 
@@ -275,7 +275,7 @@ export const generateDailyBriefing = createServerFn({ method: "POST" })
             title: `ריבוי אירועי משמעת - ${st.name}`,
             description: describeDisciplineSpike(spike),
             suggested_action: "עדכן את ההורים ובנה תוכנית התנהגות ממוקדת",
-            action_link: `/classes/${cls.id}?tab=behavior`,
+            action_link: `/classes/${cls.id}?tab=tracking`,
           });
         }
       }
