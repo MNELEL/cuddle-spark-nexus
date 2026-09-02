@@ -20,6 +20,8 @@ import { buildClassReportPdf } from "@/lib/pdf/class-report-pdf";
 import { downloadPdfBlob } from "@/lib/pdf/pdf-builder";
 import { useBrand } from "@/hooks/use-brand";
 import { PdfPreviewModal } from "@/components/pdf-preview-modal";
+import { HebrewRangeFilter } from "@/components/hebrew-range-filter";
+import { toHebrewDateFull } from "@/lib/hebrew-date";
 
 export const Route = createFileRoute("/_authenticated/reports/$classId")({
   head: () => ({
@@ -177,13 +179,22 @@ function ReportsPage() {
 
       <Card className="no-print">
         <CardContent className="flex flex-wrap items-end gap-3 py-4">
+          <div className="w-full">
+            <Label>טווח לפי הלוח העברי</Label>
+            <HebrewRangeFilter
+              value={{ from, to }}
+              onChange={(r) => { setFrom(r.from); setTo(r.to); }}
+            />
+          </div>
           <div>
             <Label>מתאריך</Label>
             <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+            <p className="mt-1 text-[11px] text-muted-foreground">{toHebrewDateFull(from) ?? ""}</p>
           </div>
           <div>
             <Label>עד תאריך</Label>
             <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+            <p className="mt-1 text-[11px] text-muted-foreground">{toHebrewDateFull(to) ?? ""}</p>
           </div>
           <div className="min-w-[200px]">
             <Label>קבוצה</Label>
@@ -229,7 +240,7 @@ function ReportsPage() {
         <header className="border-b pb-4">
           <h1 className="font-display text-3xl font-bold">דוח כיתה — {data?.class.name ?? "..."}</h1>
           <p className="mt-1 text-sm text-muted-foreground font-mono-tabular">
-            תקופה: {from} — {to} · הופק: {today()} · {TEACHER_LABEL} המלמד
+            תקופה: {toHebrewDateFull(from) ?? from} — {toHebrewDateFull(to) ?? to} · הופק: {today()} · {TEACHER_LABEL} המלמד
             {groupName ? ` · קבוצה: ${groupName}` : ""}
             {` · ${filtered.length} תלמידים`}
           </p>
