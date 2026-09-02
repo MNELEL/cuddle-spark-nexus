@@ -29,26 +29,19 @@ export function HebrewDatePanel({
   editable?: boolean;
   onDateChange?: (date: Date) => void;
 }) {
-  const [now, setNow] = useState(() => new Date());
-  const [selected, setSelected] = useState<Date | null>(null);
+  const { date: active, now, isCustom, info, setDate, reset } = useHebrewAnchor();
   const [hebrewInput, setHebrewInput] = useState("");
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 60_000);
-    return () => clearInterval(t);
-  }, []);
-
-  const active = selected ?? now;
-  const info = useMemo(() => hebrewDayInfo(active), [active]);
   const elapsed = useMemo(() => elapsedSince(active, now), [active, now]);
 
   const apply = (d: Date) => {
-    setSelected(d);
+    setDate(d);
     setError("");
     setHebrewInput("");
     onDateChange?.(d);
   };
+
 
   const submitHebrew = () => {
     const res = parseHebrewDateInput(hebrewInput);
