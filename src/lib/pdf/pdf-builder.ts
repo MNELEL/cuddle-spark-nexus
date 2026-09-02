@@ -1,6 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable, { type UserOptions } from "jspdf-autotable";
-import { hebrewDate, hebrewDateTime } from "@/lib/hebrew-date";
+import { hebrewDate as hebrewDateLabel, hebrewDateTime } from "@/lib/hebrew-date";
 
 const FONT_REGULAR_URL = "/fonts/Heebo-Regular.ttf";
 const FONT_BOLD_URL = "/fonts/Heebo-Bold.ttf";
@@ -504,9 +504,7 @@ export function safeName(name: string): string {
 }
 
 export function hebrewDate(iso: string): string {
-  try {
-    return hebrewDate(iso + "T00:00:00");
-  } catch { return iso; }
+  return hebrewDateLabel(`${iso}T00:00:00`) || iso;
 }
 
 export function downloadPdfBlob(blob: Blob, filename: string): void {

@@ -43,6 +43,7 @@ export function toHebrewDateLabel(iso: string | null | undefined): string | null
 export function toHebrewDateFull(iso: string | null | undefined): string | null {
   const d = iso ? parseIso(iso) : null;
   if (!d) return null;
+  return new HDate(d).renderGematriya();
 }
 
 /** Parses ISO dates *and* full timestamps ("2026-09-02T18:04:00Z"). */
