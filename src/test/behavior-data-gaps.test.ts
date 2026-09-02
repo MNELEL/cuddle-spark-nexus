@@ -110,3 +110,71 @@ describe("data gaps", () => {
     expect(describeGap(evaluateBulletinGap(["2026-01-05"], today)!, "עלון שבועי")).toContain("15");
   });
 });
+
+import {
+  evaluateGradeOutlier,
+  evaluateBelowClassAverage,
+  describeGradeOutlier,
+  describeBelowClassAverage,
+} from "@/lib/grade-decline";
+
+describe("evaluateGradeOutlier", () => {
+  const strong = [
+    { value: 92, max_value: 100, date: "2026-08-01" },
+    { value: 88, max_value: 100, date: "2026-08-10" },
+    { value: 95, max_value: 100, date: "2026-08-20" },
+  ];
+
+  it("flags a failing exam for a strong student", () => {
+    const r = evaluateGradeOutlier([...strong, { value: 45, max_value: 100, date: "2026-09-01" }]);
+    expect(r).not.toBeNull();
+    expect(r!.score).toBe(45);
+    expect(r!.average).toBe(92);
+    expect(r!.severity).toBe("high");
+    expect(describeGradeOutlier(r!)).toContain("45%");
+  });
+
+  it("ignores a passing last grade or a weak average", () => {
+    expect(evaluateGradeOutlier([...strong, { value: 80, max_value: 100, date: "2026-09-01" }])).toBeNull();
+    expect(
+      evaluateGradeOutlier([
+        { value: 60, max_value: 100, date: "2026-08-01" },
+        { value: 62, max_value: 100, date: "2026-08-10" },
+        { value: 40, max_value: 100, date: "2026-09-01" },
+      ]),
+    ).toBeNull();
+  });
+
+  it("normalizes max_value", () => {
+    const r = evaluateGradeOutlier([
+      { value: 19, max_value: 20, date: "2026-08-01" },
+      { value: 18, max_value: 20, date: "2026-08-05" },
+      { value: 9, max_value: 20, date: "2026-09-01" },
+    ]);
+    expect(r).not.toBeNull();
+    expect(r!.score).toBe(45);
+  });
+});
+
+describe("evaluateBelowClassAverage", () => {
+  it("flags a meaningful gap from the class average", () => {
+    const student = [
+      { value: 55, max_value: 100, date: "2026-09-01" },
+      { value: 60, max_value: 100, date: "2026-09-02" },
+    ];
+    const cls = [...student, { value: 95, max_value: 100, date: "2026-09-01" }, { value: 92, max_value: 100, date: "2026-09-02" }];
+    const g = evaluateBelowClassAverage(student, cls);
+    expect(g).not.toBeNull();
+    expect(g!.gapPoints).toBeGreaterThanOrEqual(15);
+    expect(describeBelowClassAverage(g!)).toContain("פער");
+  });
+
+  it("returns null when close to the class or with too few grades", () => {
+    const student = [
+      { value: 88, max_value: 100, date: "2026-09-01" },
+      { value: 90, max_value: 100, date: "2026-09-02" },
+    ];
+    expect(evaluateBelowClassAverage(student, student)).toBeNull();
+    expect(evaluateBelowClassAverage([student[0]!], student)).toBeNull();
+  });
+});

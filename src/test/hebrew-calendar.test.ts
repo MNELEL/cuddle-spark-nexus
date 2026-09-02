@@ -78,3 +78,78 @@ describe("hebrewRangePresets", () => {
     expect(prev.to < month.from).toBe(true);
   });
 });
+
+import {
+  elapsedSince,
+  gematriyaToNumber,
+  hebrewMonthWeeks,
+  parseHebrewDateInput,
+  shiftHebrew,
+} from "@/lib/hebrew-calendar";
+
+describe("parseHebrewDateInput", () => {
+  it("parses gematriya with punctuation", () => {
+    const res = parseHebrewDateInput("כ״א אלול תשפ״ו");
+    expect(res.ok).toBe(true);
+    if (res.ok) {
+      expect(res.info.dayOfMonth).toBe(21);
+      expect(res.info.month).toContain("תשפ״ו");
+    }
+  });
+
+  it("parses gematriya without punctuation and numeric forms", () => {
+    const a = parseHebrewDateInput("כא אלול תשפו");
+    const b = parseHebrewDateInput("21 אלול 5786");
+    expect(a.ok && b.ok).toBe(true);
+    if (a.ok && b.ok) expect(a.info.iso).toBe(b.info.iso);
+  });
+
+  it("rejects unknown month and impossible day", () => {
+    expect(parseHebrewDateInput("כא בלולול תשפו").ok).toBe(false);
+    expect(parseHebrewDateInput("לא אלול תשפו").ok).toBe(false);
+    expect(parseHebrewDateInput("").ok).toBe(false);
+  });
+});
+
+describe("gematriyaToNumber", () => {
+  it("sums Hebrew letters", () => {
+    expect(gematriyaToNumber("כ״א")).toBe(21);
+    expect(gematriyaToNumber("תשפ״ו")).toBe(786);
+    expect(gematriyaToNumber("abc")).toBe(0);
+  });
+});
+
+describe("elapsedSince", () => {
+  it("reports past, future and today", () => {
+    const base = new Date(2026, 8, 2);
+    const past = elapsedSince(new Date(2026, 7, 26), base);
+    expect(past.days).toBe(7);
+    expect(past.weeks).toBe(1);
+    expect(past.label).toContain("חלפו");
+    const future = elapsedSince(new Date(2026, 8, 12), base);
+    expect(future.days).toBe(-10);
+    expect(future.label).toContain("בעוד");
+    expect(elapsedSince(base, base).label).toBe("היום");
+  });
+});
+
+describe("shiftHebrew", () => {
+  it("shifts by day, week and Hebrew month", () => {
+    const base = new Date(2026, 8, 2);
+    expect(isoOf(shiftHebrew(base, "day", 1))).toBe("2026-09-03");
+    expect(isoOf(shiftHebrew(base, "week", -1))).toBe("2026-08-26");
+    const next = shiftHebrew(base, "month", 1);
+    expect(hebrewDayInfo(next).month).not.toBe(hebrewDayInfo(base).month);
+  });
+});
+
+describe("hebrewMonthWeeks", () => {
+  it("covers the whole Hebrew month in ordered weeks", () => {
+    const weeks = hebrewMonthWeeks(new Date(2026, 8, 2));
+    const bounds = hebrewMonthBounds(new Date(2026, 8, 2));
+    expect(weeks.length).toBeGreaterThanOrEqual(4);
+    expect(weeks[0]!.from).toBe(isoOf(bounds.start));
+    expect(weeks[weeks.length - 1]!.to).toBe(isoOf(bounds.end));
+    for (let i = 1; i < weeks.length; i++) expect(weeks[i]!.from > weeks[i - 1]!.to).toBe(true);
+  });
+});
