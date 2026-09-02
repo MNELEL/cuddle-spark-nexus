@@ -24,6 +24,8 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Plus, Trash2, Bell, Award, Star, Calendar as CalIcon, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { hebrewDate } from "@/lib/hebrew-date";
+import { HebrewRangeFilter, type DateRange } from "@/components/hebrew-range-filter";
+import { hebrewDayInfo } from "@/lib/hebrew-calendar";
 
 const categoryLabel: Record<string, string> = {
   participation: "השתתפות",
@@ -242,9 +244,16 @@ function PointsPanel({
 }: { classId: string; students: Student[]; points: Point[] }) {
   const [open, setOpen] = useState(false);
   const [filterStudent, setFilterStudent] = useState<string>("all");
+  // ברירת המחדל היא החודש העברי הנוכחי — נגזר בזמן אמת מהתאריך העברי.
+  const [range, setRange] = useState<DateRange>(() => hebrewDayInfo().monthRange);
   const nameOf = (id: string) => students.find((s) => s.id === id)?.name ?? "?";
 
-  const filtered = points.filter((p) => filterStudent === "all" || p.student_id === filterStudent);
+  const filtered = points.filter(
+    (p) =>
+      (filterStudent === "all" || p.student_id === filterStudent) &&
+      (!range.from || p.date >= range.from) &&
+      (!range.to || p.date <= range.to),
+  );
 
   return (
     <div className="space-y-3">
@@ -266,6 +275,10 @@ function PointsPanel({
             </DialogTrigger>
             <PointsDialog classId={classId} students={students} onClose={() => setOpen(false)} />
           </Dialog>
+        </div>
+        <div className="w-full">
+          <Label>סינון לפי הלוח העברי</Label>
+          <HebrewRangeFilter value={range} onChange={setRange} />
         </div>
       </div>
 
