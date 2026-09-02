@@ -80,7 +80,7 @@ export function buildSeatingPrintHtml(input: SeatingPrintInput): string {
   const heading = (opts.title ?? "").trim() || `פריסת הושבה — ${className}`;
   const footer = (opts.footer ?? "").trim() || "הופק במערכת ClassAlign Studio";
   const showPositions = opts.showPositions !== false;
-  const dateLabel = input.dateLabel ?? hebrewDate();
+  const dateLabel = input.dateLabel ?? hebrewDate(new Date());
   const seatedCount = Object.values(cells).filter((c) => c.kind === "student").length;
 
   const body = Array.from({ length: rows })

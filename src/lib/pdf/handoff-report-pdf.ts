@@ -19,7 +19,7 @@ export async function buildHandoffPdfBlob(
   drawBrandHeader(hd, {
     title: "מסמך מסירה — פרופילי תלמידים",
     subtitle: `כיתה ${className}`,
-    meta: `מסמך פנימי חסוי · ${profiles.length} תלמידים · ${hebrewDate()}`,
+    meta: `מסמך פנימי חסוי · ${profiles.length} תלמידים · ${hebrewDate(new Date())}`,
   });
 
   hd.paragraph(

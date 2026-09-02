@@ -473,7 +473,7 @@ export function drawBrandHeader(
 
   doc.setFontSize(8);
   doc.setTextColor(150);
-  rtlText(doc, `הופק ב-${hebrewDateTime()}`, layout.rightX, hd.currentY(), { align: "right" });
+  rtlText(doc, `הופק ב-${hebrewDateTime(new Date())}`, layout.rightX, hd.currentY(), { align: "right" });
   hd.advance(6);
 }
 

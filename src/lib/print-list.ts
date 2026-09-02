@@ -25,7 +25,7 @@ export function printList(title: string, sections: PrintSection[]) {
     .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:0 24px}
     @media print{@page{margin:16mm}}
   `;
-  const now = hebrewDate();
+  const now = hebrewDate(new Date());
   const body = sections
     .map(
       (s) => `
