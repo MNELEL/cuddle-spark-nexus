@@ -196,7 +196,7 @@ function YearChain({ classId }: { classId: string }) {
 }
 
 type ClassSearch = { q?: string; field?: string; tab?: string; sort?: string; page?: number };
-const CLASS_TABS = ["students", "relations", "groups", "seating", "tracking", "crm", "lessons"] as const;
+const CLASS_TABS = ["students", "relations", "groups", "seating", "tracking", "crm", "lessons", "hebrew-dates"] as const;
 
 export const Route = createFileRoute("/_authenticated/classes/$classId")({
   component: ClassDetail,
@@ -256,6 +256,7 @@ function ClassDetail() {
   const tab = CLASS_TABS.includes(search.tab as (typeof CLASS_TABS)[number])
     ? (search.tab as string)
     : "seating";
+  const { date: anchorDate } = useHebrewAnchor();
   const setTab = (t: string) =>
     void navigate({ search: (prev) => ({ ...prev, tab: t }), replace: true });
   const query = search.q ?? "";
