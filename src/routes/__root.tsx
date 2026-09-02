@@ -141,9 +141,12 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <Outlet />
-        <Toaster richColors position="top-center" dir="rtl" />
+        <HebrewAnchorProvider>
+          <Outlet />
+          <Toaster richColors position="top-center" dir="rtl" />
+        </HebrewAnchorProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );
+
 }
