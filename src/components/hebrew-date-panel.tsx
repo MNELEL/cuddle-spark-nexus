@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { CalendarDays, ChevronRight, ChevronLeft, RotateCcw } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,11 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   elapsedSince,
-  hebrewDayInfo,
   isoOf,
   parseHebrewDateInput,
   shiftHebrew,
 } from "@/lib/hebrew-calendar";
+import { useHebrewAnchor } from "@/components/hebrew-anchor";
 import { toHebrewDateFull } from "@/lib/hebrew-date";
 
 /**
@@ -76,7 +76,7 @@ export function HebrewDatePanel({
         <CardTitle className="flex flex-wrap items-center gap-2 font-display text-base">
           <CalendarDays className="h-5 w-5 text-primary" aria-hidden />
           הלוח העברי
-          {selected && <Badge variant="outline">תאריך נבחר</Badge>}
+          {isCustom && <Badge variant="outline">תאריך נבחר</Badge>}
           {info.parasha && <Badge variant="secondary">{info.parasha}</Badge>}
           {info.isRoshChodesh && <Badge className="bg-accent text-accent-foreground">ראש חודש</Badge>}
           {info.isShabbat && <Badge variant="outline">שבת</Badge>}
@@ -144,7 +144,7 @@ export function HebrewDatePanel({
                 variant="ghost"
                 size="sm"
                 onClick={() => {
-                  setSelected(null);
+                  reset();
                   setHebrewInput("");
                   setError("");
                   onDateChange?.(new Date());
