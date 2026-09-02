@@ -19,6 +19,7 @@ import { listStudents } from "@/lib/students.functions";
 import { getClass } from "@/lib/classes.functions";
 import { importStudents, listConfigs, saveConfig, loadConfig, deleteConfig } from "@/lib/seating-configs.functions";
 import { exportClassGrades, exportClassAttendance, exportResourcesMeta } from "@/lib/data-export.functions";
+import { hebrewDateTime } from "@/lib/hebrew-date";
 
 type Student = {
   id: string; name: string;
@@ -277,7 +278,7 @@ export function ImportExportBar({ classId }: { classId: string }) {
                   <CardContent className="flex items-center justify-between py-2">
                     <div>
                       <div className="font-medium">{c.name}</div>
-                      <div className="text-xs text-muted-foreground">{new Date(c.created_at).toLocaleString("he-IL")}</div>
+                      <div className="text-xs text-muted-foreground">{hebrewDateTime(c.created_at)}</div>
                     </div>
                     <div className="flex gap-1">
                       <Button size="sm" onClick={() => loadM.mutate(c.id)} disabled={loadM.isPending}>טען</Button>

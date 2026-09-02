@@ -1,6 +1,6 @@
 import { createHebrewDoc, drawBrandHeader, drawFooter, safeName } from "./pdf-builder";
 import { sensitiveFlagLabel, type SensitiveFlag } from "@/lib/student-profiles.functions";
-import { hebrewDateTime } from "@/lib/hebrew-date";
+import { hebrewDate, hebrewDateTime } from "@/lib/hebrew-date";
 
 export type HandoffProfile = {
   student_name: string;
@@ -19,7 +19,7 @@ export async function buildHandoffPdfBlob(
   drawBrandHeader(hd, {
     title: "מסמך מסירה — פרופילי תלמידים",
     subtitle: `כיתה ${className}`,
-    meta: `מסמך פנימי חסוי · ${profiles.length} תלמידים · ${new Date().toLocaleDateString("he-IL")}`,
+    meta: `מסמך פנימי חסוי · ${profiles.length} תלמידים · ${hebrewDate()}`,
   });
 
   hd.paragraph(

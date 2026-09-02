@@ -1,3 +1,4 @@
+import { hebrewDate } from "@/lib/hebrew-date";
 /** RTL print helpers for the schedule screens (week grid, duties, holidays, targets). */
 
 function escapeHtml(s: string) {
@@ -40,7 +41,7 @@ export function printHtmlTable(opts: {
   w.document.write(`<!doctype html><html dir="rtl" lang="he"><head><meta charset="utf-8">
     <title>${escapeHtml(opts.title)}</title><style>${STYLE}</style></head><body>
     <h1>${escapeHtml(opts.title)}</h1>
-    <div class="meta">${escapeHtml(opts.subtitle ?? "")}${opts.subtitle ? " · " : ""}הודפס ב-${new Date().toLocaleDateString("he-IL")}</div>
+    <div class="meta">${escapeHtml(opts.subtitle ?? "")}${opts.subtitle ? " · " : ""}הודפס ב-${hebrewDate()}</div>
     <table><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table>
     <script>window.onload=()=>setTimeout(()=>window.print(),250)</script>
   </body></html>`);

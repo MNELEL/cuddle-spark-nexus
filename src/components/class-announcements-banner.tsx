@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import {
   listClassAnnouncements, createClassAnnouncement, deleteClassAnnouncement, setAnnouncementState,
 } from "@/lib/class-announcements.functions";
+import { hebrewDate } from "@/lib/hebrew-date";
 
 type Severity = "info" | "warning" | "critical";
 
@@ -150,7 +151,7 @@ export function ClassAnnouncementsBanner({ classId, readOnly = false }: { classI
                 </div>
                 {a.body && <p className="mt-1 whitespace-pre-wrap text-xs leading-relaxed">{a.body}</p>}
                 <p className="mt-1 text-[10px] text-muted-foreground font-mono-tabular">
-                  {new Date(a.created_at).toLocaleDateString("he-IL")}
+                  {hebrewDate(a.created_at)}
                 </p>
               </div>
               <div className="flex items-center gap-1">

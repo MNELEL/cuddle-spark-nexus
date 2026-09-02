@@ -14,6 +14,7 @@ import {
   rejectPendingUpdate,
   type PendingUpdateItem,
 } from "@/lib/pending-updates.functions";
+import { hebrewDateTime } from "@/lib/hebrew-date";
 
 export const Route = createFileRoute("/_authenticated/review")({
   component: ReviewPage,
@@ -137,7 +138,7 @@ function PendingCard({
         <div className="flex flex-wrap items-center gap-2 pt-1 text-xs text-muted-foreground">
           {item.student_name && <Badge variant="secondary">{item.student_name}</Badge>}
           {item.class_name && <Badge variant="outline">{item.class_name}</Badge>}
-          <span>נוצר: {new Date(item.created_at).toLocaleString("he-IL")}</span>
+          <span>נוצר: {hebrewDateTime(item.created_at)}</span>
         </div>
       </CardHeader>
       <CardContent className="space-y-3">

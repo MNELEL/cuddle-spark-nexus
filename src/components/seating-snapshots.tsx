@@ -7,6 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Camera, Trash2, Download } from "lucide-react";
 import { toast } from "sonner";
 import { listConfigs, saveConfig, loadConfig, deleteConfig } from "@/lib/seating-configs.functions";
+import { hebrewDate } from "@/lib/hebrew-date";
 
 export function SeatingSnapshots({ classId }: { classId: string }) {
   const qc = useQueryClient();
@@ -65,7 +66,7 @@ export function SeatingSnapshots({ classId }: { classId: string }) {
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-xs font-medium">{c.name}</div>
                     <div className="text-[10px] text-muted-foreground font-mono-tabular">
-                      {new Date(c.created_at).toLocaleDateString("he-IL")}
+                      {hebrewDate(c.created_at)}
                     </div>
                   </div>
                   <div className="flex gap-0.5">

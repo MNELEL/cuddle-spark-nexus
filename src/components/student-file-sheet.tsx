@@ -35,7 +35,7 @@ import {
   validateNationalId, validatePhone, validateBirthDate,
   phoneHref, whatsappHref,
 } from "@/lib/student-field-validation";
-import { daysUntilLabel, hebrewDateTime, nextHebrewBirthday, toHebrewDateLabel } from "@/lib/hebrew-date";
+import { daysUntilLabel, hebrewDate, hebrewDateTime, nextHebrewBirthday, toHebrewDateLabel } from "@/lib/hebrew-date";
 
 type Props = {
   open: boolean;
@@ -387,7 +387,7 @@ function DocumentsPanel({ classId, studentId }: Props) {
                   </div>
                   {d.description && <p className="mt-1 text-xs text-muted-foreground">{d.description}</p>}
                   <p className="mt-1 text-[11px] text-muted-foreground font-mono-tabular">
-                    {new Date(d.created_at).toLocaleDateString("he-IL")}
+                    {hebrewDate(d.created_at)}
                   </p>
                 </div>
                 <div className="flex gap-1">
@@ -506,13 +506,13 @@ function ParentCommsPanel({ classId, studentId }: Props) {
                       <span className="font-semibold">{c.subject || channelLabel[c.channel]}</span>
                       <Badge variant="secondary">{channelLabel[c.channel]}</Badge>
                       <span className="text-xs text-muted-foreground font-mono-tabular">
-                        {new Date(c.date).toLocaleDateString("he-IL")}
+                        {hebrewDate(c.date)}
                       </span>
                     </div>
                     <p className="mt-1 text-sm whitespace-pre-wrap">{c.summary}</p>
                     {c.follow_up_date && (
                       <p className="mt-1 text-xs text-amber-700 dark:text-amber-400 flex items-center gap-1">
-                        <Calendar className="h-3 w-3" /> פולו-אפ: {new Date(c.follow_up_date).toLocaleDateString("he-IL")}
+                        <Calendar className="h-3 w-3" /> פולו-אפ: {hebrewDate(c.follow_up_date)}
                       </p>
                     )}
                   </div>
@@ -638,7 +638,7 @@ function DisciplinePanel({ classId, studentId }: Props) {
                     <Badge variant="secondary">{e.category}</Badge>
                     <Badge variant="outline">חומרה {e.severity}</Badge>
                     <span className="text-xs text-muted-foreground font-mono-tabular">
-                      {new Date(e.date).toLocaleDateString("he-IL")}
+                      {hebrewDate(e.date)}
                     </span>
                     {e.parents_notified && <Badge variant="default">הורים עודכנו</Badge>}
                   </div>

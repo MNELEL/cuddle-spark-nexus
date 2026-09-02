@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { getStyleProfile, recomputeStyleProfile } from "@/lib/teacher-style.functions";
 import { RESOURCE_TYPE_LABELS, type ResourceType } from "@/lib/teaching-resources.functions";
 import { DailyBriefingCard } from "@/components/daily-briefing-card";
+import { hebrewDate } from "@/lib/hebrew-date";
 
 export const Route = createFileRoute("/_authenticated/insights")({
   component: InsightsPage,
@@ -119,7 +120,7 @@ function InsightsPage() {
     );
   }
 
-  const updatedAt = profile.last_updated_at ? new Date(profile.last_updated_at).toLocaleDateString("he-IL") : "";
+  const updatedAt = profile.last_updated_at ? hebrewDate(profile.last_updated_at) : "";
 
   return (
     <div className="space-y-6" dir="rtl">
