@@ -1,3 +1,4 @@
+import { hebrewDateTime } from "@/lib/hebrew-date";
 /**
  * Shared shapes for the teacher change history (notes/style edits and class
  * assignments). Kept out of the server-fn module so the UI can import the
@@ -28,7 +29,5 @@ export type TeacherAuditEntry = {
 };
 
 export function formatAuditDate(iso: string): string {
-  return new Date(iso).toLocaleString("he-IL", {
-    day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
-  });
+  return hebrewDateTime(iso);
 }

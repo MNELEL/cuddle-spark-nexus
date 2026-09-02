@@ -1,5 +1,6 @@
 import { createHebrewDoc, drawBrandHeader, drawFooter, safeName } from "./pdf-builder";
 import { sensitiveFlagLabel, type SensitiveFlag } from "@/lib/student-profiles.functions";
+import { hebrewDateTime } from "@/lib/hebrew-date";
 
 export type HandoffProfile = {
   student_name: string;
@@ -33,13 +34,7 @@ export async function buildHandoffPdfBlob(
     hd.section(p.student_name || "תלמיד");
     if (p.updated_at) {
       hd.paragraph(
-        `עודכן לאחרונה: ${new Date(p.updated_at).toLocaleString("he-IL", {
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        })}`,
+        `עודכן לאחרונה: ${hebrewDateTime(p.updated_at)}`,
       );
     }
     const labels = p.sensitive_flags
