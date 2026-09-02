@@ -18,7 +18,9 @@ import { TEACHER_LABEL } from "@/lib/kodesh-subjects";
 import { ParentEmailComposer } from "@/components/parent-email-composer";
 import { buildDailyClassPdf } from "@/lib/pdf/daily-class-pdf";
 import { downloadPdfBlob } from "@/lib/pdf/pdf-builder";
+import { hebrewDateWithWeekday } from "@/lib/hebrew-date";
 import { toast } from "sonner";
+
 
 export const Route = createFileRoute("/_authenticated/daily/$classId")({
   head: () => ({ meta: [{ name: "robots", content: "noindex, nofollow" }] }),
