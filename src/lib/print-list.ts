@@ -1,3 +1,4 @@
+import { hebrewDate } from "@/lib/hebrew-date";
 // Utilities for printing / copying simple name lists (whole class or single group).
 
 export type PrintSection = { title: string; items: string[] };
@@ -24,7 +25,7 @@ export function printList(title: string, sections: PrintSection[]) {
     .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:0 24px}
     @media print{@page{margin:16mm}}
   `;
-  const now = new Date().toLocaleDateString("he-IL");
+  const now = hebrewDate(new Date());
   const body = sections
     .map(
       (s) => `

@@ -12,6 +12,7 @@ import {
   getIngestAiSettings, updateIngestAiSettings, listIngestAiSuggestions,
   DEFAULT_CONFIDENCE_THRESHOLD,
 } from "@/lib/ingest-ai.functions";
+import { hebrewDateTime } from "@/lib/hebrew-date";
 
 const pct = (n: number) => `${Math.round(n * 100)}%`;
 
@@ -108,7 +109,7 @@ export function AiSuggestionsAuditCard() {
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-medium">{r.resource_title || "ללא כותרת"}</span>
                     <span className="text-xs text-muted-foreground">
-                      {new Date(r.created_at).toLocaleString("he-IL")}
+                      {hebrewDateTime(r.created_at)}
                     </span>
                     <Badge variant="secondary" className="text-[10px]">
                       ביטחון {pct(Number(r.topic_confidence))} · סף {pct(Number(r.confidence_threshold))}

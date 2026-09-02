@@ -46,6 +46,44 @@ export function toHebrewDateFull(iso: string | null | undefined): string | null 
   return new HDate(d).renderGematriya();
 }
 
+/** Parses ISO dates *and* full timestamps ("2026-09-02T18:04:00Z"). */
+function parseAny(value: string | Date | null | undefined): Date | null {
+  if (!value) return null;
+  const d = value instanceof Date ? value : new Date(value);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+/** Hebrew date for any date/timestamp value, e.g. "כ״א אֱלוּל תשפ״ו". */
+export function hebrewDate(value: string | Date | null | undefined): string {
+  const d = parseAny(value);
+  return d ? new HDate(d).renderGematriya() : "";
+}
+
+/** Hebrew date + 24h clock, e.g. "כ״א אֱלוּל תשפ״ו · 14:35". */
+export function hebrewDateTime(value: string | Date | null | undefined): string {
+  const d = parseAny(value);
+  if (!d) return "";
+  const time = `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+  return `${new HDate(d).renderGematriya()} · ${time}`;
+}
+
+/** Hebrew weekday name, e.g. "יום שלישי". */
+export function hebrewWeekday(value: string | Date | null | undefined): string {
+  const d = parseAny(value);
+  if (!d) return "";
+  const names = ["יום ראשון", "יום שני", "יום שלישי", "יום רביעי", "יום חמישי", "יום שישי", "שבת"];
+  return names[d.getDay()]!;
+}
+
+/** Hebrew weekday + full Hebrew date, e.g. "יום שלישי, כ״א אֱלוּל תשפ״ו". */
+export function hebrewDateWithWeekday(value: string | Date | null | undefined): string {
+  const d = parseAny(value);
+  if (!d) return "";
+  return `${hebrewWeekday(d)}, ${hebrewDate(d)}`;
+}
+
+
+
 /**
  * The same Hebrew day+month as `birth`, projected onto Hebrew year `hyear`,
  * with the classic edge cases handled:

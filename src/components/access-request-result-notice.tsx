@@ -5,6 +5,7 @@ import { CheckCircle2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { acknowledgeAccessRequestResult } from "@/lib/access-requests.functions";
 import type { Role } from "@/lib/user-roles.functions";
+import { hebrewDate } from "@/lib/hebrew-date";
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "מנהל מערכת",
@@ -29,7 +30,7 @@ export function AccessRequestResultNotice({ request }: { request: AccessRequestR
   const queryClient = useQueryClient();
   const approved = request.status === "approved";
   const role = (request.granted_role ?? request.requested_role) as Role;
-  const date = request.reviewed_at ? new Date(request.reviewed_at).toLocaleDateString("he-IL") : null;
+  const date = request.reviewed_at ? hebrewDate(request.reviewed_at) : null;
 
   const ack = useMutation({
     mutationFn: async () => await ackFn({ data: { request_id: request.id } }),

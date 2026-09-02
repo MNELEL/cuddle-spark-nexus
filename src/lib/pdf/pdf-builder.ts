@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable, { type UserOptions } from "jspdf-autotable";
+import { hebrewDate as hebrewDateLabel, hebrewDateTime } from "@/lib/hebrew-date";
 
 const FONT_REGULAR_URL = "/fonts/Heebo-Regular.ttf";
 const FONT_BOLD_URL = "/fonts/Heebo-Bold.ttf";
@@ -472,7 +473,7 @@ export function drawBrandHeader(
 
   doc.setFontSize(8);
   doc.setTextColor(150);
-  rtlText(doc, `הופק ב-${new Date().toLocaleString("he-IL")}`, layout.rightX, hd.currentY(), { align: "right" });
+  rtlText(doc, `הופק ב-${hebrewDateTime(new Date())}`, layout.rightX, hd.currentY(), { align: "right" });
   hd.advance(6);
 }
 
@@ -503,11 +504,7 @@ export function safeName(name: string): string {
 }
 
 export function hebrewDate(iso: string): string {
-  try {
-    return new Date(iso + "T00:00:00").toLocaleDateString("he-IL", {
-      weekday: "long", day: "numeric", month: "long", year: "numeric",
-    });
-  } catch { return iso; }
+  return hebrewDateLabel(`${iso}T00:00:00`) || iso;
 }
 
 export function downloadPdfBlob(blob: Blob, filename: string): void {

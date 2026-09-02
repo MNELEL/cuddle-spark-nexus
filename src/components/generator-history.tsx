@@ -11,6 +11,7 @@ import {
   listGeneratorVersions, deleteGeneratorVersion,
   type GeneratorKind, type GeneratorVersion,
 } from "@/lib/generator-versions.functions";
+import { hebrewDateTime } from "@/lib/hebrew-date";
 
 /** Version history for a generator: search, restore for editing, delete. */
 export function GeneratorHistory({
@@ -82,7 +83,7 @@ export function GeneratorHistory({
                     {activeVersionId === v.id && <Badge>בעריכה</Badge>}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {new Date(v.created_at).toLocaleString("he-IL")} · {v.body.length} תווים
+                    {hebrewDateTime(v.created_at)} · {v.body.length} תווים
                   </p>
                   <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{v.body.slice(0, 180)}</p>
                 </div>

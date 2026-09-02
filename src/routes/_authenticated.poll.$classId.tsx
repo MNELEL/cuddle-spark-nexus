@@ -21,6 +21,7 @@ import {
   type PollRow,
 } from "@/lib/polls.functions";
 import { suggestPollQuestion } from "@/lib/ai-poll.functions";
+import { hebrewDate } from "@/lib/hebrew-date";
 
 export const Route = createFileRoute("/_authenticated/poll/$classId")({
   component: PollPage,
@@ -330,7 +331,7 @@ function ClosedPollCard({
     (data?.votes ?? []).filter((v) => v.option_index === i).length,
   );
   const total = totals.reduce((a, b) => a + b, 0);
-  const dateStr = new Date(poll.closed_at ?? poll.updated_at).toLocaleDateString("he-IL");
+  const dateStr = hebrewDate(poll.closed_at ?? poll.updated_at);
   void students;
 
   return (

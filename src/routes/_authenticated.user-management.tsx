@@ -60,6 +60,7 @@ import { TrialApprovalsCard } from "@/components/trial-approvals-card";
 import { AccessRequestForm } from "@/components/access-request-form";
 import { AccessRequestsCard } from "@/components/access-requests-card";
 import { SystemAdminsCard } from "@/components/system-admins-card";
+import { hebrewDateTime } from "@/lib/hebrew-date";
 
 const NO_INSTITUTION = "__none__";
 const INSTITUTIONS_PAGE_SIZE = 10;
@@ -757,7 +758,7 @@ function UserManagementPage() {
                   <div>
                     <p className="text-sm font-medium">{entry.message}</p>
                     <p className="text-xs text-muted-foreground">
-                      {new Date(entry.createdAt).toLocaleString("he-IL")}
+                      {hebrewDateTime(entry.createdAt)}
                     </p>
                   </div>
                   {entry.action && <Badge variant="secondary">{entry.action}</Badge>}

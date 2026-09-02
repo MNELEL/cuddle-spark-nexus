@@ -26,6 +26,7 @@ import { useBrand } from "@/hooks/use-brand";
 import {
   BADGE_CATEGORIES, BADGE_CATEGORY_LABELS, type BadgeCategory, type BadgeRow,
 } from "@/lib/badge-options";
+import { hebrewDate } from "@/lib/hebrew-date";
 
 type Student = { id: string; name: string };
 
@@ -239,7 +240,7 @@ export function BadgesPanel({ classId, students, readOnly = false }: {
                   </span>
                   <span className="flex items-center gap-2">
                     <span className="text-xs text-muted-foreground">
-                      {new Date(a.awarded_at).toLocaleDateString("he-IL")}
+                      {hebrewDate(a.awarded_at)}
                     </span>
                     {!readOnly && (
                       <Button

@@ -12,6 +12,7 @@ import {
   clearUploadLog, formatSize, listUploadLog, removeUploadLogEntry,
   type UploadLogEntry,
 } from "@/lib/upload-log";
+import { hebrewDateTime } from "@/lib/hebrew-date";
 
 export const Route = createFileRoute("/_authenticated/resources/upload-log")({
   component: UploadLogPage,
@@ -113,7 +114,7 @@ function UploadLogPage() {
                 </CardHeader>
                 <CardContent className="space-y-2 pt-0 text-xs text-muted-foreground">
                   <div className="flex flex-wrap items-center gap-2 font-mono-tabular">
-                    <span>{new Date(e.at).toLocaleString("he-IL")}</span>
+                    <span>{hebrewDateTime(e.at)}</span>
                     <span>· {formatSize(e.sizeBytes)}</span>
                     {e.mimeType && <span>· {e.mimeType}</span>}
                   </div>

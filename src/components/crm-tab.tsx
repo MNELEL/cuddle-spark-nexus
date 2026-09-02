@@ -23,6 +23,7 @@ import {
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Trash2, Bell, Award, Star, Calendar as CalIcon, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
+import { hebrewDate } from "@/lib/hebrew-date";
 
 const categoryLabel: Record<string, string> = {
   participation: "השתתפות",
@@ -163,7 +164,7 @@ function ReminderRow({ reminder, classId, studentName }: { reminder: Reminder; c
               {reminder.due_date && (
                 <Badge variant={overdue ? "destructive" : "secondary"} className="gap-1">
                   <CalIcon className="h-3 w-3" />
-                  {new Date(reminder.due_date).toLocaleDateString("he-IL")}
+                  {hebrewDate(reminder.due_date)}
                 </Badge>
               )}
               {reminder.completed && <Badge variant="secondary" className="gap-1"><CheckCircle2 className="h-3 w-3" /> בוצע</Badge>}
@@ -297,7 +298,7 @@ function PointRow({ point, classId, studentName }: { point: Point; classId: stri
           <div>
             <div className="font-medium">{studentName}</div>
             <div className="text-xs text-muted-foreground">
-              {categoryLabel[point.category] ?? point.category} · {new Date(point.date).toLocaleDateString("he-IL")}
+              {categoryLabel[point.category] ?? point.category} · {hebrewDate(point.date)}
             </div>
             {point.note && <p className="mt-0.5 text-sm">{point.note}</p>}
           </div>

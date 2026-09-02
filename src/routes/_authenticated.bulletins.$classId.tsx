@@ -32,6 +32,7 @@ import { downloadPdfBlob } from "@/lib/pdf/pdf-builder";
 import { PdfPreviewDialog } from "@/components/pdf/pdf-preview-dialog";
 import { bulletinToMarkdown } from "@/lib/text-export";
 import { getClass } from "@/lib/classes.functions";
+import { hebrewDateTime } from "@/lib/hebrew-date";
 
 export const Route = createFileRoute("/_authenticated/bulletins/$classId")({
   head: () => ({ meta: [{ name: "robots", content: "noindex, nofollow" }] }),
@@ -828,7 +829,7 @@ function BulletinVersionsPanel({
             >
               <span className="font-medium">{v.snapshot?.title || "(ללא כותרת)"}</span>
               <span className="ms-2 text-xs text-muted-foreground">
-                נשמר: {new Date(v.created_at).toLocaleString("he-IL")}
+                נשמר: {hebrewDateTime(v.created_at)}
               </span>
             </button>
           </li>

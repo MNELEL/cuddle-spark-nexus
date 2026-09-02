@@ -40,6 +40,7 @@ import {
   type FoundUser,
 } from "@/lib/institution-teachers.functions";
 import { assignRole } from "@/lib/user-roles.functions";
+import { hebrewDate, hebrewDateTime } from "@/lib/hebrew-date";
 
 export const Route = createFileRoute("/_authenticated/institution")({
   component: InstitutionDashboardPage,
@@ -256,7 +257,7 @@ function InstitutionDashboardPage() {
                 <li key={row.id} className="flex items-center justify-between gap-3 py-2">
                   <span className="min-w-0 truncate">{row.message}</span>
                   <span className="shrink-0 font-mono-tabular text-xs text-muted-foreground">
-                    {new Date(row.createdAt).toLocaleString("he-IL")}
+                    {hebrewDateTime(row.createdAt)}
                   </span>
                 </li>
               ))}
@@ -617,7 +618,7 @@ function TeachersTab({ canEdit, institutionId }: { canEdit: boolean; institution
                         <div className="text-xs text-muted-foreground">
                           משאבים בספרייה: <span className="font-mono-tabular">{t.style.resourceCount}</span>
                           {t.style.lastUpdatedAt && (
-                            <> · עודכן: {new Date(t.style.lastUpdatedAt).toLocaleDateString("he-IL")}</>
+                            <> · עודכן: {hebrewDate(t.style.lastUpdatedAt)}</>
                           )}
                         </div>
                         {t.style.lastAiSummary && (

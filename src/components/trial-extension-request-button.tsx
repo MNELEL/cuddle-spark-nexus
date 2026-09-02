@@ -16,10 +16,11 @@ import { Label } from "@/components/ui/label";
 import { CalendarClock, Clock, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { myTrialExtensionRequests, requestTrialExtension } from "@/lib/trial.functions";
+import { hebrewDate } from "@/lib/hebrew-date";
 
 function fmt(iso: string | null) {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("he-IL", { day: "numeric", month: "long", year: "numeric" });
+  return hebrewDate(iso);
 }
 
 type Props = {

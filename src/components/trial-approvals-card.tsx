@@ -13,10 +13,11 @@ import {
   listPendingTrialRequests,
   reviewTrialRequest,
 } from "@/lib/trial.functions";
+import { hebrewDate } from "@/lib/hebrew-date";
 
 function fmt(iso: string | null) {
   if (!iso) return "לא הוגדר";
-  return new Date(iso).toLocaleDateString("he-IL", { day: "numeric", month: "long", year: "numeric" });
+  return hebrewDate(iso);
 }
 
 type LastReview = {

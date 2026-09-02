@@ -31,6 +31,7 @@ import {
 } from "@/lib/access-requests.functions";
 import { listInstitutions } from "@/lib/institutions.functions";
 import type { Role } from "@/lib/user-roles.functions";
+import { hebrewDateTime } from "@/lib/hebrew-date";
 
 const ROLE_LABELS: Record<Role, string> = {
   admin: "מנהל מערכת",
@@ -197,7 +198,7 @@ export function AccessRequestsCard({ canResolve: canResolveHint }: { canResolve:
                     <p className="text-xs text-muted-foreground">
                       {ROLE_LABELS[req.requested_role as Role]}
                       {req.institution_name ? ` · ${req.institution_name}` : ""} ·{" "}
-                      {new Date(req.created_at).toLocaleString("he-IL")}
+                      {hebrewDateTime(req.created_at)}
                     </p>
                     {req.message && (
                       <p className="mt-1 text-xs text-muted-foreground">{req.message}</p>
