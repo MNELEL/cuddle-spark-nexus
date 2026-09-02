@@ -27,11 +27,9 @@ export const Route = createFileRoute("/_authenticated/daily/$classId")({
 
 function todayStr() { return new Date().toISOString().slice(0, 10); }
 function hebrewDate(iso: string) {
-  try {
-    const d = new Date(iso + "T00:00:00");
-    return d.toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-  } catch { return iso; }
+  return hebrewDateWithWeekday(`${iso}T00:00:00`) || iso;
 }
+
 
 function DailySummaryPage() {
   const { classId } = Route.useParams();
