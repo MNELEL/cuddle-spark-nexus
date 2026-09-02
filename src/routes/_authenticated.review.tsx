@@ -14,7 +14,7 @@ import {
   rejectPendingUpdate,
   type PendingUpdateItem,
 } from "@/lib/pending-updates.functions";
-import { hebrewDateTime } from "@/lib/hebrew-date";
+import { hebrewDate, hebrewDateTime } from "@/lib/hebrew-date";
 
 export const Route = createFileRoute("/_authenticated/review")({
   component: ReviewPage,
@@ -158,7 +158,7 @@ function PendingCard({
           {date && (
             <div>
               <dt className="text-xs text-muted-foreground">תאריך האירוע</dt>
-              <dd className="font-medium">{date}</dd>
+              <dd className="font-medium">{hebrewDate(date) || date}</dd>
             </div>
           )}
           {description && (

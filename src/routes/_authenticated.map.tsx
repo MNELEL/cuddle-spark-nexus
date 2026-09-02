@@ -14,6 +14,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { listClasses } from "@/lib/classes.functions";
 import { useToolAccess } from "@/hooks/use-tool-access";
 import { MAP_SECTIONS, buildSuperSections, type MapItem } from "@/lib/system-map";
+import { HebrewDatePanel } from "@/components/hebrew-date-panel";
 
 export const Route = createFileRoute("/_authenticated/map")({
   component: SystemMapPage,
@@ -99,6 +100,8 @@ function SystemMapPage() {
             כל מה שיש במערכת, בעברית ובלחיצה אחת. בחר את הכיתה שלך — וכל פריט יפתח את המסך שלה.
           </p>
         </div>
+
+        <HebrewDatePanel />
 
         <Card>
           <CardHeader className="pb-3">

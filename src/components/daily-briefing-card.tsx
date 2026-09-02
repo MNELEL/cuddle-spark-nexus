@@ -14,6 +14,8 @@ import {
 } from "@/lib/orchestrator.functions";
 import { listPendingUpdates } from "@/lib/pending-updates.functions";
 import { StudentHistoryDialog } from "@/components/student-history-dialog";
+import { hebrewDateTime } from "@/lib/hebrew-date";
+import { hebrewDayInfo } from "@/lib/hebrew-calendar";
 
 const SEVERITY_STYLES: Record<string, { wrapper: string; label: string; badge: string }> = {
   high: {
@@ -87,6 +89,7 @@ export function DailyBriefingCard() {
           <Bell className="h-5 w-5 text-primary" aria-hidden />
           תובנות יומיות
           {insights.length > 0 && <Badge variant="secondary">{insights.length}</Badge>}
+          <Badge variant="outline">{hebrewDayInfo().full}</Badge>
         </CardTitle>
         <div className="flex items-center gap-2">
           <Button
@@ -144,6 +147,9 @@ export function DailyBriefingCard() {
                         </div>
                         <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
                           {insight.description}
+                        </p>
+                        <p className="mt-1 text-[11px] text-muted-foreground">
+                          נרשם: {hebrewDateTime(insight.created_at)}
                         </p>
                         {insight.suggested_action && (
                           <p className="mt-1 text-xs text-muted-foreground">
