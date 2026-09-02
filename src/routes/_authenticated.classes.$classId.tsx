@@ -10,6 +10,9 @@ import {
   listRelations, createRelation, deleteRelation,
 } from "@/lib/students.functions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { HebrewDatePanel } from "@/components/hebrew-date-panel";
+import { HebrewWeeksCard } from "@/components/hebrew-weeks-card";
+import { useHebrewAnchor } from "@/components/hebrew-anchor";
 import { ClassAnnouncementsBanner } from "@/components/class-announcements-banner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -359,6 +362,7 @@ function ClassDetail() {
           <TabsTrigger value="tracking">ציונים ונוכחות</TabsTrigger>
           <TabsTrigger value="crm">CRM פדגוגי</TabsTrigger>
           <TabsTrigger value="lessons">הקלטות שיעור</TabsTrigger>
+          <TabsTrigger value="hebrew-dates">תאריכים עבריים</TabsTrigger>
         </TabsList>
 
         <TabsContent value="students" className="mt-4">
@@ -401,6 +405,11 @@ function ClassDetail() {
 
         <TabsContent value="lessons" className="mt-4">
           <LessonsTab classId={classId} />
+        </TabsContent>
+
+        <TabsContent value="hebrew-dates" className="mt-4 space-y-4">
+          <HebrewDatePanel editable />
+          <HebrewWeeksCard date={anchorDate} />
         </TabsContent>
       </Tabs>
       <AiAssistantDock classId={classId} />
