@@ -11,11 +11,10 @@ import {
   restoreResourceVersion,
   VERSION_SOURCE_LABELS,
 } from "@/lib/resource-versions.functions";
+import { hebrewDateTime } from "@/lib/hebrew-date";
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleString("he-IL", {
-    day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
-  });
+  return hebrewDateTime(iso);
 }
 
 export function ResourceVersionHistory({ resourceId }: { resourceId: string }) {

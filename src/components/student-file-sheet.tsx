@@ -35,7 +35,7 @@ import {
   validateNationalId, validatePhone, validateBirthDate,
   phoneHref, whatsappHref,
 } from "@/lib/student-field-validation";
-import { nextHebrewBirthday, toHebrewDateLabel, daysUntilLabel } from "@/lib/hebrew-date";
+import { daysUntilLabel, hebrewDateTime, nextHebrewBirthday, toHebrewDateLabel } from "@/lib/hebrew-date";
 
 type Props = {
   open: boolean;
@@ -126,13 +126,7 @@ function StudentProfilePanel({ classId, studentId }: Props) {
             {profile?.updated_at && (
               <Badge variant="secondary" className="font-mono-tabular">
                 עודכן:{" "}
-                {new Date(profile.updated_at).toLocaleString("he-IL", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  year: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
+                {hebrewDateTime(profile.updated_at)}
               </Badge>
             )}
           </div>

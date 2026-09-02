@@ -10,12 +10,13 @@ import { getMyTrialStatus, listPendingTrialRequests } from "@/lib/trial.function
 import { isAdmin } from "@/lib/user-roles.functions";
 import { useAuth } from "@/hooks/use-auth";
 import { TrialExtensionRequestButton } from "@/components/trial-extension-request-button";
+import { hebrewDate } from "@/lib/hebrew-date";
 
 const ADMIN_EMAIL = "nm0527603669@gmail.com";
 
 function formatDate(iso: string | null): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("he-IL", { day: "numeric", month: "long", year: "numeric" });
+  return hebrewDate(iso);
 }
 
 /** Shows the signed-in user's free-trial / subscription state. */
