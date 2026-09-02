@@ -1,19 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { CalendarDays } from "lucide-react";
 import { HebrewDatePanel } from "@/components/hebrew-date-panel";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import {
-  elapsedSince,
-  hebrewDayInfo,
-  hebrewMonthWeeks,
-  isoOf,
-  parseHebrewDateInput,
-} from "@/lib/hebrew-calendar";
+import { HebrewWeeksCard } from "@/components/hebrew-weeks-card";
+import { useHebrewAnchor } from "@/components/hebrew-anchor";
+import { elapsedSince, hebrewDayInfo, parseHebrewDateInput } from "@/lib/hebrew-calendar";
 
 export const Route = createFileRoute("/_authenticated/hebrew-calendar")({
   component: HebrewCalendarPage,
@@ -38,10 +33,7 @@ export const Route = createFileRoute("/_authenticated/hebrew-calendar")({
 });
 
 function HebrewCalendarPage() {
-  const [anchor, setAnchor] = useState<Date>(() => new Date());
-  const weeks = useMemo(() => hebrewMonthWeeks(anchor), [anchor]);
-  const info = useMemo(() => hebrewDayInfo(anchor), [anchor]);
-  const todayIso = isoOf(new Date());
+  const { date: anchor } = useHebrewAnchor();
 
   return (
     <div dir="rtl" className="mx-auto max-w-4xl space-y-5">
@@ -51,45 +43,16 @@ function HebrewCalendarPage() {
           לוח תאריכים עברי
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          הזן תאריך עברי או לועזי, בדוק כמה ימים ושבועות חלפו בפועל וראה את שבועות החודש העברי —
-          לפני שמעדכנים את לוח הכיתה.
+          הזן תאריך עברי או לועזי, בדוק כמה ימים ושבועות חלפו בפועל וראה את שבועות החודש העברי.
+          התאריך שנבחר כאן הוא המקור לכל תצוגות התאריך העברי באפליקציה ומתעדכן בכל המסכים מיד.
         </p>
       </div>
 
-      <HebrewDatePanel editable onDateChange={setAnchor} />
+      <HebrewDatePanel editable />
 
       <ElapsedCalculator />
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="font-display text-base">שבועות חודש {info.month}</CardTitle>
-          <CardDescription>
-            כל שבוע (ראשון–שבת) עם טווח התאריכים העבריים ופרשת השבוע.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {weeks.map((w) => {
-            const isCurrent = todayIso >= w.from && todayIso <= w.to;
-            return (
-              <div
-                key={w.from}
-                className={`flex flex-wrap items-center justify-between gap-2 rounded-md border p-2.5 ${
-                  isCurrent ? "border-primary bg-primary/5" : ""
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <Badge variant={isCurrent ? "default" : "secondary"}>שבוע {w.index}</Badge>
-                  <span className="text-sm font-medium">{w.label}</span>
-                </div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  {w.parasha && <Badge variant="outline">{w.parasha}</Badge>}
-                  <span>{elapsedSince(w.from).label}</span>
-                </div>
-              </div>
-            );
-          })}
-        </CardContent>
-      </Card>
+      <HebrewWeeksCard date={anchor} />
     </div>
   );
 }

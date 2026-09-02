@@ -10,6 +10,9 @@ import {
   listRelations, createRelation, deleteRelation,
 } from "@/lib/students.functions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { HebrewDatePanel } from "@/components/hebrew-date-panel";
+import { HebrewWeeksCard } from "@/components/hebrew-weeks-card";
+import { useHebrewAnchor } from "@/components/hebrew-anchor";
 import { ClassAnnouncementsBanner } from "@/components/class-announcements-banner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -193,7 +196,7 @@ function YearChain({ classId }: { classId: string }) {
 }
 
 type ClassSearch = { q?: string; field?: string; tab?: string; sort?: string; page?: number };
-const CLASS_TABS = ["students", "relations", "groups", "seating", "tracking", "crm", "lessons"] as const;
+const CLASS_TABS = ["students", "relations", "groups", "seating", "tracking", "crm", "lessons", "hebrew-dates"] as const;
 
 export const Route = createFileRoute("/_authenticated/classes/$classId")({
   component: ClassDetail,
@@ -253,6 +256,7 @@ function ClassDetail() {
   const tab = CLASS_TABS.includes(search.tab as (typeof CLASS_TABS)[number])
     ? (search.tab as string)
     : "seating";
+  const { date: anchorDate } = useHebrewAnchor();
   const setTab = (t: string) =>
     void navigate({ search: (prev) => ({ ...prev, tab: t }), replace: true });
   const query = search.q ?? "";
@@ -359,6 +363,7 @@ function ClassDetail() {
           <TabsTrigger value="tracking">ציונים ונוכחות</TabsTrigger>
           <TabsTrigger value="crm">CRM פדגוגי</TabsTrigger>
           <TabsTrigger value="lessons">הקלטות שיעור</TabsTrigger>
+          <TabsTrigger value="hebrew-dates">תאריכים עבריים</TabsTrigger>
         </TabsList>
 
         <TabsContent value="students" className="mt-4">
@@ -401,6 +406,11 @@ function ClassDetail() {
 
         <TabsContent value="lessons" className="mt-4">
           <LessonsTab classId={classId} />
+        </TabsContent>
+
+        <TabsContent value="hebrew-dates" className="mt-4 space-y-4">
+          <HebrewDatePanel editable />
+          <HebrewWeeksCard date={anchorDate} />
         </TabsContent>
       </Tabs>
       <AiAssistantDock classId={classId} />

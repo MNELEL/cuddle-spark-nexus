@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { getStyleProfile, recomputeStyleProfile } from "@/lib/teacher-style.functions";
 import { RESOURCE_TYPE_LABELS, type ResourceType } from "@/lib/teaching-resources.functions";
 import { DailyBriefingCard } from "@/components/daily-briefing-card";
+import { DailyLogCard } from "@/components/daily-log-card";
 import { hebrewDate } from "@/lib/hebrew-date";
 
 export const Route = createFileRoute("/_authenticated/insights")({
@@ -94,7 +95,8 @@ function InsightsPage() {
   if (!profile || profile.resource_count === 0) {
     return (
       <div className="mx-auto max-w-2xl space-y-6 py-10" dir="rtl">
-        <DailyBriefingCard />
+        <DailyLogCard />
+      <DailyBriefingCard />
         <div className="space-y-6 text-center">
           <div className="flex justify-center">
             <div className="rounded-full bg-primary/10 p-6">

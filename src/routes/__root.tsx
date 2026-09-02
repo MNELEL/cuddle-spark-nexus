@@ -13,6 +13,8 @@ import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/hooks/use-theme";
+import { HebrewAnchorProvider } from "@/components/hebrew-anchor";
+
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TITLE } from "@/lib/site-meta";
 
 function NotFoundComponent() {
@@ -141,9 +143,12 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <Outlet />
-        <Toaster richColors position="top-center" dir="rtl" />
+        <HebrewAnchorProvider>
+          <Outlet />
+          <Toaster richColors position="top-center" dir="rtl" />
+        </HebrewAnchorProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );
+
 }
