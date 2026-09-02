@@ -5,7 +5,15 @@ import {
   evaluateAttendanceDecline, describeDecline,
   evaluateAbsenceStreak, describeAbsenceStreak,
 } from "./attendance-decline";
-import { evaluateGradeDecline, describeGradeDecline, gradeAverage } from "./grade-decline";
+import {
+  evaluateGradeDecline,
+  describeGradeDecline,
+  gradeAverage,
+  evaluateGradeOutlier,
+  describeGradeOutlier,
+  evaluateBelowClassAverage,
+  describeBelowClassAverage,
+} from "./grade-decline";
 import {
   evaluateBehaviorDecline, describeBehaviorDecline,
   evaluateDisciplineSpike, describeDisciplineSpike,
@@ -237,6 +245,41 @@ export const generateDailyBriefing = createServerFn({ method: "POST" })
             title: `ירידה בציונים - ${st.name}`,
             description: describeGradeDecline(gDecline),
             suggested_action: "בדוק אילו נושאים קשים לו והצע חזרה ממוקדת",
+            action_link: `/analytics/${cls.id}`,
+          });
+        }
+
+        // כשל חד-פעמי אצל תלמיד חזק — "נכון ל-90 אך נפסל במבחן".
+        const outlier = evaluateGradeOutlier(myGrades);
+        if (outlier) {
+          pending.push({
+            owner_id: userId,
+            class_id: cls.id,
+            student_id: st.id,
+            insight_type: "grade_outlier",
+            severity: outlier.severity,
+            title: `כשל חריג במבחן - ${st.name}`,
+            description: describeGradeOutlier(outlier),
+            suggested_action: "בדוק את המבחן מול התלמיד ושקול הזדמנות נוספת",
+            action_link: `/analytics/${cls.id}`,
+          });
+        }
+
+        // פער מול ממוצע הכיתה באותה תקופה.
+        const classGap = evaluateBelowClassAverage(
+          myGrades.filter((g) => g.date >= recentFrom),
+          gradeRows.filter((g) => g.date >= recentFrom),
+        );
+        if (classGap) {
+          pending.push({
+            owner_id: userId,
+            class_id: cls.id,
+            student_id: st.id,
+            insight_type: "below_class_average",
+            severity: classGap.severity,
+            title: `פער מול ממוצע הכיתה - ${st.name}`,
+            description: describeBelowClassAverage(classGap),
+            suggested_action: "שקול תרגול נוסף או חונכות אישית",
             action_link: `/analytics/${cls.id}`,
           });
         }
