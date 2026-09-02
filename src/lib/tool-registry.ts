@@ -48,6 +48,7 @@ export const TOOLS: ToolEntry[] = [
 
   // --- tools ---
   { to: "/weekly-schedule/$classId", section: "tools", requires: "classes", classScoped: true, icon: "CalendarDays", label: "מערכת שעות", desc: "מערכת שבועית, תורנויות ולוח שנה עברי" },
+  { to: "/hebrew-calendar", section: "tools", requires: "any", icon: "CalendarDays", label: "לוח תאריכים עברי", desc: "המרת תאריך עברי ולועזי, תאריך-החלוף ושבועות החודש העברי" },
   { to: "/schedule-rules", section: "tools", requires: "classes", icon: "CalendarClock", label: "כללים קבועים במערכת", desc: "סיום מוקדם ביום קבוע וראש חודש — עריכה והשבתה לפי כיתה" },
   { to: "/student-view/$classId", section: "tools", requires: "classes", classScoped: true, icon: "Globe2", label: "מצב תלמיד", desc: "המסך כפי שהתלמיד רואה אותו — לבדיקה לפני שיתוף" },
 
