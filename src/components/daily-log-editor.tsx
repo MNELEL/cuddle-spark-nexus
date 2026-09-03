@@ -90,11 +90,53 @@ export function DailyLogEditor({ classId, className }: { classId: string; classN
             )}
             שמור תיעוד
           </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowHistory((v) => !v)}
+            aria-expanded={showHistory}
+          >
+            <History className="h-4 w-4" aria-hidden />
+            היסטוריית שינויים
+            {showHistory ? (
+              <ChevronUp className="h-4 w-4" aria-hidden />
+            ) : (
+              <ChevronDown className="h-4 w-4" aria-hidden />
+            )}
+          </Button>
           {q.isLoading && <span className="text-xs text-muted-foreground">טוען…</span>}
           {!q.isLoading && !dirty && text && (
             <span className="text-xs text-muted-foreground">נשמר</span>
           )}
         </div>
+
+        {showHistory && (
+          <div className="space-y-2 rounded-md border p-3">
+            {h.isLoading && <p className="text-xs text-muted-foreground">טוען היסטוריה…</p>}
+            {!h.isLoading && (h.data ?? []).length === 0 && (
+              <p className="text-xs text-muted-foreground">אין שינויים מתועדים לתאריך זה.</p>
+            )}
+            {(h.data ?? []).map((entry) => (
+              <div key={entry.id} className="space-y-1 border-b pb-2 last:border-0 last:pb-0">
+                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                  <Badge variant={entry.action === "created" ? "secondary" : "outline"}>
+                    {entry.action === "created" ? "נוצר" : "עודכן"}
+                  </Badge>
+                  <span>{entry.author}</span>
+                  <span>{hebrewDateTime(entry.created_at)}</span>
+                  {entry.date && <span>({toHebrewDateFull(entry.date) ?? entry.date})</span>}
+                </div>
+                {entry.previous_notes && (
+                  <p className="whitespace-pre-wrap text-xs text-muted-foreground line-through">
+                    {entry.previous_notes}
+                  </p>
+                )}
+                <p className="whitespace-pre-wrap text-sm">{entry.new_notes}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
