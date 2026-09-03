@@ -1,11 +1,10 @@
-import { useRef, useState } from "react";
-import { ACCEPT_SPREADSHEET, validateUploadFile } from "@/lib/upload-accept";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
-import { Download, Upload, History, Save, Trash2, FileSpreadsheet, FileText, Braces, GraduationCap, CalendarCheck, Library } from "lucide-react";
+import { Download, History, Save, Trash2, FileSpreadsheet, FileText, Braces, GraduationCap, CalendarCheck, Library } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,9 +16,10 @@ import {
 import { toast } from "sonner";
 import { listStudents } from "@/lib/students.functions";
 import { getClass } from "@/lib/classes.functions";
-import { importStudents, listConfigs, saveConfig, loadConfig, deleteConfig } from "@/lib/seating-configs.functions";
+import { listConfigs, saveConfig, loadConfig, deleteConfig } from "@/lib/seating-configs.functions";
 import { exportClassGrades, exportClassAttendance, exportResourcesMeta } from "@/lib/data-export.functions";
 import { hebrewDateTime } from "@/lib/hebrew-date";
+import { RosterImportDialog } from "@/components/roster-import-dialog";
 
 type Student = {
   id: string; name: string;
@@ -28,28 +28,11 @@ type Student = {
   seat_row: number | null; seat_col: number | null;
 };
 
-const HEIGHT_MAP: Record<string, "low" | "mid" | "high"> = {
-  "low": "low", "mid": "mid", "high": "high",
-  "נמוך": "low", "בינוני": "mid", "גבוה": "high",
-};
-const ROW_MAP: Record<string, "front" | "mid" | "back" | "any"> = {
-  "front": "front", "mid": "mid", "back": "back", "any": "any",
-  "קדמית": "front", "אמצעית": "mid", "אחורית": "back", "לא משנה": "any",
-};
-
-type ImportRow = {
-  name: string;
-  height: "low" | "mid" | "high";
-  row_pref: "front" | "mid" | "back" | "any";
-  corner_pref: boolean;
-  notes: string;
-};
-
 export function ImportExportBar({ classId }: { classId: string }) {
   const qc = useQueryClient();
   const listS = useServerFn(listStudents);
   const getC = useServerFn(getClass);
-  const imp = useServerFn(importStudents);
+
   const listCfg = useServerFn(listConfigs);
   const saveCfg = useServerFn(saveConfig);
   const loadCfg = useServerFn(loadConfig);
@@ -58,49 +41,17 @@ export function ImportExportBar({ classId }: { classId: string }) {
   const expAtt = useServerFn(exportClassAttendance);
   const expRes = useServerFn(exportResourcesMeta);
 
-  const fileInput = useRef<HTMLInputElement>(null);
   const [saveOpen, setSaveOpen] = useState(false);
   const [histOpen, setHistOpen] = useState(false);
   const [cfgName, setCfgName] = useState("");
 
-  const importM = useMutation({
-    mutationFn: (rows: ImportRow[]) =>
-      imp({ data: { class_id: classId, students: rows } }),
-    onSuccess: (r) => {
-      qc.invalidateQueries({ queryKey: ["students", classId] });
-      toast.success(`יובאו ${r.count} תלמידים`);
-    },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה בייבוא"),
+  // שמות התלמידים הקיימים, כדי שהייבוא מאקסל לא ייצור כפילויות.
+  const { data: existingStudents = [] } = useQuery({
+    queryKey: ["students", classId],
+    queryFn: () => listS({ data: { classId } }),
   });
+  const existingNames = (existingStudents as Student[]).map((s) => s.name);
 
-  const onFile = async (file: File) => {
-    const check = validateUploadFile(file, ACCEPT_SPREADSHEET);
-    if (!check.ok) { toast.error(check.message); return; }
-    try {
-      const buf = await file.arrayBuffer();
-      const wb = XLSX.read(buf, { type: "array" });
-      const sheet = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
-      const parsed = rows.map((r) => {
-        const name = String(r["שם"] ?? r["name"] ?? r["Name"] ?? "").trim();
-        const heightRaw = String(r["גובה"] ?? r["height"] ?? "mid").trim().toLowerCase();
-        const rowRaw = String(r["שורה"] ?? r["row_pref"] ?? "any").trim().toLowerCase();
-        const corner = String(r["פינה"] ?? r["corner_pref"] ?? "").trim().toLowerCase();
-        const notes = String(r["הערות"] ?? r["notes"] ?? "");
-        return {
-          name,
-          height: HEIGHT_MAP[heightRaw] ?? "mid",
-          row_pref: ROW_MAP[rowRaw] ?? "any",
-          corner_pref: ["1", "true", "כן", "yes", "v"].includes(corner),
-          notes,
-        };
-      }).filter((r) => r.name);
-      if (!parsed.length) { toast.error("לא נמצאו שורות תקפות"); return; }
-      importM.mutate(parsed);
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "שגיאה בקריאת הקובץ");
-    }
-  };
 
   const exportExcel = async () => {
     const [cls, students] = await Promise.all([
@@ -209,14 +160,11 @@ export function ImportExportBar({ classId }: { classId: string }) {
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <input ref={fileInput} type="file" accept={ACCEPT_SPREADSHEET} className="hidden"
-        onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); e.target.value = ""; }} />
-      <Button size="sm" variant="outline" onClick={() => fileInput.current?.click()} disabled={importM.isPending}>
-        <Upload className="ms-1 h-4 w-4" /> ייבוא Excel
-      </Button>
+      <RosterImportDialog classId={classId} existingNames={existingNames} />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button size="sm" variant="outline"><Download className="ms-1 h-4 w-4" /> ייצוא</Button>
+
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={exportExcel}>

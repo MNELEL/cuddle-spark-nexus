@@ -2,12 +2,14 @@ import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { hebrewRangePresets } from "@/lib/hebrew-calendar";
 import { toHebrewDateFull } from "@/lib/hebrew-date";
+import { useHebrewAnchor } from "@/components/hebrew-anchor";
 
 export type DateRange = { from: string; to: string };
 
 /**
  * סינון תאריכים לפי הלוח העברי — היום, השבוע (פרשה), חודש עברי נוכחי/קודם
- * ושנה עברית. כל הטווחים נגזרים בזמן אמת מהתאריך העברי.
+ * ושנה עברית. כל הטווחים נגזרים בזמן אמת מהתאריך העברי הפעיל,
+ * כך שכשהלוח מתקדם הטווחים מתעדכנים לבד.
  */
 export function HebrewRangeFilter({
   value,
@@ -18,7 +20,9 @@ export function HebrewRangeFilter({
   onChange: (range: DateRange) => void;
   className?: string;
 }) {
-  const presets = useMemo(() => hebrewRangePresets(new Date()), []);
+  const { date } = useHebrewAnchor();
+  const presets = useMemo(() => hebrewRangePresets(date), [date]);
+
 
   return (
     <div className={className} dir="rtl">

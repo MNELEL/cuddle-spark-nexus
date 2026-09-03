@@ -1,14 +1,26 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { CalendarDays } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { HebrewDatePanel } from "@/components/hebrew-date-panel";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { HebrewWeeksCard } from "@/components/hebrew-weeks-card";
+import { HebrewRangeLinksCard } from "@/components/hebrew-range-links-card";
 import { useHebrewAnchor } from "@/components/hebrew-anchor";
-import { elapsedSince, hebrewDayInfo, parseHebrewDateInput } from "@/lib/hebrew-calendar";
+import {
+  elapsedSince,
+  hebrewDayInfo,
+  hebrewWeekBounds,
+  isoOf,
+  parseHebrewDateInput,
+} from "@/lib/hebrew-calendar";
+import { listClasses } from "@/lib/classes.functions";
 
 export const Route = createFileRoute("/_authenticated/hebrew-calendar")({
   component: HebrewCalendarPage,
@@ -18,12 +30,12 @@ export const Route = createFileRoute("/_authenticated/hebrew-calendar")({
       {
         name: "description",
         content:
-          "לוח תאריכים עברי עצמאי: תאריך היום, תאריך-החלוף, שבועות החודש העברי והמרה בין תאריך עברי ולועזי.",
+          "לוח תאריכים עברי אוטומטי: יום, שבוע וחודש עברי, תאריך-החלוף וטווחי סינון לדוחות ול-CRM.",
       },
       { property: "og:title", content: "לוח תאריכים עברי · הכיתה שלי" },
       {
         property: "og:description",
-        content: "המרת תאריכים עבריים, חישוב ימים ושבועות שחלפו ותצוגת שבועות החודש העברי.",
+        content: "לוח עברי אוטומטי לפי הלוח האמיתי — יום, שבוע, חודש וסינון תאריכים למסכים.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -33,7 +45,13 @@ export const Route = createFileRoute("/_authenticated/hebrew-calendar")({
 });
 
 function HebrewCalendarPage() {
-  const { date: anchor } = useHebrewAnchor();
+  const { date: anchor, isCustom, info } = useHebrewAnchor();
+  const list = useServerFn(listClasses);
+  const { data: classes = [] } = useQuery({
+    queryKey: ["classes"],
+    queryFn: () => list(),
+  });
+  const firstClassId = (classes as { id: string }[])[0]?.id;
 
   return (
     <div dir="rtl" className="mx-auto max-w-4xl space-y-5">
@@ -43,17 +61,95 @@ function HebrewCalendarPage() {
           לוח תאריכים עברי
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          הזן תאריך עברי או לועזי, בדוק כמה ימים ושבועות חלפו בפועל וראה את שבועות החודש העברי.
-          התאריך שנבחר כאן הוא המקור לכל תצוגות התאריך העברי באפליקציה ומתעדכן בכל המסכים מיד.
+          הלוח נגזר אוטומטית מהלוח העברי האמיתי ומתקדם מעצמו — יום, שבוע וחודש.
+          {isCustom
+            ? " כרגע נבחר תאריך ידני; הבחירה מתאפסת לבד ביום הבא."
+            : " אין צורך להזין דבר: התאריך המוצג הוא היום העברי בפועל."}
         </p>
       </div>
 
-      <HebrewDatePanel editable />
+      <Tabs defaultValue="day" dir="rtl">
+        <TabsList>
+          <TabsTrigger value="day">יום</TabsTrigger>
+          <TabsTrigger value="week">שבוע</TabsTrigger>
+          <TabsTrigger value="month">חודש</TabsTrigger>
+        </TabsList>
 
-      <ElapsedCalculator />
+        <TabsContent value="day" className="mt-4 space-y-4">
+          <HebrewDatePanel editable />
+          <ElapsedCalculator />
+        </TabsContent>
 
-      <HebrewWeeksCard date={anchor} />
+        <TabsContent value="week" className="mt-4 space-y-4">
+          <WeekDaysCard date={anchor} />
+        </TabsContent>
+
+        <TabsContent value="month" className="mt-4 space-y-4">
+          <Card dir="rtl">
+            <CardHeader className="pb-3">
+              <CardTitle className="font-display text-base">חודש {info.month}</CardTitle>
+              <CardDescription>
+                טווח החודש העברי: {info.monthRange.from} – {info.monthRange.to}
+              </CardDescription>
+            </CardHeader>
+          </Card>
+          <HebrewWeeksCard date={anchor} />
+        </TabsContent>
+      </Tabs>
+
+      <HebrewRangeLinksCard classId={firstClassId} />
     </div>
+  );
+}
+
+/** שבעת ימי השבוע העברי הפעיל (ראשון–שבת) עם חגים, פרשה ותאריך-החלוף. */
+function WeekDaysCard({ date }: { date: Date }) {
+  const days = useMemo(() => {
+    const { start } = hebrewWeekBounds(date);
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      return hebrewDayInfo(d);
+    });
+  }, [date]);
+  const todayIso = isoOf(new Date());
+
+  return (
+    <Card dir="rtl">
+      <CardHeader className="pb-3">
+        <CardTitle className="font-display text-base">
+          שבוע {days[0]?.parasha ? `· ${days[0].parasha}` : ""}
+        </CardTitle>
+        <CardDescription>כל ימי השבוע העברי, כולל שישי ושבת, לפי הלוח האמיתי.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {days.map((d) => (
+          <div
+            key={d.iso}
+            className={`flex flex-wrap items-center justify-between gap-2 rounded-md border p-2.5 ${
+              d.iso === todayIso ? "border-primary bg-primary/5" : ""
+            }`}
+          >
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant={d.iso === todayIso ? "default" : "secondary"}>{d.weekday}</Badge>
+              <span className="text-sm font-medium">{d.full}</span>
+              {d.isRoshChodesh && (
+                <Badge className="bg-accent text-accent-foreground">ראש חודש</Badge>
+              )}
+              {d.isShabbat && <Badge variant="outline">שבת</Badge>}
+              {d.holidays.map((h) => (
+                <Badge key={h} variant="outline">
+                  {h}
+                </Badge>
+              ))}
+            </div>
+            <span className="text-xs text-muted-foreground">
+              {d.iso} · {elapsedSince(d.iso).label}
+            </span>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
   );
 }
 
