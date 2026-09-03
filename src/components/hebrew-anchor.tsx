@@ -18,6 +18,10 @@ type AnchorContext = {
   reset: () => void;
 };
 
+/**
+ * התאריך נשמר יחד עם היום שבו נבחר, כך שהבחירה תקפה רק לאותו יום.
+ * ביום חדש הלוח חוזר אוטומטית לתאריך העברי האמיתי — הלוח האמיתי הוא המקור.
+ */
 const STORAGE_KEY = "hebrew-anchor-date";
 
 const Ctx = createContext<AnchorContext | null>(null);
@@ -28,11 +32,31 @@ export function HebrewAnchorProvider({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     const stored = window.localStorage.getItem(STORAGE_KEY);
-    if (stored && /^\d{4}-\d{2}-\d{2}$/.test(stored)) setSelectedIso(stored);
+    if (!stored) return;
+    const [iso, savedOn] = stored.split("|");
+    // בחירה ידנית שנשמרה ביום אחר אינה תקפה יותר — הלוח חוזר לעצמו.
+    if (iso && /^\d{4}-\d{2}-\d{2}$/.test(iso) && savedOn === isoOf(new Date())) {
+      setSelectedIso(iso);
+    } else {
+      window.localStorage.removeItem(STORAGE_KEY);
+    }
   }, []);
 
   useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 60_000);
+    const t = setInterval(() => {
+      const next = new Date();
+      setNow(next);
+      // חצות: מסירים בחירה ידנית של אתמול כדי שהלוח יתעדכן לבד.
+      setSelectedIso((prev) => {
+        if (!prev) return prev;
+        const stored = window.localStorage.getItem(STORAGE_KEY);
+        if (stored && stored.split("|")[1] !== isoOf(next)) {
+          window.localStorage.removeItem(STORAGE_KEY);
+          return null;
+        }
+        return prev;
+      });
+    }, 60_000);
     return () => clearInterval(t);
   }, []);
 
@@ -40,7 +64,7 @@ export function HebrewAnchorProvider({ children }: { children: React.ReactNode }
     const iso = isoOf(d);
     setSelectedIso(iso);
     try {
-      window.localStorage.setItem(STORAGE_KEY, iso);
+      window.localStorage.setItem(STORAGE_KEY, `${iso}|${isoOf(new Date())}`);
     } catch {
       /* מצב פרטי — נשאר בזיכרון בלבד */
     }
@@ -54,6 +78,7 @@ export function HebrewAnchorProvider({ children }: { children: React.ReactNode }
       /* ignore */
     }
   }, []);
+
 
   const value = useMemo<AnchorContext>(() => {
     const todayIso = isoOf(now);
