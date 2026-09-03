@@ -89,7 +89,7 @@ function HebrewCalendarPage() {
             <CardHeader className="pb-3">
               <CardTitle className="font-display text-base">חודש {info.month}</CardTitle>
               <CardDescription>
-                טווח החודש העברי: {isoOf(info.monthRange.from)} – {isoOf(info.monthRange.to)}
+                טווח החודש העברי: {info.monthRange.from} – {info.monthRange.to}
               </CardDescription>
             </CardHeader>
           </Card>
