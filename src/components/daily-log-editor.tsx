@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { NotebookPen, Save, Loader2 } from "lucide-react";
+import { NotebookPen, Save, Loader2, History, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { getDailyLog, saveDailyLog } from "@/lib/daily-log.functions";
+import { getDailyLog, saveDailyLog, listDailyLogHistory } from "@/lib/daily-log.functions";
 import { useHebrewAnchor } from "@/components/hebrew-anchor";
+import { hebrewDateTime, toHebrewDateFull } from "@/lib/hebrew-date";
 
 /**
  * כרטיס תיעוד יומי ידני לכיתה. התאריך נקבע לפי הלוח העברי הפעיל,
