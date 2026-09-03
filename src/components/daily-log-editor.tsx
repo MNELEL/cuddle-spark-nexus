@@ -21,12 +21,20 @@ export function DailyLogEditor({ classId, className }: { classId: string; classN
   const qc = useQueryClient();
   const load = useServerFn(getDailyLog);
   const save = useServerFn(saveDailyLog);
+  const history = useServerFn(listDailyLogHistory);
   const [text, setText] = useState("");
   const [dirty, setDirty] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   const q = useQuery({
     queryKey: ["daily-log", classId, date],
     queryFn: () => load({ data: { classId, date } }),
+  });
+
+  const h = useQuery({
+    queryKey: ["daily-log-history", classId, date],
+    queryFn: () => history({ data: { classId, date, limit: 30 } }),
+    enabled: showHistory,
   });
 
   useEffect(() => {
@@ -39,6 +47,7 @@ export function DailyLogEditor({ classId, className }: { classId: string; classN
     onSuccess: () => {
       setDirty(false);
       qc.invalidateQueries({ queryKey: ["daily-log", classId, date] });
+      qc.invalidateQueries({ queryKey: ["daily-log-history", classId, date] });
       toast.success("התיעוד היומי נשמר");
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "השמירה נכשלה"),
