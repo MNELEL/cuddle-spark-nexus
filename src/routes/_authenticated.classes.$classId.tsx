@@ -14,6 +14,7 @@ import { HebrewDatePanel } from "@/components/hebrew-date-panel";
 import { HebrewWeeksCard } from "@/components/hebrew-weeks-card";
 import { useHebrewAnchor } from "@/components/hebrew-anchor";
 import { DailyLogEditor } from "@/components/daily-log-editor";
+import { ClassRangeExportCard } from "@/components/class-range-export";
 import { ClassAnnouncementsBanner } from "@/components/class-announcements-banner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -412,6 +413,7 @@ function ClassDetail() {
         <TabsContent value="hebrew-dates" className="mt-4 space-y-4">
           <HebrewDatePanel editable />
           <DailyLogEditor classId={classId} />
+          <ClassRangeExportCard classId={classId} />
           <HebrewWeeksCard date={anchorDate} />
         </TabsContent>
       </Tabs>

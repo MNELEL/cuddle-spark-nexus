@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { NotebookPen, Save, Loader2 } from "lucide-react";
+import { NotebookPen, Save, Loader2, History, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { getDailyLog, saveDailyLog } from "@/lib/daily-log.functions";
+import { getDailyLog, saveDailyLog, listDailyLogHistory } from "@/lib/daily-log.functions";
 import { useHebrewAnchor } from "@/components/hebrew-anchor";
+import { hebrewDateTime, toHebrewDateFull } from "@/lib/hebrew-date";
 
 /**
  * כרטיס תיעוד יומי ידני לכיתה. התאריך נקבע לפי הלוח העברי הפעיל,
@@ -20,12 +21,20 @@ export function DailyLogEditor({ classId, className }: { classId: string; classN
   const qc = useQueryClient();
   const load = useServerFn(getDailyLog);
   const save = useServerFn(saveDailyLog);
+  const history = useServerFn(listDailyLogHistory);
   const [text, setText] = useState("");
   const [dirty, setDirty] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   const q = useQuery({
     queryKey: ["daily-log", classId, date],
     queryFn: () => load({ data: { classId, date } }),
+  });
+
+  const h = useQuery({
+    queryKey: ["daily-log-history", classId, date],
+    queryFn: () => history({ data: { classId, date, limit: 30 } }),
+    enabled: showHistory,
   });
 
   useEffect(() => {
@@ -38,6 +47,7 @@ export function DailyLogEditor({ classId, className }: { classId: string; classN
     onSuccess: () => {
       setDirty(false);
       qc.invalidateQueries({ queryKey: ["daily-log", classId, date] });
+      qc.invalidateQueries({ queryKey: ["daily-log-history", classId, date] });
       toast.success("התיעוד היומי נשמר");
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "השמירה נכשלה"),
@@ -80,11 +90,53 @@ export function DailyLogEditor({ classId, className }: { classId: string; classN
             )}
             שמור תיעוד
           </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowHistory((v) => !v)}
+            aria-expanded={showHistory}
+          >
+            <History className="h-4 w-4" aria-hidden />
+            היסטוריית שינויים
+            {showHistory ? (
+              <ChevronUp className="h-4 w-4" aria-hidden />
+            ) : (
+              <ChevronDown className="h-4 w-4" aria-hidden />
+            )}
+          </Button>
           {q.isLoading && <span className="text-xs text-muted-foreground">טוען…</span>}
           {!q.isLoading && !dirty && text && (
             <span className="text-xs text-muted-foreground">נשמר</span>
           )}
         </div>
+
+        {showHistory && (
+          <div className="space-y-2 rounded-md border p-3">
+            {h.isLoading && <p className="text-xs text-muted-foreground">טוען היסטוריה…</p>}
+            {!h.isLoading && (h.data ?? []).length === 0 && (
+              <p className="text-xs text-muted-foreground">אין שינויים מתועדים לתאריך זה.</p>
+            )}
+            {(h.data ?? []).map((entry) => (
+              <div key={entry.id} className="space-y-1 border-b pb-2 last:border-0 last:pb-0">
+                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                  <Badge variant={entry.action === "created" ? "secondary" : "outline"}>
+                    {entry.action === "created" ? "נוצר" : "עודכן"}
+                  </Badge>
+                  <span>{entry.author}</span>
+                  <span>{hebrewDateTime(entry.created_at)}</span>
+                  {entry.date && <span>({toHebrewDateFull(entry.date) ?? entry.date})</span>}
+                </div>
+                {entry.previous_notes && (
+                  <p className="whitespace-pre-wrap text-xs text-muted-foreground line-through">
+                    {entry.previous_notes}
+                  </p>
+                )}
+                <p className="whitespace-pre-wrap text-sm">{entry.new_notes}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

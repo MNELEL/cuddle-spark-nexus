@@ -14,3 +14,8 @@ export const AUDIT_SOURCE_TEACHERS = "admin.teachers";
  * add a DB write per render and bury real changes under thousands of rows.
  */
 export const AUDIT_SOURCE_STUDENT_PROFILES = "student_profiles.audit";
+/**
+ * תיעוד יומי לכיתה (daily_summaries): כל שמירה נרשמת עם הטקסט הקודם והחדש,
+ * כדי שאפשר יהיה לראות היסטוריית שינויים לכל תאריך.
+ */
+export const AUDIT_SOURCE_DAILY_LOG = "class.daily_log";
