@@ -76,6 +76,7 @@ import { Route as AuthenticatedCalendarClassIdRouteImport } from './routes/_auth
 import { Route as AuthenticatedCertificatesClassIdRouteImport } from './routes/_authenticated.certificates.$classId'
 import { Route as AuthenticatedClassesIndexRouteImport } from './routes/_authenticated.classes.index'
 import { Route as AuthenticatedClassesClassIdRouteImport } from './routes/_authenticated.classes.$classId'
+import { Route as AuthenticatedDailyReportClassIdRouteImport } from './routes/_authenticated.daily-report.$classId'
 import { Route as AuthenticatedDailyClassIdRouteImport } from './routes/_authenticated.daily.$classId'
 import { Route as AuthenticatedExamGeneratorClassIdRouteImport } from './routes/_authenticated.exam-generator.$classId'
 import { Route as AuthenticatedExamScannerClassIdRouteImport } from './routes/_authenticated.exam-scanner.$classId'
@@ -458,6 +459,12 @@ const AuthenticatedClassesClassIdRoute =
     path: '/classes/$classId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedDailyReportClassIdRoute =
+  AuthenticatedDailyReportClassIdRouteImport.update({
+    id: '/daily-report/$classId',
+    path: '/daily-report/$classId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedDailyClassIdRoute =
   AuthenticatedDailyClassIdRouteImport.update({
     id: '/daily/$classId',
@@ -663,6 +670,7 @@ export interface FileRoutesByFullPath {
   '/calendar/$classId': typeof AuthenticatedCalendarClassIdRoute
   '/certificates/$classId': typeof AuthenticatedCertificatesClassIdRoute
   '/classes/$classId': typeof AuthenticatedClassesClassIdRouteWithChildren
+  '/daily-report/$classId': typeof AuthenticatedDailyReportClassIdRoute
   '/daily/$classId': typeof AuthenticatedDailyClassIdRoute
   '/exam-generator/$classId': typeof AuthenticatedExamGeneratorClassIdRoute
   '/exam-scanner/$classId': typeof AuthenticatedExamScannerClassIdRoute
@@ -749,6 +757,7 @@ export interface FileRoutesByTo {
   '/calendar/$classId': typeof AuthenticatedCalendarClassIdRoute
   '/certificates/$classId': typeof AuthenticatedCertificatesClassIdRoute
   '/classes/$classId': typeof AuthenticatedClassesClassIdRouteWithChildren
+  '/daily-report/$classId': typeof AuthenticatedDailyReportClassIdRoute
   '/daily/$classId': typeof AuthenticatedDailyClassIdRoute
   '/exam-generator/$classId': typeof AuthenticatedExamGeneratorClassIdRoute
   '/exam-scanner/$classId': typeof AuthenticatedExamScannerClassIdRoute
@@ -842,6 +851,7 @@ export interface FileRoutesById {
   '/_authenticated/calendar/$classId': typeof AuthenticatedCalendarClassIdRoute
   '/_authenticated/certificates/$classId': typeof AuthenticatedCertificatesClassIdRoute
   '/_authenticated/classes/$classId': typeof AuthenticatedClassesClassIdRouteWithChildren
+  '/_authenticated/daily-report/$classId': typeof AuthenticatedDailyReportClassIdRoute
   '/_authenticated/daily/$classId': typeof AuthenticatedDailyClassIdRoute
   '/_authenticated/exam-generator/$classId': typeof AuthenticatedExamGeneratorClassIdRoute
   '/_authenticated/exam-scanner/$classId': typeof AuthenticatedExamScannerClassIdRoute
@@ -935,6 +945,7 @@ export interface FileRouteTypes {
     | '/calendar/$classId'
     | '/certificates/$classId'
     | '/classes/$classId'
+    | '/daily-report/$classId'
     | '/daily/$classId'
     | '/exam-generator/$classId'
     | '/exam-scanner/$classId'
@@ -1021,6 +1032,7 @@ export interface FileRouteTypes {
     | '/calendar/$classId'
     | '/certificates/$classId'
     | '/classes/$classId'
+    | '/daily-report/$classId'
     | '/daily/$classId'
     | '/exam-generator/$classId'
     | '/exam-scanner/$classId'
@@ -1113,6 +1125,7 @@ export interface FileRouteTypes {
     | '/_authenticated/calendar/$classId'
     | '/_authenticated/certificates/$classId'
     | '/_authenticated/classes/$classId'
+    | '/_authenticated/daily-report/$classId'
     | '/_authenticated/daily/$classId'
     | '/_authenticated/exam-generator/$classId'
     | '/_authenticated/exam-scanner/$classId'
@@ -1636,6 +1649,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClassesClassIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/daily-report/$classId': {
+      id: '/_authenticated/daily-report/$classId'
+      path: '/daily-report/$classId'
+      fullPath: '/daily-report/$classId'
+      preLoaderRoute: typeof AuthenticatedDailyReportClassIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/daily/$classId': {
       id: '/_authenticated/daily/$classId'
       path: '/daily/$classId'
@@ -1838,6 +1858,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedCalendarClassIdRoute: typeof AuthenticatedCalendarClassIdRoute
   AuthenticatedCertificatesClassIdRoute: typeof AuthenticatedCertificatesClassIdRoute
   AuthenticatedClassesClassIdRoute: typeof AuthenticatedClassesClassIdRouteWithChildren
+  AuthenticatedDailyReportClassIdRoute: typeof AuthenticatedDailyReportClassIdRoute
   AuthenticatedDailyClassIdRoute: typeof AuthenticatedDailyClassIdRoute
   AuthenticatedExamGeneratorClassIdRoute: typeof AuthenticatedExamGeneratorClassIdRoute
   AuthenticatedExamScannerClassIdRoute: typeof AuthenticatedExamScannerClassIdRoute
@@ -1885,6 +1906,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedCertificatesClassIdRoute: AuthenticatedCertificatesClassIdRoute,
   AuthenticatedClassesClassIdRoute:
     AuthenticatedClassesClassIdRouteWithChildren,
+  AuthenticatedDailyReportClassIdRoute: AuthenticatedDailyReportClassIdRoute,
   AuthenticatedDailyClassIdRoute: AuthenticatedDailyClassIdRoute,
   AuthenticatedExamGeneratorClassIdRoute:
     AuthenticatedExamGeneratorClassIdRoute,

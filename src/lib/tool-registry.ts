@@ -75,6 +75,7 @@ export const TOOLS: ToolEntry[] = [
   { to: "/onboarding", section: "docs", requires: "any", icon: "Sparkles", label: "המדריך החכם", desc: "שישה שלבים מהקמת הכיתה ועד הדוח הראשון להורים" },
   { to: "/certificates/$classId", section: "docs", requires: "classes", classScoped: true, icon: "Award", label: "תעודות", desc: "הפקת תעודות עם התבנית והלוגו של המוסד" },
   { to: "/daily/$classId", section: "docs", requires: "classes", classScoped: true, icon: "FileText", label: "סיכום יומי", desc: "דוח יומי להדפסה ולשליחה" },
+  { to: "/daily-report/$classId", section: "docs", requires: "classes", classScoped: true, icon: "CalendarDays", label: "דוח תיעוד יומי", desc: "כל ימי הלוח העברי עם תיעוד, נוכחות, ציונים ותובנות" },
   { to: "/bulletins/$classId", section: "docs", requires: "classes", classScoped: true, icon: "FileText", label: "עלון שבועי", desc: "עלון כיתתי עם סיכום, חידה ופעילויות" },
   { to: "/reports/$classId", section: "docs", requires: "classes", classScoped: true, icon: "FileText", label: "דוחות", desc: "דוחות מעקב והתקדמות" },
   { to: "/parents/$classId", section: "docs", requires: "classes", classScoped: true, icon: "Mail", label: "קשר עם הורים", desc: "מיילים ותקשורת עם ההורים" },

@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useNavigate, Link } from "@tanstack/react-router";
@@ -6,6 +7,13 @@ import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   generateDailyBriefing,
   listDailyBriefing,
@@ -35,17 +43,39 @@ const SEVERITY_STYLES: Record<string, { wrapper: string; label: string; badge: s
   },
 };
 
+const SEVERITY_RANK: Record<string, number> = { high: 0, medium: 1, low: 2 };
+
 export function DailyBriefingCard() {
   const fetchList = useServerFn(listDailyBriefing);
   const runGenerate = useServerFn(generateDailyBriefing);
   const runDismiss = useServerFn(dismissInsight);
   const qc = useQueryClient();
   const navigate = useNavigate();
+  const [classFilter, setClassFilter] = useState("all");
+  const [sortBy, setSortBy] = useState<"severity" | "class">("severity");
 
-  const { data: insights = [], isLoading } = useQuery({
+  const { data: allInsights = [], isLoading } = useQuery({
     queryKey: ["daily-briefing"],
     queryFn: () => fetchList(),
   });
+
+  const classOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const i of allInsights) map.set(i.class_id, i.class_name || "כיתה");
+    return Array.from(map, ([id, name]) => ({ id, name }));
+  }, [allInsights]);
+
+  const insights = useMemo(() => {
+    const rows = allInsights.filter((i) => classFilter === "all" || i.class_id === classFilter);
+    const bySeverity = (a: DailyInsight, b: DailyInsight) =>
+      (SEVERITY_RANK[a.severity] ?? 3) - (SEVERITY_RANK[b.severity] ?? 3) ||
+      (a.created_at < b.created_at ? 1 : -1);
+    return [...rows].sort((a, b) =>
+      sortBy === "class"
+        ? (a.class_name || "").localeCompare(b.class_name || "", "he") || bySeverity(a, b)
+        : bySeverity(a, b),
+    );
+  }, [allInsights, classFilter, sortBy]);
 
   const fetchPending = useServerFn(listPendingUpdates);
   const { data: pending = [] } = useQuery({
@@ -91,7 +121,32 @@ export function DailyBriefingCard() {
           {insights.length > 0 && <Badge variant="secondary">{insights.length}</Badge>}
           <Badge variant="outline">{hebrewDayInfo().full}</Badge>
         </CardTitle>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {classOptions.length > 1 && (
+            <Select value={classFilter} onValueChange={setClassFilter}>
+              <SelectTrigger className="h-9 w-[150px]" aria-label="סינון לפי כיתה">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">כל הכיתות</SelectItem>
+                {classOptions.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <Select value={sortBy} onValueChange={(v) => setSortBy(v as "severity" | "class")}>
+            <SelectTrigger className="h-9 w-[130px]" aria-label="מיון תובנות">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="severity">מיון: חומרה</SelectItem>
+              <SelectItem value="class">מיון: כיתה</SelectItem>
+            </SelectContent>
+          </Select>
+
           <Button
             variant="outline"
             size="sm"
