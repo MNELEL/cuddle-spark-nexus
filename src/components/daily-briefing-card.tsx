@@ -121,7 +121,32 @@ export function DailyBriefingCard() {
           {insights.length > 0 && <Badge variant="secondary">{insights.length}</Badge>}
           <Badge variant="outline">{hebrewDayInfo().full}</Badge>
         </CardTitle>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {classOptions.length > 1 && (
+            <Select value={classFilter} onValueChange={setClassFilter}>
+              <SelectTrigger className="h-9 w-[150px]" aria-label="סינון לפי כיתה">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">כל הכיתות</SelectItem>
+                {classOptions.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <Select value={sortBy} onValueChange={(v) => setSortBy(v as "severity" | "class")}>
+            <SelectTrigger className="h-9 w-[130px]" aria-label="מיון תובנות">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="severity">מיון: חומרה</SelectItem>
+              <SelectItem value="class">מיון: כיתה</SelectItem>
+            </SelectContent>
+          </Select>
+
           <Button
             variant="outline"
             size="sm"
