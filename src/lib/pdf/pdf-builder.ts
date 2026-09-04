@@ -142,16 +142,40 @@ export const VISUAL_TEXT_OPTS = {
 } as const;
 
 /**
+ * The embedded Heebo subset has no glyphs for a few typographic characters
+ * (section sign, en/em dashes, curly quotes, ellipsis). jsPDF drops the whole
+ * string when it cannot encode a character, so headings silently disappeared.
+ * Map them to ASCII equivalents before drawing.
+ */
+const GLYPH_FALLBACKS: Array<[RegExp, string]> = [
+  [/§\s?/g, ""],
+  [/[—–‒―]/g, "-"],
+  [/[’‘‚]/g, "'"],
+  [/[“”„]/g, '"'],
+  [/…/g, "..."],
+  [/[\u00a0\u2007\u202f]/g, " "],
+  [/[•·]/g, "-"],
+];
+
+/** Replaces characters the embedded Hebrew font cannot render. */
+export function sanitizeGlyphs(text: string): string {
+  let out = text;
+  for (const [re, rep] of GLYPH_FALLBACKS) out = out.replace(re, rep);
+  return out;
+}
+
+/**
  * Converts a logical (typed) Hebrew string into visual order for the PDF.
  * Safe to call on any string, including pure Latin/numeric text.
  */
 export function bidi(text: string): string {
   if (!text) return text;
+  const clean = sanitizeGlyphs(text);
   try {
     const engine = getVisualEngine();
-    return engine ? engine.doBidiReorder(text) : text;
+    return engine ? engine.doBidiReorder(clean) : clean;
   } catch {
-    return text;
+    return clean;
   }
 }
 
