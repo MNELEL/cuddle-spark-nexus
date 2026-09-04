@@ -41,11 +41,31 @@ export function DailyBriefingCard() {
   const runDismiss = useServerFn(dismissInsight);
   const qc = useQueryClient();
   const navigate = useNavigate();
+  const [classFilter, setClassFilter] = useState("all");
+  const [sortBy, setSortBy] = useState<"severity" | "class">("severity");
 
-  const { data: insights = [], isLoading } = useQuery({
+  const { data: allInsights = [], isLoading } = useQuery({
     queryKey: ["daily-briefing"],
     queryFn: () => fetchList(),
   });
+
+  const classOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const i of allInsights) map.set(i.class_id, i.class_name || "כיתה");
+    return Array.from(map, ([id, name]) => ({ id, name }));
+  }, [allInsights]);
+
+  const insights = useMemo(() => {
+    const rows = allInsights.filter((i) => classFilter === "all" || i.class_id === classFilter);
+    const bySeverity = (a: DailyInsight, b: DailyInsight) =>
+      (SEVERITY_RANK[a.severity] ?? 3) - (SEVERITY_RANK[b.severity] ?? 3) ||
+      (a.created_at < b.created_at ? 1 : -1);
+    return [...rows].sort((a, b) =>
+      sortBy === "class"
+        ? (a.class_name || "").localeCompare(b.class_name || "", "he") || bySeverity(a, b)
+        : bySeverity(a, b),
+    );
+  }, [allInsights, classFilter, sortBy]);
 
   const fetchPending = useServerFn(listPendingUpdates);
   const { data: pending = [] } = useQuery({
