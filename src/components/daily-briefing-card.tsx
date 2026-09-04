@@ -43,6 +43,8 @@ const SEVERITY_STYLES: Record<string, { wrapper: string; label: string; badge: s
   },
 };
 
+const SEVERITY_RANK: Record<string, number> = { high: 0, medium: 1, low: 2 };
+
 export function DailyBriefingCard() {
   const fetchList = useServerFn(listDailyBriefing);
   const runGenerate = useServerFn(generateDailyBriefing);
