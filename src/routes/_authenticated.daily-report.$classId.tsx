@@ -192,6 +192,35 @@ function DailyLogReportPage() {
             </Badge>
             <Badge variant="outline">תובנות: {totals.insights}</Badge>
           </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              size="sm"
+              disabled={!data || busy !== null}
+              onClick={() => runExport("xlsx")}
+            >
+              {busy === "xlsx" ? (
+                <Loader2 className="ms-1 h-4 w-4 animate-spin" aria-hidden />
+              ) : (
+                <FileSpreadsheet className="ms-1 h-4 w-4" aria-hidden />
+              )}
+              ייצוא ל-Excel
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={!data || busy !== null}
+              onClick={() => runExport("pdf")}
+            >
+              {busy === "pdf" ? (
+                <Loader2 className="ms-1 h-4 w-4 animate-spin" aria-hidden />
+              ) : (
+                <FileText className="ms-1 h-4 w-4" aria-hidden />
+              )}
+              ייצוא ל-PDF
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
