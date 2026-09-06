@@ -2,7 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowRight, CalendarDays } from "lucide-react";
+import * as XLSX from "xlsx";
+import { ArrowRight, CalendarDays, FileSpreadsheet, FileText, Loader2, Pencil } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +12,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { HebrewRangeFilter, type DateRange } from "@/components/hebrew-range-filter";
 import { useHebrewAnchor } from "@/components/hebrew-anchor";
+import { DailyReportDayDialog } from "@/components/daily-report-day-dialog";
 import { hebrewRangePresets, hebrewDayInfo, isoOf } from "@/lib/hebrew-calendar";
+import { toHebrewDateFull } from "@/lib/hebrew-date";
 import { getDailyReport, type DailyReportDay } from "@/lib/daily-report.functions";
 
 export const Route = createFileRoute("/_authenticated/daily-report/$classId")({
