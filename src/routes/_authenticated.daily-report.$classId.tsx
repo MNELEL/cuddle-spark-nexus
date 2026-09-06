@@ -2,7 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowRight, CalendarDays } from "lucide-react";
+import * as XLSX from "xlsx";
+import { ArrowRight, CalendarDays, FileSpreadsheet, FileText, Loader2, Pencil } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +12,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { HebrewRangeFilter, type DateRange } from "@/components/hebrew-range-filter";
 import { useHebrewAnchor } from "@/components/hebrew-anchor";
+import { DailyReportDayDialog } from "@/components/daily-report-day-dialog";
 import { hebrewRangePresets, hebrewDayInfo, isoOf } from "@/lib/hebrew-calendar";
+import { toHebrewDateFull } from "@/lib/hebrew-date";
 import { getDailyReport, type DailyReportDay } from "@/lib/daily-report.functions";
 
 export const Route = createFileRoute("/_authenticated/daily-report/$classId")({
@@ -44,6 +48,8 @@ function DailyLogReportPage() {
     return { from: p.from, to: p.to };
   });
   const [onlyWithData, setOnlyWithData] = useState(false);
+  const [busy, setBusy] = useState<"xlsx" | "pdf" | null>(null);
+  const [editDate, setEditDate] = useState<string | null>(null);
   const fetchReport = useServerFn(getDailyReport);
 
   const { data, isLoading } = useQuery({
@@ -80,6 +86,66 @@ function DailyLogReportPage() {
       ),
     [rows],
   );
+
+  const rangeLabel = useMemo(() => {
+    const hit = hebrewRangePresets(anchorDate).find(
+      (p) => p.from === range.from && p.to === range.to,
+    );
+    return (
+      hit?.label ??
+      `${toHebrewDateFull(range.from) ?? range.from} – ${toHebrewDateFull(range.to) ?? range.to}`
+    );
+  }, [anchorDate, range]);
+
+  /** ייצוא בדיוק של השורות המוצגות — אותו טווח עברי ואותו סינון. */
+  const runExport = async (kind: "xlsx" | "pdf") => {
+    if (!data) return;
+    setBusy(kind);
+    try {
+      if (kind === "xlsx") {
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(
+          wb,
+          XLSX.utils.json_to_sheet(
+            rows.map((d) => ({
+              "תאריך עברי": toHebrewDateFull(d.date) ?? d.date,
+              "תאריך": d.date,
+              "נוכחים": d.attendance.present,
+              "נעדרים": d.attendance.absent,
+              "איחורים": d.attendance.late,
+              "מאושרים": d.attendance.excused,
+              "סה״כ נוכחות": d.attendance.total,
+              "מספר ציונים": d.grades.count,
+              "ממוצע ציונים (%)": d.grades.avgPct === null ? "" : Math.round(d.grades.avgPct),
+              "תובנות": d.insights.total,
+              "תובנות חמורות": d.insights.high,
+              "תיעוד יומי": d.notes ?? "",
+            })),
+          ),
+          "דוח תיעוד יומי",
+        );
+        XLSX.writeFile(wb, `דוח-תיעוד-יומי-${data.class.name}-${range.from}-${range.to}.xlsx`);
+      } else {
+        const [{ buildDailyReportPdf }, { downloadPdfBlob }] = await Promise.all([
+          import("@/lib/pdf/daily-report-pdf"),
+          import("@/lib/pdf/pdf-builder"),
+        ]);
+        const { blob, filename } = await buildDailyReportPdf({
+          className: data.class.name,
+          range: { from: range.from, to: range.to },
+          rangeLabel,
+          studentCount: data.studentCount,
+          days: rows,
+        });
+        downloadPdfBlob(blob, filename);
+      }
+      toast.success(`יוצאו ${rows.length} ימים`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "הייצוא נכשל");
+    } finally {
+      setBusy(null);
+    }
+  };
 
   return (
     <div dir="rtl" className="mx-auto max-w-5xl space-y-4 p-4">
@@ -126,6 +192,35 @@ function DailyLogReportPage() {
             </Badge>
             <Badge variant="outline">תובנות: {totals.insights}</Badge>
           </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              size="sm"
+              disabled={!data || busy !== null}
+              onClick={() => runExport("xlsx")}
+            >
+              {busy === "xlsx" ? (
+                <Loader2 className="ms-1 h-4 w-4 animate-spin" aria-hidden />
+              ) : (
+                <FileSpreadsheet className="ms-1 h-4 w-4" aria-hidden />
+              )}
+              ייצוא ל-Excel
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={!data || busy !== null}
+              onClick={() => runExport("pdf")}
+            >
+              {busy === "pdf" ? (
+                <Loader2 className="ms-1 h-4 w-4 animate-spin" aria-hidden />
+              ) : (
+                <FileText className="ms-1 h-4 w-4" aria-hidden />
+              )}
+              ייצוא ל-PDF
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -171,6 +266,16 @@ function DailyLogReportPage() {
                         תובנות: {d.insights.total}
                       </Badge>
                     )}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setEditDate(d.date)}
+                      aria-label={`עריכת ${info.full}`}
+                    >
+                      <Pencil className="ms-1 h-4 w-4" aria-hidden />
+                      עריכה
+                    </Button>
                   </div>
                 </div>
                 <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">
@@ -181,6 +286,13 @@ function DailyLogReportPage() {
           })}
         </ul>
       )}
+
+      <DailyReportDayDialog
+        classId={classId}
+        date={editDate}
+        open={editDate !== null}
+        onOpenChange={(v) => !v && setEditDate(null)}
+      />
     </div>
   );
 }
