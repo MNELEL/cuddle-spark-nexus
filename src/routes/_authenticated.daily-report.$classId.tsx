@@ -266,6 +266,16 @@ function DailyLogReportPage() {
                         תובנות: {d.insights.total}
                       </Badge>
                     )}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setEditDate(d.date)}
+                      aria-label={`עריכת ${info.full}`}
+                    >
+                      <Pencil className="ms-1 h-4 w-4" aria-hidden />
+                      עריכה
+                    </Button>
                   </div>
                 </div>
                 <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">
@@ -276,6 +286,13 @@ function DailyLogReportPage() {
           })}
         </ul>
       )}
+
+      <DailyReportDayDialog
+        classId={classId}
+        date={editDate}
+        open={editDate !== null}
+        onOpenChange={(v) => !v && setEditDate(null)}
+      />
     </div>
   );
 }
