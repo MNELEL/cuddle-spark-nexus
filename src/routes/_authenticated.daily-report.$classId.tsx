@@ -48,6 +48,8 @@ function DailyLogReportPage() {
     return { from: p.from, to: p.to };
   });
   const [onlyWithData, setOnlyWithData] = useState(false);
+  const [busy, setBusy] = useState<"xlsx" | "pdf" | null>(null);
+  const [editDate, setEditDate] = useState<string | null>(null);
   const fetchReport = useServerFn(getDailyReport);
 
   const { data, isLoading } = useQuery({
