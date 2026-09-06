@@ -87,6 +87,66 @@ function DailyLogReportPage() {
     [rows],
   );
 
+  const rangeLabel = useMemo(() => {
+    const hit = hebrewRangePresets(anchorDate).find(
+      (p) => p.from === range.from && p.to === range.to,
+    );
+    return (
+      hit?.label ??
+      `${toHebrewDateFull(range.from) ?? range.from} – ${toHebrewDateFull(range.to) ?? range.to}`
+    );
+  }, [anchorDate, range]);
+
+  /** ייצוא בדיוק של השורות המוצגות — אותו טווח עברי ואותו סינון. */
+  const runExport = async (kind: "xlsx" | "pdf") => {
+    if (!data) return;
+    setBusy(kind);
+    try {
+      if (kind === "xlsx") {
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(
+          wb,
+          XLSX.utils.json_to_sheet(
+            rows.map((d) => ({
+              "תאריך עברי": toHebrewDateFull(d.date) ?? d.date,
+              "תאריך": d.date,
+              "נוכחים": d.attendance.present,
+              "נעדרים": d.attendance.absent,
+              "איחורים": d.attendance.late,
+              "מאושרים": d.attendance.excused,
+              "סה״כ נוכחות": d.attendance.total,
+              "מספר ציונים": d.grades.count,
+              "ממוצע ציונים (%)": d.grades.avgPct === null ? "" : Math.round(d.grades.avgPct),
+              "תובנות": d.insights.total,
+              "תובנות חמורות": d.insights.high,
+              "תיעוד יומי": d.notes ?? "",
+            })),
+          ),
+          "דוח תיעוד יומי",
+        );
+        XLSX.writeFile(wb, `דוח-תיעוד-יומי-${data.class.name}-${range.from}-${range.to}.xlsx`);
+      } else {
+        const [{ buildDailyReportPdf }, { downloadPdfBlob }] = await Promise.all([
+          import("@/lib/pdf/daily-report-pdf"),
+          import("@/lib/pdf/pdf-builder"),
+        ]);
+        const { blob, filename } = await buildDailyReportPdf({
+          className: data.class.name,
+          range: { from: range.from, to: range.to },
+          rangeLabel,
+          studentCount: data.studentCount,
+          days: rows,
+        });
+        downloadPdfBlob(blob, filename);
+      }
+      toast.success(`יוצאו ${rows.length} ימים`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "הייצוא נכשל");
+    } finally {
+      setBusy(null);
+    }
+  };
+
   return (
     <div dir="rtl" className="mx-auto max-w-5xl space-y-4 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
