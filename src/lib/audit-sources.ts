@@ -19,3 +19,10 @@ export const AUDIT_SOURCE_STUDENT_PROFILES = "student_profiles.audit";
  * כדי שאפשר יהיה לראות היסטוריית שינויים לכל תאריך.
  */
 export const AUDIT_SOURCE_DAILY_LOG = "class.daily_log";
+/**
+ * תובנות יומיות שהמלמד הזין ידנית (orchestrator_insights, insight_type="manual").
+ * כל יצירה/עדכון/מחיקה נרשמת כדי שתהיה היסטוריית שינויים.
+ */
+export const AUDIT_SOURCE_MANUAL_INSIGHT = "class.manual_insight";
+/** תיעוד יומי לתלמיד מתוך ה-CRM: נוכחות, ציון ותובנה. */
+export const AUDIT_SOURCE_STUDENT_DAILY = "student.daily_log";
