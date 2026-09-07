@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildRosterStudents,
+  parseRosterDate,
   guessMapping,
   mappingHasName,
   type RosterMapping,
@@ -68,6 +69,8 @@ describe("buildRosterStudents", () => {
         row_pref: "front",
         corner_pref: true,
         notes: "יושב עם חבר",
+        birth_date: null,
+        start_date: null,
       },
     ]);
     expect(res.skipped).toBe(0);
@@ -97,5 +100,23 @@ describe("buildRosterStudents", () => {
   it("ברירות מחדל כשהערכים חסרים או לא מוכרים", () => {
     const res = buildRosterStudents([{ "שם פרטי": "דוד", "גובה": "???" }], mapping);
     expect(res.students[0]).toMatchObject({ height: "mid", row_pref: "any", corner_pref: false, notes: "" });
+  });
+});
+
+describe("parseRosterDate", () => {
+  it("קורא תאריך לועזי בפורמטים שונים", () => {
+    expect(parseRosterDate("2026-09-02")).toBe("2026-09-02");
+    expect(parseRosterDate("2/9/2026")).toBe("2026-09-02");
+    expect(parseRosterDate("02.09.26")).toBe("2026-09-02");
+  });
+
+  it("קורא תאריך עברי", () => {
+    expect(parseRosterDate("א׳ תשרי תשפ״ו")).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it("קורא מספר סידורי של אקסל ומחזיר null לערך לא תקין", () => {
+    expect(parseRosterDate(46266)).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(parseRosterDate("שלום")).toBeNull();
+    expect(parseRosterDate("")).toBeNull();
   });
 });
