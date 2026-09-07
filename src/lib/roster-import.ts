@@ -11,6 +11,8 @@ export type RosterField =
   | "first_name"
   | "middle_name"
   | "last_name"
+  | "birth_date"
+  | "start_date"
   | "height"
   | "row_pref"
   | "corner_pref"
@@ -24,6 +26,10 @@ export type RosterStudent = {
   row_pref: RowPref;
   corner_pref: boolean;
   notes: string;
+  /** תאריך לידה כ-ISO (מקור אמת), נקרא מהאקסל בעברית או בלועזי. */
+  birth_date: string | null;
+  /** תאריך תחילת הלימוד בכיתה — "תאריך-החלוף" של התלמיד. */
+  start_date: string | null;
 };
 
 export const ROSTER_FIELD_LABELS: Record<RosterField, string> = {
@@ -32,6 +38,8 @@ export const ROSTER_FIELD_LABELS: Record<RosterField, string> = {
   first_name: "שם פרטי",
   middle_name: "שם האב / שם נוסף",
   last_name: "שם משפחה",
+  birth_date: "תאריך לידה",
+  start_date: "תאריך תחילת לימוד (תאריך-החלוף)",
   height: "גובה",
   row_pref: "העדפת שורה",
   corner_pref: "פינה",
