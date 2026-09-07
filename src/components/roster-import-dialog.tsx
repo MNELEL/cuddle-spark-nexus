@@ -173,6 +173,8 @@ export function RosterImportDialog({
                 <thead className="bg-muted/50">
                   <tr>
                     <th className="p-2 font-medium">שם</th>
+                    <th className="p-2 font-medium">תאריך לידה</th>
+                    <th className="p-2 font-medium">תחילת לימוד</th>
                     <th className="p-2 font-medium">גובה</th>
                     <th className="p-2 font-medium">העדפת שורה</th>
                     <th className="p-2 font-medium">פינה</th>
