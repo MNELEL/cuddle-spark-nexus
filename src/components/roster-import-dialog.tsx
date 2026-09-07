@@ -185,6 +185,12 @@ export function RosterImportDialog({
                   {result.students.slice(0, 10).map((s) => (
                     <tr key={s.name} className="border-t">
                       <td className="p-2">{s.name}</td>
+                      <td className="p-2 text-muted-foreground">
+                        {s.birth_date ? `${toHebrewDateFull(s.birth_date) ?? ""} (${s.birth_date})` : "—"}
+                      </td>
+                      <td className="p-2 text-muted-foreground">
+                        {s.start_date ? `${toHebrewDateFull(s.start_date) ?? ""} (${s.start_date})` : "—"}
+                      </td>
                       <td className="p-2">
                         {({ low: "נמוך", mid: "בינוני", high: "גבוה" })[s.height]}
                       </td>
