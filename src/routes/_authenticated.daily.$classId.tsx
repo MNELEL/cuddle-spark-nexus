@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { AiAssistantDock } from "@/components/ai-assistant-dock";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, Printer, Mail, MessageCircle, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { buildClassReport } from "@/lib/reports.functions";
+import { getDailySummary, saveDailySummary } from "@/lib/daily-summaries.functions";
 import { TEACHER_LABEL } from "@/lib/kodesh-subjects";
 import { ParentEmailComposer } from "@/components/parent-email-composer";
 import { buildDailyClassPdf } from "@/lib/pdf/daily-class-pdf";
@@ -36,10 +37,16 @@ function hebrewDate(iso: string) {
 function DailySummaryPage() {
   const { classId } = Route.useParams();
   const build = useServerFn(buildClassReport);
+  const fetchSummary = useServerFn(getDailySummary);
+  const saveSummary = useServerFn(saveDailySummary);
   const [date, setDate] = useState(todayStr());
   const [mode, setMode] = useState<"class" | "student">("class");
   const [studentId, setStudentId] = useState<string>("");
   const [classNotes, setClassNotes] = useState("");
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
+  // הערך האחרון שנשמר/נטען — כדי לא לשמור מחדש ערך שהגיע מהשרת
+  const lastSavedRef = useRef<string>("");
+  const notesLoadedForRef = useRef<string>("");
   const [studentNotes, setStudentNotes] = useState<Record<string, string>>({});
   const [composer, setComposer] = useState<{ id: string; name: string } | null>(null);
 
@@ -47,6 +54,40 @@ function DailySummaryPage() {
     queryKey: ["daily-report", classId, date],
     queryFn: () => build({ data: { classId, from: date, to: date } }),
   });
+
+  // טעינת ההערה הכלל-כיתתית השמורה עבור הכיתה והתאריך
+  const { data: savedNotes } = useQuery({
+    queryKey: ["daily-summary-notes", classId, date],
+    queryFn: () => fetchSummary({ data: { classId, date } }),
+  });
+
+  // אתחול ה-state כשהנתונים מגיעים (או כשהתאריך/כיתה משתנים)
+  useEffect(() => {
+    if (savedNotes === undefined) return;
+    const key = `${classId}:${date}`;
+    if (notesLoadedForRef.current === key) return;
+    notesLoadedForRef.current = key;
+    lastSavedRef.current = savedNotes;
+    setClassNotes(savedNotes);
+    setSaveState("idle");
+  }, [savedNotes, classId, date]);
+
+  // שמירה אוטומטית (debounce 1.5 שניות) — רק במצב כלל-כיתתי
+  useEffect(() => {
+    if (mode !== "class") return;
+    if (notesLoadedForRef.current !== `${classId}:${date}`) return;
+    if (classNotes === lastSavedRef.current) return;
+    setSaveState("saving");
+    const t = setTimeout(() => {
+      saveSummary({ data: { classId, date, notes: classNotes } })
+        .then(() => {
+          lastSavedRef.current = classNotes;
+          setSaveState("saved");
+        })
+        .catch(() => setSaveState("idle"));
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [classNotes, mode, classId, date, saveSummary]);
 
   const list = useMemo(() => {
     if (!data) return [];
@@ -170,7 +211,12 @@ function DailySummaryPage() {
         <CardContent className="py-4 space-y-3">
           {mode === "class" ? (
             <div>
-              <Label>הערות {TEACHER_LABEL} (כלל-כיתתי)</Label>
+              <div className="flex items-center justify-between">
+                <Label>הערות {TEACHER_LABEL} (כלל-כיתתי)</Label>
+                <span className="text-xs text-muted-foreground" aria-live="polite">
+                  {saveState === "saving" ? "שומר..." : saveState === "saved" ? "נשמר" : ""}
+                </span>
+              </div>
               <Textarea
                 rows={3}
                 value={classNotes}
