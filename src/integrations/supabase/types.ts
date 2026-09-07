@@ -2860,6 +2860,7 @@ export type Database = {
           seat_col: number | null
           seat_locked: boolean
           seat_row: number | null
+          start_date: string | null
         }
         Insert: {
           accommodation_note?: string | null
@@ -2888,6 +2889,7 @@ export type Database = {
           seat_col?: number | null
           seat_locked?: boolean
           seat_row?: number | null
+          start_date?: string | null
         }
         Update: {
           accommodation_note?: string | null
@@ -2916,6 +2918,7 @@ export type Database = {
           seat_col?: number | null
           seat_locked?: boolean
           seat_row?: number | null
+          start_date?: string | null
         }
         Relationships: [
           {
