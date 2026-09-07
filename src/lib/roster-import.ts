@@ -59,11 +59,61 @@ const ROW_MAP: Record<string, RowPref> = {
 
 const TRUE_VALUES = ["1", "true", "כן", "yes", "v", "✓", "x"];
 
+/**
+ * ממיר תא תאריך מהאקסל ל-ISO. תומך בתאריך עברי ("כ״א אלול תשפ״ו"),
+ * בתאריך לועזי (2026-09-02, 02/09/2026, 2.9.2026) ובמספר הסידורי של אקסל.
+ */
+export function parseRosterDate(value: unknown): string | null {
+  if (value === undefined || value === null || value === "") return null;
+
+  if (value instanceof Date && !Number.isNaN(value.getTime())) return isoDay(value);
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+    // מספר סידורי של אקסל: יום 1 = 1900-01-01, עם באג השנה המעוברת של 1900.
+    if (value < 1 || value > 80000) return null;
+    const ms = Math.round((value - 25569) * 86400000);
+    const d = new Date(ms);
+    return Number.isNaN(d.getTime()) ? null : isoDay(d);
+  }
+
+  const raw = String(value).trim();
+  if (!raw) return null;
+
+  if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(raw)) {
+    const [y, m, d] = raw.split("-").map(Number) as [number, number, number];
+    return validIso(y, m, d);
+  }
+  const dmy = raw.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})$/);
+  if (dmy) {
+    const day = Number(dmy[1]);
+    const month = Number(dmy[2]);
+    let year = Number(dmy[3]);
+    if (year < 100) year += year < 40 ? 2000 : 1900;
+    return validIso(year, month, day);
+  }
+
+  const hebrew = parseHebrewDateInput(raw);
+  return hebrew.ok ? isoDay(hebrew.date) : null;
+}
+
+function isoDay(d: Date): string {
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+function validIso(y: number, m: number, d: number): string | null {
+  if (y < 1900 || y > 2200 || m < 1 || m > 12 || d < 1 || d > 31) return null;
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${y}-${p(m)}-${p(d)}`;
+}
+
 /** ניחוש שדה לפי כותרת העמודה בקובץ. */
 export function guessField(header: string): RosterField {
   const h = header.trim().toLowerCase();
   if (!h) return "ignore";
   const has = (...keys: string[]) => keys.some((k) => h.includes(k));
+  if (has("תאריך לידה", "לידה", "birth", "dob")) return "birth_date";
+  if (has("תחילת", "הצטרפ", "כניסה לכיתה", "start", "join", "enroll")) return "start_date";
   if (has("שם פרטי", "first")) return "first_name";
   if (has("שם משפחה", "משפחה", "last", "surname")) return "last_name";
   if (has("שם האב", "אמצעי", "middle")) return "middle_name";
