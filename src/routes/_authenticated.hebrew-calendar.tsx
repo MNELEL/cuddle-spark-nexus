@@ -4,6 +4,7 @@ import { CalendarDays } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { HebrewDatePanel } from "@/components/hebrew-date-panel";
+import { HebrewDateForm } from "@/components/hebrew-date-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -76,7 +77,8 @@ function HebrewCalendarPage() {
         </TabsList>
 
         <TabsContent value="day" className="mt-4 space-y-4">
-          <HebrewDatePanel editable />
+          <HebrewDateForm />
+      <HebrewDatePanel editable />
           <ElapsedCalculator />
         </TabsContent>
 
