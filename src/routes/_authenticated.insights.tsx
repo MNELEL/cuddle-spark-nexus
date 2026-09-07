@@ -96,7 +96,7 @@ function InsightsPage() {
     return (
       <div className="mx-auto max-w-2xl space-y-6 py-10" dir="rtl">
         <DailyLogCard />
-      <DailyBriefingCard />
+        <DailyBriefingCard />
         <div className="space-y-6 text-center">
           <div className="flex justify-center">
             <div className="rounded-full bg-primary/10 p-6">
@@ -146,6 +146,7 @@ function InsightsPage() {
       </div>
 
       <DailyBriefingCard />
+      <DailyLogCard />
 
       {profile.last_ai_summary && (
         <Card className="border-primary/30 bg-gradient-to-bl from-primary/10 to-transparent">
