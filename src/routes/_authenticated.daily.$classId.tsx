@@ -211,7 +211,12 @@ function DailySummaryPage() {
         <CardContent className="py-4 space-y-3">
           {mode === "class" ? (
             <div>
-              <Label>הערות {TEACHER_LABEL} (כלל-כיתתי)</Label>
+              <div className="flex items-center justify-between">
+                <Label>הערות {TEACHER_LABEL} (כלל-כיתתי)</Label>
+                <span className="text-xs text-muted-foreground" aria-live="polite">
+                  {saveState === "saving" ? "שומר..." : saveState === "saved" ? "נשמר" : ""}
+                </span>
+              </div>
               <Textarea
                 rows={3}
                 value={classNotes}
