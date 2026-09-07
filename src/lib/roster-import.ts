@@ -133,14 +133,23 @@ export function guessMapping(headers: string[]): RosterMapping {
   return map;
 }
 
-function pick(row: Record<string, unknown>, mapping: RosterMapping, field: RosterField): string {
+function pickRaw(
+  row: Record<string, unknown>,
+  mapping: RosterMapping,
+  field: RosterField,
+): unknown {
   for (const [header, f] of Object.entries(mapping)) {
     if (f === field) {
       const v = row[header];
-      if (v !== undefined && v !== null && String(v).trim() !== "") return String(v).trim();
+      if (v !== undefined && v !== null && String(v).trim() !== "") return v;
     }
   }
-  return "";
+  return undefined;
+}
+
+function pick(row: Record<string, unknown>, mapping: RosterMapping, field: RosterField): string {
+  const v = pickRaw(row, mapping, field);
+  return v === undefined ? "" : String(v).trim();
 }
 
 export type RosterParseResult = {
