@@ -55,6 +55,40 @@ function DailySummaryPage() {
     queryFn: () => build({ data: { classId, from: date, to: date } }),
   });
 
+  // טעינת ההערה הכלל-כיתתית השמורה עבור הכיתה והתאריך
+  const { data: savedNotes } = useQuery({
+    queryKey: ["daily-summary-notes", classId, date],
+    queryFn: () => fetchSummary({ data: { classId, date } }),
+  });
+
+  // אתחול ה-state כשהנתונים מגיעים (או כשהתאריך/כיתה משתנים)
+  useEffect(() => {
+    if (savedNotes === undefined) return;
+    const key = `${classId}:${date}`;
+    if (notesLoadedForRef.current === key) return;
+    notesLoadedForRef.current = key;
+    lastSavedRef.current = savedNotes;
+    setClassNotes(savedNotes);
+    setSaveState("idle");
+  }, [savedNotes, classId, date]);
+
+  // שמירה אוטומטית (debounce 1.5 שניות) — רק במצב כלל-כיתתי
+  useEffect(() => {
+    if (mode !== "class") return;
+    if (notesLoadedForRef.current !== `${classId}:${date}`) return;
+    if (classNotes === lastSavedRef.current) return;
+    setSaveState("saving");
+    const t = setTimeout(() => {
+      saveSummary({ data: { classId, date, notes: classNotes } })
+        .then(() => {
+          lastSavedRef.current = classNotes;
+          setSaveState("saved");
+        })
+        .catch(() => setSaveState("idle"));
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [classNotes, mode, classId, date, saveSummary]);
+
   const list = useMemo(() => {
     if (!data) return [];
     if (mode === "student" && studentId) return data.students.filter((s) => s.id === studentId);
