@@ -1,0 +1,2 @@
+ALTER TABLE public.orchestrator_insights ADD COLUMN IF NOT EXISTS insight_date date NOT NULL DEFAULT current_date;
+UPDATE public.orchestrator_insights SET insight_date = created_at::date WHERE insight_date = current_date AND created_at::date <> current_date;

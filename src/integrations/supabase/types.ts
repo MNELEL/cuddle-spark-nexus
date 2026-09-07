@@ -1656,6 +1656,7 @@ export type Database = {
           created_at: string
           description: string
           id: string
+          insight_date: string
           insight_type: string
           is_dismissed: boolean
           owner_id: string
@@ -1670,6 +1671,7 @@ export type Database = {
           created_at?: string
           description: string
           id?: string
+          insight_date?: string
           insight_type?: string
           is_dismissed?: boolean
           owner_id: string
@@ -1684,6 +1686,7 @@ export type Database = {
           created_at?: string
           description?: string
           id?: string
+          insight_date?: string
           insight_type?: string
           is_dismissed?: boolean
           owner_id?: string
