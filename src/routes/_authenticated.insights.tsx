@@ -146,6 +146,7 @@ function InsightsPage() {
       </div>
 
       <DailyBriefingCard />
+      <DailyLogCard />
 
       {profile.last_ai_summary && (
         <Card className="border-primary/30 bg-gradient-to-bl from-primary/10 to-transparent">
