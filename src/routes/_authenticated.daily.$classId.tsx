@@ -37,10 +37,16 @@ function hebrewDate(iso: string) {
 function DailySummaryPage() {
   const { classId } = Route.useParams();
   const build = useServerFn(buildClassReport);
+  const fetchSummary = useServerFn(getDailySummary);
+  const saveSummary = useServerFn(saveDailySummary);
   const [date, setDate] = useState(todayStr());
   const [mode, setMode] = useState<"class" | "student">("class");
   const [studentId, setStudentId] = useState<string>("");
   const [classNotes, setClassNotes] = useState("");
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
+  // הערך האחרון שנשמר/נטען — כדי לא לשמור מחדש ערך שהגיע מהשרת
+  const lastSavedRef = useRef<string>("");
+  const notesLoadedForRef = useRef<string>("");
   const [studentNotes, setStudentNotes] = useState<Record<string, string>>({});
   const [composer, setComposer] = useState<{ id: string; name: string } | null>(null);
 
