@@ -2,6 +2,8 @@
  * לוגיקת ייבוא רשימת תלמידים אמיתית מאקסל — זיהוי עמודות בעברית/אנגלית,
  * מיפוי ידני, ניקוי כפילויות ובניית השורות לייבוא. ללא תלות ב-UI כדי שאפשר לבדוק.
  */
+import { parseHebrewDateInput } from "./hebrew-calendar";
+
 export type Height = "low" | "mid" | "high";
 export type RowPref = "front" | "mid" | "back" | "any";
 
