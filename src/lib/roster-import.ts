@@ -211,6 +211,8 @@ export function buildRosterStudents(
       row_pref: ROW_MAP[pick(row, mapping, "row_pref").toLowerCase()] ?? "any",
       corner_pref: TRUE_VALUES.includes(pick(row, mapping, "corner_pref").toLowerCase()),
       notes: pick(row, mapping, "notes").slice(0, 2000),
+      birth_date: parseRosterDate(pickRaw(row, mapping, "birth_date")),
+      start_date: parseRosterDate(pickRaw(row, mapping, "start_date")),
     });
   }
 
