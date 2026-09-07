@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { AiAssistantDock } from "@/components/ai-assistant-dock";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, Printer, Mail, MessageCircle, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { buildClassReport } from "@/lib/reports.functions";
+import { getDailySummary, saveDailySummary } from "@/lib/daily-summaries.functions";
 import { TEACHER_LABEL } from "@/lib/kodesh-subjects";
 import { ParentEmailComposer } from "@/components/parent-email-composer";
 import { buildDailyClassPdf } from "@/lib/pdf/daily-class-pdf";
