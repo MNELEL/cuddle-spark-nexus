@@ -105,7 +105,7 @@ function DailyInsightsPage() {
     setDate(info.iso);
   };
 
-  const saveM = useMutation({
+  const saveM = useMutation<unknown, Error>({
     mutationFn: () =>
       editId
         ? updateFn({ data: { id: editId, severity: severity as "low", title, description, date } })
