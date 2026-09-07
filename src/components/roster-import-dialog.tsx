@@ -19,10 +19,11 @@ import {
   ROSTER_FIELD_LABELS, buildRosterStudents, guessMapping, mappingHasName,
   type RosterField, type RosterMapping,
 } from "@/lib/roster-import";
+import { toHebrewDateFull } from "@/lib/hebrew-date";
 
 const FIELDS: RosterField[] = [
   "ignore", "full_name", "first_name", "middle_name", "last_name",
-  "height", "row_pref", "corner_pref", "notes",
+  "birth_date", "start_date", "height", "row_pref", "corner_pref", "notes",
 ];
 
 /**
@@ -71,7 +72,7 @@ export function RosterImportDialog({
       return;
     }
     try {
-      const wb = XLSX.read(await file.arrayBuffer(), { type: "array" });
+      const wb = XLSX.read(await file.arrayBuffer(), { type: "array", cellDates: true });
       const first = wb.SheetNames[0];
       const sheet = first ? wb.Sheets[first] : undefined;
       if (!sheet) {
@@ -123,7 +124,8 @@ export function RosterImportDialog({
             </DialogTitle>
             <DialogDescription>
               {fileName} · {rows.length} שורות בקובץ. התאם כל עמודה לשדה במערכת ובדוק את התצוגה
-              המקדימה לפני הייבוא.
+              המקדימה לפני הייבוא. תאריכים (לידה, תחילת לימוד) נקראים גם בעברית — "כ״א אלול תשפ״ו" —
+              וגם בלועזי.
             </DialogDescription>
           </DialogHeader>
 
@@ -173,6 +175,8 @@ export function RosterImportDialog({
                 <thead className="bg-muted/50">
                   <tr>
                     <th className="p-2 font-medium">שם</th>
+                    <th className="p-2 font-medium">תאריך לידה</th>
+                    <th className="p-2 font-medium">תחילת לימוד</th>
                     <th className="p-2 font-medium">גובה</th>
                     <th className="p-2 font-medium">העדפת שורה</th>
                     <th className="p-2 font-medium">פינה</th>
@@ -183,6 +187,12 @@ export function RosterImportDialog({
                   {result.students.slice(0, 10).map((s) => (
                     <tr key={s.name} className="border-t">
                       <td className="p-2">{s.name}</td>
+                      <td className="p-2 text-muted-foreground">
+                        {s.birth_date ? `${toHebrewDateFull(s.birth_date) ?? ""} (${s.birth_date})` : "—"}
+                      </td>
+                      <td className="p-2 text-muted-foreground">
+                        {s.start_date ? `${toHebrewDateFull(s.start_date) ?? ""} (${s.start_date})` : "—"}
+                      </td>
                       <td className="p-2">
                         {({ low: "נמוך", mid: "בינוני", high: "גבוה" })[s.height]}
                       </td>

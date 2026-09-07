@@ -91,6 +91,8 @@ export const importStudents = createServerFn({ method: "POST" })
       row_pref: z.enum(["front", "mid", "back", "any"]).default("any"),
       corner_pref: z.boolean().default(false),
       notes: z.string().max(2000).optional().default(""),
+      birth_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+      start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
     })).min(1).max(500),
   }).parse(d))
   .handler(async ({ data, context }) => {

@@ -71,10 +71,10 @@ export const getDailyReport = createServerFn({ method: "POST" })
         .lte("date", data.to),
       supabase
         .from("orchestrator_insights")
-        .select("created_at,severity")
+        .select("insight_date,severity")
         .eq("class_id", data.classId)
-        .gte("created_at", `${data.from}T00:00:00Z`)
-        .lte("created_at", `${data.to}T23:59:59Z`),
+        .gte("insight_date", data.from)
+        .lte("insight_date", data.to),
       supabase.from("students").select("id").eq("class_id", data.classId),
     ]);
     for (const r of [logs, attendance, grades, insights, students]) {
@@ -116,7 +116,7 @@ export const getDailyReport = createServerFn({ method: "POST" })
     }
 
     for (const i of insights.data ?? []) {
-      const date = String(i.created_at).slice(0, 10);
+      const date = String(i.insight_date).slice(0, 10);
       const d = at(date).insights;
       d.total += 1;
       const sev = i.severity as "high" | "medium" | "low";

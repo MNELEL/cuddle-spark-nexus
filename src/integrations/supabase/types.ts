@@ -1656,6 +1656,7 @@ export type Database = {
           created_at: string
           description: string
           id: string
+          insight_date: string
           insight_type: string
           is_dismissed: boolean
           owner_id: string
@@ -1670,6 +1671,7 @@ export type Database = {
           created_at?: string
           description: string
           id?: string
+          insight_date?: string
           insight_type?: string
           is_dismissed?: boolean
           owner_id: string
@@ -1684,6 +1686,7 @@ export type Database = {
           created_at?: string
           description?: string
           id?: string
+          insight_date?: string
           insight_type?: string
           is_dismissed?: boolean
           owner_id?: string
@@ -2860,6 +2863,7 @@ export type Database = {
           seat_col: number | null
           seat_locked: boolean
           seat_row: number | null
+          start_date: string | null
         }
         Insert: {
           accommodation_note?: string | null
@@ -2888,6 +2892,7 @@ export type Database = {
           seat_col?: number | null
           seat_locked?: boolean
           seat_row?: number | null
+          start_date?: string | null
         }
         Update: {
           accommodation_note?: string | null
@@ -2916,6 +2921,7 @@ export type Database = {
           seat_col?: number | null
           seat_locked?: boolean
           seat_row?: number | null
+          start_date?: string | null
         }
         Relationships: [
           {

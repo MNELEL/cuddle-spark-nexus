@@ -60,6 +60,7 @@ export const TOOLS: ToolEntry[] = [
   // --- assess ---
   { to: "/questions", section: "assess", requires: "any", icon: "ClipboardList", label: "מאגר שאלות", desc: "בנק שאלות לפי נושא ומקצוע" },
   { to: "/insights", section: "assess", requires: "any", icon: "LineChart", label: "תובנות", desc: "מגמות ציונים, נוכחות והתנהגות" },
+  { to: "/daily-insights", section: "assess", requires: "classes", icon: "Lightbulb", label: "תובנות יומיות", desc: "הזנה ועריכה של תובנות יומיות לכיתה ולתלמיד לפי תאריך עברי" },
   { to: "/resources", section: "assess", requires: "any", icon: "Library", label: "ספריית חומרי הוראה", desc: "מערכי שיעור, דפי עבודה ועזרים" },
   { to: "/resources/generate", section: "assess", requires: "any", icon: "Wand2", label: "מחולל סיכומים ומשימות", desc: "הפקת סיכום או מערך משימות מתוך חומר שבספרייה" },
   { to: "/exam-generator/$classId", section: "assess", requires: "classes", classScoped: true, icon: "Wand2", label: "מחולל מבחנים AI", desc: "יצירת מבחן מותאם מהחומר שנלמד" },

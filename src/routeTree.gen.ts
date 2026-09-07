@@ -30,6 +30,7 @@ import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as AuthenticatedBellScheduleRouteImport } from './routes/_authenticated.bell-schedule'
 import { Route as AuthenticatedContactSheetRouteImport } from './routes/_authenticated.contact-sheet'
+import { Route as AuthenticatedDailyInsightsRouteImport } from './routes/_authenticated.daily-insights'
 import { Route as AuthenticatedHebrewCalendarRouteImport } from './routes/_authenticated.hebrew-calendar'
 import { Route as AuthenticatedIngestRouteImport } from './routes/_authenticated.ingest'
 import { Route as AuthenticatedInsightsRouteImport } from './routes/_authenticated.insights'
@@ -207,6 +208,12 @@ const AuthenticatedContactSheetRoute =
   AuthenticatedContactSheetRouteImport.update({
     id: '/contact-sheet',
     path: '/contact-sheet',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedDailyInsightsRoute =
+  AuthenticatedDailyInsightsRouteImport.update({
+    id: '/daily-insights',
+    path: '/daily-insights',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedHebrewCalendarRoute =
@@ -625,6 +632,7 @@ export interface FileRoutesByFullPath {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/bell-schedule': typeof AuthenticatedBellScheduleRoute
   '/contact-sheet': typeof AuthenticatedContactSheetRoute
+  '/daily-insights': typeof AuthenticatedDailyInsightsRoute
   '/hebrew-calendar': typeof AuthenticatedHebrewCalendarRoute
   '/ingest': typeof AuthenticatedIngestRoute
   '/insights': typeof AuthenticatedInsightsRoute
@@ -713,6 +721,7 @@ export interface FileRoutesByTo {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/bell-schedule': typeof AuthenticatedBellScheduleRoute
   '/contact-sheet': typeof AuthenticatedContactSheetRoute
+  '/daily-insights': typeof AuthenticatedDailyInsightsRoute
   '/hebrew-calendar': typeof AuthenticatedHebrewCalendarRoute
   '/ingest': typeof AuthenticatedIngestRoute
   '/insights': typeof AuthenticatedInsightsRoute
@@ -806,6 +815,7 @@ export interface FileRoutesById {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_authenticated/bell-schedule': typeof AuthenticatedBellScheduleRoute
   '/_authenticated/contact-sheet': typeof AuthenticatedContactSheetRoute
+  '/_authenticated/daily-insights': typeof AuthenticatedDailyInsightsRoute
   '/_authenticated/hebrew-calendar': typeof AuthenticatedHebrewCalendarRoute
   '/_authenticated/ingest': typeof AuthenticatedIngestRoute
   '/_authenticated/insights': typeof AuthenticatedInsightsRoute
@@ -900,6 +910,7 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/bell-schedule'
     | '/contact-sheet'
+    | '/daily-insights'
     | '/hebrew-calendar'
     | '/ingest'
     | '/insights'
@@ -988,6 +999,7 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/bell-schedule'
     | '/contact-sheet'
+    | '/daily-insights'
     | '/hebrew-calendar'
     | '/ingest'
     | '/insights'
@@ -1080,6 +1092,7 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/_authenticated/bell-schedule'
     | '/_authenticated/contact-sheet'
+    | '/_authenticated/daily-insights'
     | '/_authenticated/hebrew-calendar'
     | '/_authenticated/ingest'
     | '/_authenticated/insights'
@@ -1325,6 +1338,13 @@ declare module '@tanstack/react-router' {
       path: '/contact-sheet'
       fullPath: '/contact-sheet'
       preLoaderRoute: typeof AuthenticatedContactSheetRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/daily-insights': {
+      id: '/_authenticated/daily-insights'
+      path: '/daily-insights'
+      fullPath: '/daily-insights'
+      preLoaderRoute: typeof AuthenticatedDailyInsightsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/hebrew-calendar': {
@@ -1838,6 +1858,7 @@ const AuthenticatedClassesClassIdRouteWithChildren =
 interface AuthenticatedRouteChildren {
   AuthenticatedBellScheduleRoute: typeof AuthenticatedBellScheduleRoute
   AuthenticatedContactSheetRoute: typeof AuthenticatedContactSheetRoute
+  AuthenticatedDailyInsightsRoute: typeof AuthenticatedDailyInsightsRoute
   AuthenticatedHebrewCalendarRoute: typeof AuthenticatedHebrewCalendarRoute
   AuthenticatedIngestRoute: typeof AuthenticatedIngestRoute
   AuthenticatedInsightsRoute: typeof AuthenticatedInsightsRoute
@@ -1885,6 +1906,7 @@ interface AuthenticatedRouteChildren {
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedBellScheduleRoute: AuthenticatedBellScheduleRoute,
   AuthenticatedContactSheetRoute: AuthenticatedContactSheetRoute,
+  AuthenticatedDailyInsightsRoute: AuthenticatedDailyInsightsRoute,
   AuthenticatedHebrewCalendarRoute: AuthenticatedHebrewCalendarRoute,
   AuthenticatedIngestRoute: AuthenticatedIngestRoute,
   AuthenticatedInsightsRoute: AuthenticatedInsightsRoute,
