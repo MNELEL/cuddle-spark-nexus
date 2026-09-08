@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { CalendarCheck, HelpCircle, RotateCcw } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { CalendarCheck, FileSpreadsheet, HelpCircle, RotateCcw } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,17 +12,42 @@ import {
   isoOf,
   parseHebrewDateInput,
 } from "@/lib/hebrew-calendar";
+import { readCalendarRowsFromWorkbook, type CalendarFileRow } from "@/lib/calendar-file-import";
 
 /**
  * טופס נוח לניהול הלוח העברי בעצמך:
  * שדה אחד לתאריך היום (מה שכל המערכת מציגה), שדה שני לתאריך-החלוף
- * (מאיזה יום למדוד), והסבר קצר על אופן עבודת הלוח העברי.
+ * (מאיזה יום למדוד — ידנית או מתוך קובץ Excel של הכיתה),
+ * והסבר קצר על אופן עבודת הלוח העברי.
  */
 export function HebrewDateForm({ className }: { className?: string }) {
   const { date: active, now, isCustom, info, setDate, reset } = useHebrewAnchor();
   const [todayInput, setTodayInput] = useState("");
   const [fromInput, setFromInput] = useState("");
   const [error, setError] = useState("");
+  const [fileRows, setFileRows] = useState<CalendarFileRow[]>([]);
+  const [fileName, setFileName] = useState("");
+  const [fileError, setFileError] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const loadFile = async (file: File) => {
+    setFileError("");
+    try {
+      const XLSX = await import("xlsx");
+      const wb = XLSX.read(await file.arrayBuffer(), { type: "array", cellDates: true });
+      const rows = readCalendarRowsFromWorkbook(wb);
+      if (rows.length === 0) {
+        setFileRows([]);
+        setFileError("לא נמצאו שורות עם שם ותאריך בקובץ.");
+        return;
+      }
+      setFileRows(rows);
+      setFileName(file.name);
+    } catch {
+      setFileRows([]);
+      setFileError("קריאת הקובץ נכשלה. ודא שזה קובץ Excel תקין.");
+    }
+  };
 
   const resolve = (raw: string): { date: Date } | { error: string } => {
     const t = raw.trim();
