@@ -12,7 +12,7 @@ import {
   isoOf,
   parseHebrewDateInput,
 } from "@/lib/hebrew-calendar";
-import { readCalendarRowsFromWorkbook, type CalendarFileRow } from "@/lib/calendar-file-import";
+import { readCalendarRows, type CalendarFileRow } from "@/lib/calendar-file-import";
 
 /**
  * טופס נוח לניהול הלוח העברי בעצמך:
@@ -35,7 +35,11 @@ export function HebrewDateForm({ className }: { className?: string }) {
     try {
       const XLSX = await import("xlsx");
       const wb = XLSX.read(await file.arrayBuffer(), { type: "array", cellDates: true });
-      const rows = readCalendarRowsFromWorkbook(wb);
+      const sheetName = wb.SheetNames[0];
+      const sheet = sheetName ? wb.Sheets[sheetName] : undefined;
+      const rows = sheet
+        ? readCalendarRows(XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" }))
+        : [];
       if (rows.length === 0) {
         setFileRows([]);
         setFileError("לא נמצאו שורות עם שם ותאריך בקובץ.");
