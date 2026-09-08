@@ -76,6 +76,7 @@ export const generateDailyBriefing = createServerFn({ method: "POST" })
       description: string;
       suggested_action: string;
       action_link: string;
+      insight_date: string;
     };
 
     const pending: NewInsight[] = [];
