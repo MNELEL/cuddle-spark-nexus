@@ -53,6 +53,8 @@ function DailyInsightsPage() {
   const [classId, setClassId] = useState("");
   const [range, setRange] = useState<DateRange>({ from: info.monthRange.from, to: info.monthRange.to });
   const [showHistory, setShowHistory] = useState(false);
+  const [filterStudent, setFilterStudent] = useState("all");
+  const [filterDate, setFilterDate] = useState("");
 
   const [date, setDate] = useState(info.iso);
   const [studentId, setStudentId] = useState("class");
@@ -131,6 +133,15 @@ function DailyInsightsPage() {
     mutationFn: (id: string) => deleteFn({ data: { id } }),
     onSuccess: () => { toast.success("התובנה נמחקה"); refresh(); },
     onError: (e) => toast.error(e instanceof Error ? e.message : "המחיקה נכשלה"),
+  });
+
+  /** סינון התוצאות לפי תלמיד ולפי יום בודד, בנוסף לטווח העברי. */
+  const filtered = (insights.data ?? []).filter((i) => {
+    if (filterStudent === "class-only" && i.student_id) return false;
+    if (filterStudent !== "all" && filterStudent !== "class-only" && i.student_id !== filterStudent)
+      return false;
+    if (filterDate && i.insight_date !== filterDate) return false;
+    return true;
   });
 
   return (
