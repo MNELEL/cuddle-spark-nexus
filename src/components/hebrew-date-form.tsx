@@ -146,6 +146,69 @@ export function HebrewDateForm({ className }: { className?: string }) {
           </div>
         </div>
 
+        <div className="space-y-2 rounded-lg border p-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={() => fileRef.current?.click()}>
+              <FileSpreadsheet className="h-4 w-4" aria-hidden />
+              טען תאריכים מקובץ Excel
+            </Button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              className="hidden"
+              aria-label="קובץ Excel עם תאריכי הכיתה"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void loadFile(f);
+                e.target.value = "";
+              }}
+            />
+            {fileName && <Badge variant="secondary">{fileName}</Badge>}
+            {fileRows.length > 0 && <Badge variant="outline">{fileRows.length} שורות</Badge>}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            במקום להקליד — בחר שורה מהקובץ, והתאריך שבה ייכנס כתאריך-החלוף (או כתאריך היום).
+            נקראות עמודות שם, תאריך תחילת לימוד ותאריך לידה, בעברית או בלועזי.
+          </p>
+          {fileError && <p className="text-xs text-destructive">{fileError}</p>}
+          {fileRows.length > 0 && (
+            <ul className="max-h-52 space-y-1 overflow-auto text-xs">
+              {fileRows.map((r, i) => {
+                const iso = r.start_date ?? r.birth_date!;
+                const label = hebrewDayInfo(new Date(`${iso}T00:00:00`)).full;
+                return (
+                  <li
+                    key={`${r.name}-${i}`}
+                    className="flex flex-wrap items-center justify-between gap-2 border-t pt-1"
+                  >
+                    <span>
+                      <span className="font-medium text-foreground">{r.name}</span> · {label} ({iso})
+                      {r.start_date ? "" : " · תאריך לידה"}
+                    </span>
+                    <span className="flex gap-1">
+                      <Button type="button" size="sm" variant="ghost" onClick={() => setFromInput(iso)}>
+                        כתאריך-החלוף
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setError("");
+                          setDate(new Date(`${iso}T00:00:00`));
+                        }}
+                      >
+                        כיום הפעיל
+                      </Button>
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+
         <div className="flex flex-wrap items-center gap-2">
           <Input
             type="date"
