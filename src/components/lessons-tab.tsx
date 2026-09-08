@@ -14,9 +14,11 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { splitAudioForTranscription } from "@/lib/audio-split";
 import {
   listLessonTranscripts, createLessonRecording, deleteLessonTranscript,
   getLessonUploadUrl, transcribeAndSummarize, generateResourceFromTranscript,
+  summarizeLessonParts, syncLessonToCurriculum,
   type LessonTranscript,
 } from "@/lib/lessons.functions";
 
@@ -54,6 +56,7 @@ function RecordOrUpload({ classId, onCreated }: { classId: string; onCreated: ()
   const [title, setTitle] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
+  const [stage, setStage] = useState("");
   const [recording, setRecording] = useState(false);
   const recRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -61,6 +64,8 @@ function RecordOrUpload({ classId, onCreated }: { classId: string; onCreated: ()
   const getUrl = useServerFn(getLessonUploadUrl);
   const create = useServerFn(createLessonRecording);
   const transcribe = useServerFn(transcribeAndSummarize);
+  const summarize = useServerFn(summarizeLessonParts);
+  const syncCurriculum = useServerFn(syncLessonToCurriculum);
 
   async function startRec() {
     try {
@@ -90,22 +95,70 @@ function RecordOrUpload({ classId, onCreated }: { classId: string; onCreated: ()
   async function upload() {
     if (!file) { toast.error("בחר או הקלט קובץ"); return; }
     if (!title.trim()) { toast.error("הוסף כותרת לשיעור"); return; }
-    const check = validateUploadFile(file, ACCEPT_AUDIO, 24);
+    const check = validateUploadFile(file, ACCEPT_AUDIO, 400);
     if (!check.ok) { toast.error(check.message); return; }
     setBusy(true);
     try {
-      const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const { path, token } = await getUrl({ data: { filename: safe } });
-      const { error: upErr } = await supabase.storage
-        .from("lesson-recordings").uploadToSignedUrl(path, token, file, { contentType: file.type });
-      if (upErr) throw upErr;
-      const { id } = await create({ data: { classId, title: title.trim(), audio_path: path } });
+      setStage("מכין את ההקלטה…");
+      const parts = await splitAudioForTranscription(file);
+      const groupId = parts.length > 1 ? crypto.randomUUID() : undefined;
+      if (parts.length > 1) {
+        toast.success(`ההקלטה חולקה אוטומטית ל-${parts.length} חלקים`);
+      }
+
+      const ids: string[] = [];
+      for (const part of parts) {
+        setStage(`מעלה חלק ${part.index} מתוך ${part.total}…`);
+        const safe = part.file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+        const { path, token } = await getUrl({ data: { filename: safe } });
+        const { error: upErr } = await supabase.storage
+          .from("lesson-recordings")
+          .uploadToSignedUrl(path, token, part.file, { contentType: part.file.type });
+        if (upErr) throw upErr;
+        const partTitle = part.total > 1
+          ? `${title.trim()} — חלק ${part.index} מתוך ${part.total}`
+          : title.trim();
+        const { id } = await create({
+          data: {
+            classId,
+            title: partTitle,
+            audio_path: path,
+            ...(part.seconds ? { duration_seconds: part.seconds } : {}),
+            ...(groupId ? { part_group_id: groupId, part_index: part.index, part_total: part.total } : {}),
+          },
+        });
+        ids.push(id);
+      }
+
       toast.success("הועלה — מתחיל תמלול…");
       setFile(null); setTitle("");
       onCreated();
-      transcribe({ data: { id } })
-        .then(() => { toast.success("התמלול הושלם"); onCreated(); })
-        .catch((e) => toast.error(e instanceof Error ? e.message : "תמלול נכשל"));
+
+      void (async () => {
+        try {
+          for (let i = 0; i < ids.length; i++) {
+            setStage(`מתמלל חלק ${i + 1} מתוך ${ids.length}…`);
+            await transcribe({ data: { id: ids[i] } });
+            onCreated();
+          }
+          if (groupId) {
+            setStage("מאחד את החלקים לסיכום אחד…");
+            await summarize({ data: { part_group_id: groupId } });
+          }
+          const first = ids[0];
+          if (first) {
+            setStage("מסנכרן עם ההספק והתכנית הלימודית…");
+            const sync = await syncCurriculum({ data: { transcript_id: first } });
+            if (sync.next_unit) toast.success(`סונכרן — היחידה הבאה: ${sync.next_unit}`);
+            else toast.success("התמלול והסנכרון הושלמו");
+          }
+          onCreated();
+        } catch (e) {
+          toast.error(e instanceof Error ? e.message : "תמלול נכשל");
+        } finally {
+          setStage("");
+        }
+      })();
     } catch (e) {
       console.error(e);
       toast.error(e instanceof Error ? e.message : "ההעלאה נכשלה");
@@ -113,6 +166,7 @@ function RecordOrUpload({ classId, onCreated }: { classId: string; onCreated: ()
       setBusy(false);
     }
   }
+
 
   return (
     <Card>
@@ -159,8 +213,15 @@ function RecordOrUpload({ classId, onCreated }: { classId: string; onCreated: ()
             העלה ותמלל
           </Button>
         </div>
+        {stage && (
+          <div className="flex items-center gap-2 text-xs text-primary">
+            <Loader2 className="h-3 w-3 animate-spin" /> {stage}
+          </div>
+        )}
         <p className="text-[11px] text-muted-foreground">
-          עד 24MB לקובץ. ה-AI יתמלל בעברית, יסכם, וישלוף נקודות מפתח שתוכל להפוך לדף עבודה.
+          גם הקלטות ארוכות וכבדות (עד 400MB): הקובץ מסונן לדיבור ומחולק אוטומטית לכמה חלקים,
+          כל חלק מתומלל בעברית, ואז נבנה סיכום אחד לכל השיעור ומסונכרן עם ההספק והתכנית הלימודית —
+          כדי לזהות מה נלמד בפועל ומה עוד חסר.
         </p>
       </CardContent>
     </Card>

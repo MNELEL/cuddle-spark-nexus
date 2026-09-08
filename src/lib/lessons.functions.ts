@@ -17,9 +17,16 @@ export type LessonTranscript = {
   key_points: string[];
   status: "pending" | "transcribing" | "done" | "failed";
   error: string | null;
+  /** שיוך לקבוצת חלקים כשהקלטה כבדה פוצלה אוטומטית. */
+  part_group_id: string | null;
+  part_index: number | null;
+  part_total: number | null;
   created_at: string;
   updated_at: string;
 };
+
+const LESSON_COLUMNS =
+  "id,owner_id,class_id,title,audio_path,duration_seconds,transcript,summary,key_points,status,error,part_group_id,part_index,part_total,created_at,updated_at";
 
 export const listLessonTranscripts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -27,7 +34,7 @@ export const listLessonTranscripts = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<LessonTranscript[]> => {
     const { data: rows, error } = await context.supabase
       .from("lesson_transcripts")
-      .select("id,owner_id,class_id,title,audio_path,duration_seconds,transcript,summary,key_points,status,error,created_at,updated_at")
+      .select(LESSON_COLUMNS)
       .eq("class_id", data.classId)
       .order("created_at", { ascending: false });
     if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה."); }
@@ -51,6 +58,9 @@ export const createLessonRecording = createServerFn({ method: "POST" })
     title: z.string().min(1).max(200),
     audio_path: z.string().min(1).max(500),
     duration_seconds: z.number().int().min(0).max(60 * 60 * 6).optional(),
+    part_group_id: uuid.optional(),
+    part_index: z.number().int().min(1).max(200).optional(),
+    part_total: z.number().int().min(1).max(200).optional(),
   }).parse(d))
   .handler(async ({ data, context }) => {
     const row = {
@@ -60,12 +70,16 @@ export const createLessonRecording = createServerFn({ method: "POST" })
       audio_path: data.audio_path,
       duration_seconds: data.duration_seconds ?? null,
       status: "pending" as const,
+      part_group_id: data.part_group_id ?? null,
+      part_index: data.part_index ?? null,
+      part_total: data.part_total ?? null,
     };
     const { data: ins, error } = await context.supabase
       .from("lesson_transcripts").insert(row as never).select("id").single();
     if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה."); }
     return { id: (ins as { id: string }).id };
   });
+
 
 export const deleteLessonTranscript = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -145,7 +159,7 @@ export const transcribeAndSummarize = createServerFn({ method: "POST" })
           { role: "system", content: system },
           { role: "user", content: [
             { type: "text", text: "תמלל וסכם את ההקלטה הבאה של השיעור:" },
-            { type: "input_audio", input_audio: { data: b64, format: mime.includes("mp3") ? "mp3" : "webm" } },
+            { type: "input_audio", input_audio: { data: b64, format: mime.includes("wav") ? "wav" : mime.includes("mp3") ? "mp3" : "webm" } },
           ] },
         ],
         jsonResponse: true,
@@ -290,4 +304,132 @@ export const generateResourceFromTranscript = createServerFn({ method: "POST" })
       .from("teaching_resources").insert(insertRow as never).select("id").single();
     if (error) { console.error("[DB Error]", error); throw new Error("שגיאה בשמירת החומר"); }
     return { id: (ins as { id: string }).id };
+  });
+/**
+ * מאחד את כל חלקי ההקלטה לסיכום אחד: סיכום כולל, נקודות מפתח,
+ * וזיהוי מה נלמד בפועל — הבסיס לסנכרון עם ההספק והתכנית הלימודית.
+ */
+export const summarizeLessonParts = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ part_group_id: uuid }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase
+      .from("lesson_transcripts")
+      .select(LESSON_COLUMNS)
+      .eq("part_group_id", data.part_group_id)
+      .order("part_index", { ascending: true });
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה."); }
+    const parts = (rows ?? []) as unknown as LessonTranscript[];
+    const ready = parts.filter((p) => p.status === "done" && p.transcript);
+    if (ready.length === 0) throw new Error("אין עדיין חלקים מתומללים");
+
+    const joined = ready
+      .map((p) => `=== חלק ${p.part_index ?? 1} ===\n${p.transcript}`)
+      .join("\n\n")
+      .slice(0, 120000);
+
+    const system = `אתה עוזר של רב/מלמד בתלמוד תורה. לפניך תמלול של שיעור אחד שפוצל לכמה חלקים.
+כתוב סיכום אחד רציף של השיעור כולו (4-6 פסקאות), הפק 6-12 נקודות מפתח,
+וכן רשימת נושאים שנלמדו בפועל (topics) — מסכת/דף/סוגיה/פרק/מושג לפי מה שנאמר.
+כתוב בעברית לציבור החרדי ("הרב", "המלמד", "התלמידים").
+החזר אך ורק JSON תקין:
+{"summary":"...","key_points":["..."],"topics":["..."]}`;
+
+    const raw = (await callLovableAI({
+      model: "google/gemini-2.5-pro",
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: joined },
+      ],
+      jsonResponse: true,
+    })) || "{}";
+    let parsed: { summary?: string; key_points?: unknown; topics?: unknown } = {};
+    try { parsed = JSON.parse(raw); } catch { /* ignore */ }
+
+    const summary = String(parsed.summary ?? "").slice(0, 8000);
+    const key_points = Array.isArray(parsed.key_points)
+      ? parsed.key_points.map((p) => String(p).slice(0, 500)).slice(0, 20) : [];
+    const topics = Array.isArray(parsed.topics)
+      ? parsed.topics.map((t) => String(t).slice(0, 200)).slice(0, 20) : [];
+
+    const first = ready[0];
+    if (first) {
+      await context.supabase.from("lesson_transcripts")
+        .update({ summary, key_points } as never).eq("id", first.id);
+    }
+    return { ok: true, summary, key_points, topics, parts: ready.length, class_id: first?.class_id ?? null };
+  });
+
+/**
+ * מסנכרן את מה שנלמד בשיעור עם התכנית הלימודית וההספק:
+ * מסמן יחידות לימוד שכוסו בפועל, ומייצר תובנה יומית על חוסר לימוד/פיגור בהספק.
+ */
+export const syncLessonToCurriculum = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ transcript_id: uuid }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: lessonRow } = await context.supabase
+      .from("lesson_transcripts").select("*").eq("id", data.transcript_id).maybeSingle();
+    if (!lessonRow) throw new Error("השיעור לא נמצא");
+    const lesson = lessonRow as unknown as LessonTranscript;
+    if (!lesson.summary && !lesson.transcript) throw new Error("אין עדיין תוכן לסנכרון");
+
+    const { data: unitRows } = await context.supabase
+      .from("curriculum_units")
+      .select("id,title,subject,status,order_index,estimated_lessons")
+      .eq("class_id", lesson.class_id)
+      .order("order_index", { ascending: true });
+    const units = (unitRows ?? []) as {
+      id: string; title: string; subject: string; status: string;
+      order_index: number | null; estimated_lessons: number | null;
+    }[];
+
+    const haystack = `${lesson.summary}\n${(lesson.key_points ?? []).join("\n")}\n${lesson.transcript}`;
+    const norm = (s: string) => s.replace(/[״"׳'.,־-]/g, " ").replace(/\s+/g, " ").trim();
+    const hay = norm(haystack);
+    const covered = units.filter((u) => {
+      const words = norm(u.title).split(" ").filter((w) => w.length >= 3);
+      if (words.length === 0) return false;
+      const hits = words.filter((w) => hay.includes(w)).length;
+      return hits / words.length >= 0.6;
+    });
+
+    const today = new Date().toISOString().slice(0, 10);
+    for (const u of covered) {
+      if (u.status === "done") continue;
+      await context.supabase.from("curriculum_units")
+        .update({ status: "done", completed_at: today } as never).eq("id", u.id);
+    }
+
+    const pending = units.filter((u) => u.status !== "done" && !covered.some((c) => c.id === u.id));
+    const nextUnit = pending[0];
+    const gapTitles = pending.slice(0, 5).map((u) => u.title);
+
+    const description = units.length === 0
+      ? `השיעור "${lesson.title}" תומלל וסוכם, אך לא מוגדרת עדיין תכנית לימודית לכיתה — לכן אין למול מה למדוד את ההספק.`
+      : `בשיעור "${lesson.title}" כוסו ${covered.length} יחידות לימוד. נותרו ${pending.length} יחידות שלא נלמדו עדיין` +
+        (gapTitles.length ? `: ${gapTitles.join(", ")}.` : ".");
+
+    const insight = {
+      owner_id: context.userId,
+      class_id: lesson.class_id,
+      student_id: null,
+      insight_type: "lesson_coverage",
+      severity: pending.length > 5 ? "medium" : "low",
+      title: `הספק ותוכן שנלמד — ${lesson.title}`,
+      description,
+      suggested_action: nextUnit ? `להמשיך ביחידה הבאה: ${nextUnit.title}` : null,
+      action_link: `/class/${lesson.class_id}`,
+      insight_date: today,
+    };
+    const { error: insErr } = await context.supabase
+      .from("orchestrator_insights").insert(insight as never);
+    if (insErr) console.error("[DB Error]", insErr);
+
+    return {
+      ok: true,
+      covered: covered.map((u) => u.title),
+      pending: gapTitles,
+      next_unit: nextUnit?.title ?? null,
+    };
   });

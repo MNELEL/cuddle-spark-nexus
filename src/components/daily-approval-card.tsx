@@ -50,6 +50,11 @@ export function DailyApprovalCard({
     qc.invalidateQueries({ queryKey: ["daily-approval", studentId, date] });
     qc.invalidateQueries({ queryKey: ["student-daily-history", studentId] });
     qc.invalidateQueries({ queryKey: ["daily-log-report"] });
+    qc.invalidateQueries({ queryKey: ["manual-insights"] });
+    qc.invalidateQueries({ queryKey: ["manual-insights-history"] });
+    qc.invalidateQueries({ queryKey: ["daily-approval"] });
+    qc.invalidateQueries({ queryKey: ["daily-summary"] });
+    qc.invalidateQueries({ queryKey: ["hebrew-days"] });
     qc.invalidateQueries({ queryKey: ["daily-briefing"] });
     void classId;
   };
