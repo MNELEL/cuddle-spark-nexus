@@ -196,6 +196,8 @@ export function StudentDailyCard({
           </div>
         )}
 
+        {studentId && <DailyApprovalCard studentId={studentId} classId={classId} date={date} />}
+
         {showHistory && (
           <ul className="space-y-1 text-xs text-muted-foreground">
             {(hist.data ?? []).length === 0 && <li>אין שינויים רשומים.</li>}
