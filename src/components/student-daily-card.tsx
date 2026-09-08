@@ -13,6 +13,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { useHebrewAnchor } from "@/components/hebrew-anchor";
+import { DailyApprovalCard } from "@/components/daily-approval-card";
 import { hebrewDateTime } from "@/lib/hebrew-date";
 import {
   getStudentDaily, saveStudentDaily, listStudentDailyHistory,
