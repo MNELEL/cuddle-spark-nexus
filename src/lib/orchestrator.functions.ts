@@ -76,6 +76,7 @@ export const generateDailyBriefing = createServerFn({ method: "POST" })
       description: string;
       suggested_action: string;
       action_link: string;
+      insight_date: string;
     };
 
     const pending: NewInsight[] = [];
@@ -139,6 +140,7 @@ export const generateDailyBriefing = createServerFn({ method: "POST" })
             description: describeGap(attGap, "נוכחות"),
             suggested_action: "השלם את רישום הנוכחות בימים החסרים",
             action_link: `/classes/${cls.id}?tab=tracking`,
+            insight_date: today,
           });
         }
 
@@ -151,6 +153,7 @@ export const generateDailyBriefing = createServerFn({ method: "POST" })
             description: describeGap(gradeGap, "ציונים"),
             suggested_action: "הזן ציונים למבחנים ולבחנים האחרונים",
             action_link: `/classes/${cls.id}?tab=tracking`,
+            insight_date: today,
           });
         }
 
@@ -168,6 +171,7 @@ export const generateDailyBriefing = createServerFn({ method: "POST" })
             description: describeGap(bulletinGap, "עלון שבועי"),
             suggested_action: "הפק ופרסם את העלון השבועי להורים",
             action_link: `/bulletins/${cls.id}`,
+            insight_date: today,
           });
         }
 
@@ -183,6 +187,7 @@ export const generateDailyBriefing = createServerFn({ method: "POST" })
             description: describeGradeDecline(classDecline),
             suggested_action: "שקול חזרה כיתתית על החומר האחרון",
             action_link: `/analytics/${cls.id}`,
+            insight_date: today,
           });
         }
 
@@ -210,6 +215,7 @@ export const generateDailyBriefing = createServerFn({ method: "POST" })
             description: describeDecline(decline),
             suggested_action: "בדוק מה קרה בשבוע האחרון וצור קשר עם ההורים",
             action_link: `/classes/${cls.id}?tab=tracking`,
+            insight_date: today,
           });
         }
 
@@ -226,6 +232,7 @@ export const generateDailyBriefing = createServerFn({ method: "POST" })
             description: describeAbsenceStreak(streak),
             suggested_action: "התקשר להורים לבדוק את סיבת ההיעדרות",
             action_link: `/classes/${cls.id}?tab=tracking`,
+            insight_date: today,
           });
         }
 
@@ -246,6 +253,7 @@ export const generateDailyBriefing = createServerFn({ method: "POST" })
             description: describeGradeDecline(gDecline),
             suggested_action: "בדוק אילו נושאים קשים לו והצע חזרה ממוקדת",
             action_link: `/analytics/${cls.id}`,
+            insight_date: today,
           });
         }
 
@@ -262,6 +270,7 @@ export const generateDailyBriefing = createServerFn({ method: "POST" })
             description: describeGradeOutlier(outlier),
             suggested_action: "בדוק את המבחן מול התלמיד ושקול הזדמנות נוספת",
             action_link: `/analytics/${cls.id}`,
+            insight_date: today,
           });
         }
 
@@ -281,6 +290,7 @@ export const generateDailyBriefing = createServerFn({ method: "POST" })
             description: describeBelowClassAverage(classGap),
             suggested_action: "שקול תרגול נוסף או חונכות אישית",
             action_link: `/analytics/${cls.id}`,
+            insight_date: today,
           });
         }
 
@@ -301,6 +311,7 @@ export const generateDailyBriefing = createServerFn({ method: "POST" })
             description: describeBehaviorDecline(bDecline),
             suggested_action: "שוחח איתו ביחידות ושקול תגבור חיובי",
             action_link: `/classes/${cls.id}?tab=tracking`,
+            insight_date: today,
           });
         }
 
@@ -319,6 +330,7 @@ export const generateDailyBriefing = createServerFn({ method: "POST" })
             description: describeDisciplineSpike(spike),
             suggested_action: "עדכן את ההורים ובנה תוכנית התנהגות ממוקדת",
             action_link: `/classes/${cls.id}?tab=tracking`,
+            insight_date: today,
           });
         }
       }
