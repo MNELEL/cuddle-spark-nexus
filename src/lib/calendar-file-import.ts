@@ -22,19 +22,3 @@ export function readCalendarRows(rows: Record<string, unknown>[]): CalendarFileR
     .map((s) => ({ name: s.name, start_date: s.start_date, birth_date: s.birth_date }))
     .filter((r) => r.start_date || r.birth_date);
 }
-
-/** קורא את הגיליון הראשון בחוברת עבודה של xlsx. */
-export function readCalendarRowsFromWorkbook(wb: {
-  SheetNames: string[];
-  Sheets: Record<string, unknown>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [k: string]: any;
-}): CalendarFileRow[] {
-  const first = wb.SheetNames[0];
-  if (!first) return [];
-  // ייבוא דינמי נמנע כאן — הקורא מעביר חוברת שכבר נקראה.
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const utils = (wb.__utils ?? null) as null;
-  void utils;
-  throw new Error("use readCalendarRows with sheet json");
-}
