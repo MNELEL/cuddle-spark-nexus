@@ -1166,6 +1166,57 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_log_approvals: {
+        Row: {
+          approver_name: string
+          class_id: string
+          created_at: string
+          date: string
+          id: string
+          notes: string
+          owner_id: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          approver_name?: string
+          class_id: string
+          created_at?: string
+          date: string
+          id?: string
+          notes?: string
+          owner_id?: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          approver_name?: string
+          class_id?: string
+          created_at?: string
+          date?: string
+          id?: string
+          notes?: string
+          owner_id?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_log_approvals_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_log_approvals_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daily_summaries: {
         Row: {
           class_id: string
