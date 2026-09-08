@@ -1652,6 +1652,9 @@ export type Database = {
           id: string
           key_points: Json
           owner_id: string
+          part_group_id: string | null
+          part_index: number | null
+          part_total: number | null
           status: string
           summary: string
           title: string
@@ -1668,6 +1671,9 @@ export type Database = {
           id?: string
           key_points?: Json
           owner_id: string
+          part_group_id?: string | null
+          part_index?: number | null
+          part_total?: number | null
           status?: string
           summary?: string
           title?: string
@@ -1684,6 +1690,9 @@ export type Database = {
           id?: string
           key_points?: Json
           owner_id?: string
+          part_group_id?: string | null
+          part_index?: number | null
+          part_total?: number | null
           status?: string
           summary?: string
           title?: string

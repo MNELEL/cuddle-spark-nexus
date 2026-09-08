@@ -21,7 +21,10 @@ import { readCalendarRows, type CalendarFileRow } from "@/lib/calendar-file-impo
  * והסבר קצר על אופן עבודת הלוח העברי.
  */
 export function HebrewDateForm({ className }: { className?: string }) {
-  const { date: active, now, isCustom, info, setDate, reset } = useHebrewAnchor();
+  const {
+    date: active, now, isCustom, info, setDate, reset,
+    elapsedFrom, elapsedFromInfo, isElapsedCustom, elapsed, setElapsedFrom, resetElapsedFrom,
+  } = useHebrewAnchor();
   const [todayInput, setTodayInput] = useState("");
   const [fromInput, setFromInput] = useState("");
   const [error, setError] = useState("");
@@ -70,6 +73,16 @@ export function HebrewDateForm({ className }: { className?: string }) {
     setError("");
     setTodayInput("");
     setDate(res.date);
+  };
+
+  const applyElapsed = () => {
+    const res = resolve(fromInput);
+    if ("error" in res) {
+      setError(res.error);
+      return;
+    }
+    setError("");
+    setElapsedFrom(res.date);
   };
 
   const fromResult = useMemo(() => {
@@ -129,12 +142,30 @@ export function HebrewDateForm({ className }: { className?: string }) {
 
           <div className="space-y-1.5">
             <Label htmlFor="form-elapsed">תאריך-החלוף (מאיזה יום למדוד)</Label>
-            <Input
-              id="form-elapsed"
-              value={fromInput}
-              placeholder="למשל: א׳ תשרי תשפ״ו"
-              onChange={(e) => setFromInput(e.target.value)}
-            />
+            <div className="flex gap-2">
+              <Input
+                id="form-elapsed"
+                value={fromInput}
+                placeholder={elapsedFromInfo.full}
+                onChange={(e) => setFromInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") applyElapsed();
+                }}
+              />
+              <Button type="button" variant="outline" onClick={applyElapsed} disabled={!fromInput.trim()}>
+                קבע
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {isElapsedCustom ? "הוזן ידנית" : "מתעדכן לבד מהלוח האמיתי (תחילת שנת הלימודים)"}: {elapsedFromInfo.full} —
+              {" "}מאז עברו {elapsed.label}.
+              {isElapsedCustom && (
+                <Button type="button" variant="link" size="sm" className="h-auto p-0 ps-1 text-xs"
+                  onClick={() => { setFromInput(""); resetElapsedFrom(); }}>
+                  חזור ללוח האמיתי
+                </Button>
+              )}
+            </p>
             {fromResult && "error" in fromResult && (
               <p className="text-xs text-destructive">{fromResult.error}</p>
             )}

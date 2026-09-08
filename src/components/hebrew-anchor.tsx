@@ -1,5 +1,12 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { hebrewDayInfo, isoOf, type HebrewDayInfo } from "@/lib/hebrew-calendar";
+import {
+  elapsedSince,
+  hebrewDayInfo,
+  hebrewYearBounds,
+  isoOf,
+  type ElapsedSpan,
+  type HebrewDayInfo,
+} from "@/lib/hebrew-calendar";
 
 /**
  * מקור אמת יחיד לתאריך העברי הפעיל בכל האפליקציה.
@@ -16,6 +23,15 @@ type AnchorContext = {
   info: HebrewDayInfo;
   setDate: (d: Date) => void;
   reset: () => void;
+  /** תאריך-החלוף — היום שממנו נמדד המרחק. ברירת המחדל נגזרת מהלוח האמיתי (א׳ תשרי). */
+  elapsedFrom: Date;
+  elapsedFromInfo: HebrewDayInfo;
+  /** האם תאריך-החלוף הוזן ידנית (אחרת הוא מתעדכן לבד מהלוח). */
+  isElapsedCustom: boolean;
+  /** המרחק בין תאריך-החלוף לתאריך הפעיל — מתחשב אוטומטית. */
+  elapsed: ElapsedSpan;
+  setElapsedFrom: (d: Date) => void;
+  resetElapsedFrom: () => void;
 };
 
 /**
@@ -23,12 +39,15 @@ type AnchorContext = {
  * ביום חדש הלוח חוזר אוטומטית לתאריך העברי האמיתי — הלוח האמיתי הוא המקור.
  */
 const STORAGE_KEY = "hebrew-anchor-date";
+/** תאריך-החלוף נשמר ללא תפוגה; כשאין ערך שמור הוא נגזר מהלוח האמיתי. */
+const ELAPSED_KEY = "hebrew-anchor-elapsed-from";
 
 const Ctx = createContext<AnchorContext | null>(null);
 
 export function HebrewAnchorProvider({ children }: { children: React.ReactNode }) {
   const [now, setNow] = useState(() => new Date());
   const [selectedIso, setSelectedIso] = useState<string | null>(null);
+  const [elapsedIso, setElapsedIso] = useState<string | null>(null);
 
   useEffect(() => {
     const stored = window.localStorage.getItem(STORAGE_KEY);
@@ -60,6 +79,30 @@ export function HebrewAnchorProvider({ children }: { children: React.ReactNode }
     return () => clearInterval(t);
   }, []);
 
+  useEffect(() => {
+    const stored = window.localStorage.getItem(ELAPSED_KEY);
+    if (stored && /^\d{4}-\d{2}-\d{2}$/.test(stored)) setElapsedIso(stored);
+  }, []);
+
+  const setElapsedFrom = useCallback((d: Date) => {
+    const iso = isoOf(d);
+    setElapsedIso(iso);
+    try {
+      window.localStorage.setItem(ELAPSED_KEY, iso);
+    } catch {
+      /* מצב פרטי — נשאר בזיכרון בלבד */
+    }
+  }, []);
+
+  const resetElapsedFrom = useCallback(() => {
+    setElapsedIso(null);
+    try {
+      window.localStorage.removeItem(ELAPSED_KEY);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   const setDate = useCallback((d: Date) => {
     const iso = isoOf(d);
     setSelectedIso(iso);
@@ -84,8 +127,19 @@ export function HebrewAnchorProvider({ children }: { children: React.ReactNode }
     const todayIso = isoOf(now);
     const isCustom = !!selectedIso && selectedIso !== todayIso;
     const date = isCustom ? new Date(`${selectedIso}T00:00:00`) : now;
-    return { date, now, isCustom, info: hebrewDayInfo(date), setDate, reset };
-  }, [now, selectedIso, setDate, reset]);
+    // ברירת המחדל של תאריך-החלוף: תחילת שנת הלימודים העברית של התאריך הפעיל —
+    // כך שהוא מתעדכן לבד עם התקדמות הלוח, בלי הזנה ידנית.
+    const autoFrom = hebrewYearBounds(date).start;
+    const elapsedFrom = elapsedIso ? new Date(`${elapsedIso}T00:00:00`) : autoFrom;
+    return {
+      date, now, isCustom, info: hebrewDayInfo(date), setDate, reset,
+      elapsedFrom,
+      elapsedFromInfo: hebrewDayInfo(elapsedFrom),
+      isElapsedCustom: !!elapsedIso,
+      elapsed: elapsedSince(elapsedFrom, date),
+      setElapsedFrom, resetElapsedFrom,
+    };
+  }, [now, selectedIso, elapsedIso, setDate, reset, setElapsedFrom, resetElapsedFrom]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
@@ -102,5 +156,11 @@ export function useHebrewAnchor(): AnchorContext {
     info: hebrewDayInfo(fallbackNow),
     setDate: () => {},
     reset: () => {},
+    elapsedFrom: hebrewYearBounds(fallbackNow).start,
+    elapsedFromInfo: hebrewDayInfo(hebrewYearBounds(fallbackNow).start),
+    isElapsedCustom: false,
+    elapsed: elapsedSince(hebrewYearBounds(fallbackNow).start, fallbackNow),
+    setElapsedFrom: () => {},
+    resetElapsedFrom: () => {},
   };
 }
