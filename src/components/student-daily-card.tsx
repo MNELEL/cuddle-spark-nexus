@@ -13,6 +13,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { useHebrewAnchor } from "@/components/hebrew-anchor";
+import { DailyApprovalCard } from "@/components/daily-approval-card";
 import { hebrewDateTime } from "@/lib/hebrew-date";
 import {
   getStudentDaily, saveStudentDaily, listStudentDailyHistory,
@@ -195,6 +196,8 @@ export function StudentDailyCard({
             </p>
           </div>
         )}
+
+        {studentId && <DailyApprovalCard studentId={studentId} classId={classId} date={date} />}
 
         {showHistory && (
           <ul className="space-y-1 text-xs text-muted-foreground">

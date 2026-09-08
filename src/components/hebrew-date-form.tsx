@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { CalendarCheck, HelpCircle, RotateCcw } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { CalendarCheck, FileSpreadsheet, HelpCircle, RotateCcw } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,17 +12,46 @@ import {
   isoOf,
   parseHebrewDateInput,
 } from "@/lib/hebrew-calendar";
+import { readCalendarRows, type CalendarFileRow } from "@/lib/calendar-file-import";
 
 /**
  * טופס נוח לניהול הלוח העברי בעצמך:
  * שדה אחד לתאריך היום (מה שכל המערכת מציגה), שדה שני לתאריך-החלוף
- * (מאיזה יום למדוד), והסבר קצר על אופן עבודת הלוח העברי.
+ * (מאיזה יום למדוד — ידנית או מתוך קובץ Excel של הכיתה),
+ * והסבר קצר על אופן עבודת הלוח העברי.
  */
 export function HebrewDateForm({ className }: { className?: string }) {
   const { date: active, now, isCustom, info, setDate, reset } = useHebrewAnchor();
   const [todayInput, setTodayInput] = useState("");
   const [fromInput, setFromInput] = useState("");
   const [error, setError] = useState("");
+  const [fileRows, setFileRows] = useState<CalendarFileRow[]>([]);
+  const [fileName, setFileName] = useState("");
+  const [fileError, setFileError] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const loadFile = async (file: File) => {
+    setFileError("");
+    try {
+      const XLSX = await import("xlsx");
+      const wb = XLSX.read(await file.arrayBuffer(), { type: "array", cellDates: true });
+      const sheetName = wb.SheetNames[0];
+      const sheet = sheetName ? wb.Sheets[sheetName] : undefined;
+      const rows = sheet
+        ? readCalendarRows(XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" }))
+        : [];
+      if (rows.length === 0) {
+        setFileRows([]);
+        setFileError("לא נמצאו שורות עם שם ותאריך בקובץ.");
+        return;
+      }
+      setFileRows(rows);
+      setFileName(file.name);
+    } catch {
+      setFileRows([]);
+      setFileError("קריאת הקובץ נכשלה. ודא שזה קובץ Excel תקין.");
+    }
+  };
 
   const resolve = (raw: string): { date: Date } | { error: string } => {
     const t = raw.trim();
@@ -115,6 +144,69 @@ export function HebrewDateForm({ className }: { className?: string }) {
               </p>
             )}
           </div>
+        </div>
+
+        <div className="space-y-2 rounded-lg border p-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={() => fileRef.current?.click()}>
+              <FileSpreadsheet className="h-4 w-4" aria-hidden />
+              טען תאריכים מקובץ Excel
+            </Button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              className="hidden"
+              aria-label="קובץ Excel עם תאריכי הכיתה"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void loadFile(f);
+                e.target.value = "";
+              }}
+            />
+            {fileName && <Badge variant="secondary">{fileName}</Badge>}
+            {fileRows.length > 0 && <Badge variant="outline">{fileRows.length} שורות</Badge>}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            במקום להקליד — בחר שורה מהקובץ, והתאריך שבה ייכנס כתאריך-החלוף (או כתאריך היום).
+            נקראות עמודות שם, תאריך תחילת לימוד ותאריך לידה, בעברית או בלועזי.
+          </p>
+          {fileError && <p className="text-xs text-destructive">{fileError}</p>}
+          {fileRows.length > 0 && (
+            <ul className="max-h-52 space-y-1 overflow-auto text-xs">
+              {fileRows.map((r, i) => {
+                const iso = r.start_date ?? r.birth_date!;
+                const label = hebrewDayInfo(new Date(`${iso}T00:00:00`)).full;
+                return (
+                  <li
+                    key={`${r.name}-${i}`}
+                    className="flex flex-wrap items-center justify-between gap-2 border-t pt-1"
+                  >
+                    <span>
+                      <span className="font-medium text-foreground">{r.name}</span> · {label} ({iso})
+                      {r.start_date ? "" : " · תאריך לידה"}
+                    </span>
+                    <span className="flex gap-1">
+                      <Button type="button" size="sm" variant="ghost" onClick={() => setFromInput(iso)}>
+                        כתאריך-החלוף
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setError("");
+                          setDate(new Date(`${iso}T00:00:00`));
+                        }}
+                      >
+                        כיום הפעיל
+                      </Button>
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-2">

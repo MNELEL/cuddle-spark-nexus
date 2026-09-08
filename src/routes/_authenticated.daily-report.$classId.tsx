@@ -10,15 +10,34 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { HebrewRangeFilter, type DateRange } from "@/components/hebrew-range-filter";
 import { useHebrewAnchor } from "@/components/hebrew-anchor";
 import { DailyReportDayDialog } from "@/components/daily-report-day-dialog";
 import { hebrewRangePresets, hebrewDayInfo, isoOf } from "@/lib/hebrew-calendar";
-import { toHebrewDateFull } from "@/lib/hebrew-date";
-import { getDailyReport, type DailyReportDay } from "@/lib/daily-report.functions";
+import { toHebrewDateFull, hebrewDateTime } from "@/lib/hebrew-date";
+import { listStudents } from "@/lib/students.functions";
+import {
+  getDailyReport,
+  getDailyReportDetails,
+  type DailyReportDay,
+} from "@/lib/daily-report.functions";
+
+type ReportSearch = { from?: string; to?: string; studentId?: string };
 
 export const Route = createFileRoute("/_authenticated/daily-report/$classId")({
   head: () => ({ meta: [{ name: "robots", content: "noindex, nofollow" }] }),
+  validateSearch: (search: Record<string, unknown>): ReportSearch => ({
+    from: typeof search.from === "string" ? search.from : undefined,
+    to: typeof search.to === "string" ? search.to : undefined,
+    studentId: typeof search.studentId === "string" ? search.studentId : undefined,
+  }),
   component: DailyLogReportPage,
 });
 
@@ -37,24 +56,56 @@ const emptyDay = (date: string): DailyReportDay => ({
   attendance: { present: 0, absent: 0, late: 0, excused: 0, total: 0 },
   grades: { count: 0, avgPct: null },
   insights: { total: 0, high: 0, medium: 0, low: 0 },
+  approvals: 0,
 });
+
+const STATUS_LABEL: Record<string, string> = {
+  present: "נוכח",
+  absent: "נעדר",
+  late: "איחור",
+  excused: "מאושר",
+};
+const SEVERITY_LABEL: Record<string, string> = {
+  low: "רגילה",
+  medium: "לתשומת לב",
+  high: "דחופה",
+};
+
+const ISO = /^\d{4}-\d{2}-\d{2}$/;
 
 function DailyLogReportPage() {
   const { classId } = Route.useParams();
+  const search = Route.useSearch();
   const { date: anchorDate } = useHebrewAnchor();
   const [range, setRange] = useState<DateRange>(() => {
+    if (search.from && search.to && ISO.test(search.from) && ISO.test(search.to)) {
+      return { from: search.from, to: search.to };
+    }
     const presets = hebrewRangePresets(anchorDate);
     const p = presets.find((x) => x.id === "month") ?? presets[0]!;
     return { from: p.from, to: p.to };
   });
+  const [studentId, setStudentId] = useState<string>(search.studentId ?? "all");
   const [onlyWithData, setOnlyWithData] = useState(false);
   const [busy, setBusy] = useState<"xlsx" | "pdf" | null>(null);
   const [editDate, setEditDate] = useState<string | null>(null);
   const fetchReport = useServerFn(getDailyReport);
+  const fetchDetails = useServerFn(getDailyReportDetails);
+  const studentsFn = useServerFn(listStudents);
+
+  const { data: students = [] } = useQuery({
+    queryKey: ["students", classId],
+    queryFn: () => studentsFn({ data: { classId } }),
+  });
+
+  const scopedStudent = studentId === "all" ? null : studentId;
 
   const { data, isLoading } = useQuery({
-    queryKey: ["daily-log-report", classId, range.from, range.to],
-    queryFn: () => fetchReport({ data: { classId, from: range.from, to: range.to } }),
+    queryKey: ["daily-log-report", classId, range.from, range.to, scopedStudent],
+    queryFn: () =>
+      fetchReport({
+        data: { classId, from: range.from, to: range.to, studentId: scopedStudent },
+      }),
   });
 
   const rows = useMemo(() => {
@@ -62,7 +113,12 @@ function DailyLogReportPage() {
     const all = daysInRange(range.from, range.to).map((iso) => map.get(iso) ?? emptyDay(iso));
     return onlyWithData
       ? all.filter(
-          (d) => d.notes || d.attendance.total > 0 || d.grades.count > 0 || d.insights.total > 0,
+          (d) =>
+            d.notes ||
+            d.attendance.total > 0 ||
+            d.grades.count > 0 ||
+            d.insights.total > 0 ||
+            d.approvals > 0,
         )
       : all;
   }, [data, range, onlyWithData]);
@@ -76,13 +132,23 @@ function DailyLogReportPage() {
           acc.late += d.attendance.late;
           acc.logs += d.notes ? 1 : 0;
           acc.insights += d.insights.total;
+          acc.approvals += d.approvals;
           if (d.grades.avgPct !== null) {
             acc.gradeSum += d.grades.avgPct * d.grades.count;
             acc.gradeCount += d.grades.count;
           }
           return acc;
         },
-        { present: 0, absent: 0, late: 0, logs: 0, insights: 0, gradeSum: 0, gradeCount: 0 },
+        {
+          present: 0,
+          absent: 0,
+          late: 0,
+          logs: 0,
+          insights: 0,
+          approvals: 0,
+          gradeSum: 0,
+          gradeCount: 0,
+        },
       ),
     [rows],
   );
@@ -97,44 +163,134 @@ function DailyLogReportPage() {
     );
   }, [anchorDate, range]);
 
-  /** ייצוא בדיוק של השורות המוצגות — אותו טווח עברי ואותו סינון. */
+  /** ייצוא בדיוק של השורות המוצגות — אותו טווח עברי, אותו תלמיד ואותו סינון. */
   const runExport = async (kind: "xlsx" | "pdf") => {
     if (!data) return;
     setBusy(kind);
     try {
+      const suffix = data.student ? `-${data.student.name}` : "";
       if (kind === "xlsx") {
+        const details = await fetchDetails({
+          data: { classId, from: range.from, to: range.to, studentId: scopedStudent },
+        });
+        const shown = new Set(rows.map((d) => d.date));
+        const heb = (iso: string) => toHebrewDateFull(iso) ?? iso;
         const wb = XLSX.utils.book_new();
+
         XLSX.utils.book_append_sheet(
           wb,
           XLSX.utils.json_to_sheet(
             rows.map((d) => ({
-              "תאריך עברי": toHebrewDateFull(d.date) ?? d.date,
-              "תאריך": d.date,
-              "נוכחים": d.attendance.present,
-              "נעדרים": d.attendance.absent,
-              "איחורים": d.attendance.late,
-              "מאושרים": d.attendance.excused,
+              "תאריך עברי": heb(d.date),
+              תאריך: d.date,
+              נוכחים: d.attendance.present,
+              נעדרים: d.attendance.absent,
+              איחורים: d.attendance.late,
+              מאושרים: d.attendance.excused,
               "סה״כ נוכחות": d.attendance.total,
               "מספר ציונים": d.grades.count,
               "ממוצע ציונים (%)": d.grades.avgPct === null ? "" : Math.round(d.grades.avgPct),
-              "תובנות": d.insights.total,
+              תובנות: d.insights.total,
               "תובנות חמורות": d.insights.high,
+              "אישורי מלמד": d.approvals,
               "תיעוד יומי": d.notes ?? "",
             })),
           ),
-          "דוח תיעוד יומי",
+          "סיכום יומי",
         );
-        XLSX.writeFile(wb, `דוח-תיעוד-יומי-${data.class.name}-${range.from}-${range.to}.xlsx`);
+
+        XLSX.utils.book_append_sheet(
+          wb,
+          XLSX.utils.json_to_sheet(
+            details.attendance
+              .filter((r) => shown.has(r.date))
+              .map((r) => ({
+                "תאריך עברי": heb(r.date),
+                תאריך: r.date,
+                תלמיד: r.student,
+                נוכחות: STATUS_LABEL[r.status] ?? r.status,
+                הערה: r.notes,
+              })),
+          ),
+          "נוכחות",
+        );
+
+        XLSX.utils.book_append_sheet(
+          wb,
+          XLSX.utils.json_to_sheet(
+            details.grades
+              .filter((r) => shown.has(r.date))
+              .map((r) => ({
+                "תאריך עברי": heb(r.date),
+                תאריך: r.date,
+                תלמיד: r.student,
+                מקצוע: r.subject,
+                ציון: r.value,
+                מתוך: r.max_value,
+                "אחוז": Math.round((r.value / (r.max_value || 100)) * 100),
+              })),
+          ),
+          "ציונים",
+        );
+
+        XLSX.utils.book_append_sheet(
+          wb,
+          XLSX.utils.json_to_sheet(
+            details.insights
+              .filter((r) => shown.has(r.date))
+              .map((r) => ({
+                "תאריך עברי": heb(r.date),
+                תאריך: r.date,
+                תלמיד: r.student,
+                חשיבות: SEVERITY_LABEL[r.severity] ?? r.severity,
+                כותרת: r.title,
+                פירוט: r.description,
+              })),
+          ),
+          "תובנות",
+        );
+
+        XLSX.utils.book_append_sheet(
+          wb,
+          XLSX.utils.json_to_sheet(
+            details.approvals
+              .filter((r) => shown.has(r.date))
+              .map((r) => ({
+                "תאריך עברי": heb(r.date),
+                תאריך: r.date,
+                תלמיד: r.student,
+                "אושר על ידי": r.approver,
+                "הערת אישור": r.notes,
+              })),
+          ),
+          "אישורים",
+        );
+
+        XLSX.utils.book_append_sheet(
+          wb,
+          XLSX.utils.json_to_sheet(
+            details.history.map((h) => ({
+              מתי: hebrewDateTime(h.date),
+              שינוי: h.message,
+            })),
+          ),
+          "היסטוריית שינויים",
+        );
+
+        XLSX.writeFile(
+          wb,
+          `דוח-תיעוד-יומי-${data.class.name}${suffix}-${range.from}-${range.to}.xlsx`,
+        );
       } else {
         const [{ buildDailyReportPdf }, { downloadPdfBlob }] = await Promise.all([
           import("@/lib/pdf/daily-report-pdf"),
           import("@/lib/pdf/pdf-builder"),
         ]);
         const { blob, filename } = await buildDailyReportPdf({
-          className: data.class.name,
+          className: data.student ? `${data.class.name} — ${data.student.name}` : data.class.name,
           range: { from: range.from, to: range.to },
           rangeLabel,
-          studentCount: data.studentCount,
+          studentCount: data.student ? 1 : data.studentCount,
           days: rows,
         });
         downloadPdfBlob(blob, filename);
@@ -153,6 +309,7 @@ function DailyLogReportPage() {
         <h1 className="flex items-center gap-2 font-display text-xl">
           <CalendarDays className="h-5 w-5 text-primary" aria-hidden />
           דוח תיעוד יומי{data ? ` — ${data.class.name}` : ""}
+          {data?.student ? ` · ${data.student.name}` : ""}
         </h1>
         <Button asChild variant="ghost" size="sm">
           <Link to="/classes/$classId" params={{ classId }}>
@@ -164,22 +321,40 @@ function DailyLogReportPage() {
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="font-display text-base">טווח לוח עברי</CardTitle>
+          <CardTitle className="font-display text-base">טווח לוח עברי וסינון</CardTitle>
           <CardDescription>
             כל ימי הלוח העברי בטווח מוצגים — גם ימים בלי תיעוד, כדי לזהות פערים.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <HebrewRangeFilter value={range} onChange={setRange} />
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="only-with-data"
-              checked={onlyWithData}
-              onCheckedChange={(v) => setOnlyWithData(v === true)}
-            />
-            <Label htmlFor="only-with-data" className="text-sm font-normal">
-              הצג רק ימים עם נתונים
-            </Label>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="dr-student">תלמיד</Label>
+              <Select value={studentId} onValueChange={setStudentId}>
+                <SelectTrigger id="dr-student">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">כל הכיתה</SelectItem>
+                  {(students as { id: string; name: string }[]).map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-end gap-2">
+              <Checkbox
+                id="only-with-data"
+                checked={onlyWithData}
+                onCheckedChange={(v) => setOnlyWithData(v === true)}
+              />
+              <Label htmlFor="only-with-data" className="text-sm font-normal">
+                הצג רק ימים עם נתונים
+              </Label>
+            </div>
           </div>
           <div className="flex flex-wrap gap-2 text-xs">
             <Badge variant="outline">ימי תיעוד: {totals.logs}</Badge>
@@ -191,6 +366,7 @@ function DailyLogReportPage() {
               {totals.gradeCount ? `${Math.round(totals.gradeSum / totals.gradeCount)}%` : "—"}
             </Badge>
             <Badge variant="outline">תובנות: {totals.insights}</Badge>
+            <Badge variant="outline">אישורי מלמד: {totals.approvals}</Badge>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button
@@ -233,7 +409,11 @@ function DailyLogReportPage() {
           {rows.map((d) => {
             const info = hebrewDayInfo(new Date(`${d.date}T00:00:00`));
             const empty =
-              !d.notes && d.attendance.total === 0 && d.grades.count === 0 && d.insights.total === 0;
+              !d.notes &&
+              d.attendance.total === 0 &&
+              d.grades.count === 0 &&
+              d.insights.total === 0 &&
+              d.approvals === 0;
             return (
               <li
                 key={d.date}
@@ -266,6 +446,7 @@ function DailyLogReportPage() {
                         תובנות: {d.insights.total}
                       </Badge>
                     )}
+                    {d.approvals > 0 && <Badge>אושר ({d.approvals})</Badge>}
                     <Button
                       type="button"
                       variant="ghost"

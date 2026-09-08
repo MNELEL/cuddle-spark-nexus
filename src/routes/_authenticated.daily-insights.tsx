@@ -53,6 +53,8 @@ function DailyInsightsPage() {
   const [classId, setClassId] = useState("");
   const [range, setRange] = useState<DateRange>({ from: info.monthRange.from, to: info.monthRange.to });
   const [showHistory, setShowHistory] = useState(false);
+  const [filterStudent, setFilterStudent] = useState("all");
+  const [filterDate, setFilterDate] = useState("");
 
   const [date, setDate] = useState(info.iso);
   const [studentId, setStudentId] = useState("class");
@@ -131,6 +133,15 @@ function DailyInsightsPage() {
     mutationFn: (id: string) => deleteFn({ data: { id } }),
     onSuccess: () => { toast.success("התובנה נמחקה"); refresh(); },
     onError: (e) => toast.error(e instanceof Error ? e.message : "המחיקה נכשלה"),
+  });
+
+  /** סינון התוצאות לפי תלמיד ולפי יום בודד, בנוסף לטווח העברי. */
+  const filtered = (insights.data ?? []).filter((i) => {
+    if (filterStudent === "class-only" && i.student_id) return false;
+    if (filterStudent !== "all" && filterStudent !== "class-only" && i.student_id !== filterStudent)
+      return false;
+    if (filterDate && i.insight_date !== filterDate) return false;
+    return true;
   });
 
   return (
@@ -243,16 +254,65 @@ function DailyInsightsPage() {
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="font-display text-base">תובנות בטווח</CardTitle>
-          <CardDescription>סנן לפי טווח תאריכים עברי.</CardDescription>
+          <CardDescription>סנן לפי כיתה, תלמיד, טווח עברי או יום בודד.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <HebrewRangeFilter value={range} onChange={setRange} />
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="di-filter-student">תלמיד</Label>
+              <Select value={filterStudent} onValueChange={setFilterStudent}>
+                <SelectTrigger id="di-filter-student"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">כל הכיתה</SelectItem>
+                  <SelectItem value="class-only">כלל־כיתתי בלבד</SelectItem>
+                  {(students as { id: string; name: string }[]).map((s) => (
+                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="di-filter-date">יום בודד</Label>
+              <Input
+                id="di-filter-date"
+                type="date"
+                value={filterDate}
+                onChange={(e) => setFilterDate(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                {filterDate ? (toHebrewDateFull(filterDate) ?? "") : "ריק = כל הטווח"}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-end gap-2">
+              {filterDate && (
+                <Button type="button" variant="ghost" size="sm" onClick={() => setFilterDate("")}>
+                  נקה יום
+                </Button>
+              )}
+              <Button asChild variant="outline" size="sm" disabled={!classId}>
+                <Link
+                  to="/daily-report/$classId"
+                  params={{ classId }}
+                  search={{
+                    from: filterDate || range.from,
+                    to: filterDate || range.to,
+                    ...(filterStudent !== "all" && filterStudent !== "class-only"
+                      ? { studentId: filterStudent }
+                      : {}),
+                  }}
+                >
+                  לדוח התיעוד היומי המסונן
+                </Link>
+              </Button>
+            </div>
+          </div>
           {insights.isLoading && <p className="text-sm text-muted-foreground">טוען…</p>}
-          {!insights.isLoading && (insights.data ?? []).length === 0 && (
-            <p className="text-sm text-muted-foreground">אין תובנות ידניות בטווח הזה.</p>
+          {!insights.isLoading && filtered.length === 0 && (
+            <p className="text-sm text-muted-foreground">אין תובנות ידניות לסינון הזה.</p>
           )}
           <ul className="space-y-2">
-            {(insights.data ?? []).map((i) => (
+            {filtered.map((i) => (
               <li key={i.id} className="rounded-md border p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
