@@ -209,18 +209,29 @@ export function CertificateTemplateCard() {
                 <Label className="text-xs text-muted-foreground" htmlFor="tpl-primary">צבע עיקרי</Label>
                 <div className="flex items-center gap-2">
                   <Input id="tpl-primary" type="color" className="h-9 w-14 p-1" value={design.primary_color}
-                    onChange={(e) => patch({ primary_color: e.target.value })} />
-                  <span className="font-mono text-xs">{design.primary_color}</span>
+                    onChange={(e) => patch({ primary_color: normalizeHex(e.target.value, design.primary_color) })} />
+                  <Input
+                    aria-label="קוד צבע עיקרי"
+                    className="h-9 w-28 font-mono text-xs"
+                    value={design.primary_color}
+                    onChange={(e) => patch({ primary_color: normalizeHex(e.target.value, design.primary_color) })}
+                  />
                 </div>
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground" htmlFor="tpl-accent">צבע הדגשה</Label>
                 <div className="flex items-center gap-2">
                   <Input id="tpl-accent" type="color" className="h-9 w-14 p-1" value={design.accent_color}
-                    onChange={(e) => patch({ accent_color: e.target.value })} />
-                  <span className="font-mono text-xs">{design.accent_color}</span>
+                    onChange={(e) => patch({ accent_color: normalizeHex(e.target.value, design.accent_color) })} />
+                  <Input
+                    aria-label="קוד צבע הדגשה"
+                    className="h-9 w-28 font-mono text-xs"
+                    value={design.accent_color}
+                    onChange={(e) => patch({ accent_color: normalizeHex(e.target.value, design.accent_color) })}
+                  />
                 </div>
               </div>
+
               <div>
                 <Label className="text-xs text-muted-foreground">עובי גופן הכותרת</Label>
                 <Select value={design.title_font_weight} onValueChange={(v) => patch({ title_font_weight: v as CertTemplateDesign["title_font_weight"] })}>
