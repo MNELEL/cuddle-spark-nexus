@@ -265,16 +265,23 @@ export function CertificateTemplateCard() {
               </div>
             </div>
 
+            {designIssues(design).length > 0 && (
+              <p className="text-xs text-destructive">
+                לא ניתן לשמור: {designIssues(design).join(" · ")}
+              </p>
+            )}
+
             <div className="flex flex-wrap items-center gap-2">
               <Button
                 type="button"
-                disabled={busy || !name.trim() || saveMut.isPending}
+                disabled={busy || !name.trim() || saveMut.isPending || designIssues(design).length > 0}
                 onClick={() => saveMut.mutate()}
               >
                 שמור תבנית
               </Button>
               <Button type="button" variant="ghost" onClick={() => setDesign(null)}>בטל</Button>
             </div>
+
           </div>
         )}
 
