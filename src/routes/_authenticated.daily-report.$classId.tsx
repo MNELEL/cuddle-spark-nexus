@@ -449,10 +449,32 @@ function DailyLogReportPage() {
               onChange={(id, design) => {
                 setTemplateId(id);
                 setTemplateDesign(design);
+                setTemplateName((design as { name?: string } | undefined)?.name ?? null);
               }}
               label="תבנית ל-PDF"
             />
           </div>
+
+          {templateDesign && (
+            <div className="flex flex-wrap items-center gap-2 rounded-md border p-2 text-xs">
+              <span className="font-medium">תבנית הסגנון לדוח:</span>
+              <Badge variant="secondary">{templateName ?? "תבנית שמורה"}</Badge>
+              <span
+                className="inline-block h-4 w-4 rounded border"
+                style={{ background: templateDesign.primary_color }}
+                aria-label="צבע ראשי"
+              />
+              <span
+                className="inline-block h-4 w-4 rounded border"
+                style={{ background: templateDesign.accent_color }}
+                aria-label="צבע הדגשה"
+              />
+              <span className="text-muted-foreground">
+                ה-PDF יכלול שורה לכל תלמיד: שם, כיתה, תאריך עברי, נוכחות, ציון ותובנה.
+              </span>
+            </div>
+          )}
+
 
         </CardContent>
       </Card>
