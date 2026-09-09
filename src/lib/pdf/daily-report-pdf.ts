@@ -4,14 +4,27 @@ import { createHebrewDoc, drawBrandHeader, drawFooter, hebrewDate, safeName } fr
 import { drawTemplateFrame } from "./template-design";
 import { ensurePdfBrandLoaded } from "./brand-loader";
 
+/** שורת תיעוד יומי לתלמיד בודד: נוכחות, ציון ותובנה ליום מסוים. */
+export type DailyReportStudentEntry = {
+  date: string;
+  student: string;
+  attendance: string;
+  grade: string;
+  insight: string;
+};
+
 export type DailyReportPdfInput = {
   className: string;
   range: { from: string; to: string };
   rangeLabel?: string;
   studentCount: number;
   days: DailyReportDay[];
+  /** תיעוד לפי תלמיד — שם, תאריך, נוכחות, ציון ותובנה. */
+  entries?: DailyReportStudentEntry[];
   /** תבנית סגנון שמורה (מסגרת וצבעים); ללא תבנית — העיצוב הרגיל. */
   design?: CertTemplateDesign;
+  /** שם התבנית שנבחרה — מוצג בכותרת הדוח. */
+  templateName?: string;
 };
 
 /** דוח תיעוד יומי לפי כיתה — טבלת סיכום לכל ימי הטווח העברי + התיעוד המלא. */
@@ -42,7 +55,9 @@ export async function buildDailyReportPdf(
   drawBrandHeader(hd, {
     title: `דוח תיעוד יומי — ${input.className}`,
     subtitle: input.rangeLabel,
-    meta: `תקופה: ${hebrewDate(input.range.from)} — ${hebrewDate(input.range.to)} · ${input.studentCount} תלמידים`,
+    meta:
+      `תקופה: ${hebrewDate(input.range.from)} — ${hebrewDate(input.range.to)} · ${input.studentCount} תלמידים` +
+      (input.templateName ? ` · תבנית: ${input.templateName}` : ""),
   });
 
   hd.section("סיכום הטווח");
@@ -84,6 +99,30 @@ export async function buildDailyReportPdf(
       hd.subSection(`${hebrewDate(d.date)} (${d.date})`);
       hd.paragraph(d.notes || "—");
     }
+
+  const entries = input.entries ?? [];
+  hd.section(`תיעוד לפי תלמיד (${entries.length})`);
+  if (entries.length === 0) hd.paragraph("אין תיעוד לפי תלמיד בטווח זה.");
+  else
+    hd.table({
+      head: [["תאריך עברי", "תלמיד", "כיתה", "נוכחות", "ציון", "תובנה"]],
+      body: entries.map((e) => [
+        hebrewDate(e.date),
+        e.student,
+        input.className,
+        e.attendance || "—",
+        e.grade || "—",
+        e.insight || "—",
+      ]),
+      columnStyles: {
+        0: { cellWidth: 26 },
+        1: { cellWidth: 30 },
+        2: { cellWidth: 24 },
+        3: { cellWidth: 20, halign: "center" },
+        4: { cellWidth: 22, halign: "center" },
+        5: { cellWidth: "auto", overflow: "linebreak" },
+      },
+    });
 
   drawFooter(hd, input.className);
   const filename = `דוח_תיעוד_יומי_${safeName(input.className)}_${input.range.from}_${input.range.to}.pdf`;

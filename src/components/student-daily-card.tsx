@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { History, NotebookPen, Save, Loader2 } from "lucide-react";
+import { History, NotebookPen, Save, Loader2, Sparkles } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,7 @@ import { hebrewDateTime } from "@/lib/hebrew-date";
 import {
   getStudentDaily, saveStudentDaily, listStudentDailyHistory,
 } from "@/lib/student-daily.functions";
+import { suggestStudentDailySummary } from "@/lib/ai-daily-summary.functions";
 
 const STATUS_LABEL: Record<string, string> = {
   present: "נוכח", absent: "נעדר", late: "איחור", excused: "מאושר",
@@ -51,6 +52,32 @@ export function StudentDailyCard({
   const load = useServerFn(getStudentDaily);
   const save = useServerFn(saveStudentDaily);
   const history = useServerFn(listStudentDailyHistory);
+  const suggest = useServerFn(suggestStudentDailySummary);
+
+  /** תקציר אוטומטי מ-AI על בסיס הנוכחות, הציון וההערה של היום. */
+  const suggestM = useMutation({
+    mutationFn: () =>
+      suggest({
+        data: {
+          studentId,
+          date,
+          draft: {
+            status,
+            attendanceNotes: attNotes,
+            subject,
+            value: value.trim() ? Number(value) : null,
+            maxValue: Number(maxValue) || 100,
+            note: description,
+          },
+        },
+      }),
+    onSuccess: (r) => {
+      setTitle(r.title);
+      setDescription(r.description);
+      toast.success("התקציר הוצע — אפשר לערוך ולשמור");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "הצעת התקציר נכשלה"),
+  });
 
   const existing = useQuery({
     queryKey: ["student-daily", studentId, date],
@@ -185,6 +212,20 @@ export function StudentDailyCard({
           <Button type="button" onClick={() => saveM.mutate()} disabled={!studentId || saveM.isPending}>
             {saveM.isPending ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Save className="h-4 w-4" aria-hidden />}
             שמור תיעוד
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => suggestM.mutate()}
+            disabled={!studentId || suggestM.isPending}
+          >
+            {suggestM.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+            ) : (
+              <Sparkles className="h-4 w-4" aria-hidden />
+            )}
+            הצע תקציר AI
           </Button>
           <Button type="button" variant="ghost" size="sm" onClick={() => setShowHistory((v) => !v)}>
             <History className="h-4 w-4" aria-hidden />
