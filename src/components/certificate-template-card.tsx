@@ -24,7 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SmartUpload } from "@/components/smart-upload";
 import { ACCEPT_IMAGE } from "@/lib/upload-accept";
-import { hebrewDateLabel } from "@/lib/hebrew-date";
+import { hebrewDate } from "@/lib/hebrew-date";
 
 /** תוויות בעברית לכל ערך מותר, כדי שהמלמד יראה טקסט קריא ולא ערכים טכניים. */
 const FRAME_HE: Record<string, string> = {
@@ -250,7 +250,7 @@ export function CertificateTemplateCard() {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium">{t.name}</span>
-                    <Badge variant="secondary">{hebrewDateLabel(t.created_at)}</Badge>
+                    <Badge variant="secondary">{hebrewDate(t.created_at)}</Badge>
                   </div>
                   <p className="mt-0.5 text-xs text-muted-foreground">{describeDesign(t)}</p>
                 </div>
