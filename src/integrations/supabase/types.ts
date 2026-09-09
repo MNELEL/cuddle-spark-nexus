@@ -459,6 +459,54 @@ export type Database = {
           },
         ]
       }
+      certificate_templates: {
+        Row: {
+          accent_color: string
+          corner_decoration: string
+          created_at: string
+          frame_style: string
+          id: string
+          is_default: boolean
+          layout_density: string
+          name: string
+          owner_id: string
+          primary_color: string
+          source_image_note: string | null
+          title_alignment: string
+          title_font_weight: string
+        }
+        Insert: {
+          accent_color?: string
+          corner_decoration?: string
+          created_at?: string
+          frame_style?: string
+          id?: string
+          is_default?: boolean
+          layout_density?: string
+          name: string
+          owner_id: string
+          primary_color?: string
+          source_image_note?: string | null
+          title_alignment?: string
+          title_font_weight?: string
+        }
+        Update: {
+          accent_color?: string
+          corner_decoration?: string
+          created_at?: string
+          frame_style?: string
+          id?: string
+          is_default?: boolean
+          layout_density?: string
+          name?: string
+          owner_id?: string
+          primary_color?: string
+          source_image_note?: string | null
+          title_alignment?: string
+          title_font_weight?: string
+        }
+        Relationships: []
+      }
       checklist_leads: {
         Row: {
           checklist_slug: string
