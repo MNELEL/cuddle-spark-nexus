@@ -573,7 +573,10 @@ function CertificatesPage() {
         </CardContent>
       </Card>
 
+      <CertificateTemplateCard />
+
       <Tabs defaultValue="certs" dir="rtl">
+
         <TabsList>
           <TabsTrigger value="certs">תעודות ({list.length})</TabsTrigger>
           <TabsTrigger value="conference">הכנה לפגישת הורים</TabsTrigger>
