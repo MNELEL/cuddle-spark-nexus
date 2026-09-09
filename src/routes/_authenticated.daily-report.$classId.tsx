@@ -94,6 +94,7 @@ function DailyLogReportPage() {
   const [editDate, setEditDate] = useState<string | null>(null);
   const [templateId, setTemplateId] = useState<string | null>(null);
   const [templateDesign, setTemplateDesign] = useState<CertTemplateDesign | undefined>(undefined);
+  const [templateName, setTemplateName] = useState<string | null>(null);
 
   const fetchReport = useServerFn(getDailyReport);
   const fetchDetails = useServerFn(getDailyReportDetails);
@@ -288,18 +289,57 @@ function DailyLogReportPage() {
           `דוח-תיעוד-יומי-${data.class.name}${suffix}-${range.from}-${range.to}.xlsx`,
         );
       } else {
-        const [{ buildDailyReportPdf }, { downloadPdfBlob }] = await Promise.all([
+        const [{ buildDailyReportPdf }, { downloadPdfBlob }, details] = await Promise.all([
           import("@/lib/pdf/daily-report-pdf"),
           import("@/lib/pdf/pdf-builder"),
+          fetchDetails({
+            data: { classId, from: range.from, to: range.to, studentId: scopedStudent },
+          }),
         ]);
+        const shown = new Set(rows.map((d) => d.date));
+        /** שורה לכל תלמיד ליום: נוכחות, ציון ותובנה יחד. */
+        const perStudent = new Map<
+          string,
+          { date: string; student: string; attendance: string; grade: string; insight: string }
+        >();
+        const entry = (date: string, student: string) => {
+          const key = `${date}|${student}`;
+          let e = perStudent.get(key);
+          if (!e) {
+            e = { date, student, attendance: "", grade: "", insight: "" };
+            perStudent.set(key, e);
+          }
+          return e;
+        };
+        for (const r of details.attendance) {
+          if (!shown.has(r.date)) continue;
+          const e = entry(r.date, r.student);
+          e.attendance = [STATUS_LABEL[r.status] ?? r.status, r.notes].filter(Boolean).join(" · ");
+        }
+        for (const r of details.grades) {
+          if (!shown.has(r.date)) continue;
+          const e = entry(r.date, r.student);
+          const one = `${r.subject ? `${r.subject}: ` : ""}${r.value}/${r.max_value}`;
+          e.grade = e.grade ? `${e.grade} · ${one}` : one;
+        }
+        for (const r of details.insights) {
+          if (!shown.has(r.date)) continue;
+          const e = entry(r.date, r.student);
+          const one = `${r.title}${r.description ? ` — ${r.description}` : ""}`;
+          e.insight = e.insight ? `${e.insight} · ${one}` : one;
+        }
+        const entries = Array.from(perStudent.values()).sort((a, b) =>
+          a.date === b.date ? a.student.localeCompare(b.student, "he") : a.date < b.date ? 1 : -1,
+        );
         const { blob, filename } = await buildDailyReportPdf({
           className: data.student ? `${data.class.name} — ${data.student.name}` : data.class.name,
           range: { from: range.from, to: range.to },
           rangeLabel,
           studentCount: data.student ? 1 : data.studentCount,
           days: rows,
+          entries,
           design: templateDesign,
-
+          ...(templateName ? { templateName } : {}),
         });
         downloadPdfBlob(blob, filename);
       }
