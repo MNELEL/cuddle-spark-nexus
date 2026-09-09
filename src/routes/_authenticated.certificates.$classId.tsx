@@ -24,6 +24,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { SmartUpload } from "@/components/smart-upload";
 import { CertificateTemplateCard } from "@/components/certificate-template-card";
+import { CertificateTemplateSelect } from "@/components/certificate-template-select";
+import type { CertTemplateDesign } from "@/lib/ai-certificate.functions";
+
 
 import { ACCEPT_IMAGE } from "@/lib/upload-accept";
 import {
@@ -174,6 +177,9 @@ function CertificatesPage() {
   const [teacherName, setTeacherName] = useState("");
   const [principalName, setPrincipalName] = useState("");
   const [isCorrection, setIsCorrection] = useState(false);
+  const [templateId, setTemplateId] = useState<string | null>(null);
+  const [templateDesign, setTemplateDesign] = useState<CertTemplateDesign | undefined>(undefined);
+
 
   // Pre-fill from brand settings once loaded (only if the field is still empty).
   useMemo(() => {
@@ -442,6 +448,8 @@ function CertificatesPage() {
       principalName,
       issueDate: new Date().toISOString().slice(0, 10),
       type: kind,
+      design: templateDesign,
+
     });
     return { blob, filename: certificateFilename(row.name, period.label) };
   };
@@ -568,9 +576,18 @@ function CertificatesPage() {
               />
               סמן כתעודת תיקון
             </label>
+            <CertificateTemplateSelect
+              value={templateId}
+              onChange={(id, design) => {
+                setTemplateId(id);
+                setTemplateDesign(design);
+              }}
+              label="תבנית סגנון לתעודה"
+            />
             <Button onClick={generateAll} disabled={!list.length}>
               <Download className="ms-1 h-4 w-4" /> הפק תעודות לכל הכיתה
             </Button>
+
           </div>
         </CardContent>
       </Card>

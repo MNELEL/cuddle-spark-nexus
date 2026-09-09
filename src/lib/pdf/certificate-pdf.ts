@@ -1,12 +1,13 @@
+import type { CertTemplateDesign } from "@/lib/ai-certificate.functions";
 import {
   createHebrewDoc,
   drawBrandHeader,
   drawFooter,
   safeName,
-  SLATE,
-  AMBER,
   SOFT,
 } from "./pdf-builder";
+import { designColors, drawTemplateFrame } from "./template-design";
+
 
 export const GRADE_LABELS = [
   "מצוין",
@@ -63,21 +64,18 @@ export type CertificatePayload = {
   principalName?: string;
   issueDate: string; // YYYY-MM-DD
   type?: "regular" | "correction"; // "תיקון" if correction
+  /** תבנית סגנון שמורה שנבחרה; ללא תבנית — העיצוב הרגיל של המערכת. */
+  design?: CertTemplateDesign;
 };
+
 
 export async function buildCertificatePdfBlob(p: CertificatePayload): Promise<Blob> {
   const hd = await createHebrewDoc();
   const { doc, layout } = hd;
+  const { primary, accent } = designColors(p.design);
 
-  // Ornate double border in slate + amber
-  const outer = 6;
-  const inner = 9;
-  doc.setDrawColor(...SLATE);
-  doc.setLineWidth(0.8);
-  doc.rect(outer, outer, layout.pageW - outer * 2, layout.pageH - outer * 2);
-  doc.setDrawColor(...AMBER);
-  doc.setLineWidth(0.4);
-  doc.rect(inner, inner, layout.pageW - inner * 2, layout.pageH - inner * 2);
+  // מסגרת לפי תבנית הסגנון השמורה (או ברירת המחדל של המערכת).
+  drawTemplateFrame(hd, p.design);
 
   drawBrandHeader(hd, {
     title: p.type === "correction" ? "תעודה — תיקון" : "תעודת הערכה",
@@ -85,19 +83,34 @@ export async function buildCertificatePdfBlob(p: CertificatePayload): Promise<Bl
     meta: `${p.period} · שנה"ל ${p.academicYear}`,
   });
 
-  // Student panel
+  // Student panel — שם התלמיד מקבל את הצבע, העובי והיישור של התבנית שנבחרה.
+  const dense = p.design?.layout_density ?? "standard";
+  const panelH = dense === "compact" ? 13 : dense === "spacious" ? 20 : 16;
   const y0 = hd.currentY() + 2;
   doc.setFillColor(...SOFT);
-  doc.rect(layout.marginL, y0, layout.contentW, 16, "F");
-  doc.setFont("Heebo", "bold");
-  doc.setFontSize(13);
-  doc.setTextColor(...SLATE);
-  hd.text(`שם התלמיד: ${p.studentName}`, layout.rightX - 3, y0 + 7, { align: "right" });
+  doc.rect(layout.marginL, y0, layout.contentW, panelH, "F");
+  doc.setFont("Heebo", p.design?.title_font_weight === "normal" ? "normal" : "bold");
+  doc.setFontSize(dense === "spacious" ? 15 : 13);
+  doc.setTextColor(...primary);
+  const centered = p.design?.title_alignment === "center" && !!p.design;
+  if (centered) {
+    hd.text(`שם התלמיד: ${p.studentName}`, layout.marginL + layout.contentW / 2, y0 + panelH / 2 + 0.5, {
+      align: "center",
+    });
+  } else {
+    hd.text(`שם התלמיד: ${p.studentName}`, layout.rightX - 3, y0 + 7, { align: "right" });
+  }
   doc.setFont("Heebo", "normal");
   doc.setFontSize(10.5);
-  doc.setTextColor(60);
-  hd.text(`כיתה: ${p.className}`, layout.rightX - 3, y0 + 13, { align: "right" });
-  hd.setY(y0 + 20);
+  doc.setTextColor(...(p.design ? accent : ([60, 60, 60] as [number, number, number])));
+  hd.text(
+    `כיתה: ${p.className}`,
+    centered ? layout.marginL + layout.contentW / 2 : layout.rightX - 3,
+    y0 + panelH - 3,
+    { align: centered ? "center" : "right" },
+  );
+  hd.setY(y0 + panelH + 4);
+
 
   // Subjects table
   hd.section("הישגים לימודיים");

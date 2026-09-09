@@ -1,10 +1,20 @@
 import { useMemo, useRef, useState } from "react";
-import { CalendarCheck, FileSpreadsheet, HelpCircle, RotateCcw } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import { CalendarCheck, FileSpreadsheet, HelpCircle, Loader2, RotateCcw, Upload } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useHebrewAnchor } from "@/components/hebrew-anchor";
 import {
   elapsedSince,
@@ -12,7 +22,15 @@ import {
   isoOf,
   parseHebrewDateInput,
 } from "@/lib/hebrew-calendar";
-import { readCalendarRows, type CalendarFileRow } from "@/lib/calendar-file-import";
+import {
+  readCalendarRows,
+  readDailyLogRows,
+  type CalendarFileRow,
+  type DailyLogFileRow,
+} from "@/lib/calendar-file-import";
+import { listClasses } from "@/lib/classes.functions";
+import { importDailyLogRows } from "@/lib/daily-log-import.functions";
+
 
 /**
  * טופס נוח לניהול הלוח העברי בעצמך:
@@ -29,9 +47,29 @@ export function HebrewDateForm({ className }: { className?: string }) {
   const [fromInput, setFromInput] = useState("");
   const [error, setError] = useState("");
   const [fileRows, setFileRows] = useState<CalendarFileRow[]>([]);
+  const [logRows, setLogRows] = useState<DailyLogFileRow[]>([]);
   const [fileName, setFileName] = useState("");
   const [fileError, setFileError] = useState("");
+  const [importClassId, setImportClassId] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const qc = useQueryClient();
+  const listCls = useServerFn(listClasses);
+  const { data: classes = [] } = useQuery({ queryKey: ["classes"], queryFn: () => listCls() });
+  const importLogs = useServerFn(importDailyLogRows);
+  const importMut = useMutation({
+    mutationFn: () => importLogs({ data: { classId: importClassId, rows: logRows } }),
+    onSuccess: (res) => {
+      toast.success(
+        `נוסף תיעוד ל-${res.imported} תלמידים · נוכחות ${res.attendance} · ציונים ${res.grades} · תיעוד ${res.notes}` +
+          (res.unmatched.length ? ` · ${res.unmatched.length} שמות לא זוהו` : ""),
+      );
+      for (const key of ["daily-briefing", "manual-insights", "daily-log-report", "class-anchor-summary"]) {
+        void qc.invalidateQueries({ queryKey: [key] });
+      }
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "הייבוא נכשל"),
+  });
 
   const loadFile = async (file: File) => {
     setFileError("");
@@ -40,21 +78,27 @@ export function HebrewDateForm({ className }: { className?: string }) {
       const wb = XLSX.read(await file.arrayBuffer(), { type: "array", cellDates: true });
       const sheetName = wb.SheetNames[0];
       const sheet = sheetName ? wb.Sheets[sheetName] : undefined;
-      const rows = sheet
-        ? readCalendarRows(XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" }))
+      const raw = sheet
+        ? XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" })
         : [];
-      if (rows.length === 0) {
+      const rows = readCalendarRows(raw);
+      // מאותו קובץ נקראות גם שורות תיעוד יומי (נוכחות, ציון והערה) לפי היום הפעיל.
+      const logs = readDailyLogRows(raw, info.iso);
+      setLogRows(logs);
+      if (rows.length === 0 && logs.length === 0) {
         setFileRows([]);
-        setFileError("לא נמצאו שורות עם שם ותאריך בקובץ.");
+        setFileError("לא נמצאו שורות עם שם ותאריך או תיעוד בקובץ.");
         return;
       }
       setFileRows(rows);
       setFileName(file.name);
     } catch {
       setFileRows([]);
+      setLogRows([]);
       setFileError("קריאת הקובץ נכשלה. ודא שזה קובץ Excel תקין.");
     }
   };
+
 
   const resolve = (raw: string): { date: Date } | { error: string } => {
     const t = raw.trim();
@@ -238,6 +282,56 @@ export function HebrewDateForm({ className }: { className?: string }) {
               })}
             </ul>
           )}
+
+          {logRows.length > 0 && (
+            <div className="space-y-2 rounded-md border border-dashed p-2">
+              <p className="text-xs font-medium text-foreground">
+                בקובץ יש גם תיעוד יומי — {logRows.length} שורות (נוכחות, ציון והערה).
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <Select value={importClassId} onValueChange={setImportClassId}>
+                  <SelectTrigger className="h-8 w-44 text-xs" aria-label="כיתה לייבוא התיעוד">
+                    <SelectValue placeholder="בחר כיתה" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(classes as { id: string; name: string }[]).map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={!importClassId || importMut.isPending}
+                  onClick={() => importMut.mutate()}
+                >
+                  {importMut.isPending ? (
+                    <Loader2 className="ms-1 h-4 w-4 animate-spin" aria-hidden />
+                  ) : (
+                    <Upload className="ms-1 h-4 w-4" aria-hidden />
+                  )}
+                  ייבא תיעוד יומי לכיתה
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                ההתאמה לתלמידים לפי השם. שורה בלי תאריך תיעוד תיכנס ליום הפעיל ({info.iso}).
+              </p>
+              <ul className="max-h-40 space-y-1 overflow-auto text-xs">
+                {logRows.slice(0, 12).map((r, i) => (
+                  <li key={`${r.name}-log-${i}`} className="border-t pt-1">
+                    <span className="font-medium text-foreground">{r.name}</span> ·{" "}
+                    {hebrewDayInfo(new Date(`${r.date}T00:00:00`)).full}
+                    {r.status ? ` · נוכחות: ${r.status}` : ""}
+                    {r.grade !== null ? ` · ציון ${r.grade}` : ""}
+                    {r.note ? ` · ${r.note.slice(0, 40)}` : ""}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
         </div>
 
         <div className="flex flex-wrap items-center gap-2">

@@ -18,6 +18,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { HebrewRangeFilter, type DateRange } from "@/components/hebrew-range-filter";
+import { CertificateTemplateSelect } from "@/components/certificate-template-select";
+import type { CertTemplateDesign } from "@/lib/ai-certificate.functions";
+
 import { useHebrewAnchor } from "@/components/hebrew-anchor";
 import { DailyReportDayDialog } from "@/components/daily-report-day-dialog";
 import { hebrewRangePresets, hebrewDayInfo, isoOf } from "@/lib/hebrew-calendar";
@@ -89,6 +92,9 @@ function DailyLogReportPage() {
   const [onlyWithData, setOnlyWithData] = useState(false);
   const [busy, setBusy] = useState<"xlsx" | "pdf" | null>(null);
   const [editDate, setEditDate] = useState<string | null>(null);
+  const [templateId, setTemplateId] = useState<string | null>(null);
+  const [templateDesign, setTemplateDesign] = useState<CertTemplateDesign | undefined>(undefined);
+
   const fetchReport = useServerFn(getDailyReport);
   const fetchDetails = useServerFn(getDailyReportDetails);
   const studentsFn = useServerFn(listStudents);
@@ -292,6 +298,8 @@ function DailyLogReportPage() {
           rangeLabel,
           studentCount: data.student ? 1 : data.studentCount,
           days: rows,
+          design: templateDesign,
+
         });
         downloadPdfBlob(blob, filename);
       }
@@ -396,7 +404,16 @@ function DailyLogReportPage() {
               )}
               ייצוא ל-PDF
             </Button>
+            <CertificateTemplateSelect
+              value={templateId}
+              onChange={(id, design) => {
+                setTemplateId(id);
+                setTemplateDesign(design);
+              }}
+              label="תבנית ל-PDF"
+            />
           </div>
+
         </CardContent>
       </Card>
 
