@@ -183,7 +183,8 @@ export function CertificateTemplateCard() {
 
         {design && (
           <div className="space-y-3 rounded-lg border p-3">
-            <p className="text-sm font-medium">{describeDesign(design)}</p>
+            <DesignPreview design={design} />
+
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
