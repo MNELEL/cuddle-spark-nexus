@@ -86,6 +86,24 @@ export function HebrewAnchorProvider({ children }: { children: React.ReactNode }
     if (stored && /^\d{4}-\d{2}-\d{2}$/.test(stored)) setElapsedIso(stored);
   }, []);
 
+  /**
+   * תאריך-החלוף הוא ציר הזמן של התובנות: כל שינוי בו (ידני או מהלוח האמיתי)
+   * מרענן אוטומטית את התובנות והדוחות, כך שהם תמיד מחושבים מהתאריך הפעיל.
+   */
+  const qc = useQueryClient();
+  const firstAnchorRun = useRef(true);
+  useEffect(() => {
+    if (firstAnchorRun.current) {
+      firstAnchorRun.current = false;
+      return;
+    }
+    for (const key of ["daily-briefing", "manual-insights", "manual-insights-history", "daily-log-report", "class-anchor-summary"]) {
+      void qc.invalidateQueries({ queryKey: [key] });
+    }
+  }, [elapsedIso, qc]);
+
+
+
   const setElapsedFrom = useCallback((d: Date) => {
     const iso = isoOf(d);
     setElapsedIso(iso);
