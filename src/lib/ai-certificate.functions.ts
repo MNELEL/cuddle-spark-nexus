@@ -194,3 +194,165 @@ export const suggestCertificateNotes = createServerFn({ method: "POST" })
       .map((t): CertNoteSuggestion => ({ text: String(t ?? "").slice(0, 800) }))
       .filter((s) => s.text.length > 0);
   });
+
+/* -------------------- Certificate design template (detect + store) -------------------- */
+
+export const FRAME_STYLES = ["double_border", "single_border", "ornate", "none"] as const;
+export const CORNER_DECORATIONS = ["none", "flourish", "rosette", "seal"] as const;
+export const TITLE_WEIGHTS = ["bold", "normal"] as const;
+export const TITLE_ALIGNMENTS = ["center", "right"] as const;
+export const LAYOUT_DENSITIES = ["compact", "standard", "spacious"] as const;
+
+export type CertTemplateDesign = {
+  frame_style: (typeof FRAME_STYLES)[number];
+  corner_decoration: (typeof CORNER_DECORATIONS)[number];
+  primary_color: string;
+  accent_color: string;
+  title_font_weight: (typeof TITLE_WEIGHTS)[number];
+  title_alignment: (typeof TITLE_ALIGNMENTS)[number];
+  layout_density: (typeof LAYOUT_DENSITIES)[number];
+};
+
+export const DEFAULT_CERT_DESIGN: CertTemplateDesign = {
+  frame_style: "double_border",
+  corner_decoration: "none",
+  primary_color: "#334155",
+  accent_color: "#d97706",
+  title_font_weight: "bold",
+  title_alignment: "center",
+  layout_density: "standard",
+};
+
+const designSchema = z.object({
+  frame_style: z.enum(FRAME_STYLES),
+  corner_decoration: z.enum(CORNER_DECORATIONS),
+  primary_color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+  accent_color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+  title_font_weight: z.enum(TITLE_WEIGHTS),
+  title_alignment: z.enum(TITLE_ALIGNMENTS),
+  layout_density: z.enum(LAYOUT_DENSITIES),
+});
+
+function pick<T extends readonly string[]>(v: unknown, allowed: T, fallback: T[number]): T[number] {
+  return typeof v === "string" && (allowed as readonly string[]).includes(v) ? (v as T[number]) : fallback;
+}
+function pickHex(v: unknown, fallback: string): string {
+  return typeof v === "string" && /^#[0-9a-fA-F]{6}$/.test(v) ? v.toLowerCase() : fallback;
+}
+
+/**
+ * Analyzes ONLY the visual structure of a photographed certificate (frame,
+ * corner decorations, dominant colors, title alignment/weight, density).
+ * No content, names, or grades are read here.
+ */
+export const analyzeCertificateTemplate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => inputSchema.parse(d))
+  .handler(async ({ data }): Promise<CertTemplateDesign> => {
+    const system = `אתה מנתח תבנית עיצוב חזותית של תעודה מתמונה.
+נתח אך ורק את המבנה החזותי: אל תקרא ואל תחזיר תוכן, שמות, מקצועות או ציונים.
+זהה:
+- frame_style: double_border (מסגרת כפולה), single_border (מסגרת יחידה), ornate (מסגרת מעוטרת), none (בלי מסגרת)
+- corner_decoration: none (ללא), flourish (עיטור פרחוני), rosette (רוזטה), seal (חותם)
+- primary_color: הצבע הדומיננטי של המסגרת/הכותרת, כ-hex בן 6 ספרות
+- accent_color: צבע ההדגשה המשני, כ-hex בן 6 ספרות
+- title_font_weight: bold (מודגש) או normal (רגיל)
+- title_alignment: center (מרכז) או right (ימין)
+- layout_density: compact (דחוס), standard (רגיל), spacious (מרווח)
+החזר JSON בלבד:
+{"frame_style":"","corner_decoration":"","primary_color":"#334155","accent_color":"#d97706","title_font_weight":"","title_alignment":"","layout_density":""}`;
+
+    const raw = (await callLovableAI({
+      messages: [
+        { role: "system", content: system },
+        {
+          role: "user",
+          content: [
+            { type: "text", text: "זוהי תמונה של תעודה. נתח את סגנון העיצוב בלבד." },
+            { type: "image_url", image_url: { url: `data:${data.mimeType};base64,${data.imageBase64}` } },
+          ],
+        },
+      ],
+      jsonResponse: true,
+    })) || "{}";
+
+    let p: Record<string, unknown> = {};
+    try { p = JSON.parse(raw) as Record<string, unknown>; } catch { /* ignore */ }
+
+    return {
+      frame_style: pick(p.frame_style, FRAME_STYLES, DEFAULT_CERT_DESIGN.frame_style),
+      corner_decoration: pick(p.corner_decoration, CORNER_DECORATIONS, DEFAULT_CERT_DESIGN.corner_decoration),
+      primary_color: pickHex(p.primary_color, DEFAULT_CERT_DESIGN.primary_color),
+      accent_color: pickHex(p.accent_color, DEFAULT_CERT_DESIGN.accent_color),
+      title_font_weight: pick(p.title_font_weight, TITLE_WEIGHTS, DEFAULT_CERT_DESIGN.title_font_weight),
+      title_alignment: pick(p.title_alignment, TITLE_ALIGNMENTS, DEFAULT_CERT_DESIGN.title_alignment),
+      layout_density: pick(p.layout_density, LAYOUT_DENSITIES, DEFAULT_CERT_DESIGN.layout_density),
+    };
+  });
+
+export type CertificateTemplate = CertTemplateDesign & {
+  id: string;
+  name: string;
+  source_image_note: string | null;
+  is_default: boolean;
+  created_at: string;
+};
+
+const saveTemplateSchema = z.object({
+  name: z.string().trim().min(1).max(80),
+  sourceImageNote: z.string().trim().max(200).optional(),
+  design: designSchema,
+});
+
+/** Saves a detected (or manually edited) design as a named template. */
+export const saveCertificateTemplate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => saveTemplateSchema.parse(d))
+  .handler(async ({ data, context }): Promise<CertificateTemplate> => {
+    const { data: row, error } = await context.supabase
+      .from("certificate_templates")
+      .insert({
+        owner_id: context.userId,
+        name: data.name,
+        source_image_note: data.sourceImageNote ?? null,
+        ...data.design,
+      })
+      .select("id,name,source_image_note,is_default,created_at,frame_style,corner_decoration,primary_color,accent_color,title_font_weight,title_alignment,layout_density")
+      .single();
+    if (error || !row) throw new Error("שמירת התבנית נכשלה.");
+    return row as CertificateTemplate;
+  });
+
+/** All templates of the signed-in teacher, newest first. */
+export const listCertificateTemplates = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<CertificateTemplate[]> => {
+    const { data, error } = await context.supabase
+      .from("certificate_templates")
+      .select("id,name,source_image_note,is_default,created_at,frame_style,corner_decoration,primary_color,accent_color,title_font_weight,title_alignment,layout_density")
+      .eq("owner_id", context.userId)
+      .order("created_at", { ascending: false });
+    if (error) throw new Error("טעינת התבניות נכשלה.");
+    return (data ?? []) as CertificateTemplate[];
+  });
+
+/** Deletes one template after verifying ownership. */
+export const deleteCertificateTemplate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    const { data: existing } = await context.supabase
+      .from("certificate_templates")
+      .select("id")
+      .eq("id", data.id)
+      .eq("owner_id", context.userId)
+      .maybeSingle();
+    if (!existing) throw new Error("התבנית לא נמצאה.");
+    const { error } = await context.supabase
+      .from("certificate_templates")
+      .delete()
+      .eq("id", data.id)
+      .eq("owner_id", context.userId);
+    if (error) throw new Error("מחיקת התבנית נכשלה.");
+    return { ok: true };
+  });
