@@ -48,10 +48,15 @@ export const Route = createFileRoute("/_authenticated/daily-insights")({
 const SEVERITY_LABEL: Record<string, string> = { low: "רגילה", medium: "לתשומת לב", high: "דחופה" };
 
 function DailyInsightsPage() {
-  const { info } = useHebrewAnchor();
+  const { info, elapsedFromInfo } = useHebrewAnchor();
   const qc = useQueryClient();
   const [classId, setClassId] = useState("");
-  const [range, setRange] = useState<DateRange>({ from: info.monthRange.from, to: info.monthRange.to });
+  // ברירת המחדל היא תאריך-החלוף עד היום הפעיל, כדי שהתובנות ילכו עם הלוח העברי.
+  const [range, setRange] = useState<DateRange>({
+    from: elapsedFromInfo.iso < info.iso ? elapsedFromInfo.iso : info.monthRange.from,
+    to: info.iso,
+  });
+
   const [showHistory, setShowHistory] = useState(false);
   const [filterStudent, setFilterStudent] = useState("all");
   const [filterDate, setFilterDate] = useState("");

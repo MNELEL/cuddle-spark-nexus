@@ -1,5 +1,7 @@
+import type { CertTemplateDesign } from "@/lib/ai-certificate.functions";
 import type { DailyReportDay } from "@/lib/daily-report.functions";
 import { createHebrewDoc, drawBrandHeader, drawFooter, hebrewDate, safeName } from "./pdf-builder";
+import { drawTemplateFrame } from "./template-design";
 import { ensurePdfBrandLoaded } from "./brand-loader";
 
 export type DailyReportPdfInput = {
@@ -8,6 +10,8 @@ export type DailyReportPdfInput = {
   rangeLabel?: string;
   studentCount: number;
   days: DailyReportDay[];
+  /** תבנית סגנון שמורה (מסגרת וצבעים); ללא תבנית — העיצוב הרגיל. */
+  design?: CertTemplateDesign;
 };
 
 /** דוח תיעוד יומי לפי כיתה — טבלת סיכום לכל ימי הטווח העברי + התיעוד המלא. */
@@ -16,6 +20,8 @@ export async function buildDailyReportPdf(
 ): Promise<{ blob: Blob; filename: string }> {
   await ensurePdfBrandLoaded();
   const hd = await createHebrewDoc();
+  if (input.design) drawTemplateFrame(hd, input.design);
+
 
   const totals = input.days.reduce(
     (a, d) => {

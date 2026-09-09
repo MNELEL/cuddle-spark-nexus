@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import * as XLSX from "xlsx";
-import { readCalendarRows } from "@/lib/calendar-file-import";
+import { readCalendarRows, readDailyLogRows } from "@/lib/calendar-file-import";
 
 /** בונה קובץ Excel אמיתי (מערך בייטים) ומחזיר את שורות הגיליון הראשון. */
 function roundTrip(rows: Record<string, unknown>[]): Record<string, unknown>[] {
@@ -33,3 +33,32 @@ describe("קריאת תאריכי לוח מקובץ Excel", () => {
     expect(readCalendarRows(rows)).toEqual([]);
   });
 });
+
+describe("קריאת תיעוד יומי מקובץ Excel", () => {
+  it("קורא נוכחות, ציון והערה, ומשלים תאריך חסר מהיום הפעיל", () => {
+    const rows = roundTrip([
+      { "שם התלמיד": "יוסף כהן", "תאריך תיעוד": "2025-09-23", "נוכחות": "נוכח", "ציון": 88, "מקצוע": "גמרא", "תיעוד": "השתתף מאוד" },
+      { "שם התלמיד": "שמעון לוי", "תאריך תיעוד": "", "נוכחות": "איחור", "ציון": "", "מקצוע": "", "תיעוד": "" },
+      { "שם התלמיד": "אין נתונים", "תאריך תיעוד": "2025-09-23", "נוכחות": "", "ציון": "", "מקצוע": "", "תיעוד": "" },
+    ]);
+
+    const out = readDailyLogRows(rows, "2025-10-01");
+    expect(out).toHaveLength(2);
+    expect(out[0]).toEqual({
+      name: "יוסף כהן",
+      date: "2025-09-23",
+      status: "present",
+      grade: 88,
+      subject: "גמרא",
+      note: "השתתף מאוד",
+    });
+    expect(out[1]!.date).toBe("2025-10-01");
+    expect(out[1]!.status).toBe("late");
+    expect(out[1]!.grade).toBeNull();
+  });
+
+  it("מחזיר רשימה ריקה בלי עמודת שם", () => {
+    expect(readDailyLogRows(roundTrip([{ "נוכחות": "נוכח" }]), "2025-10-01")).toEqual([]);
+  });
+});
+
