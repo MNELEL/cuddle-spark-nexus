@@ -55,6 +55,32 @@ export function describeDesign(d: CertTemplateDesign): string {
 }
 
 /**
+ * מחזיר תמיד hex תקין בן 6 ספרות באות קטנה.
+ * קלט חלקי או שגוי (למשל "#abc", "abcdef", טקסט חופשי) מתוקן או חוזר לערך הקודם,
+ * כך שלא נשמר לעולם צבע שאינו מתוך תחום הערכים המותרים.
+ */
+export function normalizeHex(raw: string, fallback: string): string {
+  const v = raw.trim().replace(/^#/, "").toLowerCase();
+  if (/^[0-9a-f]{6}$/.test(v)) return `#${v}`;
+  if (/^[0-9a-f]{3}$/.test(v)) return `#${v[0]}${v[0]}${v[1]}${v[1]}${v[2]}${v[2]}`;
+  return fallback;
+}
+
+/** בדיקת תקינות מלאה מול תחום הערכים המותרים לפני שמירה. */
+export function designIssues(d: CertTemplateDesign): string[] {
+  const out: string[] = [];
+  if (!(FRAME_STYLES as readonly string[]).includes(d.frame_style)) out.push("סוג מסגרת אינו מוכר");
+  if (!(CORNER_DECORATIONS as readonly string[]).includes(d.corner_decoration)) out.push("קישוט הפינות אינו מוכר");
+  if (!(TITLE_WEIGHTS as readonly string[]).includes(d.title_font_weight)) out.push("עובי הכותרת אינו מוכר");
+  if (!(TITLE_ALIGNMENTS as readonly string[]).includes(d.title_alignment)) out.push("יישור הכותרת אינו מוכר");
+  if (!(LAYOUT_DENSITIES as readonly string[]).includes(d.layout_density)) out.push("צפיפות הפריסה אינה מוכרת");
+  if (!/^#[0-9a-f]{6}$/.test(d.primary_color)) out.push("הצבע העיקרי אינו תקין");
+  if (!/^#[0-9a-f]{6}$/.test(d.accent_color)) out.push("צבע ההדגשה אינו תקין");
+  return out;
+}
+
+
+/**
  * שלב ראשון בלבד: זיהוי סגנון עיצוב של תעודה מתמונה ושמירתו כתבנית.
  * הפקת ה-PDF הקיימת אינה מושפעת בשלב זה.
  */
@@ -157,7 +183,8 @@ export function CertificateTemplateCard() {
 
         {design && (
           <div className="space-y-3 rounded-lg border p-3">
-            <p className="text-sm font-medium">{describeDesign(design)}</p>
+            <DesignPreview design={design} />
+
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
@@ -182,18 +209,29 @@ export function CertificateTemplateCard() {
                 <Label className="text-xs text-muted-foreground" htmlFor="tpl-primary">צבע עיקרי</Label>
                 <div className="flex items-center gap-2">
                   <Input id="tpl-primary" type="color" className="h-9 w-14 p-1" value={design.primary_color}
-                    onChange={(e) => patch({ primary_color: e.target.value })} />
-                  <span className="font-mono text-xs">{design.primary_color}</span>
+                    onChange={(e) => patch({ primary_color: normalizeHex(e.target.value, design.primary_color) })} />
+                  <Input
+                    aria-label="קוד צבע עיקרי"
+                    className="h-9 w-28 font-mono text-xs"
+                    value={design.primary_color}
+                    onChange={(e) => patch({ primary_color: normalizeHex(e.target.value, design.primary_color) })}
+                  />
                 </div>
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground" htmlFor="tpl-accent">צבע הדגשה</Label>
                 <div className="flex items-center gap-2">
                   <Input id="tpl-accent" type="color" className="h-9 w-14 p-1" value={design.accent_color}
-                    onChange={(e) => patch({ accent_color: e.target.value })} />
-                  <span className="font-mono text-xs">{design.accent_color}</span>
+                    onChange={(e) => patch({ accent_color: normalizeHex(e.target.value, design.accent_color) })} />
+                  <Input
+                    aria-label="קוד צבע הדגשה"
+                    className="h-9 w-28 font-mono text-xs"
+                    value={design.accent_color}
+                    onChange={(e) => patch({ accent_color: normalizeHex(e.target.value, design.accent_color) })}
+                  />
                 </div>
               </div>
+
               <div>
                 <Label className="text-xs text-muted-foreground">עובי גופן הכותרת</Label>
                 <Select value={design.title_font_weight} onValueChange={(v) => patch({ title_font_weight: v as CertTemplateDesign["title_font_weight"] })}>
@@ -227,16 +265,23 @@ export function CertificateTemplateCard() {
               </div>
             </div>
 
+            {designIssues(design).length > 0 && (
+              <p className="text-xs text-destructive">
+                לא ניתן לשמור: {designIssues(design).join(" · ")}
+              </p>
+            )}
+
             <div className="flex flex-wrap items-center gap-2">
               <Button
                 type="button"
-                disabled={busy || !name.trim() || saveMut.isPending}
+                disabled={busy || !name.trim() || saveMut.isPending || designIssues(design).length > 0}
                 onClick={() => saveMut.mutate()}
               >
                 שמור תבנית
               </Button>
               <Button type="button" variant="ghost" onClick={() => setDesign(null)}>בטל</Button>
             </div>
+
           </div>
         )}
 
@@ -269,5 +314,88 @@ export function CertificateTemplateCard() {
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+/**
+ * תצוגה מקדימה בעברית של הפרמטרים שזוהו, לפני שמירה:
+ * כל פרמטר מוצג בשם קריא עם הערך שלו, וכן דוגמת מסגרת עם הצבעים שנבחרו.
+ */
+function DesignPreview({ design }: { design: CertTemplateDesign }) {
+  const rows: { label: string; value: string }[] = [
+    { label: "סוג מסגרת", value: FRAME_HE[design.frame_style] ?? design.frame_style },
+    { label: "קישוט פינות", value: CORNER_HE[design.corner_decoration] ?? design.corner_decoration },
+    { label: "עובי גופן הכותרת", value: WEIGHT_HE[design.title_font_weight] ?? design.title_font_weight },
+    { label: "יישור הכותרת", value: ALIGN_HE[design.title_alignment] ?? design.title_alignment },
+    { label: "צפיפות פריסה", value: DENSITY_HE[design.layout_density] ?? design.layout_density },
+  ];
+
+  const border =
+    design.frame_style === "none"
+      ? "none"
+      : design.frame_style === "double_border"
+        ? `4px double ${design.primary_color}`
+        : design.frame_style === "ornate"
+          ? `4px ridge ${design.primary_color}`
+          : `2px solid ${design.primary_color}`;
+  const pad =
+    design.layout_density === "compact" ? "0.5rem" : design.layout_density === "spacious" ? "1.5rem" : "1rem";
+
+  return (
+    <div className="space-y-3">
+      <p className="text-sm font-medium">מה זוהה בתמונה</p>
+      <dl className="grid gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
+        {rows.map((r) => (
+          <div key={r.label} className="flex items-center justify-between gap-2 border-b py-1">
+            <dt className="text-muted-foreground">{r.label}</dt>
+            <dd className="font-medium">{r.value}</dd>
+          </div>
+        ))}
+        <div className="flex items-center justify-between gap-2 border-b py-1">
+          <dt className="text-muted-foreground">צבע עיקרי</dt>
+          <dd className="flex items-center gap-1.5">
+            <span
+              className="inline-block h-3.5 w-3.5 rounded border"
+              style={{ backgroundColor: design.primary_color }}
+              aria-hidden="true"
+            />
+            <span className="font-mono">{design.primary_color}</span>
+          </dd>
+        </div>
+        <div className="flex items-center justify-between gap-2 border-b py-1">
+          <dt className="text-muted-foreground">צבע הדגשה</dt>
+          <dd className="flex items-center gap-1.5">
+            <span
+              className="inline-block h-3.5 w-3.5 rounded border"
+              style={{ backgroundColor: design.accent_color }}
+              aria-hidden="true"
+            />
+            <span className="font-mono">{design.accent_color}</span>
+          </dd>
+        </div>
+      </dl>
+
+      <div className="rounded-md bg-muted/40 p-2">
+        <p className="mb-1.5 text-xs text-muted-foreground">דוגמה חזותית (לתצוגה בלבד)</p>
+        <div style={{ border, padding: pad }} className="rounded bg-background">
+          <p
+            style={{
+              color: design.primary_color,
+              fontWeight: design.title_font_weight === "bold" ? 700 : 400,
+              textAlign: design.title_alignment === "right" ? "right" : "center",
+            }}
+            className="font-display text-sm"
+          >
+            תעודת הצטיינות
+          </p>
+          <p
+            style={{ color: design.accent_color, textAlign: design.title_alignment === "right" ? "right" : "center" }}
+            className="text-xs"
+          >
+            {design.corner_decoration === "none" ? "ללא קישוט פינות" : CORNER_HE[design.corner_decoration]}
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }
