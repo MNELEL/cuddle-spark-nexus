@@ -55,6 +55,32 @@ export function describeDesign(d: CertTemplateDesign): string {
 }
 
 /**
+ * מחזיר תמיד hex תקין בן 6 ספרות באות קטנה.
+ * קלט חלקי או שגוי (למשל "#abc", "abcdef", טקסט חופשי) מתוקן או חוזר לערך הקודם,
+ * כך שלא נשמר לעולם צבע שאינו מתוך תחום הערכים המותרים.
+ */
+export function normalizeHex(raw: string, fallback: string): string {
+  const v = raw.trim().replace(/^#/, "").toLowerCase();
+  if (/^[0-9a-f]{6}$/.test(v)) return `#${v}`;
+  if (/^[0-9a-f]{3}$/.test(v)) return `#${v[0]}${v[0]}${v[1]}${v[1]}${v[2]}${v[2]}`;
+  return fallback;
+}
+
+/** בדיקת תקינות מלאה מול תחום הערכים המותרים לפני שמירה. */
+export function designIssues(d: CertTemplateDesign): string[] {
+  const out: string[] = [];
+  if (!(FRAME_STYLES as readonly string[]).includes(d.frame_style)) out.push("סוג מסגרת אינו מוכר");
+  if (!(CORNER_DECORATIONS as readonly string[]).includes(d.corner_decoration)) out.push("קישוט הפינות אינו מוכר");
+  if (!(TITLE_WEIGHTS as readonly string[]).includes(d.title_font_weight)) out.push("עובי הכותרת אינו מוכר");
+  if (!(TITLE_ALIGNMENTS as readonly string[]).includes(d.title_alignment)) out.push("יישור הכותרת אינו מוכר");
+  if (!(LAYOUT_DENSITIES as readonly string[]).includes(d.layout_density)) out.push("צפיפות הפריסה אינה מוכרת");
+  if (!/^#[0-9a-f]{6}$/.test(d.primary_color)) out.push("הצבע העיקרי אינו תקין");
+  if (!/^#[0-9a-f]{6}$/.test(d.accent_color)) out.push("צבע ההדגשה אינו תקין");
+  return out;
+}
+
+
+/**
  * שלב ראשון בלבד: זיהוי סגנון עיצוב של תעודה מתמונה ושמירתו כתבנית.
  * הפקת ה-PDF הקיימת אינה מושפעת בשלב זה.
  */
