@@ -316,3 +316,86 @@ export function CertificateTemplateCard() {
     </Card>
   );
 }
+
+/**
+ * תצוגה מקדימה בעברית של הפרמטרים שזוהו, לפני שמירה:
+ * כל פרמטר מוצג בשם קריא עם הערך שלו, וכן דוגמת מסגרת עם הצבעים שנבחרו.
+ */
+function DesignPreview({ design }: { design: CertTemplateDesign }) {
+  const rows: { label: string; value: string }[] = [
+    { label: "סוג מסגרת", value: FRAME_HE[design.frame_style] ?? design.frame_style },
+    { label: "קישוט פינות", value: CORNER_HE[design.corner_decoration] ?? design.corner_decoration },
+    { label: "עובי גופן הכותרת", value: WEIGHT_HE[design.title_font_weight] ?? design.title_font_weight },
+    { label: "יישור הכותרת", value: ALIGN_HE[design.title_alignment] ?? design.title_alignment },
+    { label: "צפיפות פריסה", value: DENSITY_HE[design.layout_density] ?? design.layout_density },
+  ];
+
+  const border =
+    design.frame_style === "none"
+      ? "none"
+      : design.frame_style === "double_border"
+        ? `4px double ${design.primary_color}`
+        : design.frame_style === "ornate"
+          ? `4px ridge ${design.primary_color}`
+          : `2px solid ${design.primary_color}`;
+  const pad =
+    design.layout_density === "compact" ? "0.5rem" : design.layout_density === "spacious" ? "1.5rem" : "1rem";
+
+  return (
+    <div className="space-y-3">
+      <p className="text-sm font-medium">מה זוהה בתמונה</p>
+      <dl className="grid gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
+        {rows.map((r) => (
+          <div key={r.label} className="flex items-center justify-between gap-2 border-b py-1">
+            <dt className="text-muted-foreground">{r.label}</dt>
+            <dd className="font-medium">{r.value}</dd>
+          </div>
+        ))}
+        <div className="flex items-center justify-between gap-2 border-b py-1">
+          <dt className="text-muted-foreground">צבע עיקרי</dt>
+          <dd className="flex items-center gap-1.5">
+            <span
+              className="inline-block h-3.5 w-3.5 rounded border"
+              style={{ backgroundColor: design.primary_color }}
+              aria-hidden="true"
+            />
+            <span className="font-mono">{design.primary_color}</span>
+          </dd>
+        </div>
+        <div className="flex items-center justify-between gap-2 border-b py-1">
+          <dt className="text-muted-foreground">צבע הדגשה</dt>
+          <dd className="flex items-center gap-1.5">
+            <span
+              className="inline-block h-3.5 w-3.5 rounded border"
+              style={{ backgroundColor: design.accent_color }}
+              aria-hidden="true"
+            />
+            <span className="font-mono">{design.accent_color}</span>
+          </dd>
+        </div>
+      </dl>
+
+      <div className="rounded-md bg-muted/40 p-2">
+        <p className="mb-1.5 text-xs text-muted-foreground">דוגמה חזותית (לתצוגה בלבד)</p>
+        <div style={{ border, padding: pad }} className="rounded bg-background">
+          <p
+            style={{
+              color: design.primary_color,
+              fontWeight: design.title_font_weight === "bold" ? 700 : 400,
+              textAlign: design.title_alignment === "right" ? "right" : "center",
+            }}
+            className="font-display text-sm"
+          >
+            תעודת הצטיינות
+          </p>
+          <p
+            style={{ color: design.accent_color, textAlign: design.title_alignment === "right" ? "right" : "center" }}
+            className="text-xs"
+          >
+            {design.corner_decoration === "none" ? "ללא קישוט פינות" : CORNER_HE[design.corner_decoration]}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
