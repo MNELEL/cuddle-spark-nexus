@@ -146,6 +146,22 @@ function ClassesPage() {
     ) as typeof classes;
   }, [classes, q, statusFilter, recentIds, sort, perClass]);
 
+  // One row per academic year, keeping the chosen sort order inside each row.
+  const yearGroups = useMemo(() => {
+    const map = new Map<string, typeof filtered>();
+    for (const c of filtered) {
+      const year = String((c as { academic_year?: string | null }).academic_year ?? "").trim() || "ללא שנה";
+      const list = map.get(year) ?? ([] as typeof filtered);
+      list.push(c);
+      map.set(year, list);
+    }
+    return Array.from(map.entries()).sort((a, b) => {
+      if (a[0] === "ללא שנה") return 1;
+      if (b[0] === "ללא שנה") return -1;
+      return b[0].localeCompare(a[0], "he");
+    });
+  }, [filtered]);
+
   const hasFilters = q.trim().length > 0 || statusFilter !== "active";
   const clearFilters = () => { setQ(""); setStatusFilter("active"); };
 
