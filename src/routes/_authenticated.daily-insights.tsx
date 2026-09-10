@@ -48,7 +48,12 @@ export const Route = createFileRoute("/_authenticated/daily-insights")({
 const SEVERITY_LABEL: Record<string, string> = { low: "רגילה", medium: "לתשומת לב", high: "דחופה" };
 
 function DailyInsightsPage() {
-  const { info, elapsedFromInfo } = useHebrewAnchor();
+  const { info, elapsedFromInfo, elapsedFrom } = useHebrewAnchor();
+  /** תאריך-החלוף הבא — תחילת החודש העברי הבא, נגזר מהלוח האמיתי בלי הזנה ידנית. */
+  const nextAnchor = useMemo(
+    () => hebrewDayInfo(hebrewMonthBounds(shiftHebrew(elapsedFrom, "month", 1)).start),
+    [elapsedFrom],
+  );
   const qc = useQueryClient();
   const [classId, setClassId] = useState("");
   // ברירת המחדל היא תאריך-החלוף עד היום הפעיל, כדי שהתובנות ילכו עם הלוח העברי.
