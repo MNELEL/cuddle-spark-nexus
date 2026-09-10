@@ -15,6 +15,7 @@ import {
 import { useHebrewAnchor } from "@/components/hebrew-anchor";
 import { DailyApprovalCard } from "@/components/daily-approval-card";
 import { hebrewDateTime } from "@/lib/hebrew-date";
+import { hebrewDayInfo, hebrewMonthBounds, shiftHebrew } from "@/lib/hebrew-calendar";
 import {
   getStudentDaily, saveStudentDaily, listStudentDailyHistory,
 } from "@/lib/student-daily.functions";
