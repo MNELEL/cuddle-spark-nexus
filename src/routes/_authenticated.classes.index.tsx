@@ -102,6 +102,7 @@ function ClassesPage() {
   });
   const classes = data?.classes ?? [];
   const perClass = (data?.perClass ?? {}) as Record<string, ClassMetrics>;
+  const rosters = (data?.rosters ?? {}) as Record<string, RosterEntry[]>;
   const stats = data?.stats;
 
   const invalidateClasses = () => {
