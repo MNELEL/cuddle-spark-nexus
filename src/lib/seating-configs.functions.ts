@@ -176,3 +176,47 @@ export const generateSeatingCandidates = createServerFn({ method: "POST" })
     }
     return created;
   });
+
+/** פרטי תצורה שמורה — שם הכיתה, המקומות והתלמידים — לצורך הפקת PDF. */
+export const getConfigDetail = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: cfg, error } = await context.supabase.from("seating_configs")
+      .select("id, name, created_at, score, violation_count, class_id, snapshot").eq("id", data.id).single();
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    const snap = cfg.snapshot as unknown as SeatSnapshot;
+    const { data: cls } = await context.supabase.from("classes")
+      .select("name, room_objects").eq("id", cfg.class_id).single();
+    const { data: students } = await context.supabase.from("students")
+      .select("id, name").eq("class_id", cfg.class_id);
+    const nameById = new Map((students ?? []).map((s) => [s.id, s.name as string]));
+    const objects = Array.isArray((cls as { room_objects?: unknown } | null)?.room_objects)
+      ? ((cls as { room_objects?: unknown }).room_objects as Array<{ row?: number; col?: number; label?: string; span?: number }>)
+      : [];
+    return {
+      id: cfg.id,
+      name: cfg.name,
+      created_at: cfg.created_at,
+      score: cfg.score,
+      violation_count: cfg.violation_count,
+      className: (cls as { name?: string } | null)?.name ?? "",
+      grid: { rows: snap.grid_rows, cols: snap.grid_cols },
+      hidden_seats: snap.hidden_seats ?? [],
+      seats: snap.seats
+        .filter((s) => s.seat_row !== null && s.seat_col !== null)
+        .map((s) => ({
+          student: nameById.get(s.student_id) ?? "—",
+          row: (s.seat_row ?? 0) + 1,
+          col: (s.seat_col ?? 0) + 1,
+          locked: s.seat_locked,
+        }))
+        .sort((a, b) => a.row - b.row || a.col - b.col),
+      objects: objects.map((o) => ({
+        label: o.label ?? "פריט",
+        row: (o.row ?? 0) + 1,
+        col: (o.col ?? 0) + 1,
+        span: o.span ?? 1,
+      })),
+    };
+  });
