@@ -296,7 +296,26 @@ function DailyInsightsPage() {
           <CardDescription>סנן לפי כיתה, תלמיד, טווח עברי או יום בודד.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          <HebrewRangeFilter value={range} onChange={setRange} />
+          <HebrewRangeFilter value={range} onChange={onRangeChange} />
+          <p className="mt-1.5 text-[11px] text-muted-foreground">
+            {manualRange ? (
+              <>
+                טווח נבחר ידנית.{" "}
+                <button
+                  type="button"
+                  className="underline"
+                  onClick={() => setManualRange(false)}
+                >
+                  חזרה לעדכון אוטומטי מהלוח
+                </button>
+              </>
+            ) : (
+              <>
+                מתעדכן לבד מהלוח העברי: תאריך-החלוף {elapsedFromInfo.label} · היום {info.label} ·
+                תאריך-החלוף הבא {nextAnchor.label}
+              </>
+            )}
+          </p>
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="space-y-1.5">
               <Label htmlFor="di-filter-student">תלמיד</Label>
