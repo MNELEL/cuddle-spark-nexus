@@ -36,6 +36,15 @@ export const suggestStudentDailySummary = createServerFn({ method: "POST" })
             note: z.string().max(2000).optional().default(""),
           })
           .optional(),
+        // הקשר הלוח העברי: תאריך-החלוף, היום ותאריך-החלוף הבא, כדי שהתקציר ידבר בשפת הלוח.
+        anchors: z
+          .object({
+            elapsedFrom: z.string().max(120).optional().default(""),
+            today: z.string().max(120).optional().default(""),
+            next: z.string().max(120).optional().default(""),
+            elapsedDays: z.number().int().nonnegative().optional(),
+          })
+          .optional(),
       })
       .parse(d),
   )
