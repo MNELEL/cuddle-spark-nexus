@@ -56,6 +56,46 @@ export function SeatingSnapshots({ classId }: { classId: string }) {
     onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
   });
 
+  const pdfM = useMutation({
+    mutationFn: async (id: string) => {
+      const detail = await detailFn({ data: { id } });
+      const [{ buildSeatingConfigPdf }, { downloadPdfBlob }] = await Promise.all([
+        import("@/lib/pdf/seating-config-pdf"),
+        import("@/lib/pdf/pdf-builder"),
+      ]);
+      const { blob, filename } = await buildSeatingConfigPdf(detail);
+      downloadPdfBlob(blob, filename);
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "הפקת ה-PDF נכשלה"),
+  });
+
+  const excelM = useMutation({
+    mutationFn: async () => {
+      const XLSX = await import("xlsx");
+      const rows = configs.map((c, i) => ({
+        "#": i + 1,
+        "שם הסידור": c.name,
+        "תאריך עברי": hebrewDate(c.created_at),
+        תאריך: String(c.created_at).slice(0, 10),
+        ציון: c.score ?? "",
+        הפרות: c.violation_count ?? "",
+        הערכה:
+          c.violation_count === null || c.violation_count === undefined
+            ? "ללא ציון"
+            : c.violation_count === 0
+              ? "ציון מושלם"
+              : (c.score ?? 0) < -50
+                ? "בעייתי"
+                : "דורש תשומת לב",
+      }));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), "סידורים");
+      XLSX.writeFile(wb, `סידורים_שמורים_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    },
+    onSuccess: () => toast.success("הקובץ הורד"),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "הייצוא נכשל"),
+  });
+
   return (
     <Popover>
       <PopoverTrigger asChild>
