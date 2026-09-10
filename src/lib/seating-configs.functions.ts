@@ -21,7 +21,7 @@ export const listConfigs = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ classId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase
-      .from("seating_configs").select("id, name, created_at").eq("class_id", data.classId)
+      .from("seating_configs").select("id, name, created_at, score, violation_count").eq("class_id", data.classId)
       .order("created_at", { ascending: false });
     if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return rows ?? [];
