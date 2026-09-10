@@ -85,9 +85,24 @@ export const getClassesOverview = createServerFn({ method: "GET" })
       if (bulletins.error) console.error("[DB Error]", bulletins.error);
       if (events.error) console.error("[DB Error]", events.error);
 
+      const keyCount: Record<string, number> = {};
+      for (const s of students.data ?? []) {
+        const key = (s as { person_key?: string | null }).person_key;
+        if (key) keyCount[key] = (keyCount[key] ?? 0) + 1;
+      }
       for (const s of students.data ?? []) {
         const m = perClass[s.class_id];
         if (m) m.studentCount += 1;
+        const key = ((s as { person_key?: string | null }).person_key ?? "") as string;
+        rosters[s.class_id]?.push({
+          id: s.id,
+          name: (s as { name?: string }).name ?? "",
+          person_key: key,
+          carriedOver: key ? (keyCount[key] ?? 0) > 1 : false,
+        });
+      }
+      for (const list of Object.values(rosters)) {
+        list.sort((a, b) => a.name.localeCompare(b.name, "he"));
       }
       for (const b of bulletins.data ?? []) {
         const m = perClass[b.class_id];
