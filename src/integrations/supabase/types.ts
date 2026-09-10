@@ -2973,6 +2973,7 @@ export type Database = {
           name: string
           national_id: string | null
           notes: string | null
+          person_key: string
           row_pref: string
           seat_col: number | null
           seat_locked: boolean
@@ -3002,6 +3003,7 @@ export type Database = {
           name: string
           national_id?: string | null
           notes?: string | null
+          person_key?: string
           row_pref?: string
           seat_col?: number | null
           seat_locked?: boolean
@@ -3031,6 +3033,7 @@ export type Database = {
           name?: string
           national_id?: string | null
           notes?: string | null
+          person_key?: string
           row_pref?: string
           seat_col?: number | null
           seat_locked?: boolean
