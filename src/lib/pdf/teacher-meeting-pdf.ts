@@ -56,11 +56,11 @@ export async function buildTeacherMeetingsPdf(
       styles: { halign: "center", fontSize: 10 },
     });
 
-    hd.subSection?.("סיכום הפגישה");
+    hd.subSection("סיכום הפגישה");
     hd.paragraph(m.summary);
 
     if (m.actionItems) {
-      hd.subSection?.("מטלות להמשך");
+      hd.subSection("מטלות להמשך");
       hd.paragraph(m.actionItems);
     }
     if (m.followUpDate) {
