@@ -2849,6 +2849,66 @@ export type Database = {
         }
         Relationships: []
       }
+      student_portfolio_items: {
+        Row: {
+          class_id: string | null
+          created_at: string
+          description: string
+          id: string
+          item_date: string
+          kind: string
+          person_key: string
+          school_year: string | null
+          student_id: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          class_id?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          item_date?: string
+          kind?: string
+          person_key: string
+          school_year?: string | null
+          student_id?: string | null
+          title: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          class_id?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          item_date?: string
+          kind?: string
+          person_key?: string
+          school_year?: string | null
+          student_id?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_portfolio_items_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_portfolio_items_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_profiles: {
         Row: {
           class_id: string
