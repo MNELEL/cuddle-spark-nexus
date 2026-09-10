@@ -74,6 +74,34 @@ function DailyInsightsPage() {
   const [description, setDescription] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
 
+  /**
+   * הטווח והתאריך מתעדכנים לבד מהלוח העברי: כל שינוי בתאריך-החלוף או ביום הפעיל
+   * מתגלגל מיד למסך, בלי כפתור עדכון חיצוני. בחירה ידנית של טווח עוצרת את העדכון האוטומטי.
+   */
+  const autoRange = useRef<DateRange | null>(null);
+  const autoDate = useRef<string | null>(null);
+  const [manualRange, setManualRange] = useState(false);
+  const autoFrom = elapsedFromInfo.iso < info.iso ? elapsedFromInfo.iso : info.monthRange.from;
+  useEffect(() => {
+    if (manualRange) return;
+    const next = { from: autoFrom, to: info.iso };
+    if (autoRange.current?.from === next.from && autoRange.current?.to === next.to) return;
+    autoRange.current = next;
+    setRange(next);
+  }, [autoFrom, info.iso, manualRange]);
+  useEffect(() => {
+    if (editId) return;
+    if (autoDate.current === info.iso) return;
+    autoDate.current = info.iso;
+    setDate(info.iso);
+  }, [info.iso, editId]);
+
+  const onRangeChange = (r: DateRange) => {
+    setManualRange(true);
+    setRange(r);
+  };
+
+
   const classesFn = useServerFn(listClasses);
   const studentsFn = useServerFn(listStudents);
   const listFn = useServerFn(listManualInsights);
