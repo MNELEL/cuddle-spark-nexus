@@ -17,6 +17,7 @@ import { HebrewDatePanel } from "@/components/hebrew-date-panel";
 import { useHebrewAnchor } from "@/components/hebrew-anchor";
 import { HebrewRangeFilter, type DateRange } from "@/components/hebrew-range-filter";
 import { hebrewDateTime, toHebrewDateFull } from "@/lib/hebrew-date";
+import { hebrewDayInfo, hebrewMonthBounds, shiftHebrew } from "@/lib/hebrew-calendar";
 import { listClasses } from "@/lib/classes.functions";
 import { listStudents } from "@/lib/students.functions";
 import {
