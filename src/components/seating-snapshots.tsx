@@ -64,6 +64,10 @@ export function SeatingSnapshots({ classId }: { classId: string }) {
           <Input placeholder='שם (למשל: "תחילת שנה")' value={name} onChange={(e) => setName(e.target.value)} />
           <Button size="sm" disabled={!name.trim() || saveM.isPending} onClick={() => saveM.mutate(name.trim())}>שמור</Button>
         </div>
+        <Button size="sm" variant="outline" className="w-full" disabled={genM.isPending} onClick={() => genM.mutate()}>
+          <Sparkles className="ms-1 h-4 w-4" />
+          {genM.isPending ? "מכין הצעות..." : "צור 3 הצעות להשוואה"}
+        </Button>
         <div className="border-t pt-2">
           <div className="mb-1 text-xs font-semibold">סידורים שמורים ({configs.length})</div>
           {configs.length === 0 ? (
