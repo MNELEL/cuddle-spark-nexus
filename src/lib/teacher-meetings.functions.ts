@@ -189,10 +189,14 @@ export const updateTeacherMeeting = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await requireOwnedMeeting(supabaseAdmin as unknown as SupabaseClient<Database>, data.id, scope.institutionId);
 
-    const patch: Record<string, string | null> = {};
-    if (data.summary !== undefined) patch["summary"] = data.summary;
-    if (data.actionItems !== undefined) patch["action_items"] = data.actionItems.trim() || null;
-    if (data.followUpDate !== undefined) patch["follow_up_date"] = data.followUpDate;
+    const patch: {
+      summary?: string;
+      action_items?: string | null;
+      follow_up_date?: string | null;
+    } = {};
+    if (data.summary !== undefined) patch.summary = data.summary;
+    if (data.actionItems !== undefined) patch.action_items = data.actionItems.trim() || null;
+    if (data.followUpDate !== undefined) patch.follow_up_date = data.followUpDate;
     if (Object.keys(patch).length === 0) return { ok: true as const };
 
     const { error } = await supabaseAdmin
