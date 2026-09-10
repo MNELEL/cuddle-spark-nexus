@@ -54,7 +54,8 @@ function HebrewCalendarPage() {
     queryKey: ["classes"],
     queryFn: () => list(),
   });
-  const firstClassId = (classes as { id: string }[])[0]?.id;
+  const classOptions = classes as { id: string; name: string }[];
+  const firstClassId = classOptions[0]?.id;
 
   return (
     <div dir="rtl" className="mx-auto max-w-4xl space-y-5">
