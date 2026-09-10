@@ -65,10 +65,13 @@ export const getClassesOverview = createServerFn({ method: "GET" })
     const perClass: Record<string, ClassMetrics> = {};
     for (const id of ids) perClass[id] = { ...EMPTY_METRICS };
 
+    const rosters: Record<string, Array<{ id: string; name: string; person_key: string; carriedOver: boolean }>> = {};
+    for (const id of ids) rosters[id] = [];
+
     if (ids.length > 0) {
       const { from, to } = examWindow();
       const [students, bulletins, events] = await Promise.all([
-        context.supabase.from("students").select("id, class_id").in("class_id", ids),
+        context.supabase.from("students").select("id, class_id, name, person_key").in("class_id", ids),
         context.supabase.from("weekly_bulletins").select("id, class_id").in("class_id", ids).eq("status", "draft"),
         context.supabase
           .from("class_events")
