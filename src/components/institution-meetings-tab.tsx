@@ -12,14 +12,20 @@ import { CertificateTemplateSelect } from "@/components/certificate-template-sel
 import { TeacherMeetingsDialog, exportMeetingPdf } from "@/components/teacher-meetings-dialog";
 import type { CertTemplateDesign } from "@/lib/ai-certificate.functions";
 import { hebrewDate } from "@/lib/hebrew-date";
-import { listInstitutionMeetings } from "@/lib/teacher-meetings.functions";
+import {
+  listInstitutionMeetings,
+  getInstitutionMeetingsReport,
+  type MeetingsReport,
+} from "@/lib/teacher-meetings.functions";
 
-/** טאב "פגישות": סיכום פגישות 1:1 לכל מלמד במוסד, כולל ייצוא PDF. */
+/** טאב "פגישות": סיכום פגישות 1:1 לכל מלמד במוסד, כולל דוח, תקציר AI וייצוא PDF. */
 export function InstitutionMeetingsTab({ canEdit }: { canEdit: boolean }) {
   const fetchAll = useServerFn(listInstitutionMeetings);
+  const fetchReport = useServerFn(getInstitutionMeetingsReport);
   const [design, setDesign] = useState<CertTemplateDesign | undefined>(undefined);
   const [templateId, setTemplateId] = useState<string | null>(null);
   const [target, setTarget] = useState<{ userId: string; name: string } | null>(null);
+  const [aiSummary, setAiSummary] = useState<string | null>(null);
 
   const q = useQuery({
     queryKey: ["institution-meetings"],
@@ -27,7 +33,76 @@ export function InstitutionMeetingsTab({ canEdit }: { canEdit: boolean }) {
   });
   const groups = q.data ?? [];
 
+  const reportQ = useQuery({
+    queryKey: ["institution-meetings-report"],
+    queryFn: () => fetchReport({ data: {} }) as Promise<MeetingsReport>,
+  });
+  const report = reportQ.data;
+
+  const aiM = useMutation({
+    mutationFn: () => fetchReport({ data: { withAi: true } }) as Promise<MeetingsReport>,
+    onSuccess: (r) => {
+      if (!r.aiSummary) return toast.error("לא התקבל תקציר. נסה שוב בעוד רגע.");
+      setAiSummary(r.aiSummary);
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "הפקת התקציר נכשלה"),
+  });
+
   return (
+    <div className="space-y-6">
+    <Card className="rounded-2xl">
+      <CardHeader>
+        <CardTitle className="text-base">דוח פגישות לפי מלמדים וכיתות</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {reportQ.isLoading ? (
+          <Skeleton className="h-24 rounded-xl" />
+        ) : reportQ.isError ? (
+          <p className="py-4 text-center text-sm text-destructive">טעינת הדוח נכשלה.</p>
+        ) : !report || report.teachers.length === 0 ? (
+          <p className="py-4 text-center text-sm text-muted-foreground">אין נתוני פגישות לדוח.</p>
+        ) : (
+          <>
+            <p className="text-xs text-muted-foreground">
+              סה״כ <span className="font-mono-tabular">{report.totalMeetings}</span> פגישות במוסד
+            </p>
+            <ul className="divide-y text-sm">
+              {report.teachers.map((t) => (
+                <li key={t.teacherId} className="flex items-start justify-between gap-3 py-2">
+                  <div className="min-w-0">
+                    <div className="truncate font-medium">הרב {t.teacherName}</div>
+                    <div className="text-xs text-muted-foreground">
+                      כיתות: {t.classNames.join(", ") || "ללא"}
+                      {t.lastMeetingDate ? ` · פגישה אחרונה: ${hebrewDate(t.lastMeetingDate)}` : ""}
+                      {t.openFollowUps.length > 0
+                        ? ` · מעקבים: ${t.openFollowUps.map((d) => hebrewDate(d)).join(", ")}`
+                        : ""}
+                    </div>
+                  </div>
+                  <Badge variant="outline" className="shrink-0 font-mono-tabular">{t.meetingCount}</Badge>
+                </li>
+              ))}
+            </ul>
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-xl"
+              disabled={aiM.isPending}
+              onClick={() => aiM.mutate()}
+            >
+              {aiM.isPending
+                ? <Loader2 className="me-1 h-4 w-4 animate-spin" aria-hidden="true" />
+                : <Sparkles className="me-1 h-4 w-4" aria-hidden="true" />}
+              תקציר AI לדוח
+            </Button>
+            {aiSummary && (
+              <div className="rounded-xl bg-muted/50 p-3 text-sm whitespace-pre-wrap">{aiSummary}</div>
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
+
     <Card className="rounded-2xl">
       <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <CardTitle className="flex items-center gap-2 text-base">
@@ -120,5 +195,6 @@ export function InstitutionMeetingsTab({ canEdit }: { canEdit: boolean }) {
 
       <TeacherMeetingsDialog teacher={target} canEdit={canEdit} onClose={() => setTarget(null)} />
     </Card>
+    </div>
   );
 }
