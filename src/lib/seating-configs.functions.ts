@@ -38,8 +38,15 @@ export const saveConfig = createServerFn({ method: "POST" })
       .select("grid_rows, grid_cols, hidden_seats").eq("id", data.class_id).single();
     if (e1) throw new Error(e1.message);
     const { data: students, error: e2 } = await context.supabase.from("students")
-      .select("id, seat_row, seat_col, seat_locked").eq("class_id", data.class_id);
+      .select("id, seat_row, seat_col, seat_locked, height, row_pref, corner_pref").eq("class_id", data.class_id);
     if (e2) throw new Error(e2.message);
+    const { data: relations, error: e3 } = await context.supabase.from("student_relations")
+      .select("student_a, student_b, kind").eq("class_id", data.class_id);
+    if (e3) throw new Error(e3.message);
+    const scoringStudents = (students ?? []) as unknown as ScoringStudent[];
+    const scoringRelations = (relations ?? []) as unknown as ScoringRelation[];
+    const violations = computeViolations(scoringStudents, scoringRelations, cls.grid_rows, cls.grid_cols);
+    const score = scoreAssignment(scoringStudents, scoringRelations, cls.grid_rows, cls.grid_cols);
     const snapshot: SeatSnapshot = {
       grid_rows: cls.grid_rows, grid_cols: cls.grid_cols,
       hidden_seats: Array.isArray(cls.hidden_seats) ? (cls.hidden_seats as string[]) : [],
