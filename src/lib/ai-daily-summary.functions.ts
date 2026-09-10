@@ -127,6 +127,9 @@ export const suggestStudentDailySummary = createServerFn({ method: "POST" })
           content: `תלמיד: ${student.name}
 כיתה: ${student.classes?.name ?? ""}
 תאריך: ${data.date}
+${data.anchors?.today ? `תאריך עברי: ${data.anchors.today}` : ""}
+${data.anchors?.elapsedFrom ? `תאריך-החלוף: ${data.anchors.elapsedFrom}${data.anchors.elapsedDays !== undefined ? ` (${data.anchors.elapsedDays} ימים)` : ""}` : ""}
+${data.anchors?.next ? `תאריך-החלוף הבא: ${data.anchors.next}` : ""}
 נתוני היום:
 ${facts.map((f) => `- ${f}`).join("\n")}`,
         },
