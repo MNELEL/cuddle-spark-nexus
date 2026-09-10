@@ -74,6 +74,11 @@ export function StudentDailyCard({
             maxValue: Number(maxValue) || 100,
             note: description,
           },
+          anchors: {
+            elapsedFrom: elapsedFromInfo.full,
+            today: info.full,
+            next: nextAnchor.full,
+          },
         },
       }),
     onSuccess: (r) => {
