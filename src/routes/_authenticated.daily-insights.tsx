@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -17,6 +17,7 @@ import { HebrewDatePanel } from "@/components/hebrew-date-panel";
 import { useHebrewAnchor } from "@/components/hebrew-anchor";
 import { HebrewRangeFilter, type DateRange } from "@/components/hebrew-range-filter";
 import { hebrewDateTime, toHebrewDateFull } from "@/lib/hebrew-date";
+import { hebrewDayInfo, hebrewMonthBounds, shiftHebrew } from "@/lib/hebrew-calendar";
 import { listClasses } from "@/lib/classes.functions";
 import { listStudents } from "@/lib/students.functions";
 import {
@@ -48,7 +49,12 @@ export const Route = createFileRoute("/_authenticated/daily-insights")({
 const SEVERITY_LABEL: Record<string, string> = { low: "רגילה", medium: "לתשומת לב", high: "דחופה" };
 
 function DailyInsightsPage() {
-  const { info, elapsedFromInfo } = useHebrewAnchor();
+  const { info, elapsedFromInfo, elapsedFrom } = useHebrewAnchor();
+  /** תאריך-החלוף הבא — תחילת החודש העברי הבא, נגזר מהלוח האמיתי בלי הזנה ידנית. */
+  const nextAnchor = useMemo(
+    () => hebrewDayInfo(hebrewMonthBounds(shiftHebrew(elapsedFrom, "month", 1)).start),
+    [elapsedFrom],
+  );
   const qc = useQueryClient();
   const [classId, setClassId] = useState("");
   // ברירת המחדל היא תאריך-החלוף עד היום הפעיל, כדי שהתובנות ילכו עם הלוח העברי.
@@ -67,6 +73,34 @@ function DailyInsightsPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
+
+  /**
+   * הטווח והתאריך מתעדכנים לבד מהלוח העברי: כל שינוי בתאריך-החלוף או ביום הפעיל
+   * מתגלגל מיד למסך, בלי כפתור עדכון חיצוני. בחירה ידנית של טווח עוצרת את העדכון האוטומטי.
+   */
+  const autoRange = useRef<DateRange | null>(null);
+  const autoDate = useRef<string | null>(null);
+  const [manualRange, setManualRange] = useState(false);
+  const autoFrom = elapsedFromInfo.iso < info.iso ? elapsedFromInfo.iso : info.monthRange.from;
+  useEffect(() => {
+    if (manualRange) return;
+    const next = { from: autoFrom, to: info.iso };
+    if (autoRange.current?.from === next.from && autoRange.current?.to === next.to) return;
+    autoRange.current = next;
+    setRange(next);
+  }, [autoFrom, info.iso, manualRange]);
+  useEffect(() => {
+    if (editId) return;
+    if (autoDate.current === info.iso) return;
+    autoDate.current = info.iso;
+    setDate(info.iso);
+  }, [info.iso, editId]);
+
+  const onRangeChange = (r: DateRange) => {
+    setManualRange(true);
+    setRange(r);
+  };
+
 
   const classesFn = useServerFn(listClasses);
   const studentsFn = useServerFn(listStudents);
@@ -262,7 +296,26 @@ function DailyInsightsPage() {
           <CardDescription>סנן לפי כיתה, תלמיד, טווח עברי או יום בודד.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          <HebrewRangeFilter value={range} onChange={setRange} />
+          <HebrewRangeFilter value={range} onChange={onRangeChange} />
+          <p className="mt-1.5 text-[11px] text-muted-foreground">
+            {manualRange ? (
+              <>
+                טווח נבחר ידנית.{" "}
+                <button
+                  type="button"
+                  className="underline"
+                  onClick={() => setManualRange(false)}
+                >
+                  חזרה לעדכון אוטומטי מהלוח
+                </button>
+              </>
+            ) : (
+              <>
+                מתעדכן לבד מהלוח העברי: תאריך-החלוף {elapsedFromInfo.full} · היום {info.full} ·
+                תאריך-החלוף הבא {nextAnchor.full}
+              </>
+            )}
+          </p>
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="space-y-1.5">
               <Label htmlFor="di-filter-student">תלמיד</Label>

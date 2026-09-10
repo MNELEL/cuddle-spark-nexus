@@ -300,7 +300,10 @@ function DailyLogReportPage() {
         /** שורה לכל תלמיד ליום: נוכחות, ציון ותובנה יחד. */
         const perStudent = new Map<
           string,
-          { date: string; student: string; attendance: string; grade: string; insight: string }
+          {
+            date: string; student: string; attendance: string; grade: string; insight: string;
+            approvedAt?: string; approvedBy?: string;
+          }
         >();
         const entry = (date: string, student: string) => {
           const key = `${date}|${student}`;
@@ -327,6 +330,12 @@ function DailyLogReportPage() {
           const e = entry(r.date, r.student);
           const one = `${r.title}${r.description ? ` — ${r.description}` : ""}`;
           e.insight = e.insight ? `${e.insight} · ${one}` : one;
+        }
+        for (const r of details.approvals) {
+          if (!shown.has(r.date)) continue;
+          const e = entry(r.date, r.student);
+          e.approvedAt = r.date;
+          if (r.approver) e.approvedBy = r.approver;
         }
         const entries = Array.from(perStudent.values()).sort((a, b) =>
           a.date === b.date ? a.student.localeCompare(b.student, "he") : a.date < b.date ? 1 : -1,

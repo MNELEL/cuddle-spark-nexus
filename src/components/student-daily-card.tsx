@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -15,6 +15,7 @@ import {
 import { useHebrewAnchor } from "@/components/hebrew-anchor";
 import { DailyApprovalCard } from "@/components/daily-approval-card";
 import { hebrewDateTime } from "@/lib/hebrew-date";
+import { hebrewDayInfo, hebrewMonthBounds, shiftHebrew } from "@/lib/hebrew-calendar";
 import {
   getStudentDaily, saveStudentDaily, listStudentDailyHistory,
 } from "@/lib/student-daily.functions";
@@ -35,7 +36,12 @@ export function StudentDailyCard({
   classId: string;
   students: { id: string; name: string }[];
 }) {
-  const { info, isCustom } = useHebrewAnchor();
+  const { info, isCustom, elapsedFrom, elapsedFromInfo } = useHebrewAnchor();
+  /** תאריך-החלוף הבא נגזר מהלוח האמיתי — תחילת החודש העברי הבא. */
+  const nextAnchor = useMemo(
+    () => hebrewDayInfo(hebrewMonthBounds(shiftHebrew(elapsedFrom, "month", 1)).start),
+    [elapsedFrom],
+  );
   const date = info.iso;
   const qc = useQueryClient();
   const [studentId, setStudentId] = useState(students[0]?.id ?? "");
@@ -68,6 +74,11 @@ export function StudentDailyCard({
             value: value.trim() ? Number(value) : null,
             maxValue: Number(maxValue) || 100,
             note: description,
+          },
+          anchors: {
+            elapsedFrom: elapsedFromInfo.full,
+            today: info.full,
+            next: nextAnchor.full,
           },
         },
       }),

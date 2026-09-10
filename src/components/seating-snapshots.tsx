@@ -4,9 +4,12 @@ import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Camera, Trash2, Download, Sparkles } from "lucide-react";
+import { Camera, Trash2, Download, Sparkles, FileText, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
-import { listConfigs, saveConfig, loadConfig, deleteConfig, generateSeatingCandidates } from "@/lib/seating-configs.functions";
+import {
+  listConfigs, saveConfig, loadConfig, deleteConfig,
+  generateSeatingCandidates, getConfigDetail,
+} from "@/lib/seating-configs.functions";
 import { hebrewDate } from "@/lib/hebrew-date";
 
 export function SeatingSnapshots({ classId }: { classId: string }) {
@@ -16,6 +19,7 @@ export function SeatingSnapshots({ classId }: { classId: string }) {
   const loadFn = useServerFn(loadConfig);
   const delFn = useServerFn(deleteConfig);
   const genFn = useServerFn(generateSeatingCandidates);
+  const detailFn = useServerFn(getConfigDetail);
   const [name, setName] = useState("");
 
   const { data: configs = [] } = useQuery({
@@ -53,6 +57,46 @@ export function SeatingSnapshots({ classId }: { classId: string }) {
     onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
   });
 
+  const pdfM = useMutation({
+    mutationFn: async (id: string) => {
+      const detail = await detailFn({ data: { id } });
+      const [{ buildSeatingConfigPdf }, { downloadPdfBlob }] = await Promise.all([
+        import("@/lib/pdf/seating-config-pdf"),
+        import("@/lib/pdf/pdf-builder"),
+      ]);
+      const { blob, filename } = await buildSeatingConfigPdf(detail);
+      downloadPdfBlob(blob, filename);
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "הפקת ה-PDF נכשלה"),
+  });
+
+  const excelM = useMutation({
+    mutationFn: async () => {
+      const XLSX = await import("xlsx");
+      const rows = configs.map((c, i) => ({
+        "#": i + 1,
+        "שם הסידור": c.name,
+        "תאריך עברי": hebrewDate(c.created_at),
+        תאריך: String(c.created_at).slice(0, 10),
+        ציון: c.score ?? "",
+        הפרות: c.violation_count ?? "",
+        הערכה:
+          c.violation_count === null || c.violation_count === undefined
+            ? "ללא ציון"
+            : c.violation_count === 0
+              ? "ציון מושלם"
+              : (c.score ?? 0) < -50
+                ? "בעייתי"
+                : "דורש תשומת לב",
+      }));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), "סידורים");
+      XLSX.writeFile(wb, `סידורים_שמורים_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    },
+    onSuccess: () => toast.success("הקובץ הורד"),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "הייצוא נכשל"),
+  });
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -69,7 +113,21 @@ export function SeatingSnapshots({ classId }: { classId: string }) {
           {genM.isPending ? "מכין הצעות..." : "צור 3 הצעות להשוואה"}
         </Button>
         <div className="border-t pt-2">
-          <div className="mb-1 text-xs font-semibold">סידורים שמורים ({configs.length})</div>
+          <div className="mb-1 flex items-center justify-between gap-2">
+            <div className="text-xs font-semibold">סידורים שמורים ({configs.length})</div>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 px-2 text-[11px]"
+              disabled={configs.length === 0 || excelM.isPending}
+              onClick={() => excelM.mutate()}
+            >
+              <FileSpreadsheet className="ms-1 h-3.5 w-3.5" /> ייצוא Excel
+            </Button>
+          </div>
+          <p className="mb-1.5 text-[10px] text-muted-foreground">
+            "החל כסידור פעיל" מדביק את התצורה בדיוק כפי שנשמרה, בלי מיון מחדש.
+          </p>
           {configs.length === 0 ? (
             <p className="py-2 text-center text-xs text-muted-foreground">אין סידורים שמורים</p>
           ) : (
@@ -92,8 +150,11 @@ export function SeatingSnapshots({ classId }: { classId: string }) {
                     ) : null}
                   </div>
                   <div className="flex gap-0.5">
-                    <Button size="icon" variant="ghost" aria-label="טען תצורה" className="h-7 w-7" title="טען" onClick={() => loadM.mutate(c.id)}>
+                    <Button size="icon" variant="ghost" aria-label="החל את התצורה כסידור פעיל" className="h-7 w-7" title="החל כסידור פעיל" onClick={() => loadM.mutate(c.id)}>
                       <Download className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button size="icon" variant="ghost" aria-label="הפק PDF של התצורה" className="h-7 w-7" title="PDF" disabled={pdfM.isPending} onClick={() => pdfM.mutate(c.id)}>
+                      <FileText className="h-3.5 w-3.5" />
                     </Button>
                     <Button size="icon" variant="ghost" aria-label="מחק תצורה" className="h-7 w-7 text-destructive" title="מחק" onClick={() => delM.mutate(c.id)}>
                       <Trash2 className="h-3.5 w-3.5" />

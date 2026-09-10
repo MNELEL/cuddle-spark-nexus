@@ -11,6 +11,10 @@ export type DailyReportStudentEntry = {
   attendance: string;
   grade: string;
   insight: string;
+  /** תאריך אישור המלמד לתיעוד היום (אם אושר). */
+  approvedAt?: string;
+  /** שם המאשר, אם קיים. */
+  approvedBy?: string;
 };
 
 export type DailyReportPdfInput = {
@@ -105,7 +109,7 @@ export async function buildDailyReportPdf(
   if (entries.length === 0) hd.paragraph("אין תיעוד לפי תלמיד בטווח זה.");
   else
     hd.table({
-      head: [["תאריך עברי", "תלמיד", "כיתה", "נוכחות", "ציון", "תובנה"]],
+      head: [["תאריך עברי", "תלמיד", "כיתה", "נוכחות", "ציון", "תובנה", "אושר"]],
       body: entries.map((e) => [
         hebrewDate(e.date),
         e.student,
@@ -113,16 +117,43 @@ export async function buildDailyReportPdf(
         e.attendance || "—",
         e.grade || "—",
         e.insight || "—",
+        e.approvedAt ? hebrewDate(e.approvedAt) : "—",
       ]),
       columnStyles: {
-        0: { cellWidth: 26 },
-        1: { cellWidth: 30 },
-        2: { cellWidth: 24 },
-        3: { cellWidth: 20, halign: "center" },
-        4: { cellWidth: 22, halign: "center" },
+        0: { cellWidth: 24 },
+        1: { cellWidth: 28 },
+        2: { cellWidth: 20 },
+        3: { cellWidth: 18, halign: "center" },
+        4: { cellWidth: 18, halign: "center" },
         5: { cellWidth: "auto", overflow: "linebreak" },
+        6: { cellWidth: 24, halign: "center" },
       },
     });
+
+  // מסמך תיעוד מלא בסגנון תעודה — רק כשנבחרה תבנית סגנון; בלי תבנית נשמר העיצוב הרגיל.
+  if (input.design && entries.length > 0) {
+    for (const e of entries) {
+      hd.doc.addPage();
+      drawTemplateFrame(hd, input.design);
+      drawBrandHeader(hd, {
+        title: `תיעוד יומי — ${e.student}`,
+        subtitle: input.templateName,
+        meta: `${input.className} · ${hebrewDate(e.date)} (${e.date})`,
+      });
+      hd.section("פרטי היום");
+      hd.paragraph(`נוכחות: ${e.attendance || "—"}`);
+      hd.paragraph(`ציון: ${e.grade || "—"}`);
+      hd.section("תובנה");
+      hd.paragraph(e.insight || "—");
+      hd.section("אישור המלמד");
+      hd.paragraph(
+        e.approvedAt
+          ? `אושר בתאריך ${hebrewDate(e.approvedAt)} (${String(e.approvedAt).slice(0, 10)})${e.approvedBy ? ` · ${e.approvedBy}` : ""}`
+          : "טרם אושר",
+      );
+      drawFooter(hd, input.className);
+    }
+  }
 
   drawFooter(hd, input.className);
   const filename = `דוח_תיעוד_יומי_${safeName(input.className)}_${input.range.from}_${input.range.to}.pdf`;
