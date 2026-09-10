@@ -311,8 +311,8 @@ function DailyInsightsPage() {
               </>
             ) : (
               <>
-                מתעדכן לבד מהלוח העברי: תאריך-החלוף {elapsedFromInfo.label} · היום {info.label} ·
-                תאריך-החלוף הבא {nextAnchor.label}
+                מתעדכן לבד מהלוח העברי: תאריך-החלוף {elapsedFromInfo.full} · היום {info.full} ·
+                תאריך-החלוף הבא {nextAnchor.full}
               </>
             )}
           </p>
