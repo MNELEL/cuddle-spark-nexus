@@ -4,9 +4,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Camera, Trash2, Download } from "lucide-react";
+import { Camera, Trash2, Download, Sparkles } from "lucide-react";
 import { toast } from "sonner";
-import { listConfigs, saveConfig, loadConfig, deleteConfig } from "@/lib/seating-configs.functions";
+import { listConfigs, saveConfig, loadConfig, deleteConfig, generateSeatingCandidates } from "@/lib/seating-configs.functions";
 import { hebrewDate } from "@/lib/hebrew-date";
 
 export function SeatingSnapshots({ classId }: { classId: string }) {
@@ -15,6 +15,7 @@ export function SeatingSnapshots({ classId }: { classId: string }) {
   const saveFn = useServerFn(saveConfig);
   const loadFn = useServerFn(loadConfig);
   const delFn = useServerFn(deleteConfig);
+  const genFn = useServerFn(generateSeatingCandidates);
   const [name, setName] = useState("");
 
   const { data: configs = [] } = useQuery({
@@ -43,6 +44,14 @@ export function SeatingSnapshots({ classId }: { classId: string }) {
     mutationFn: (id: string) => delFn({ data: { id } }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["seating-configs", classId] }),
   });
+  const genM = useMutation({
+    mutationFn: () => genFn({ data: { classId, count: 3 } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["seating-configs", classId] });
+      toast.success("נוצרו 3 הצעות להשוואה");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
+  });
 
   return (
     <Popover>
@@ -55,6 +64,10 @@ export function SeatingSnapshots({ classId }: { classId: string }) {
           <Input placeholder='שם (למשל: "תחילת שנה")' value={name} onChange={(e) => setName(e.target.value)} />
           <Button size="sm" disabled={!name.trim() || saveM.isPending} onClick={() => saveM.mutate(name.trim())}>שמור</Button>
         </div>
+        <Button size="sm" variant="outline" className="w-full" disabled={genM.isPending} onClick={() => genM.mutate()}>
+          <Sparkles className="ms-1 h-4 w-4" />
+          {genM.isPending ? "מכין הצעות..." : "צור 3 הצעות להשוואה"}
+        </Button>
         <div className="border-t pt-2">
           <div className="mb-1 text-xs font-semibold">סידורים שמורים ({configs.length})</div>
           {configs.length === 0 ? (
@@ -68,6 +81,15 @@ export function SeatingSnapshots({ classId }: { classId: string }) {
                     <div className="text-[10px] text-muted-foreground font-mono-tabular">
                       {hebrewDate(c.created_at)}
                     </div>
+                    {c.violation_count !== null && c.violation_count !== undefined ? (
+                      c.violation_count === 0 ? (
+                        <div className="mt-0.5 text-[10px] font-semibold text-emerald-600">✓ ציון מושלם</div>
+                      ) : (
+                        <div className={`mt-0.5 text-[10px] font-semibold ${(c.score ?? 0) < -50 ? "text-destructive" : "text-amber-600"}`}>
+                          ⚠ {c.violation_count} הפרות
+                        </div>
+                      )
+                    ) : null}
                   </div>
                   <div className="flex gap-0.5">
                     <Button size="icon" variant="ghost" aria-label="טען תצורה" className="h-7 w-7" title="טען" onClick={() => loadM.mutate(c.id)}>
