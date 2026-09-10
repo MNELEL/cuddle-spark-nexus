@@ -2586,21 +2586,27 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          score: number | null
           snapshot: Json
+          violation_count: number | null
         }
         Insert: {
           class_id: string
           created_at?: string
           id?: string
           name: string
+          score?: number | null
           snapshot: Json
+          violation_count?: number | null
         }
         Update: {
           class_id?: string
           created_at?: string
           id?: string
           name?: string
+          score?: number | null
           snapshot?: Json
+          violation_count?: number | null
         }
         Relationships: []
       }
