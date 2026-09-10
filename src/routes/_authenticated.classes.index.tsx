@@ -61,6 +61,42 @@ function StatTile({ label, value, hint }: { label: string; value: number; hint?:
   );
 }
 
+type RosterEntry = { id: string; name: string; person_key: string; carriedOver: boolean };
+
+/** Collapsible student list with the stable student ID, so year transitions are visible. */
+function ClassRoster({ roster }: { roster: RosterEntry[] }) {
+  if (roster.length === 0) return null;
+  const carried = roster.filter((s) => s.carriedOver).length;
+  return (
+    <Collapsible>
+      <CollapsibleTrigger asChild>
+        <Button variant="ghost" size="sm" className="w-full justify-between rounded-xl px-2 text-xs">
+          <span>
+            רשימת תלמידים ({roster.length})
+            {carried > 0 && <span className="text-primary"> · {carried} עברו שנה</span>}
+          </span>
+          <ChevronDown className="h-4 w-4" aria-hidden="true" />
+        </Button>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <ul className="mt-2 max-h-56 space-y-1 overflow-y-auto pe-1 text-xs">
+          {roster.map((s) => (
+            <li key={s.id} className="flex items-center justify-between gap-2 rounded-lg bg-muted/40 px-2 py-1">
+              <span className="min-w-0 truncate">{s.name}</span>
+              <span className="flex shrink-0 items-center gap-1">
+                {s.carriedOver && <Badge variant="outline" className="border-primary/50 text-primary">עבר שנה</Badge>}
+                <code className="font-mono-tabular text-[10px] text-muted-foreground" title={s.person_key}>
+                  {s.person_key.slice(0, 8)}
+                </code>
+              </span>
+            </li>
+          ))}
+        </ul>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
 function ClassesPage() {
   const overview = useServerFn(getClassesOverview);
   const remove = useServerFn(deleteClass);
