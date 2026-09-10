@@ -15,6 +15,7 @@ export function SeatingSnapshots({ classId }: { classId: string }) {
   const saveFn = useServerFn(saveConfig);
   const loadFn = useServerFn(loadConfig);
   const delFn = useServerFn(deleteConfig);
+  const genFn = useServerFn(generateSeatingCandidates);
   const [name, setName] = useState("");
 
   const { data: configs = [] } = useQuery({
