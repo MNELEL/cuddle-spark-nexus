@@ -300,7 +300,10 @@ function DailyLogReportPage() {
         /** שורה לכל תלמיד ליום: נוכחות, ציון ותובנה יחד. */
         const perStudent = new Map<
           string,
-          { date: string; student: string; attendance: string; grade: string; insight: string }
+          {
+            date: string; student: string; attendance: string; grade: string; insight: string;
+            approvedAt?: string; approvedBy?: string;
+          }
         >();
         const entry = (date: string, student: string) => {
           const key = `${date}|${student}`;
