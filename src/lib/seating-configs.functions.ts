@@ -55,7 +55,7 @@ export const saveConfig = createServerFn({ method: "POST" })
       })),
     };
     const { error } = await context.supabase.from("seating_configs")
-      .insert({ class_id: data.class_id, name: data.name, snapshot });
+      .insert({ class_id: data.class_id, name: data.name, snapshot, score, violation_count: violations.length });
     if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return { ok: true };
   });
