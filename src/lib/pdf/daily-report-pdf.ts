@@ -11,6 +11,10 @@ export type DailyReportStudentEntry = {
   attendance: string;
   grade: string;
   insight: string;
+  /** תאריך אישור המלמד לתיעוד היום (אם אושר). */
+  approvedAt?: string;
+  /** שם המאשר, אם קיים. */
+  approvedBy?: string;
 };
 
 export type DailyReportPdfInput = {
