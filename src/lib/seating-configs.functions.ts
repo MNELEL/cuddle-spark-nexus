@@ -115,3 +115,64 @@ export const importStudents = createServerFn({ method: "POST" })
     if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return { ok: true, count: rows.length };
   });
+export const generateSeatingCandidates = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({
+    classId: z.string().uuid(),
+    count: z.number().int().min(1).max(5).default(3),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: cls, error: e1 } = await context.supabase.from("classes")
+      .select("grid_rows, grid_cols, hidden_seats, room_objects").eq("id", data.classId).single();
+    if (e1) throw new Error(e1.message);
+    const { data: students, error: e2 } = await context.supabase.from("students")
+      .select("id, seat_row, seat_col, seat_locked, height, row_pref, corner_pref").eq("class_id", data.classId);
+    if (e2) throw new Error(e2.message);
+    const { data: relations, error: e3 } = await context.supabase.from("student_relations")
+      .select("student_a, student_b, kind").eq("class_id", data.classId);
+    if (e3) throw new Error(e3.message);
+
+    const hidden = new Set<string>(Array.isArray(cls.hidden_seats) ? (cls.hidden_seats as string[]) : []);
+    const objects = Array.isArray((cls as { room_objects?: unknown }).room_objects)
+      ? ((cls as { room_objects?: unknown }).room_objects as Array<{ row?: number; col?: number; span?: number }>)
+      : [];
+    for (const o of objects) {
+      if (typeof o?.row === "number" && typeof o?.col === "number") {
+        const span = typeof o.span === "number" && o.span > 1 ? o.span : 1;
+        for (let i = 0; i < span; i++) hidden.add(`${o.row}:${o.col + i}`);
+      }
+    }
+
+    const base = (students ?? []) as unknown as ScoringStudent[];
+    const scoringRelations = (relations ?? []) as unknown as ScoringRelation[];
+    const created: Array<{ id: string; name: string; score: number; violation_count: number }> = [];
+
+    for (let i = 0; i < data.count; i++) {
+      const assign = smartAssign(base, scoringRelations, cls.grid_rows, cls.grid_cols, hidden);
+      const projected: ScoringStudent[] = base.map((s) => {
+        if (!assign.has(s.id)) return { ...s };
+        const pos = assign.get(s.id) ?? null;
+        return { ...s, seat_row: pos?.row ?? null, seat_col: pos?.col ?? null };
+      });
+      const violations = computeViolations(projected, scoringRelations, cls.grid_rows, cls.grid_cols);
+      const score = scoreAssignment(projected, scoringRelations, cls.grid_rows, cls.grid_cols);
+      const snapshot: SeatSnapshot = {
+        grid_rows: cls.grid_rows,
+        grid_cols: cls.grid_cols,
+        hidden_seats: Array.isArray(cls.hidden_seats) ? (cls.hidden_seats as string[]) : [],
+        seats: projected.map((s) => ({
+          student_id: s.id, seat_row: s.seat_row, seat_col: s.seat_col, seat_locked: s.seat_locked,
+        })),
+      };
+      const name = `הצעה אוטומטית ${i + 1}`;
+      const { data: row, error } = await context.supabase.from("seating_configs")
+        .insert({ class_id: data.classId, name, snapshot, score, violation_count: violations.length })
+        .select("id, name, score, violation_count").single();
+      if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+      created.push({
+        id: row.id, name: row.name,
+        score: row.score ?? score, violation_count: row.violation_count ?? violations.length,
+      });
+    }
+    return created;
+  });
