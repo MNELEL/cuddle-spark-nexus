@@ -13,6 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { HebrewWeeksCard } from "@/components/hebrew-weeks-card";
 import { HebrewRangeLinksCard } from "@/components/hebrew-range-links-card";
+import { HebrewDailyPdfCard } from "@/components/hebrew-daily-pdf-card";
+import { StudentDailyPdfCard } from "@/components/student-daily-pdf-card";
 import { useHebrewAnchor } from "@/components/hebrew-anchor";
 import {
   elapsedSince,
