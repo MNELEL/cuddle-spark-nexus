@@ -69,7 +69,21 @@ export function SeatingSnapshots({ classId }: { classId: string }) {
           {genM.isPending ? "מכין הצעות..." : "צור 3 הצעות להשוואה"}
         </Button>
         <div className="border-t pt-2">
-          <div className="mb-1 text-xs font-semibold">סידורים שמורים ({configs.length})</div>
+          <div className="mb-1 flex items-center justify-between gap-2">
+            <div className="text-xs font-semibold">סידורים שמורים ({configs.length})</div>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 px-2 text-[11px]"
+              disabled={configs.length === 0 || excelM.isPending}
+              onClick={() => excelM.mutate()}
+            >
+              <FileSpreadsheet className="ms-1 h-3.5 w-3.5" /> ייצוא Excel
+            </Button>
+          </div>
+          <p className="mb-1.5 text-[10px] text-muted-foreground">
+            "החל כסידור פעיל" מדביק את התצורה בדיוק כפי שנשמרה, בלי מיון מחדש.
+          </p>
           {configs.length === 0 ? (
             <p className="py-2 text-center text-xs text-muted-foreground">אין סידורים שמורים</p>
           ) : (
