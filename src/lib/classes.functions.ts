@@ -162,6 +162,7 @@ export const createClass = createServerFn({ method: "POST" })
 
       const rows = (src ?? []).map((s) => ({
         class_id: row.id,
+        person_key: s.person_key,
         name: s.name,
         gender: s.gender,
         height: s.height,
