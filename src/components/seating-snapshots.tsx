@@ -81,6 +81,15 @@ export function SeatingSnapshots({ classId }: { classId: string }) {
                     <div className="text-[10px] text-muted-foreground font-mono-tabular">
                       {hebrewDate(c.created_at)}
                     </div>
+                    {c.violation_count !== null && c.violation_count !== undefined ? (
+                      c.violation_count === 0 ? (
+                        <div className="mt-0.5 text-[10px] font-semibold text-emerald-600">✓ ציון מושלם</div>
+                      ) : (
+                        <div className={`mt-0.5 text-[10px] font-semibold ${(c.score ?? 0) < -50 ? "text-destructive" : "text-amber-600"}`}>
+                          ⚠ {c.violation_count} הפרות
+                        </div>
+                      )
+                    ) : null}
                   </div>
                   <div className="flex gap-0.5">
                     <Button size="icon" variant="ghost" aria-label="טען תצורה" className="h-7 w-7" title="טען" onClick={() => loadM.mutate(c.id)}>
