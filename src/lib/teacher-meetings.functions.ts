@@ -306,3 +306,106 @@ export const deleteTeacherMeeting = createServerFn({ method: "POST" })
     });
     return { ok: true as const };
   });
+
+export type MeetingsReportTeacher = {
+  teacherId: string;
+  teacherName: string;
+  classNames: string[];
+  meetingCount: number;
+  lastMeetingDate: string | null;
+  openFollowUps: string[];
+};
+
+export type MeetingsReport = {
+  teachers: MeetingsReportTeacher[];
+  totalMeetings: number;
+  aiSummary: string | null;
+};
+
+const reportSchema = z.object({ withAi: z.boolean().optional() });
+
+/** דוח פגישות במוסד לפי מלמדים וכיתות, עם תקציר AI אופציונלי. */
+export const getInstitutionMeetingsReport = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => reportSchema.parse(d ?? {}))
+  .handler(async ({ data, context }): Promise<MeetingsReport> => {
+    const { supabase, userId } = context;
+    const scope = await requireScope(supabase, userId);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rows, error } = await supabaseAdmin
+      .from("teacher_meetings")
+      .select("id, teacher_id, meeting_date, summary, action_items, follow_up_date")
+      .eq("institution_id", scope.institutionId)
+      .order("meeting_date", { ascending: false });
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    const meetings = rows ?? [];
+
+    const teacherIds = Array.from(new Set(meetings.map((m) => m.teacher_id)));
+    const names: Record<string, string> = {};
+    const classNames: Record<string, string[]> = {};
+    if (teacherIds.length > 0) {
+      const [{ data: profiles, error: pErr }, { data: classes, error: cErr }] = await Promise.all([
+        supabaseAdmin.from("profiles").select("id, display_name").in("id", teacherIds),
+        supabaseAdmin
+          .from("classes")
+          .select("name, owner_id, status")
+          .eq("institution_id", scope.institutionId)
+          .in("owner_id", teacherIds),
+      ]);
+      if (pErr) { console.error("[DB Error]", pErr); throw new Error("הפעולה נכשלה. נסה שוב."); }
+      if (cErr) { console.error("[DB Error]", cErr); throw new Error("הפעולה נכשלה. נסה שוב."); }
+      for (const p of profiles ?? []) names[p.id] = p.display_name ?? "";
+      for (const c of classes ?? []) {
+        if (c.status === "archived") continue;
+        (classNames[c.owner_id] ??= []).push(c.name);
+      }
+    }
+
+    const teachers: MeetingsReportTeacher[] = teacherIds.map((id) => {
+      const own = meetings.filter((m) => m.teacher_id === id);
+      return {
+        teacherId: id,
+        teacherName: names[id] || "מלמד",
+        classNames: classNames[id] ?? [],
+        meetingCount: own.length,
+        lastMeetingDate: own[0]?.meeting_date ?? null,
+        openFollowUps: own
+          .filter((m) => m.follow_up_date)
+          .map((m) => m.follow_up_date as string)
+          .slice(0, 5),
+      };
+    }).sort((a, b) => b.meetingCount - a.meetingCount);
+
+    let aiSummary: string | null = null;
+    if (data.withAi && meetings.length > 0) {
+      const lines = teachers.map((t) => {
+        const own = meetings.filter((m) => m.teacher_id === t.teacherId).slice(0, 6);
+        const detail = own
+          .map((m) => `  - ${m.meeting_date}: ${m.summary}${m.action_items ? ` | מטלות: ${m.action_items}` : ""}${m.follow_up_date ? ` | מעקב: ${m.follow_up_date}` : ""}`)
+          .join("\n");
+        return `מלמד: ${t.teacherName} (כיתות: ${t.classNames.join(", ") || "ללא"}) — ${t.meetingCount} פגישות\n${detail}`;
+      }).join("\n");
+
+      try {
+        const { callLovableAI } = await import("@/lib/ai-gateway.server");
+        aiSummary = await callLovableAI({
+          messages: [
+            {
+              role: "system",
+              content:
+                "אתה עוזר ניהולי בתלמוד תורה. סכם בעברית תקציר קצר ומעשי למנהל המוסד על פגישות 1:1 עם המלמדים, " +
+                "לפי מלמדים וכיתות. השתמש רק בנתונים שקיבלת, אל תמציא עובדות. " +
+                "החזר עד 8 שורות: נושאים חוזרים, מטלות פתוחות ומעקבים שדורשים תשומת לב.",
+            },
+            { role: "user", content: lines },
+          ],
+        });
+      } catch (e) {
+        console.error("[AI Error]", e);
+        aiSummary = null;
+      }
+    }
+
+    return { teachers, totalMeetings: meetings.length, aiSummary };
+  });
