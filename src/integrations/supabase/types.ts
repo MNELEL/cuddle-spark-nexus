@@ -3110,6 +3110,50 @@ export type Database = {
           },
         ]
       }
+      teacher_meetings: {
+        Row: {
+          action_items: string | null
+          admin_id: string
+          created_at: string
+          follow_up_date: string | null
+          id: string
+          institution_id: string
+          meeting_date: string
+          summary: string
+          teacher_id: string
+        }
+        Insert: {
+          action_items?: string | null
+          admin_id: string
+          created_at?: string
+          follow_up_date?: string | null
+          id?: string
+          institution_id: string
+          meeting_date?: string
+          summary: string
+          teacher_id: string
+        }
+        Update: {
+          action_items?: string | null
+          admin_id?: string
+          created_at?: string
+          follow_up_date?: string | null
+          id?: string
+          institution_id?: string
+          meeting_date?: string
+          summary?: string
+          teacher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teacher_meetings_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       teacher_notes: {
         Row: {
           content: string

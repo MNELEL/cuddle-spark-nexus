@@ -22,6 +22,7 @@ import {
 import { InstitutionStaffCard } from "@/components/institution-staff-card";
 import { InstitutionClassAssignmentsCard } from "@/components/institution-class-assignments-card";
 import { TeacherChangeHistory } from "@/components/teacher-change-history";
+import { TeacherMeetingsDialog } from "@/components/teacher-meetings-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { renameInstitutionTeacher } from "@/lib/institution-staff.functions";
 import { Search, ChevronLeft, Pencil, Building2, Users, GraduationCap, Archive, UserPlus, Loader2 } from "lucide-react";
@@ -294,6 +295,7 @@ function TeachersTab({ canEdit, institutionId }: { canEdit: boolean; institution
   const attachRole = useServerFn(assignRole);
   const [renameTarget, setRenameTarget] = useState<{ userId: string; name: string } | null>(null);
   const [notesTarget, setNotesTarget] = useState<{ userId: string; name: string; notes: string } | null>(null);
+  const [meetingsTarget, setMeetingsTarget] = useState<{ userId: string; name: string } | null>(null);
 
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
@@ -572,6 +574,14 @@ function TeachersTab({ canEdit, institutionId }: { canEdit: boolean; institution
                   >
                     סגנון הוראה והערות
                   </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="rounded-xl"
+                    onClick={() => setMeetingsTarget({ userId: t.userId, name: t.name })}
+                  >
+                    פגישות
+                  </Button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button variant="ghost" size="sm" className="rounded-xl text-destructive">
@@ -706,6 +716,8 @@ function TeachersTab({ canEdit, institutionId }: { canEdit: boolean; institution
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <TeacherMeetingsDialog teacher={meetingsTarget} onClose={() => setMeetingsTarget(null)} />
     </Card>
   );
 }
