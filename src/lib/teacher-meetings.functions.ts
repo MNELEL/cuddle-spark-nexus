@@ -96,6 +96,62 @@ export const listTeacherMeetings = createServerFn({ method: "POST" })
     }));
   });
 
+export type TeacherMeetingsGroup = {
+  teacherId: string;
+  teacherName: string;
+  meetings: TeacherMeeting[];
+};
+
+/** כל הפגישות במוסד של הקורא, מקובצות לפי מלמד. כל מנהל מוסד רשאי לצפות. */
+export const listInstitutionMeetings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<TeacherMeetingsGroup[]> => {
+    const { supabase, userId } = context;
+    const scope = await requireScope(supabase, userId);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rows, error } = await supabaseAdmin
+      .from("teacher_meetings")
+      .select("id, meeting_date, summary, action_items, follow_up_date, admin_id, teacher_id, created_at")
+      .eq("institution_id", scope.institutionId)
+      .order("meeting_date", { ascending: false });
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+
+    const meetings = rows ?? [];
+    const ids = Array.from(new Set(meetings.flatMap((m) => [m.admin_id, m.teacher_id])));
+    const names: Record<string, string> = {};
+    if (ids.length > 0) {
+      // Display names only — no emails or other account PII.
+      const { data: profiles, error: pErr } = await supabaseAdmin
+        .from("profiles").select("id, display_name").in("id", ids);
+      if (pErr) { console.error("[DB Error]", pErr); throw new Error("הפעולה נכשלה. נסה שוב."); }
+      for (const p of profiles ?? []) names[p.id] = p.display_name ?? "";
+    }
+
+    const groups = new Map<string, TeacherMeetingsGroup>();
+    for (const m of meetings) {
+      let g = groups.get(m.teacher_id);
+      if (!g) {
+        g = {
+          teacherId: m.teacher_id,
+          teacherName: names[m.teacher_id] || "מלמד",
+          meetings: [],
+        };
+        groups.set(m.teacher_id, g);
+      }
+      g.meetings.push({
+        id: m.id,
+        meetingDate: m.meeting_date,
+        summary: m.summary,
+        actionItems: m.action_items ?? null,
+        followUpDate: m.follow_up_date ?? null,
+        adminName: names[m.admin_id] || "מנהל המוסד",
+        createdAt: m.created_at,
+      });
+    }
+    return Array.from(groups.values()).sort((a, b) => a.teacherName.localeCompare(b.teacherName, "he"));
+  });
+
 const dateString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "תאריך לא תקין");
 
 const createSchema = z.object({
