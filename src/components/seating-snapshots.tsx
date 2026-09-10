@@ -43,6 +43,14 @@ export function SeatingSnapshots({ classId }: { classId: string }) {
     mutationFn: (id: string) => delFn({ data: { id } }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["seating-configs", classId] }),
   });
+  const genM = useMutation({
+    mutationFn: () => genFn({ data: { classId, count: 3 } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["seating-configs", classId] });
+      toast.success("נוצרו 3 הצעות להשוואה");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
+  });
 
   return (
     <Popover>
