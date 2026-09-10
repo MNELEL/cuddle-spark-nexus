@@ -36,6 +36,7 @@ import {
   phoneHref, whatsappHref,
 } from "@/lib/student-field-validation";
 import { daysUntilLabel, hebrewDate, hebrewDateTime, nextHebrewBirthday, toHebrewDateLabel } from "@/lib/hebrew-date";
+import { StudentPortfolioPanel } from "@/components/student-portfolio-panel";
 
 type Props = {
   open: boolean;
@@ -230,6 +231,9 @@ function StudentFileSheetInner(props: Props) {
             <TabsTrigger value="contact" className="flex-1">
               <IdCard className="ms-1 h-4 w-4" /> פרטי קשר
             </TabsTrigger>
+            <TabsTrigger value="portfolio" className="flex-1">
+              <Calendar className="ms-1 h-4 w-4" /> תיק רב-שנתי
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="documents" className="mt-4">
             <DocumentsPanel {...props} />
@@ -245,6 +249,9 @@ function StudentFileSheetInner(props: Props) {
           </TabsContent>
           <TabsContent value="contact" className="mt-4">
             <ContactDetailsPanel {...props} />
+          </TabsContent>
+          <TabsContent value="portfolio" className="mt-4">
+            <StudentPortfolioPanel studentId={studentId} />
           </TabsContent>
         </Tabs>
       </SheetContent>

@@ -61,6 +61,42 @@ function StatTile({ label, value, hint }: { label: string; value: number; hint?:
   );
 }
 
+type RosterEntry = { id: string; name: string; person_key: string; carriedOver: boolean };
+
+/** Collapsible student list with the stable student ID, so year transitions are visible. */
+function ClassRoster({ roster }: { roster: RosterEntry[] }) {
+  if (roster.length === 0) return null;
+  const carried = roster.filter((s) => s.carriedOver).length;
+  return (
+    <Collapsible>
+      <CollapsibleTrigger asChild>
+        <Button variant="ghost" size="sm" className="w-full justify-between rounded-xl px-2 text-xs">
+          <span>
+            רשימת תלמידים ({roster.length})
+            {carried > 0 && <span className="text-primary"> · {carried} עברו שנה</span>}
+          </span>
+          <ChevronDown className="h-4 w-4" aria-hidden="true" />
+        </Button>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <ul className="mt-2 max-h-56 space-y-1 overflow-y-auto pe-1 text-xs">
+          {roster.map((s) => (
+            <li key={s.id} className="flex items-center justify-between gap-2 rounded-lg bg-muted/40 px-2 py-1">
+              <span className="min-w-0 truncate">{s.name}</span>
+              <span className="flex shrink-0 items-center gap-1">
+                {s.carriedOver && <Badge variant="outline" className="border-primary/50 text-primary">עבר שנה</Badge>}
+                <code className="font-mono-tabular text-[10px] text-muted-foreground" title={s.person_key}>
+                  {s.person_key.slice(0, 8)}
+                </code>
+              </span>
+            </li>
+          ))}
+        </ul>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
 function ClassesPage() {
   const overview = useServerFn(getClassesOverview);
   const remove = useServerFn(deleteClass);
@@ -102,6 +138,7 @@ function ClassesPage() {
   });
   const classes = data?.classes ?? [];
   const perClass = (data?.perClass ?? {}) as Record<string, ClassMetrics>;
+  const rosters = (data?.rosters ?? {}) as Record<string, RosterEntry[]>;
   const stats = data?.stats;
 
   const invalidateClasses = () => {
@@ -144,6 +181,22 @@ function ClassesPage() {
       compareClasses(sort, recentIds, perClass) as unknown as (a: Record<string, unknown>, b: Record<string, unknown>) => number,
     ) as typeof classes;
   }, [classes, q, statusFilter, recentIds, sort, perClass]);
+
+  // One row per academic year, keeping the chosen sort order inside each row.
+  const yearGroups = useMemo(() => {
+    const map = new Map<string, typeof filtered>();
+    for (const c of filtered) {
+      const year = String((c as { academic_year?: string | null }).academic_year ?? "").trim() || "ללא שנה";
+      const list = map.get(year) ?? ([] as typeof filtered);
+      list.push(c);
+      map.set(year, list);
+    }
+    return Array.from(map.entries()).sort((a, b) => {
+      if (a[0] === "ללא שנה") return 1;
+      if (b[0] === "ללא שנה") return -1;
+      return b[0].localeCompare(a[0], "he");
+    });
+  }, [filtered]);
 
   const hasFilters = q.trim().length > 0 || statusFilter !== "active";
   const clearFilters = () => { setQ(""); setStatusFilter("active"); };
@@ -265,8 +318,16 @@ function ClassesPage() {
           </CardContent>
         </Card>
       ) : (
+        <div className="space-y-8">
+          {yearGroups.map(([year, yearClasses]) => (
+        <section key={year} aria-label={`שנת ${year}`} className="space-y-3">
+        <div className="flex items-center gap-3">
+          <h2 className="font-display text-lg font-bold">{year}</h2>
+          <span className="text-xs text-muted-foreground font-mono-tabular">{yearClasses.length} כיתות</span>
+          <span className="h-px flex-1 bg-border" aria-hidden="true" />
+        </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((c) => {
+          {yearClasses.map((c) => {
             const status = ((c as { status?: string }).status ?? "active") as "active" | "archived";
             const m = metricsFor(perClass, c.id);
             return (
@@ -346,13 +407,17 @@ function ClassesPage() {
                   </AlertDialogContent>
                 </AlertDialog>
                 )}
-                </div>
-              </CardContent>
-            </Card>
-            );
-          })}
+                 </div>
+                <ClassRoster roster={rosters[c.id] ?? []} />
+               </CardContent>
+             </Card>
+             );
+           })}
+         </div>
+        </section>
+          ))}
         </div>
-      )}
+       )}
 
       <Card className="rounded-2xl">
         <CardContent className="flex flex-col gap-2 pt-6 sm:flex-row sm:items-center sm:justify-between">
