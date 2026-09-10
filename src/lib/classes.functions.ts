@@ -114,7 +114,7 @@ export const getClassesOverview = createServerFn({ method: "GET" })
       }
     }
 
-    return { classes: rows, perClass, stats: summarizeClasses(rows, perClass) };
+    return { classes: rows, perClass, rosters, stats: summarizeClasses(rows, perClass) };
   });
 
 export const createClass = createServerFn({ method: "POST" })
