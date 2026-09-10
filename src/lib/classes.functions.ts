@@ -188,6 +188,8 @@ export const createClass = createServerFn({ method: "POST" })
         corner_pref: s.corner_pref,
         national_id: s.national_id,
         birth_date: s.birth_date,
+        // תאריך-החלוף נשמר עם התלמיד במעבר שנה
+        start_date: s.start_date,
         address: s.address,
         father_name: s.father_name,
         father_id: s.father_id,
