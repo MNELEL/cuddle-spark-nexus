@@ -13,6 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { HebrewWeeksCard } from "@/components/hebrew-weeks-card";
 import { HebrewRangeLinksCard } from "@/components/hebrew-range-links-card";
+import { HebrewDailyPdfCard } from "@/components/hebrew-daily-pdf-card";
+import { StudentDailyPdfCard } from "@/components/student-daily-pdf-card";
 import { useHebrewAnchor } from "@/components/hebrew-anchor";
 import {
   elapsedSince,
@@ -52,7 +54,8 @@ function HebrewCalendarPage() {
     queryKey: ["classes"],
     queryFn: () => list(),
   });
-  const firstClassId = (classes as { id: string }[])[0]?.id;
+  const classOptions = classes as { id: string; name: string }[];
+  const firstClassId = classOptions[0]?.id;
 
   return (
     <div dir="rtl" className="mx-auto max-w-4xl space-y-5">
@@ -98,6 +101,13 @@ function HebrewCalendarPage() {
           <HebrewWeeksCard date={anchor} />
         </TabsContent>
       </Tabs>
+
+      {classOptions.length > 0 && (
+        <>
+          <HebrewDailyPdfCard classes={classOptions} />
+          <StudentDailyPdfCard classes={classOptions} />
+        </>
+      )}
 
       <HebrewRangeLinksCard classId={firstClassId} />
     </div>
