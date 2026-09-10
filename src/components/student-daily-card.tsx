@@ -35,7 +35,12 @@ export function StudentDailyCard({
   classId: string;
   students: { id: string; name: string }[];
 }) {
-  const { info, isCustom } = useHebrewAnchor();
+  const { info, isCustom, elapsedFrom, elapsedFromInfo } = useHebrewAnchor();
+  /** תאריך-החלוף הבא נגזר מהלוח האמיתי — תחילת החודש העברי הבא. */
+  const nextAnchor = useMemo(
+    () => hebrewDayInfo(hebrewMonthBounds(shiftHebrew(elapsedFrom, "month", 1)).start),
+    [elapsedFrom],
+  );
   const date = info.iso;
   const qc = useQueryClient();
   const [studentId, setStudentId] = useState(students[0]?.id ?? "");
