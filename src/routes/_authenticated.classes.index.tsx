@@ -265,8 +265,16 @@ function ClassesPage() {
           </CardContent>
         </Card>
       ) : (
+        <div className="space-y-8">
+          {yearGroups.map(([year, yearClasses]) => (
+        <section key={year} aria-label={`שנת ${year}`} className="space-y-3">
+        <div className="flex items-center gap-3">
+          <h2 className="font-display text-lg font-bold">{year}</h2>
+          <span className="text-xs text-muted-foreground font-mono-tabular">{yearClasses.length} כיתות</span>
+          <span className="h-px flex-1 bg-border" aria-hidden="true" />
+        </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((c) => {
+          {yearClasses.map((c) => {
             const status = ((c as { status?: string }).status ?? "active") as "active" | "archived";
             const m = metricsFor(perClass, c.id);
             return (
@@ -346,13 +354,17 @@ function ClassesPage() {
                   </AlertDialogContent>
                 </AlertDialog>
                 )}
-                </div>
-              </CardContent>
-            </Card>
-            );
-          })}
+                 </div>
+                <ClassRoster roster={rosters[c.id] ?? []} />
+               </CardContent>
+             </Card>
+             );
+           })}
+         </div>
+        </section>
+          ))}
         </div>
-      )}
+       )}
 
       <Card className="rounded-2xl">
         <CardContent className="flex flex-col gap-2 pt-6 sm:flex-row sm:items-center sm:justify-between">
