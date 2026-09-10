@@ -102,6 +102,13 @@ function HebrewCalendarPage() {
         </TabsContent>
       </Tabs>
 
+      {classOptions.length > 0 && (
+        <>
+          <HebrewDailyPdfCard classes={classOptions} />
+          <StudentDailyPdfCard classes={classOptions} />
+        </>
+      )}
+
       <HebrewRangeLinksCard classId={firstClassId} />
     </div>
   );
