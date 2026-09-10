@@ -723,7 +723,7 @@ function TeachersTab({ canEdit, institutionId }: { canEdit: boolean; institution
         </DialogContent>
       </Dialog>
 
-      <TeacherMeetingsDialog teacher={meetingsTarget} onClose={() => setMeetingsTarget(null)} />
+      <TeacherMeetingsDialog teacher={meetingsTarget} canEdit={canEdit} onClose={() => setMeetingsTarget(null)} />
     </Card>
   );
 }
