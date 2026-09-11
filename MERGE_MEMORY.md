@@ -931,3 +931,118 @@ Type-check עבר, MCP manifest נבנה מחדש בהצלחה. עלות: 1 קר
 ### מסקנה לפעם הבאה
 
 גם קומיטים שנראים לא-קשורים לנושא הנוכחי צריכים אימות מלא לפני שממשיכים — כאן זה חשף פיצ'ר עצמאי משמעותי (400MB, פיצול, סנכרון הספק) שלא היה מתועד כלל בלי הבדיקה. `list_edits` בתחילת כל סבב, גם באמצע עבודה על נושא ספציפי אחר.
+
+---
+
+## 25. תבנית עיצוב תעודה מתמונה — סגירת פער Base44 #1 (9/9/2026, commits `3b220871` → `0d4870c2`)
+
+### רקע
+
+הפער הרביעי (ואחרון) שנותר מהשוואת Base44: `CertificateTemplate.analyzed_layout` — תבנית עיצוב חוזרת (מסגרת, קישוטים, צבעים) שמזוהה פעם אחת מתמונת תעודה, נשמרת, ומיושמת על תעודות עתידיות. הובחן במפורש מ-`analyzeCertificatePhoto` הקיים (OCR תוכן: שמות/ציונים). תוכנן בשני שלבים: (א) זיהוי+שמירה בלבד, (ב) יישום על ה-PDF בפועל.
+
+### חלק א׳ — זיהוי ושמירת תבנית (תואם לתכנון, `3b220871`+`fd356127`)
+
+**Migration**: טבלת `certificate_templates` — שדות עיצוביים כ-enum מוגבל (CHECK constraints): `frame_style`, `corner_decoration`, `title_font_weight`, `title_alignment`, `layout_density`, ושני צבעי hex עם ולידציית regex. RLS: `FOR ALL` ל-owner. `REVOKE ALL FROM anon`.
+
+**זיהוי** — `analyzeCertificateTemplate` ב-`ai-certificate.functions.ts` (קובץ קיים, לא נגעו ב-`analyzeCertificatePhoto`): system prompt נפרד שמנחה לנתח **רק מבנה חזותי**. `pick`/`pickHex` — ולידציה קשיחה מול רשימת ערכים מותרים, fallback לברירת מחדל.
+
+**ממשק** — `CertificateTemplateCard` חדש ב-`/certificates/$classId`: העלאה → זיהוי → תצוגה מקדימה בעברית עם דוגמה חזותית חיה → עריכה ידנית → שמירה.
+
+### חלק ב׳ — יישום על הפקת PDF (בוצע ישירות ע"י מיכאל, `0d4870c2`)
+
+- **`src/lib/pdf/template-design.ts` חדש**: `hexToRgb`, `designColors`, `drawTemplateFrame`. ברירת מחדל (ללא תבנית) זהה למה שהיה קודם.
+- **`certificate-pdf.ts`**: מסגרת קבועה הוחלפה ב-`drawTemplateFrame`. פאנל שם התלמיד מגיב לצפיפות/עובי/יישור/צבעי התבנית. `design?` אופציונלי — קריאות קיימות ממשיכות לעבוד.
+- **`daily-report-pdf.ts`**: גם מקבל `design?` אופציונלי.
+- **`CertificateTemplateSelect` חדש**: בורר תבנית, משולב ב-`/certificates/$classId` וב-`/daily-report/$classId`.
+
+### תוספות נוספות שלא היו בתכנון
+
+**ייבוא תיעוד יומי מקובץ Excel**, **מסך חדש `/class-anchors`** (דשבורד ריכוזי לכל הכיתות — תאריך-החלוף, סיכום תיעוד), **סנכרון תאריך-החלוף לתובנות** (`invalidateQueries` על 5 query keys בכל שינוי תאריך-החלוף).
+
+### ⚠️ ממצאים
+
+- `daily-log-import.functions.ts` שורה 39: `const supabase = context.supabase as any;` — עוקף type-safety במכוון. לא בעיית RLS.
+- לא נמצאה בעיית RLS או regression בהפקת PDF.
+
+### סטטוס
+
+| פריט | סטטוס לפני | סטטוס אחרי 9/9 |
+|---|---|---|
+| `CertificateTemplate.analyzed_layout` (Base44 gap #1) | פתוח | ✅ **סגור** (25) |
+
+---
+
+## 26. תקציר AI לתיעוד יומי + טבלת תיעוד-לפי-תלמיד בדוח (9/9/2026, commit `dbf36591`)
+
+### מה בוצע
+
+**תקציר AI לתיעוד יומי** (`ai-daily-summary.functions.ts` חדש, `suggestStudentDailySummary`): מקבץ נוכחות+ציון+תובנה קיימים ליום נתון, מריץ AI שמנסח כותרת ותיאור קצרים בעברית — "בלי להמציא עובדות". משולב ככפתור "הצע תקציר AI" ב-`StudentDailyCard`.
+
+**טבלת "תיעוד לפי תלמיד" בדוח PDF**: `daily-report-pdf.ts` מקבל `entries?: DailyReportStudentEntry[]` — טבלה נוספת שמפרטת נוכחות/ציון/תובנה לכל תלמיד לכל יום בטווח.
+
+### ⚠️ ממצא קל
+
+`templateName` ב-`daily-report.$classId.tsx` נשלף עם `(design as { name?: string })?.name`, אך `CertTemplateDesign` אינו כולל `name` — רק `CertificateTemplate` המורחב. עובד בפועל כי האובייקט המלא מה-DB מועבר, אך type-safety רופף.
+
+**פערי Base44 שנותרו פתוחים לפני סעיף 27:**
+- `SeatingArrangement.satisfaction_score`
+- `TeacherMeeting`
+- `StudentPortfolioItem.academic_year`
+
+---
+
+## 27. ציון שביעות רצון להושבה — סגירת פער Base44 #3 (10/9/2026, commits `e9de1484` → `7f23d699`)
+
+### רקע
+
+`SeatingArrangement.satisfaction_score` — ציון מחושב למערך הושבה. אומת מראש: `SeatingSnapshots`/`seating-configs.functions.ts` (תצורות הושבה שמורות) כבר קיימים ופועלים, וגם `scoreAssignment`+`computeViolations` (ב-`seating-logic.ts`) כבר קיימים ומשמשים את `smartSortSeats`/`ViolationsPanel` בזמן אמת — רק לא נחשפו ברמת תצורה שמורה. זה צמצם משמעותית את היקף הפרויקט: לא נדרשה טבלה חדשה, רק עמודות נוספות על `seating_configs` הקיימת.
+
+### חלק א׳ — ציון + 3 הצעות אוטומטיות (`e9de1484`, תואם לתכנון)
+
+**Migration**: `ALTER TABLE seating_configs ADD COLUMN score integer, ADD COLUMN violation_count integer` (nullable, תצורות ישנות נשארות null).
+
+**`seating-configs.functions.ts`**:
+- `saveConfig`: מורחב לשלוף גם `student_relations`, מריץ `computeViolations`+`scoreAssignment` הקיימים על מצב ההושבה הנוכחי, שומר `score`+`violation_count` יחד עם ה-snapshot.
+- `listConfigs`: מחזיר גם את שתי העמודות החדשות.
+- `generateSeatingCandidates(classId, count)` חדשה: מריצה `smartAssign` הקיים `count` פעמים (ברירת מחדל 3), לכל תוצאה מחשבת ציון+הפרות **בלי** לכתוב בפועל ל-`students`, שומרת כל אחת כ-`seating_configs` נפרדת בשם "הצעה אוטומטית N".
+
+**`seating-snapshots.tsx`**: תג ציון ליד כל תצורה (`✓ ציון מושלם` בירוק / `⚠ N הפרות` בכתום, אדום אם ציון מתחת ל--50). כפתור "צור 3 הצעות להשוואה" חדש.
+
+### חלק ב׳ — הרחבה שבוצעה ישירות ע"י מיכאל (`7f23d699`)
+
+**PDF לתצורת הושבה** (`seating-config-pdf.ts` חדש, `getConfigDetail` חדש ב-`seating-configs.functions.ts`): מפיק PDF עם רשימת תלמידים-לפי-מקום ופריטי סביבה עבור תצורה שמורה בודדת.
+
+**ייצוא Excel לרשימת התצורות** (`seating-snapshots.tsx`): טבלת כל הסידורים השמורים עם ציון/הפרות/הערכה מילולית.
+
+**לוח עברי אוטומטי ב-`/daily-insights`**: טווח התאריכים וה"יום הפעיל" מתעדכנים כעת לבד מ-`elapsedFrom`/`info` (תאריך-החלוף), בלי כפתור רענון ידני — בחירת טווח ידנית ע"י המשתמש עוצרת את העדכון האוטומטי (`manualRange` state) עד שמבטלים.
+
+**הקשר לוח עברי בתקציר AI**: `suggestStudentDailySummary` מקבל כעת `anchors` (תאריך-החלוף, היום, הבא) ומשלב אותם בפרומפט, כדי שהתקציר "ידבר בשפת הלוח".
+
+**עמודת אישור בדוח היומי**: `DailyReportStudentEntry` מורחב עם `approvedAt`/`approvedBy`. כשנבחרה תבנית סגנון, הדוח מוסיף עמוד תעודה נפרד לכל תלמיד עם פרטי היום ואישור המלמד.
+
+### ⚠️ ממצא קל
+
+הקומיט מניח ש-`getDailyReportDetails().approvals` מחזיר שדה `approver` (`r.approver` ב-`daily-report.$classId.tsx`) — לא אומת בסבב הזה אם זה תואם בפועל למבנה שמוחזר מהשרת. לבדוק בביקור הבא אם עמודת "אושר" בדוח מוצגת נכון.
+
+### סטטוס מעודכן
+
+| פריט | סטטוס לפני | סטטוס אחרי 10/9 |
+|---|---|---|
+| `SeatingArrangement.satisfaction_score` (Base44 gap #3) | פתוח | ✅ **סגור** (27) |
+
+### סיכום כולל — פערי Base44 המקוריים (סעיף 19)
+
+| # | פער | סטטוס | נסגר בסעיף |
+|---|---|---|---|
+| 1 | `CertificateTemplate.analyzed_layout` | ✅ סגור | 25 |
+| 2 | דירוג כוכבים מהורים (`WeeklyBulletin.parent_feedbacks`) | ✅ סגור | 19 |
+| 3 | `SeatingArrangement.satisfaction_score` | ✅ סגור | 27 |
+| 4 | `OrchestratorInsight` (תובנות יומיות) | ✅ סגור | 20–22 |
+
+**נותרו פתוחים משני פערים נוספים שזוהו בסעיף 19 (לא היו בארבעה המקוריים שנספרו כ-"gap #1-4"):**
+- `TeacherMeeting` — יומן פגישות 1:1 מובנה בין הנהלה למורה
+- `StudentPortfolioItem.academic_year` — תיוג תיק תלמיד לפי שנה, ארכיון רב-שנתי
+
+### מסקנה לפעם הבאה
+
+בדיקת קוד חי לפני תכנון (`seating-snapshots.tsx`, `seating-configs.functions.ts`) חשפה שתשתית משמעותית כבר קיימת — צמצם פרויקט שנראה גדול (טבלה חדשה, מנוע ניקוד מאפס) לתוספת קטנה (שתי עמודות, חשיפת לוגיקה קיימת). לבדוק תמיד אם משהו דומה כבר קיים לפני שמניחים שצריך לבנות מאפס.
