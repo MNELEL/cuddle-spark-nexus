@@ -936,113 +936,93 @@ Type-check עבר, MCP manifest נבנה מחדש בהצלחה. עלות: 1 קר
 
 ## 25. תבנית עיצוב תעודה מתמונה — סגירת פער Base44 #1 (9/9/2026, commits `3b220871` → `0d4870c2`)
 
-### רקע
+**Migration**: טבלת `certificate_templates` עם CHECK constraints על שדות עיצוביים. RLS `FOR ALL` ל-owner. `analyzeCertificateTemplate` ב-`ai-certificate.functions.ts` מנתח רק מבנה חזותי, ולידציה קשיחה עם fallback. `CertificateTemplateCard` חדש ב-`/certificates/$classId`.
 
-הפער הרביעי (ואחרון) שנותר מהשוואת Base44: `CertificateTemplate.analyzed_layout` — תבנית עיצוב חוזרת (מסגרת, קישוטים, צבעים) שמזוהה פעם אחת מתמונת תעודה, נשמרת, ומיושמת על תעודות עתידיות. הובחן במפורש מ-`analyzeCertificatePhoto` הקיים (OCR תוכן: שמות/ציונים). תוכנן בשני שלבים: (א) זיהוי+שמירה בלבד, (ב) יישום על ה-PDF בפועל.
+**יישום על PDF** (בוצע ישירות ע"י מיכאל): `template-design.ts` חדש (`drawTemplateFrame`), `certificate-pdf.ts`+`daily-report-pdf.ts` מקבלים `design?` אופציונלי (ברירת מחדל זהה לקיים). `CertificateTemplateSelect` חדש.
 
-### חלק א׳ — זיהוי ושמירת תבנית (תואם לתכנון, `3b220871`+`fd356127`)
+**תוספות נלוות**: ייבוא תיעוד מ-Excel, מסך `/class-anchors`, סנכרון תאריך-החלוף לתובנות.
 
-**Migration**: טבלת `certificate_templates` — שדות עיצוביים כ-enum מוגבל (CHECK constraints): `frame_style`, `corner_decoration`, `title_font_weight`, `title_alignment`, `layout_density`, ושני צבעי hex עם ולידציית regex. RLS: `FOR ALL` ל-owner. `REVOKE ALL FROM anon`.
+**⚠️**: `daily-log-import.functions.ts` שורה 39, `as any` עוקף type-safety במכוון.
 
-**זיהוי** — `analyzeCertificateTemplate` ב-`ai-certificate.functions.ts` (קובץ קיים, לא נגעו ב-`analyzeCertificatePhoto`): system prompt נפרד שמנחה לנתח **רק מבנה חזותי**. `pick`/`pickHex` — ולידציה קשיחה מול רשימת ערכים מותרים, fallback לברירת מחדל.
-
-**ממשק** — `CertificateTemplateCard` חדש ב-`/certificates/$classId`: העלאה → זיהוי → תצוגה מקדימה בעברית עם דוגמה חזותית חיה → עריכה ידנית → שמירה.
-
-### חלק ב׳ — יישום על הפקת PDF (בוצע ישירות ע"י מיכאל, `0d4870c2`)
-
-- **`src/lib/pdf/template-design.ts` חדש**: `hexToRgb`, `designColors`, `drawTemplateFrame`. ברירת מחדל (ללא תבנית) זהה למה שהיה קודם.
-- **`certificate-pdf.ts`**: מסגרת קבועה הוחלפה ב-`drawTemplateFrame`. פאנל שם התלמיד מגיב לצפיפות/עובי/יישור/צבעי התבנית. `design?` אופציונלי — קריאות קיימות ממשיכות לעבוד.
-- **`daily-report-pdf.ts`**: גם מקבל `design?` אופציונלי.
-- **`CertificateTemplateSelect` חדש**: בורר תבנית, משולב ב-`/certificates/$classId` וב-`/daily-report/$classId`.
-
-### תוספות נוספות שלא היו בתכנון
-
-**ייבוא תיעוד יומי מקובץ Excel**, **מסך חדש `/class-anchors`** (דשבורד ריכוזי לכל הכיתות — תאריך-החלוף, סיכום תיעוד), **סנכרון תאריך-החלוף לתובנות** (`invalidateQueries` על 5 query keys בכל שינוי תאריך-החלוף).
-
-### ⚠️ ממצאים
-
-- `daily-log-import.functions.ts` שורה 39: `const supabase = context.supabase as any;` — עוקף type-safety במכוון. לא בעיית RLS.
-- לא נמצאה בעיית RLS או regression בהפקת PDF.
-
-### סטטוס
-
-| פריט | סטטוס לפני | סטטוס אחרי 9/9 |
-|---|---|---|
-| `CertificateTemplate.analyzed_layout` (Base44 gap #1) | פתוח | ✅ **סגור** (25) |
+### סטטוס: ✅ **סגור** — Base44 gap #1
 
 ---
 
-## 26. תקציר AI לתיעוד יומי + טבלת תיעוד-לפי-תלמיד בדוח (9/9/2026, commit `dbf36591`)
+## 26. תקציר AI לתיעוד יומי + טבלת תיעוד-לפי-תלמיד (9/9/2026, commit `dbf36591`)
 
-### מה בוצע
-
-**תקציר AI לתיעוד יומי** (`ai-daily-summary.functions.ts` חדש, `suggestStudentDailySummary`): מקבץ נוכחות+ציון+תובנה קיימים ליום נתון, מריץ AI שמנסח כותרת ותיאור קצרים בעברית — "בלי להמציא עובדות". משולב ככפתור "הצע תקציר AI" ב-`StudentDailyCard`.
-
-**טבלת "תיעוד לפי תלמיד" בדוח PDF**: `daily-report-pdf.ts` מקבל `entries?: DailyReportStudentEntry[]` — טבלה נוספת שמפרטת נוכחות/ציון/תובנה לכל תלמיד לכל יום בטווח.
-
-### ⚠️ ממצא קל
-
-`templateName` ב-`daily-report.$classId.tsx` נשלף עם `(design as { name?: string })?.name`, אך `CertTemplateDesign` אינו כולל `name` — רק `CertificateTemplate` המורחב. עובד בפועל כי האובייקט המלא מה-DB מועבר, אך type-safety רופף.
-
-**פערי Base44 שנותרו פתוחים לפני סעיף 27:**
-- `SeatingArrangement.satisfaction_score`
-- `TeacherMeeting`
-- `StudentPortfolioItem.academic_year`
+`suggestStudentDailySummary`: מנסח כותרת+תיאור מנתונים קיימים, "בלי להמציא עובדות". `daily-report-pdf.ts` מקבל `entries?`.
 
 ---
 
 ## 27. ציון שביעות רצון להושבה — סגירת פער Base44 #3 (10/9/2026, commits `e9de1484` → `7f23d699`)
 
+אומת מראש: `SeatingSnapshots`/`seating-configs.functions.ts` וגם `scoreAssignment`+`computeViolations` כבר קיימים — רק לא נחשפו ברמת תצורה שמורה. `ALTER TABLE seating_configs ADD COLUMN score, violation_count`. `generateSeatingCandidates` חדשה: מריצה `smartAssign` הקיים כמה פעמים. תג ציון + כפתור "צור 3 הצעות" ב-UI.
+
+**הרחבה ע"י מיכאל**: PDF לתצורת הושבה, ייצוא Excel, לוח עברי אוטומטי ב-`/daily-insights`, עמודת אישור בדוח היומי.
+
+### סטטוס: ✅ **סגור** — Base44 gap #3
+
+---
+
+## 28. שני כרטיסי PDF תיעוד-יומי בלוח העברי (10/9/2026, commit `0eb73470`)
+
+`HebrewDailyPdfCard`/`StudentDailyPdfCard` חדשים ב-`/hebrew-calendar`. אישור: `getDailyApproval` מחזיר `approver_name` בפועל — ממצא מסעיף 27 תקין.
+
+---
+
+## 29. מזהה-על יציב לתלמיד + תיק רב-שנתי — סגירת פער Base44 (10/9/2026, commits `dc93dd93` → `09562b93`)
+
+`StudentPortfolioItem.academic_year`. אומת מראש: מעבר שנה יוצר `student.id` חדש לגמרי, matching רק לפי שם ברגע המעבר, לא נשמר כקישור קבוע.
+
+**שלב א׳** (תואם לתכנון): `students.person_key uuid`. Backfill דו-שלבי: `gen_random_uuid()` לכל מי שחסר, ואז `WITH RECURSIVE` על `parent_class_id` שמאחד שרשראות מעבר-שנה לאותו `person_key` (השורה הוותיקה ביותר נבחרת כמקור). `createClass` מעתיק `person_key` בהעתקת תלמיד.
+
+**שלב ב׳** (בוצע ישירות ע"י מיכאל): טבלת `student_portfolio_items` (5 סוגי פריט, RLS תקין). `portfolio.functions.ts`: `getStudentPortfolio` (פריטים + timeline לפי `person_key`), `addPortfolioItem`, `deletePortfolioItem`. `StudentPortfolioPanel` — טאב "תיק רב-שנתי" ב-`StudentFileSheet`. `/classes` מקובץ לפי `academic_year` (`yearGroups`), `ClassRoster` עם תג "עבר שנה" (`carriedOver`).
+
+### סטטוס: ✅ **סגור**
+
+### סיכום — 5 מתוך 6 פערי Base44 נסגרו, נותר: `TeacherMeeting`
+
+---
+
+## 30. יומן פגישות 1:1 מלמד-מנהל — סגירת פער Base44 האחרון + תיקון RLS קריטי (10/9/2026, commits `de3322ae` → `08b295ad`)
+
 ### רקע
 
-`SeatingArrangement.satisfaction_score` — ציון מחושב למערך הושבה. אומת מראש: `SeatingSnapshots`/`seating-configs.functions.ts` (תצורות הושבה שמורות) כבר קיימים ופועלים, וגם `scoreAssignment`+`computeViolations` (ב-`seating-logic.ts`) כבר קיימים ומשמשים את `smartSortSeats`/`ViolationsPanel` בזמן אמת — רק לא נחשפו ברמת תצורה שמורה. זה צמצם משמעותית את היקף הפרויקט: לא נדרשה טבלה חדשה, רק עמודות נוספות על `seating_configs` הקיימת.
+`TeacherMeeting` — הפער האחרון מששת הפערים המקוריים. אומת מראש שדשבורד מוסד מלא (`/institution`, תפקידי `admin`/`principal`/`teacher`) כבר קיים ופעיל, אך `teaching_notes` הוא שדה יחיד ללא היסטוריית פגישות. מיכאל אישר: לא בשימוש פעיל כרגע, אך זו תשתית מכוונת למוסדות עתידיים — נבנה באותה רמה כמו שאר תשתית ה-institution.
 
-### חלק א׳ — ציון + 3 הצעות אוטומטיות (`e9de1484`, תואם לתכנון)
+### מה בוצע (`de3322ae`, תואם לתכנון בהיקף התכנים)
 
-**Migration**: `ALTER TABLE seating_configs ADD COLUMN score integer, ADD COLUMN violation_count integer` (nullable, תצורות ישנות נשארות null).
+Migration: טבלת `teacher_meetings` (`institution_id`, `teacher_id`, `admin_id`, `meeting_date`, `summary`, `action_items`, `follow_up_date`). `src/lib/teacher-meetings.functions.ts` (דפוס זהה ל-`institution-teachers.functions.ts`): `listTeacherMeetings`, `createTeacherMeeting` (מוודא שיוך מלמד-מוסד), `updateTeacherMeeting`/`deleteTeacherMeeting` (מוודאים בעלות מוסדית לפני כתיבה), רישום ל-`app_logs`. `TeacherMeetingsDialog` חדש, כפתור "פגישות" בטאב מלמדים.
 
-**`seating-configs.functions.ts`**:
-- `saveConfig`: מורחב לשלוף גם `student_relations`, מריץ `computeViolations`+`scoreAssignment` הקיימים על מצב ההושבה הנוכחי, שומר `score`+`violation_count` יחד עם ה-snapshot.
-- `listConfigs`: מחזיר גם את שתי העמודות החדשות.
-- `generateSeatingCandidates(classId, count)` חדשה: מריצה `smartAssign` הקיים `count` פעמים (ברירת מחדל 3), לכל תוצאה מחשבת ציון+הפרות **בלי** לכתוב בפועל ל-`students`, שומרת כל אחת כ-`seating_configs` נפרדת בשם "הצעה אוטומטית N".
+### ⚠️ פרצת אבטחה שנוצרה ותוקנה תוך דקה (`08b295ad`)
 
-**`seating-snapshots.tsx`**: תג ציון ליד כל תצורה (`✓ ציון מושלם` בירוק / `⚠ N הפרות` בכתום, אדום אם ציון מתחת ל--50). כפתור "צור 3 הצעות להשוואה" חדש.
+**הבעיה**: הפרומפט הנחה RLS "בסיסי, אכיפה באפליקציה" מתוך אנלוגיה שגויה לדפוס הקיים ב-`institution-dashboard.functions.ts`. אך שם, ה-RLS כמעט אף פעם לא נבדק בפועל כי כל הקריאות עוברות דרך `supabaseAdmin` (עוקף RLS לגמרי) אחרי אימות בשכבת האפליקציה. במיגרציה הראשונה של `teacher_meetings`, ה-RLS policies נכתבו כ-`USING (true)`/`WITH CHECK (true)` לכל ארבע הפעולות (SELECT/INSERT/UPDATE/DELETE) — **זה חושף את הטבלה בפועל**: כל משתמש מחובר (לא רק admin/principal, לא רק אותו מוסד) יכול לקרוא/לכתוב/למחוק כל פגישה של כל מוסד, אם הוא היה קורא ל-Supabase client ישירות במקום דרך שכבת ה-server functions.
 
-### חלק ב׳ — הרחבה שבוצעה ישירות ע"י מיכאל (`7f23d699`)
+**התיקון** (זוהה ותוקן אוטומטית ע"י קלאסיפייר האבטחה של לובאבל, דקה אחרי): 4 policies חדשים המשתמשים ב-`private.is_institution_admin(auth.uid(), institution_id)` (פונקציה security-definer קיימת בפרויקט): SELECT מוגבל ל-`teacher_id`/`admin_id`/מנהל אותו מוסד, INSERT/UPDATE/DELETE מוגבלים למנהל המוסד הרלוונטי בלבד.
 
-**PDF לתצורת הושבה** (`seating-config-pdf.ts` חדש, `getConfigDetail` חדש ב-`seating-configs.functions.ts`): מפיק PDF עם רשימת תלמידים-לפי-מקום ופריטי סביבה עבור תצורה שמורה בודדת.
-
-**ייצוא Excel לרשימת התצורות** (`seating-snapshots.tsx`): טבלת כל הסידורים השמורים עם ציון/הפרות/הערכה מילולית.
-
-**לוח עברי אוטומטי ב-`/daily-insights`**: טווח התאריכים וה"יום הפעיל" מתעדכנים כעת לבד מ-`elapsedFrom`/`info` (תאריך-החלוף), בלי כפתור רענון ידני — בחירת טווח ידנית ע"י המשתמש עוצרת את העדכון האוטומטי (`manualRange` state) עד שמבטלים.
-
-**הקשר לוח עברי בתקציר AI**: `suggestStudentDailySummary` מקבל כעת `anchors` (תאריך-החלוף, היום, הבא) ומשלב אותם בפרומפט, כדי שהתקציר "ידבר בשפת הלוח".
-
-**עמודת אישור בדוח היומי**: `DailyReportStudentEntry` מורחב עם `approvedAt`/`approvedBy`. כשנבחרה תבנית סגנון, הדוח מוסיף עמוד תעודה נפרד לכל תלמיד עם פרטי היום ואישור המלמד.
-
-### ⚠️ ממצא קל
-
-הקומיט מניח ש-`getDailyReportDetails().approvals` מחזיר שדה `approver` (`r.approver` ב-`daily-report.$classId.tsx`) — לא אומת בסבב הזה אם זה תואם בפועל למבנה שמוחזר מהשרת. לבדוק בביקור הבא אם עמודת "אושר" בדוח מוצגת נכון.
+**לקח קריטי לתיעוד קבוע:** כתיבת RLS policy כ-`USING (true)` "כי הדפוס הקיים ככה" היא טעות מסוכנת — צריך לבדוק **איך ה-RLS נאכף בפועל בדפוס המקורי**, לא רק להעתיק את הצורה החיצונית שלו. אם קריאות בדפוס המקורי עוברות תמיד דרך `supabaseAdmin`, ה-RLS שם כמעט דקורטיבי; אבל אם טבלה חדשה עלולה להיקרא ישירות דרך ה-client הרגיל (או שקוד עתידי יעשה זאת), RLS רופף הוא חור אבטחה אמיתי. **בפרומפטים עתידיים ליצירת טבלה חדשה: לעולם לא לכתוב `USING (true)` כברירת מחדל — תמיד לדרוש RLS שאוכף בעלות/שיוך אמיתי, גם אם הקריאות המתוכננות עוברות דרך admin client.**
 
 ### סטטוס מעודכן
 
 | פריט | סטטוס לפני | סטטוס אחרי 10/9 |
 |---|---|---|
-| `SeatingArrangement.satisfaction_score` (Base44 gap #3) | פתוח | ✅ **סגור** (27) |
+| `TeacherMeeting` (Base44 gap אחרון) | פתוח | ✅ **סגור** (30) |
+| פרצת RLS ב-`teacher_meetings` | נוצרה ותוקנה באותו יום | ✅ תוקן, אומת מול `get_diff` |
 
-### סיכום כולל — פערי Base44 המקוריים (סעיף 19)
+### סיכום סופי — כל ששת פערי Base44 שזוהו בסעיף 19 נסגרו
 
-| # | פער | סטטוס | נסגר בסעיף |
-|---|---|---|---|
-| 1 | `CertificateTemplate.analyzed_layout` | ✅ סגור | 25 |
-| 2 | דירוג כוכבים מהורים (`WeeklyBulletin.parent_feedbacks`) | ✅ סגור | 19 |
-| 3 | `SeatingArrangement.satisfaction_score` | ✅ סגור | 27 |
-| 4 | `OrchestratorInsight` (תובנות יומיות) | ✅ סגור | 20–22 |
+| # | פער | נסגר בסעיף |
+|---|---|---|
+| 1 | `CertificateTemplate.analyzed_layout` | 25 |
+| 2 | דירוג כוכבים מהורים | 19 |
+| 3 | `SeatingArrangement.satisfaction_score` | 27 |
+| 4 | `OrchestratorInsight` (תובנות יומיות) | 20–22 |
+| 5 | `TeacherMeeting` | 30 |
+| 6 | `StudentPortfolioItem.academic_year` | 29 |
 
-**נותרו פתוחים משני פערים נוספים שזוהו בסעיף 19 (לא היו בארבעה המקוריים שנספרו כ-"gap #1-4"):**
-- `TeacherMeeting` — יומן פגישות 1:1 מובנה בין הנהלה למורה
-- `StudentPortfolioItem.academic_year` — תיוג תיק תלמיד לפי שנה, ארכיון רב-שנתי
+**אין פערי Base44 פתוחים נוספים מההשוואה המקורית.**
 
 ### מסקנה לפעם הבאה
 
-בדיקת קוד חי לפני תכנון (`seating-snapshots.tsx`, `seating-configs.functions.ts`) חשפה שתשתית משמעותית כבר קיימת — צמצם פרויקט שנראה גדול (טבלה חדשה, מנוע ניקוד מאפס) לתוספת קטנה (שתי עמודות, חשיפת לוגיקה קיימת). לבדוק תמיד אם משהו דומה כבר קיים לפני שמניחים שצריך לבנות מאפס.
+כשמפרומפט מבקשים ליצור טבלה חדשה בהשראת דפוס RLS קיים, יש לבדוק תמיד את **אופן האכיפה בפועל** (RLS ישיר מול admin-client עם בדיקה באפליקציה), לא רק להעתיק תבנית SQL. קלאסיפייר האבטחה של לובאבל תפס ותיקן פרצה אמיתית תוך דקה — שווה תמיד לבדוק `list_edits` מיד אחרי שליחת פרומפט הכולל יצירת טבלה חדשה, כדי לתפוס תיקוני אבטחה אוטומטיים כאלה ולהבין למה היו נחוצים.
+
