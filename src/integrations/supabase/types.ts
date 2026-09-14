@@ -2851,6 +2851,8 @@ export type Database = {
       }
       student_portfolio_items: {
         Row: {
+          ai_summary: string | null
+          approved_at: string | null
           class_id: string | null
           created_at: string
           description: string
@@ -2865,6 +2867,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          ai_summary?: string | null
+          approved_at?: string | null
           class_id?: string | null
           created_at?: string
           description?: string
@@ -2879,6 +2883,8 @@ export type Database = {
           user_id?: string
         }
         Update: {
+          ai_summary?: string | null
+          approved_at?: string | null
           class_id?: string | null
           created_at?: string
           description?: string

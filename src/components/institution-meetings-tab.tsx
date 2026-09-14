@@ -15,8 +15,12 @@ import { hebrewDate } from "@/lib/hebrew-date";
 import {
   listInstitutionMeetings,
   getInstitutionMeetingsReport,
+  MEETING_PERIODS,
+  meetingPeriodLabel,
+  type MeetingPeriod,
   type MeetingsReport,
 } from "@/lib/teacher-meetings.functions";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 /** טאב "פגישות": סיכום פגישות 1:1 לכל מלמד במוסד, כולל דוח, תקציר AI וייצוא PDF. */
 export function InstitutionMeetingsTab({ canEdit }: { canEdit: boolean }) {
@@ -26,6 +30,7 @@ export function InstitutionMeetingsTab({ canEdit }: { canEdit: boolean }) {
   const [templateId, setTemplateId] = useState<string | null>(null);
   const [target, setTarget] = useState<{ userId: string; name: string } | null>(null);
   const [aiSummary, setAiSummary] = useState<string | null>(null);
+  const [period, setPeriod] = useState<MeetingPeriod>("month");
 
   const q = useQuery({
     queryKey: ["institution-meetings"],
@@ -34,13 +39,13 @@ export function InstitutionMeetingsTab({ canEdit }: { canEdit: boolean }) {
   const groups = q.data ?? [];
 
   const reportQ = useQuery({
-    queryKey: ["institution-meetings-report"],
-    queryFn: () => fetchReport({ data: {} }) as Promise<MeetingsReport>,
+    queryKey: ["institution-meetings-report", period],
+    queryFn: () => fetchReport({ data: { period } }) as Promise<MeetingsReport>,
   });
   const report = reportQ.data;
 
   const aiM = useMutation({
-    mutationFn: () => fetchReport({ data: { withAi: true } }) as Promise<MeetingsReport>,
+    mutationFn: () => fetchReport({ data: { withAi: true, period } }) as Promise<MeetingsReport>,
     onSuccess: (r) => {
       if (!r.aiSummary) return toast.error("לא התקבל תקציר. נסה שוב בעוד רגע.");
       setAiSummary(r.aiSummary);
@@ -51,8 +56,18 @@ export function InstitutionMeetingsTab({ canEdit }: { canEdit: boolean }) {
   return (
     <div className="space-y-6">
     <Card className="rounded-2xl">
-      <CardHeader>
+      <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <CardTitle className="text-base">דוח פגישות לפי מלמדים וכיתות</CardTitle>
+        <Select value={period} onValueChange={(v) => setPeriod(v as MeetingPeriod)}>
+          <SelectTrigger className="w-[150px] rounded-xl" aria-label="תקופת הדוח">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {MEETING_PERIODS.map((p) => (
+              <SelectItem key={p} value={p}>{meetingPeriodLabel[p]}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </CardHeader>
       <CardContent className="space-y-3">
         {reportQ.isLoading ? (
@@ -60,12 +75,26 @@ export function InstitutionMeetingsTab({ canEdit }: { canEdit: boolean }) {
         ) : reportQ.isError ? (
           <p className="py-4 text-center text-sm text-destructive">טעינת הדוח נכשלה.</p>
         ) : !report || report.teachers.length === 0 ? (
-          <p className="py-4 text-center text-sm text-muted-foreground">אין נתוני פגישות לדוח.</p>
+          <p className="py-4 text-center text-sm text-muted-foreground">
+            אין נתוני פגישות לדוח בתקופה שנבחרה.
+          </p>
         ) : (
           <>
             <p className="text-xs text-muted-foreground">
-              סה״כ <span className="font-mono-tabular">{report.totalMeetings}</span> פגישות במוסד
+              {meetingPeriodLabel[report.period]} · סה״כ{" "}
+              <span className="font-mono-tabular">{report.totalMeetings}</span> פגישות במוסד
             </p>
+            <div className="flex flex-wrap gap-2 text-xs">
+              <Badge variant="outline" className="font-mono-tabular">
+                ממוצע פגישות למלמד {report.avgMeetingsPerTeacher}
+              </Badge>
+              <Badge variant="outline" className="font-mono-tabular">
+                אורך סיכום ממוצע {report.avgSummaryLength} תווים
+              </Badge>
+              <Badge variant="outline" className="font-mono-tabular">
+                פגישות עם מטלות {report.meetingsWithActionItems} ({Math.round(report.actionItemsRate * 100)}%)
+              </Badge>
+            </div>
             <ul className="divide-y text-sm">
               {report.teachers.map((t) => (
                 <li key={t.teacherId} className="flex items-start justify-between gap-3 py-2">

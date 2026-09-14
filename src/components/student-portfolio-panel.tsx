@@ -9,9 +9,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, History } from "lucide-react";
+import { Plus, Trash2, History, Sparkles, CheckCircle2 } from "lucide-react";
 import {
   getStudentPortfolio, addPortfolioItem, deletePortfolioItem,
+  approvePortfolioItem, summarizePortfolioItem,
   PORTFOLIO_KINDS, portfolioKindLabel, type PortfolioKind,
 } from "@/lib/portfolio.functions";
 import { hebrewDate } from "@/lib/hebrew-date";
@@ -20,6 +21,8 @@ export function StudentPortfolioPanel({ studentId }: { studentId: string }) {
   const load = useServerFn(getStudentPortfolio);
   const add = useServerFn(addPortfolioItem);
   const remove = useServerFn(deletePortfolioItem);
+  const summarize = useServerFn(summarizePortfolioItem);
+  const approve = useServerFn(approvePortfolioItem);
   const qc = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -47,6 +50,18 @@ export function StudentPortfolioPanel({ studentId }: { studentId: string }) {
   const removeM = useMutation({
     mutationFn: (id: string) => remove({ data: { id } }),
     onSuccess: () => { invalidate(); toast.success("הפריט נמחק"); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
+  });
+
+  const summarizeM = useMutation({
+    mutationFn: (id: string) => summarize({ data: { id } }),
+    onSuccess: () => { invalidate(); toast.success("התקציר נוסף לפריט"); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
+  });
+
+  const approveM = useMutation({
+    mutationFn: (v: { id: string; approved: boolean }) => approve({ data: v }),
+    onSuccess: () => { invalidate(); toast.success("האישור עודכן"); },
     onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
   });
 
@@ -131,9 +146,43 @@ export function StudentPortfolioPanel({ studentId }: { studentId: string }) {
                     <Badge variant="secondary">{portfolioKindLabel[i.kind as PortfolioKind] ?? i.kind}</Badge>
                     {i.school_year && <Badge variant="outline" className="font-mono-tabular">{i.school_year}</Badge>}
                     {i.className && <Badge variant="outline">{i.className}</Badge>}
+                    {i.approved_at ? (
+                      <Badge className="bg-accent text-accent-foreground font-mono-tabular">
+                        אושר · {hebrewDate(String(i.approved_at).slice(0, 10))}
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline">טרם אושר</Badge>
+                    )}
                   </div>
                   {i.description && <p className="mt-1 text-xs text-muted-foreground">{i.description}</p>}
+                  {i.ai_summary && (
+                    <p className="mt-2 rounded-lg bg-muted/50 p-2 text-xs whitespace-pre-wrap">
+                      <span className="font-medium">תקציר AI: </span>{i.ai_summary}
+                    </p>
+                  )}
                   <p className="mt-1 text-[11px] text-muted-foreground font-mono-tabular">{hebrewDate(i.item_date)}</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="rounded-xl"
+                      disabled={summarizeM.isPending}
+                      onClick={() => summarizeM.mutate(i.id)}
+                    >
+                      <Sparkles className="me-1 h-4 w-4" aria-hidden="true" />
+                      תקציר AI
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="rounded-xl"
+                      disabled={approveM.isPending}
+                      onClick={() => approveM.mutate({ id: i.id, approved: !i.approved_at })}
+                    >
+                      <CheckCircle2 className="me-1 h-4 w-4" aria-hidden="true" />
+                      {i.approved_at ? "בטל אישור" : "אשר"}
+                    </Button>
+                  </div>
                 </div>
                 <Button
                   size="icon"
