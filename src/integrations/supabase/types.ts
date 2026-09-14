@@ -2861,6 +2861,7 @@ export type Database = {
           kind: string
           person_key: string
           school_year: string | null
+          source_meeting_id: string | null
           student_id: string | null
           title: string
           updated_at: string
@@ -2877,6 +2878,7 @@ export type Database = {
           kind?: string
           person_key: string
           school_year?: string | null
+          source_meeting_id?: string | null
           student_id?: string | null
           title: string
           updated_at?: string
@@ -2893,6 +2895,7 @@ export type Database = {
           kind?: string
           person_key?: string
           school_year?: string | null
+          source_meeting_id?: string | null
           student_id?: string | null
           title?: string
           updated_at?: string
@@ -2904,6 +2907,13 @@ export type Database = {
             columns: ["class_id"]
             isOneToOne: false
             referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_portfolio_items_source_meeting_id_fkey"
+            columns: ["source_meeting_id"]
+            isOneToOne: false
+            referencedRelation: "teacher_meetings"
             referencedColumns: ["id"]
           },
           {
