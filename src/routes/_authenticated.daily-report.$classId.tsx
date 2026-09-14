@@ -25,6 +25,7 @@ import { useHebrewAnchor } from "@/components/hebrew-anchor";
 import { DailyReportDayDialog } from "@/components/daily-report-day-dialog";
 import { hebrewRangePresets, hebrewDayInfo, isoOf } from "@/lib/hebrew-calendar";
 import { toHebrewDateFull, hebrewDateTime } from "@/lib/hebrew-date";
+import { useShowGregorian } from "@/lib/date-display";
 import { listStudents } from "@/lib/students.functions";
 import {
   getDailyReport,
@@ -95,6 +96,7 @@ function DailyLogReportPage() {
   const [templateId, setTemplateId] = useState<string | null>(null);
   const [templateDesign, setTemplateDesign] = useState<CertTemplateDesign | undefined>(undefined);
   const [templateName, setTemplateName] = useState<string | null>(null);
+  const showGregorian = useShowGregorian();
 
   const fetchReport = useServerFn(getDailyReport);
   const fetchDetails = useServerFn(getDailyReportDetails);
@@ -348,6 +350,7 @@ function DailyLogReportPage() {
           days: rows,
           entries,
           design: templateDesign,
+          showGregorian,
           ...(templateName ? { templateName } : {}),
         });
         downloadPdfBlob(blob, filename);
