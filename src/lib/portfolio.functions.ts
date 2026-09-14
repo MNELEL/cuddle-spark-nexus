@@ -139,3 +139,66 @@ export const deletePortfolioItem = createServerFn({ method: "POST" })
     if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     return { ok: true };
   });
+
+/** אישור פריט בתיק — שומר את תאריך האישור, או מבטל אותו. */
+export const approvePortfolioItem = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z.object({ id: z.string().uuid(), approved: z.boolean().default(true) }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("student_portfolio_items")
+      .update({ approved_at: data.approved ? new Date().toISOString() : null })
+      .eq("id", data.id);
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    return { ok: true };
+  });
+
+/** תקציר AI לפריט בתיק — מבוסס רק על הנתונים השמורים של הפריט. */
+export const summarizePortfolioItem = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: item, error } = await context.supabase
+      .from("student_portfolio_items")
+      .select("id, kind, title, description, school_year, item_date")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    if (!item) throw new Error("הפריט לא נמצא");
+
+    let summary = "";
+    try {
+      const { callLovableAI } = await import("@/lib/ai-gateway.server");
+      summary = await callLovableAI({
+        messages: [
+          {
+            role: "system",
+            content:
+              "אתה עוזר פדגוגי בתלמוד תורה. כתוב תקציר קצר בעברית (עד 3 שורות) לפריט בתיק התלמיד. " +
+              "השתמש רק בנתונים שקיבלת, אל תמציא עובדות.",
+          },
+          {
+            role: "user",
+            content:
+              `סוג: ${portfolioKindLabel[item.kind as PortfolioKind] ?? item.kind}\n` +
+              `כותרת: ${item.title}\n` +
+              `פירוט: ${item.description || "—"}\n` +
+              `שנה: ${item.school_year || "—"}\nתאריך: ${item.item_date}`,
+          },
+        ],
+      });
+    } catch (e) {
+      console.error("[AI Error]", e);
+      throw new Error("הפקת התקציר נכשלה. נסה שוב בעוד רגע.");
+    }
+
+    const trimmed = summary.trim().slice(0, 2000);
+    const { error: upErr } = await context.supabase
+      .from("student_portfolio_items")
+      .update({ ai_summary: trimmed })
+      .eq("id", data.id);
+    if (upErr) { console.error("[DB Error]", upErr); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    return { summary: trimmed };
+  });
