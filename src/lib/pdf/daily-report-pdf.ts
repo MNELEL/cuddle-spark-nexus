@@ -29,6 +29,8 @@ export type DailyReportPdfInput = {
   design?: CertTemplateDesign;
   /** שם התבנית שנבחרה — מוצג בכותרת הדוח. */
   templateName?: string;
+  /** הצגת התאריך הלועזי לצד העברי. ברירת מחדל: עברי בלבד. */
+  showGregorian?: boolean;
 };
 
 /** דוח תיעוד יומי לפי כיתה — טבלת סיכום לכל ימי הטווח העברי + התיעוד המלא. */
@@ -36,6 +38,10 @@ export async function buildDailyReportPdf(
   input: DailyReportPdfInput,
 ): Promise<{ blob: Blob; filename: string }> {
   await ensurePdfBrandLoaded();
+  const showGreg = input.showGregorian === true;
+  /** תאריך לתצוגה: עברי בלבד, ולועזי רק לפי בקשה מפורשת. */
+  const dateLabel = (iso: string) =>
+    showGreg ? `${hebrewDate(iso)} (${String(iso).slice(0, 10)})` : hebrewDate(iso);
   const hd = await createHebrewDoc();
   if (input.design) drawTemplateFrame(hd, input.design);
 
@@ -60,7 +66,7 @@ export async function buildDailyReportPdf(
     title: `דוח תיעוד יומי — ${input.className}`,
     subtitle: input.rangeLabel,
     meta:
-      `תקופה: ${hebrewDate(input.range.from)} — ${hebrewDate(input.range.to)} · ${input.studentCount} תלמידים` +
+      `תקופה: ${dateLabel(input.range.from)} — ${dateLabel(input.range.to)} · ${input.studentCount} תלמידים` +
       (input.templateName ? ` · תבנית: ${input.templateName}` : ""),
   });
 
@@ -74,10 +80,10 @@ export async function buildDailyReportPdf(
   if (input.days.length === 0) hd.paragraph("אין ימים בטווח שנבחר.");
   else
     hd.table({
-      head: [["תאריך עברי", "תאריך", "נוכחות", "ציונים", "תובנות", "תיעוד"]],
+      head: [["תאריך עברי", ...(showGreg ? ["תאריך לועזי"] : []), "נוכחות", "ציונים", "תובנות", "תיעוד"]],
       body: input.days.map((d) => [
         hebrewDate(d.date),
-        d.date,
+        ...(showGreg ? [String(d.date).slice(0, 10)] : []),
         d.attendance.total > 0
           ? `${d.attendance.present}/${d.attendance.total}${d.attendance.late > 0 ? ` (${d.attendance.late} איחורים)` : ""}`
           : "—",
@@ -85,14 +91,22 @@ export async function buildDailyReportPdf(
         d.insights.total > 0 ? String(d.insights.total) : "—",
         d.notes ? "יש" : "—",
       ]),
-      columnStyles: {
-        0: { cellWidth: 30 },
-        1: { cellWidth: 22, halign: "center" },
-        2: { cellWidth: 30, halign: "center" },
-        3: { cellWidth: 26, halign: "center" },
-        4: { cellWidth: 18, halign: "center" },
-        5: { cellWidth: "auto", halign: "center" },
-      },
+      columnStyles: showGreg
+        ? {
+            0: { cellWidth: 30 },
+            1: { cellWidth: 22, halign: "center" },
+            2: { cellWidth: 30, halign: "center" },
+            3: { cellWidth: 26, halign: "center" },
+            4: { cellWidth: 18, halign: "center" },
+            5: { cellWidth: "auto", halign: "center" },
+          }
+        : {
+            0: { cellWidth: 36 },
+            1: { cellWidth: 32, halign: "center" },
+            2: { cellWidth: 28, halign: "center" },
+            3: { cellWidth: 20, halign: "center" },
+            4: { cellWidth: "auto", halign: "center" },
+          },
     });
 
   const withNotes = input.days.filter((d) => d.notes);
@@ -100,7 +114,7 @@ export async function buildDailyReportPdf(
   if (withNotes.length === 0) hd.paragraph("אין תיעוד יומי בטווח זה.");
   else
     for (const d of withNotes) {
-      hd.subSection(`${hebrewDate(d.date)} (${d.date})`);
+      hd.subSection(dateLabel(d.date));
       hd.paragraph(d.notes || "—");
     }
 
@@ -117,7 +131,7 @@ export async function buildDailyReportPdf(
         e.attendance || "—",
         e.grade || "—",
         e.insight || "—",
-        e.approvedAt ? hebrewDate(e.approvedAt) : "—",
+        e.approvedAt ? hebrewDate(String(e.approvedAt).slice(0, 10)) : "—",
       ]),
       columnStyles: {
         0: { cellWidth: 24 },
@@ -138,7 +152,7 @@ export async function buildDailyReportPdf(
       drawBrandHeader(hd, {
         title: `תיעוד יומי — ${e.student}`,
         subtitle: input.templateName,
-        meta: `${input.className} · ${hebrewDate(e.date)} (${e.date})`,
+        meta: `${input.className} · ${dateLabel(e.date)}`,
       });
       hd.section("פרטי היום");
       hd.paragraph(`נוכחות: ${e.attendance || "—"}`);
@@ -148,7 +162,7 @@ export async function buildDailyReportPdf(
       hd.section("אישור המלמד");
       hd.paragraph(
         e.approvedAt
-          ? `אושר בתאריך ${hebrewDate(e.approvedAt)} (${String(e.approvedAt).slice(0, 10)})${e.approvedBy ? ` · ${e.approvedBy}` : ""}`
+          ? `אושר בתאריך ${dateLabel(String(e.approvedAt).slice(0, 10))}${e.approvedBy ? ` · ${e.approvedBy}` : ""}`
           : "טרם אושר",
       );
       drawFooter(hd, input.className);
@@ -156,6 +170,12 @@ export async function buildDailyReportPdf(
   }
 
   drawFooter(hd, input.className);
-  const filename = `דוח_תיעוד_יומי_${safeName(input.className)}_${input.range.from}_${input.range.to}.pdf`;
+  // שם הקובץ לפי הלוח העברי, כדי שיתאים לתאריך שמוצג בדוח.
+  const fromHeb = safeName(hebrewDate(input.range.from));
+  const toHeb = safeName(hebrewDate(input.range.to));
+  const filename =
+    fromHeb === toHeb
+      ? `דוח_תיעוד_יומי_${safeName(input.className)}_${fromHeb}.pdf`
+      : `דוח_תיעוד_יומי_${safeName(input.className)}_${fromHeb}_עד_${toHeb}.pdf`;
   return { blob: hd.doc.output("blob"), filename };
 }
