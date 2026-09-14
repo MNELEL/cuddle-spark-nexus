@@ -248,7 +248,7 @@ function DailySummaryPage() {
             סיכום יומי — {data?.class.name ?? "..."}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground font-mono-tabular">
-            {hebrewDate(date)} · הופק {todayStr()} · {TEACHER_LABEL} המלמד
+            {hebrewDate(date)} · הופק {hebrewDate(todayStr())} · {TEACHER_LABEL} המלמד
           </p>
         </header>
 

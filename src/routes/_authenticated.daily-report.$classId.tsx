@@ -25,6 +25,7 @@ import { useHebrewAnchor } from "@/components/hebrew-anchor";
 import { DailyReportDayDialog } from "@/components/daily-report-day-dialog";
 import { hebrewRangePresets, hebrewDayInfo, isoOf } from "@/lib/hebrew-calendar";
 import { toHebrewDateFull, hebrewDateTime } from "@/lib/hebrew-date";
+import { useShowGregorian } from "@/lib/date-display";
 import { listStudents } from "@/lib/students.functions";
 import {
   getDailyReport,
@@ -95,6 +96,7 @@ function DailyLogReportPage() {
   const [templateId, setTemplateId] = useState<string | null>(null);
   const [templateDesign, setTemplateDesign] = useState<CertTemplateDesign | undefined>(undefined);
   const [templateName, setTemplateName] = useState<string | null>(null);
+  const showGregorian = useShowGregorian();
 
   const fetchReport = useServerFn(getDailyReport);
   const fetchDetails = useServerFn(getDailyReportDetails);
@@ -348,6 +350,7 @@ function DailyLogReportPage() {
           days: rows,
           entries,
           design: templateDesign,
+          showGregorian,
           ...(templateName ? { templateName } : {}),
         });
         downloadPdfBlob(blob, filename);
@@ -510,7 +513,9 @@ function DailyLogReportPage() {
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-semibold">{info.full}</span>
-                    <span className="text-xs text-muted-foreground">{d.date}</span>
+                    {showGregorian && (
+                      <span className="text-xs text-muted-foreground">{d.date}</span>
+                    )}
                     {info.holidays?.map((h) => (
                       <Badge key={h} variant="secondary">
                         {h}

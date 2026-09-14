@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-export const PORTFOLIO_KINDS = ["achievement", "difficulty", "assessment", "milestone", "note"] as const;
+export const PORTFOLIO_KINDS = ["achievement", "difficulty", "assessment", "milestone", "note", "meeting"] as const;
 export type PortfolioKind = (typeof PORTFOLIO_KINDS)[number];
 
 export const portfolioKindLabel: Record<PortfolioKind, string> = {
@@ -11,6 +11,7 @@ export const portfolioKindLabel: Record<PortfolioKind, string> = {
   assessment: "אבחון",
   milestone: "ציון דרך",
   note: "הערה",
+  meeting: "פגישה 1:1",
 };
 
 const kindEnum = z.enum(PORTFOLIO_KINDS);
@@ -283,4 +284,117 @@ export const summarizePortfolioItem = createServerFn({ method: "POST" })
         meetings: (meetings.data ?? []).length,
       },
     };
+  });
+
+/**
+ * פגישות 1:1 שהמלמד רשאי לראות (RLS), עם סימון אילו פגישות כבר אושרו לתיק
+ * התלמיד לפי source_meeting_id.
+ */
+export const listPortfolioMeetings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ studentId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const student = await resolveStudent(context.supabase as never, data.studentId);
+
+    const [meetings, linked] = await Promise.all([
+      context.supabase
+        .from("teacher_meetings")
+        .select("id, meeting_date, summary, action_items, follow_up_date")
+        .order("meeting_date", { ascending: false })
+        .limit(30),
+      context.supabase
+        .from("student_portfolio_items")
+        .select("id, source_meeting_id, approved_at")
+        .eq("person_key", student.person_key)
+        .not("source_meeting_id", "is", null),
+    ]);
+    if (meetings.error) console.error("[DB Error]", meetings.error);
+    if (linked.error) console.error("[DB Error]", linked.error);
+
+    const byMeeting = new Map(
+      (linked.data ?? []).map((l) => [l.source_meeting_id as string, l]),
+    );
+    return {
+      meetings: (meetings.data ?? []).map((m) => {
+        const item = byMeeting.get(m.id);
+        return {
+          ...m,
+          itemId: item?.id ?? null,
+          approvedAt: (item?.approved_at as string | null) ?? null,
+        };
+      }),
+    };
+  });
+
+/**
+ * אישור פגישת 1:1 לתיק התלמיד — יוצר פריט מסוג "פגישה 1:1" עם תאריך הפגישה,
+ * הסיכום, המטלות ותאריך המעקב, כך שהפגישה נכללת בניתוח התיק. אישור חוזר
+ * מעדכן את הפריט הקיים במקום ליצור כפילות.
+ */
+export const approveMeetingToPortfolio = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z.object({
+      studentId: z.string().uuid(),
+      meetingId: z.string().uuid(),
+      approved: z.boolean().default(true),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const student = await resolveStudent(context.supabase as never, data.studentId);
+
+    const { data: meeting, error: mErr } = await context.supabase
+      .from("teacher_meetings")
+      .select("id, meeting_date, summary, action_items, follow_up_date")
+      .eq("id", data.meetingId)
+      .maybeSingle();
+    if (mErr) { console.error("[DB Error]", mErr); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    if (!meeting) throw new Error("הפגישה לא נמצאה");
+
+    const { data: existing, error: exErr } = await context.supabase
+      .from("student_portfolio_items")
+      .select("id")
+      .eq("person_key", student.person_key)
+      .eq("source_meeting_id", meeting.id)
+      .maybeSingle();
+    if (exErr) console.error("[DB Error]", exErr);
+
+    const description = [
+      meeting.summary ? `סיכום: ${String(meeting.summary).slice(0, 1200)}` : "",
+      meeting.action_items ? `מטלות: ${String(meeting.action_items).slice(0, 600)}` : "",
+      meeting.follow_up_date ? `תאריך מעקב: ${meeting.follow_up_date}` : "",
+    ].filter(Boolean).join("\n");
+
+    const approvedAt = data.approved ? new Date().toISOString() : null;
+    const payload = {
+      kind: "meeting",
+      title: `פגישה 1:1 · ${String(meeting.meeting_date).slice(0, 10)}`,
+      description,
+      item_date: String(meeting.meeting_date).slice(0, 10),
+      approved_at: approvedAt,
+    };
+
+    if (existing?.id) {
+      const { error } = await context.supabase
+        .from("student_portfolio_items")
+        .update(payload)
+        .eq("id", existing.id);
+      if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+      return { id: existing.id as string, approved: data.approved };
+    }
+
+    const { data: row, error } = await context.supabase
+      .from("student_portfolio_items")
+      .insert({
+        user_id: context.userId,
+        person_key: student.person_key,
+        student_id: student.id,
+        class_id: student.class_id,
+        source_meeting_id: meeting.id,
+        ...payload,
+      })
+      .select("id")
+      .single();
+    if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    return { id: row.id as string, approved: data.approved };
   });
