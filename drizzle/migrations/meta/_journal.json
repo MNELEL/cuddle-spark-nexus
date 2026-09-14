@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1789382958095,
+      "tag": "0000_portfolio_items_ai_summary_approval",
+      "breakpoints": true
+    }
+  ]
+}
