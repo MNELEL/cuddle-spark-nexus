@@ -314,17 +314,52 @@ export type MeetingsReportTeacher = {
   meetingCount: number;
   lastMeetingDate: string | null;
   openFollowUps: string[];
+  /** ממוצע פגישות עם מטלות מוגדרות (0–1) עבור התקופה. */
+  actionItemsRate: number;
+};
+
+/** תקופות הדוח: חודש, רבעון, שנה או הכל. */
+export const MEETING_PERIODS = ["month", "quarter", "year", "all"] as const;
+export type MeetingPeriod = (typeof MEETING_PERIODS)[number];
+export const meetingPeriodLabel: Record<MeetingPeriod, string> = {
+  month: "חודש אחרון",
+  quarter: "רבעון אחרון",
+  year: "שנה אחרונה",
+  all: "כל התקופה",
 };
 
 export type MeetingsReport = {
   teachers: MeetingsReportTeacher[];
   totalMeetings: number;
   aiSummary: string | null;
+  period: MeetingPeriod;
+  /** תחילת התקופה (ISO) — null כשמדובר בכל התקופה. */
+  periodFrom: string | null;
+  /** ממוצע פגישות לכל מלמד בתקופה. */
+  avgMeetingsPerTeacher: number;
+  /** אורך ממוצע של סיכום פגישה בתווים. */
+  avgSummaryLength: number;
+  /** מספר הפגישות שכוללות מטלות. */
+  meetingsWithActionItems: number;
+  /** ממוצע פגישות עם מטלות מכלל הפגישות (0–1). */
+  actionItemsRate: number;
 };
 
-const reportSchema = z.object({ withAi: z.boolean().optional() });
+const reportSchema = z.object({
+  withAi: z.boolean().optional(),
+  period: z.enum(MEETING_PERIODS).optional().default("all"),
+});
 
-/** דוח פגישות במוסד לפי מלמדים וכיתות, עם תקציר AI אופציונלי. */
+function periodStart(period: MeetingPeriod): string | null {
+  if (period === "all") return null;
+  const d = new Date();
+  if (period === "month") d.setMonth(d.getMonth() - 1);
+  else if (period === "quarter") d.setMonth(d.getMonth() - 3);
+  else d.setFullYear(d.getFullYear() - 1);
+  return d.toISOString().slice(0, 10);
+}
+
+/** דוח פגישות במוסד לפי מלמדים וכיתות ולפי תקופה, עם תקציר AI אופציונלי. */
 export const getInstitutionMeetingsReport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => reportSchema.parse(d ?? {}))
@@ -332,12 +367,16 @@ export const getInstitutionMeetingsReport = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const scope = await requireScope(supabase, userId);
 
+    const period = data.period ?? "all";
+    const from = periodStart(period);
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: rows, error } = await supabaseAdmin
+    let query = supabaseAdmin
       .from("teacher_meetings")
       .select("id, teacher_id, meeting_date, summary, action_items, follow_up_date")
-      .eq("institution_id", scope.institutionId)
-      .order("meeting_date", { ascending: false });
+      .eq("institution_id", scope.institutionId);
+    if (from) query = query.gte("meeting_date", from);
+    const { data: rows, error } = await query.order("meeting_date", { ascending: false });
     if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     const meetings = rows ?? [];
 
