@@ -55,7 +55,15 @@ export function StudentPortfolioPanel({ studentId }: { studentId: string }) {
 
   const summarizeM = useMutation({
     mutationFn: (id: string) => summarize({ data: { id } }),
-    onSuccess: () => { invalidate(); toast.success("התקציר נוסף לפריט"); },
+    onSuccess: (r) => {
+      invalidate();
+      const s = (r as { sources?: { items: number; insights: number; meetings: number } }).sources;
+      toast.success(
+        s
+          ? `הניתוח נוסף לפריט · ${s.items} פריטים, ${s.insights} תובנות, ${s.meetings} פגישות`
+          : "הניתוח נוסף לפריט",
+      );
+    },
     onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
   });
 
