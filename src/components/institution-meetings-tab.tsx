@@ -15,8 +15,12 @@ import { hebrewDate } from "@/lib/hebrew-date";
 import {
   listInstitutionMeetings,
   getInstitutionMeetingsReport,
+  MEETING_PERIODS,
+  meetingPeriodLabel,
+  type MeetingPeriod,
   type MeetingsReport,
 } from "@/lib/teacher-meetings.functions";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 /** טאב "פגישות": סיכום פגישות 1:1 לכל מלמד במוסד, כולל דוח, תקציר AI וייצוא PDF. */
 export function InstitutionMeetingsTab({ canEdit }: { canEdit: boolean }) {
@@ -26,6 +30,7 @@ export function InstitutionMeetingsTab({ canEdit }: { canEdit: boolean }) {
   const [templateId, setTemplateId] = useState<string | null>(null);
   const [target, setTarget] = useState<{ userId: string; name: string } | null>(null);
   const [aiSummary, setAiSummary] = useState<string | null>(null);
+  const [period, setPeriod] = useState<MeetingPeriod>("month");
 
   const q = useQuery({
     queryKey: ["institution-meetings"],
@@ -34,13 +39,13 @@ export function InstitutionMeetingsTab({ canEdit }: { canEdit: boolean }) {
   const groups = q.data ?? [];
 
   const reportQ = useQuery({
-    queryKey: ["institution-meetings-report"],
-    queryFn: () => fetchReport({ data: {} }) as Promise<MeetingsReport>,
+    queryKey: ["institution-meetings-report", period],
+    queryFn: () => fetchReport({ data: { period } }) as Promise<MeetingsReport>,
   });
   const report = reportQ.data;
 
   const aiM = useMutation({
-    mutationFn: () => fetchReport({ data: { withAi: true } }) as Promise<MeetingsReport>,
+    mutationFn: () => fetchReport({ data: { withAi: true, period } }) as Promise<MeetingsReport>,
     onSuccess: (r) => {
       if (!r.aiSummary) return toast.error("לא התקבל תקציר. נסה שוב בעוד רגע.");
       setAiSummary(r.aiSummary);
