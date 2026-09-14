@@ -166,11 +166,11 @@ export function HebrewDatePanel({
           ))}
         </dl>
         {info.holidays.length > 0 && (
-          <p className="mt-3 flex flex-wrap gap-1.5">
+          <div className="mt-3 flex flex-wrap gap-1.5">
             {info.holidays.map((h) => (
               <Badge key={h} variant="outline">{h}</Badge>
             ))}
-          </p>
+          </div>
         )}
       </CardContent>
     </Card>
