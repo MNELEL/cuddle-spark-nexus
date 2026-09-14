@@ -513,7 +513,9 @@ function DailyLogReportPage() {
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-semibold">{info.full}</span>
-                    <span className="text-xs text-muted-foreground">{d.date}</span>
+                    {showGregorian && (
+                      <span className="text-xs text-muted-foreground">{d.date}</span>
+                    )}
                     {info.holidays?.map((h) => (
                       <Badge key={h} variant="secondary">
                         {h}
