@@ -164,9 +164,10 @@ export function StudentPortfolioPanel({ studentId }: { studentId: string }) {
                   </div>
                   {i.description && <p className="mt-1 text-xs text-muted-foreground">{i.description}</p>}
                   {i.ai_summary && (
-                    <p className="mt-2 rounded-lg bg-muted/50 p-2 text-xs whitespace-pre-wrap">
-                      <span className="font-medium">תקציר AI: </span>{i.ai_summary}
-                    </p>
+                    <div className="mt-2 rounded-lg bg-muted/50 p-2 text-xs">
+                      <div className="mb-1 font-medium">ניתוח AI</div>
+                      <div className="whitespace-pre-wrap leading-relaxed">{i.ai_summary}</div>
+                    </div>
                   )}
                   <p className="mt-1 text-[11px] text-muted-foreground font-mono-tabular">{hebrewDate(i.item_date)}</p>
                   <div className="mt-2 flex flex-wrap gap-2">
@@ -178,7 +179,7 @@ export function StudentPortfolioPanel({ studentId }: { studentId: string }) {
                       onClick={() => summarizeM.mutate(i.id)}
                     >
                       <Sparkles className="me-1 h-4 w-4" aria-hidden="true" />
-                      תקציר AI
+                      {i.ai_summary ? "רענן ניתוח AI" : "ניתוח AI מפורט"}
                     </Button>
                     <Button
                       size="sm"
