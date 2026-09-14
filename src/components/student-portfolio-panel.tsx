@@ -9,10 +9,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, History, Sparkles, CheckCircle2 } from "lucide-react";
+import { Plus, Trash2, History, Sparkles, CheckCircle2, Users } from "lucide-react";
 import {
   getStudentPortfolio, addPortfolioItem, deletePortfolioItem,
   approvePortfolioItem, summarizePortfolioItem,
+  listPortfolioMeetings, approveMeetingToPortfolio,
   PORTFOLIO_KINDS, portfolioKindLabel, type PortfolioKind,
 } from "@/lib/portfolio.functions";
 import { hebrewDate } from "@/lib/hebrew-date";
@@ -23,6 +24,8 @@ export function StudentPortfolioPanel({ studentId }: { studentId: string }) {
   const remove = useServerFn(deletePortfolioItem);
   const summarize = useServerFn(summarizePortfolioItem);
   const approve = useServerFn(approvePortfolioItem);
+  const loadMeetings = useServerFn(listPortfolioMeetings);
+  const approveMeeting = useServerFn(approveMeetingToPortfolio);
   const qc = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -73,6 +76,22 @@ export function StudentPortfolioPanel({ studentId }: { studentId: string }) {
     onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
   });
 
+  const meetingsQ = useQuery({
+    queryKey: ["student-portfolio-meetings", studentId],
+    queryFn: () => loadMeetings({ data: { studentId } }),
+  });
+
+  const approveMeetingM = useMutation({
+    mutationFn: (v: { meetingId: string; approved: boolean }) =>
+      approveMeeting({ data: { studentId, ...v } }),
+    onSuccess: (_r, v) => {
+      invalidate();
+      void qc.invalidateQueries({ queryKey: ["student-portfolio-meetings", studentId] });
+      toast.success(v.approved ? "הפגישה אושרה לתיק ותיכלל בניתוח" : "אישור הפגישה בוטל");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
+  });
+
   const items = data?.items ?? [];
   const timeline = data?.timeline ?? [];
 
@@ -95,6 +114,67 @@ export function StudentPortfolioPanel({ studentId }: { studentId: string }) {
                 <Badge key={t.studentId} variant={t.isCurrent ? "default" : "secondary"}>
                   {t.className}{t.academicYear ? ` · ${t.academicYear}` : ""}
                 </Badge>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="space-y-3 pt-4">
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4 text-primary" aria-hidden="true" />
+            <h3 className="font-display text-lg">פגישות 1:1</h3>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            אישור פגישה מוסיף אותה לתיק התלמיד, והיא נכללת בניתוח ה-AI של התיק.
+          </p>
+          {meetingsQ.isLoading ? (
+            <p className="text-sm text-muted-foreground">טוען…</p>
+          ) : (meetingsQ.data?.meetings ?? []).length === 0 ? (
+            <p className="text-sm text-muted-foreground">אין פגישות 1:1 להצגה.</p>
+          ) : (
+            <div className="space-y-2">
+              {(meetingsQ.data?.meetings ?? []).map((m) => (
+                <div key={m.id} className="rounded-xl border p-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-medium font-mono-tabular">
+                      {hebrewDate(String(m.meeting_date).slice(0, 10))}
+                    </span>
+                    {m.approvedAt ? (
+                      <Badge className="bg-accent text-accent-foreground">
+                        אושר לתיק · {hebrewDate(String(m.approvedAt).slice(0, 10))}
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline">טרם אושר</Badge>
+                    )}
+                    {m.follow_up_date && (
+                      <Badge variant="secondary">
+                        מעקב · {hebrewDate(String(m.follow_up_date).slice(0, 10))}
+                      </Badge>
+                    )}
+                  </div>
+                  {m.summary && (
+                    <p className="mt-1 text-xs text-muted-foreground whitespace-pre-wrap">{m.summary}</p>
+                  )}
+                  {m.action_items && (
+                    <p className="mt-1 text-xs">
+                      <span className="font-medium">מטלות: </span>{m.action_items}
+                    </p>
+                  )}
+                  <Button
+                    size="sm"
+                    variant={m.approvedAt ? "ghost" : "outline"}
+                    className="mt-2 rounded-xl"
+                    disabled={approveMeetingM.isPending}
+                    onClick={() =>
+                      approveMeetingM.mutate({ meetingId: m.id, approved: !m.approvedAt })
+                    }
+                  >
+                    <CheckCircle2 className="me-1 h-4 w-4" aria-hidden="true" />
+                    {m.approvedAt ? "בטל אישור" : "אשר לתיק"}
+                  </Button>
+                </div>
               ))}
             </div>
           )}
