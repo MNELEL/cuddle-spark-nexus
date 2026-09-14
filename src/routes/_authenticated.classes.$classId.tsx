@@ -41,6 +41,7 @@ import { ClassTeacherName } from "@/components/class-teacher-name";
 import { ClassLibraryStatus } from "@/components/class-library-status";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowRight, Heart, Ban, MoveHorizontal, Pencil, Plus, Trash2, FolderOpen, FileText, Sparkles, Trophy, Users, Library, Monitor, Upload, Printer, Copy, Dices, Globe2, Award, ScanText, TrendingUp, CalendarDays, Wand2, MessageSquare, MoreHorizontal, LayoutGrid } from "lucide-react";
+import { useShowGregorian } from "@/lib/date-display";
 import { toast } from "sonner";
 import { copyList, printList } from "@/lib/print-list";
 import { listClassProfiles } from "@/lib/student-profiles.functions";
@@ -820,6 +821,7 @@ function PhoneLink({ label, phone }: { label: string; phone: string }) {
 }
 
 function StudentDetailsLine({ student }: { student: Student }) {
+  const showGregorian = useShowGregorian();
   const bday = nextHebrewBirthday(student.birth_date);
   const hebLabel = toHebrewDateLabel(student.birth_date);
   const items: React.ReactNode[] = [];
@@ -831,8 +833,8 @@ function StudentDetailsLine({ student }: { student: Student }) {
     items.push(
       <span key="bd">
         <span className="text-muted-foreground">לידה:</span>{" "}
-        <span className="font-mono-tabular">{student.birth_date}</span>
-        {hebLabel && <span> · {hebLabel}</span>}
+        <span>{hebLabel ?? student.birth_date}</span>
+        {showGregorian && <span className="font-mono-tabular"> · {student.birth_date}</span>}
         {bday && <span className="text-amber-700 dark:text-amber-400"> · {daysUntilLabel(bday.daysUntil)}</span>}
       </span>,
     );
