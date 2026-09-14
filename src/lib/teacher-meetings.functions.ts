@@ -449,5 +449,20 @@ export const getInstitutionMeetingsReport = createServerFn({ method: "POST" })
       }
     }
 
-    return { teachers, totalMeetings: meetings.length, aiSummary };
+    const withActions = meetings.filter((m) => (m.action_items ?? "").trim().length > 0).length;
+    const summaryChars = meetings.reduce((a, m) => a + (m.summary ?? "").trim().length, 0);
+
+    return {
+      teachers,
+      totalMeetings: meetings.length,
+      aiSummary,
+      period,
+      periodFrom: from,
+      avgMeetingsPerTeacher: teachers.length
+        ? Math.round((meetings.length / teachers.length) * 10) / 10
+        : 0,
+      avgSummaryLength: meetings.length ? Math.round(summaryChars / meetings.length) : 0,
+      meetingsWithActionItems: withActions,
+      actionItemsRate: meetings.length ? withActions / meetings.length : 0,
+    };
   });
