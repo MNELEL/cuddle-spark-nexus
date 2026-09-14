@@ -19,6 +19,7 @@ import { useHebrewAnchor } from "@/components/hebrew-anchor";
 import type { CertTemplateDesign } from "@/lib/ai-certificate.functions";
 import { getDailyReport, getDailyReportDetails } from "@/lib/daily-report.functions";
 import { isoOf } from "@/lib/hebrew-calendar";
+import { useShowGregorian } from "@/lib/date-display";
 
 const STATUS_LABEL: Record<string, string> = {
   present: "נוכח",
@@ -41,6 +42,7 @@ export function HebrewDailyPdfCard({ classes }: { classes: ClassOption[] }) {
   const [design, setDesign] = useState<CertTemplateDesign | undefined>(undefined);
   const [templateName, setTemplateName] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const showGregorian = useShowGregorian();
 
   const reportFn = useServerFn(getDailyReport);
   const detailsFn = useServerFn(getDailyReportDetails);
@@ -112,6 +114,7 @@ export function HebrewDailyPdfCard({ classes }: { classes: ClassOption[] }) {
         days: report.days.length ? report.days : [],
         entries: Array.from(perStudent.values()),
         design,
+        showGregorian,
         ...(templateName ? { templateName } : {}),
       });
       downloadPdfBlob(blob, filename);
@@ -129,6 +132,8 @@ export function HebrewDailyPdfCard({ classes }: { classes: ClassOption[] }) {
         <CardTitle className="font-display text-base">PDF של תיעוד היום</CardTitle>
         <CardDescription>
           התאריך נלקח מהלוח עצמו: {info.full} · תאריך-החלוף: {elapsedFromInfo.full}
+          {" · "}
+          {showGregorian ? "הקובץ יכלול גם תאריך לועזי" : "הקובץ בתאריך עברי בלבד"}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
