@@ -413,6 +413,9 @@ export const getInstitutionMeetingsReport = createServerFn({ method: "POST" })
           .filter((m) => m.follow_up_date)
           .map((m) => m.follow_up_date as string)
           .slice(0, 5),
+        actionItemsRate: own.length
+          ? own.filter((m) => (m.action_items ?? "").trim().length > 0).length / own.length
+          : 0,
       };
     }).sort((a, b) => b.meetingCount - a.meetingCount);
 
