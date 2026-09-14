@@ -21,6 +21,8 @@ export function StudentPortfolioPanel({ studentId }: { studentId: string }) {
   const load = useServerFn(getStudentPortfolio);
   const add = useServerFn(addPortfolioItem);
   const remove = useServerFn(deletePortfolioItem);
+  const summarize = useServerFn(summarizePortfolioItem);
+  const approve = useServerFn(approvePortfolioItem);
   const qc = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -48,6 +50,18 @@ export function StudentPortfolioPanel({ studentId }: { studentId: string }) {
   const removeM = useMutation({
     mutationFn: (id: string) => remove({ data: { id } }),
     onSuccess: () => { invalidate(); toast.success("הפריט נמחק"); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
+  });
+
+  const summarizeM = useMutation({
+    mutationFn: (id: string) => summarize({ data: { id } }),
+    onSuccess: () => { invalidate(); toast.success("התקציר נוסף לפריט"); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
+  });
+
+  const approveM = useMutation({
+    mutationFn: (v: { id: string; approved: boolean }) => approve({ data: v }),
+    onSuccess: () => { invalidate(); toast.success("האישור עודכן"); },
     onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
   });
 
