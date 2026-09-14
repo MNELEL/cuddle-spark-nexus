@@ -56,8 +56,18 @@ export function InstitutionMeetingsTab({ canEdit }: { canEdit: boolean }) {
   return (
     <div className="space-y-6">
     <Card className="rounded-2xl">
-      <CardHeader>
+      <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <CardTitle className="text-base">דוח פגישות לפי מלמדים וכיתות</CardTitle>
+        <Select value={period} onValueChange={(v) => setPeriod(v as MeetingPeriod)}>
+          <SelectTrigger className="w-[150px] rounded-xl" aria-label="תקופת הדוח">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {MEETING_PERIODS.map((p) => (
+              <SelectItem key={p} value={p}>{meetingPeriodLabel[p]}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </CardHeader>
       <CardContent className="space-y-3">
         {reportQ.isLoading ? (
@@ -65,12 +75,26 @@ export function InstitutionMeetingsTab({ canEdit }: { canEdit: boolean }) {
         ) : reportQ.isError ? (
           <p className="py-4 text-center text-sm text-destructive">טעינת הדוח נכשלה.</p>
         ) : !report || report.teachers.length === 0 ? (
-          <p className="py-4 text-center text-sm text-muted-foreground">אין נתוני פגישות לדוח.</p>
+          <p className="py-4 text-center text-sm text-muted-foreground">
+            אין נתוני פגישות לדוח בתקופה שנבחרה.
+          </p>
         ) : (
           <>
             <p className="text-xs text-muted-foreground">
-              סה״כ <span className="font-mono-tabular">{report.totalMeetings}</span> פגישות במוסד
+              {meetingPeriodLabel[report.period]} · סה״כ{" "}
+              <span className="font-mono-tabular">{report.totalMeetings}</span> פגישות במוסד
             </p>
+            <div className="flex flex-wrap gap-2 text-xs">
+              <Badge variant="outline" className="font-mono-tabular">
+                ממוצע פגישות למלמד {report.avgMeetingsPerTeacher}
+              </Badge>
+              <Badge variant="outline" className="font-mono-tabular">
+                אורך סיכום ממוצע {report.avgSummaryLength} תווים
+              </Badge>
+              <Badge variant="outline" className="font-mono-tabular">
+                פגישות עם מטלות {report.meetingsWithActionItems} ({Math.round(report.actionItemsRate * 100)}%)
+              </Badge>
+            </div>
             <ul className="divide-y text-sm">
               {report.teachers.map((t) => (
                 <li key={t.teacherId} className="flex items-start justify-between gap-3 py-2">
