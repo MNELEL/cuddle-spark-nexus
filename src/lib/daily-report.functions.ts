@@ -197,11 +197,11 @@ export const getDailyReportDetails = createServerFn({ method: "POST" })
     const studentId = data.studentId ?? null;
     const scoped = (q: any) => (studentId ? q.eq("student_id", studentId) : q);
 
-    const [attendance, grades, insights, approvals, logs] = await Promise.all([
+    const [attendance, grades, insights, approvals, logs, roster] = await Promise.all([
       scoped(
         supabase
           .from("attendance")
-          .select("date,status,notes,students(name)")
+          .select("date,status,notes,student_id")
           .eq("class_id", data.classId)
           .gte("date", data.from)
           .lte("date", data.to)
@@ -210,7 +210,7 @@ export const getDailyReportDetails = createServerFn({ method: "POST" })
       scoped(
         supabase
           .from("grades")
-          .select("date,subject,value,max_value,students(name)")
+          .select("date,subject,value,max_value,student_id")
           .eq("class_id", data.classId)
           .gte("date", data.from)
           .lte("date", data.to)
@@ -219,7 +219,7 @@ export const getDailyReportDetails = createServerFn({ method: "POST" })
       scoped(
         supabase
           .from("orchestrator_insights")
-          .select("insight_date,severity,title,description,students(name)")
+          .select("insight_date,severity,title,description,student_id")
           .eq("class_id", data.classId)
           .gte("insight_date", data.from)
           .lte("insight_date", data.to)
@@ -228,7 +228,7 @@ export const getDailyReportDetails = createServerFn({ method: "POST" })
       scoped(
         supabase
           .from("daily_log_approvals")
-          .select("date,approver_name,notes,students(name)")
+          .select("date,approver_name,notes,student_id")
           .eq("class_id", data.classId)
           .gte("date", data.from)
           .lte("date", data.to)
@@ -241,38 +241,42 @@ export const getDailyReportDetails = createServerFn({ method: "POST" })
         .eq("user_id", context.userId)
         .order("created_at", { ascending: false })
         .limit(300),
+      supabase.from("students").select("id,name").eq("class_id", data.classId),
     ]);
-    for (const r of [attendance, grades, insights, approvals, logs]) {
+    for (const r of [attendance, grades, insights, approvals, logs, roster]) {
       if (r.error) {
         console.error("[DB Error]", r.error);
         throw new Error("טעינת פרטי הדוח נכשלה");
       }
     }
+    const nameOf = new Map<string, string>(
+      ((roster.data ?? []) as any[]).map((s) => [String(s.id), String(s.name ?? "")]),
+    );
 
     return {
       attendance: ((attendance.data ?? []) as any[]).map((r) => ({
         date: String(r.date).slice(0, 10),
-        student: r.students?.name ?? "",
+        student: nameOf.get(String(r.student_id)) ?? "",
         status: r.status,
         notes: r.notes ?? "",
       })),
       grades: ((grades.data ?? []) as any[]).map((r) => ({
         date: String(r.date).slice(0, 10),
-        student: r.students?.name ?? "",
+        student: nameOf.get(String(r.student_id)) ?? "",
         subject: r.subject ?? "",
         value: Number(r.value),
         max_value: Number(r.max_value) || 100,
       })),
       insights: ((insights.data ?? []) as any[]).map((r) => ({
         date: String(r.insight_date).slice(0, 10),
-        student: r.students?.name ?? "כלל־כיתתי",
+        student: r.student_id ? nameOf.get(String(r.student_id)) ?? "" : "כלל־כיתתי",
         severity: r.severity,
         title: r.title,
         description: r.description ?? "",
       })),
       approvals: ((approvals.data ?? []) as any[]).map((r) => ({
         date: String(r.date).slice(0, 10),
-        student: r.students?.name ?? "",
+        student: nameOf.get(String(r.student_id)) ?? "",
         approver: r.approver_name ?? "",
         notes: r.notes ?? "",
       })),
