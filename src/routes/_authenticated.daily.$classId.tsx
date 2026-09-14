@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AiAssistantDock } from "@/components/ai-assistant-dock";
+import { HebrewDateInput } from "@/components/hebrew-date-input";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -172,7 +173,7 @@ function DailySummaryPage() {
         <CardContent className="flex flex-wrap items-end gap-3 py-4">
           <div>
             <Label>תאריך</Label>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            <HebrewDateInput compact value={date} onChange={(v) => setDate(v)} />
           </div>
           <div className="min-w-[160px]">
             <Label>היקף</Label>

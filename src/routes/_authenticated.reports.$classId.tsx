@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { HebrewDateInput } from "@/components/hebrew-date-input";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { ArrowRight, Printer, MessageCircle, Mail, FileDown, Sparkles, Sheet, Loader2 } from "lucide-react";
@@ -188,12 +189,12 @@ function ReportsPage() {
           </div>
           <div>
             <Label>מתאריך</Label>
-            <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+            <HebrewDateInput compact value={from} onChange={(v) => setFrom(v)} />
             <p className="mt-1 text-[11px] text-muted-foreground">{toHebrewDateFull(from) ?? ""}</p>
           </div>
           <div>
             <Label>עד תאריך</Label>
-            <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+            <HebrewDateInput compact value={to} onChange={(v) => setTo(v)} />
             <p className="mt-1 text-[11px] text-muted-foreground">{toHebrewDateFull(to) ?? ""}</p>
           </div>
           <div className="min-w-[200px]">

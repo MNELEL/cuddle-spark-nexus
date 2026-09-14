@@ -15,6 +15,7 @@ import { SubscriptionStatusCard } from "@/components/subscription-status-card";
 import { ReminderPreferencesCard } from "@/components/reminder-preferences-card";
 import { SecuritySettings } from "@/components/security-settings";
 import { ThemePickerCard } from "@/components/theme-picker-card";
+import { DateDisplayCard } from "@/components/date-display-card";
 import { SettingsTabs, SETTINGS_TAB_LABELS, type SettingsTabId } from "@/components/settings-tabs";
 import { TOOLS } from "@/lib/tool-registry";
 import { useBrand } from "@/hooks/use-brand";
@@ -81,6 +82,7 @@ function SettingsPage() {
       {tab === "general" && (
         <>
           <SubscriptionStatusCard />
+          <DateDisplayCard />
           <ThemePickerCard />
         </>
       )}

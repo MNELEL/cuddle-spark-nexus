@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { HebrewDateInput } from "@/components/hebrew-date-input";
 import { useServerFn } from "@tanstack/react-start";
 import { CheckCircle2, XCircle, Clock, FileCheck, Plus, Trash2, Pencil } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -109,7 +110,7 @@ function AttendancePanel({ classId }: { classId: string }) {
         <CardContent className="flex flex-wrap items-end gap-3 py-4">
           <div className="flex-1 min-w-[160px]">
             <Label>תאריך</Label>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            <HebrewDateInput compact value={date} onChange={(v) => setDate(v)} />
           </div>
           <div className="flex flex-wrap gap-1">
             <Button size="sm" variant="outline" onClick={() => bulkM.mutate("present")}>סמן הכל נוכח</Button>
@@ -370,7 +371,7 @@ function GradeDialog({
           </div>
           <div>
             <Label>תאריך</Label>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            <HebrewDateInput compact value={date} onChange={(v) => setDate(v)} />
           </div>
         </div>
         <div>

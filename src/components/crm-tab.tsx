@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { HebrewDateInput } from "@/components/hebrew-date-input";
 import { useServerFn } from "@tanstack/react-start";
 import { listStudents } from "@/lib/students.functions";
 import {
@@ -227,7 +228,7 @@ function ReminderDialog({ classId, students, onClose }: { classId: string; stude
         </div>
         <div>
           <Label>תאריך יעד (אופציונלי)</Label>
-          <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+          <HebrewDateInput compact value={dueDate} onChange={(v) => setDueDate(v)} />
         </div>
         <div>
           <Label>תיאור</Label>

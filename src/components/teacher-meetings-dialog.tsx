@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { HebrewDateInput } from "@/components/hebrew-date-input";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { FileDown, Loader2, Pencil, Trash2 } from "lucide-react";
@@ -200,13 +201,13 @@ export function TeacherMeetingsDialog({
                         onChange={(e) => setEditing({ ...editing, actionItems: e.target.value })}
                       />
                       <Label htmlFor={`edit-followup-${m.id}`}>תאריך מעקב</Label>
-                      <Input
+                      <HebrewDateInput
+                        compact
                         id={`edit-followup-${m.id}`}
-                        type="date"
-                        className="rounded-xl"
                         value={editing.followUpDate ?? ""}
-                        onChange={(e) => setEditing({ ...editing, followUpDate: e.target.value || null })}
+                        onChange={(v) => setEditing({ ...editing, followUpDate: v || null })}
                       />
+
                       <div className="flex gap-2">
                         <Button
                           size="sm"
@@ -290,13 +291,7 @@ export function TeacherMeetingsDialog({
             <h3 className="text-sm font-medium">תיעוד פגישה חדשה</h3>
             <div className="space-y-2">
               <Label htmlFor="meeting-date">תאריך הפגישה</Label>
-              <Input
-                id="meeting-date"
-                type="date"
-                className="rounded-xl"
-                value={meetingDate}
-                onChange={(e) => setMeetingDate(e.target.value)}
-              />
+              <HebrewDateInput compact value={meetingDate} onChange={(v) => setMeetingDate(v)} className="rounded-xl" />
               <p className="text-xs text-muted-foreground">{meetingDate ? hebrewDate(meetingDate) : ""}</p>
             </div>
             <div className="space-y-2">
@@ -322,13 +317,7 @@ export function TeacherMeetingsDialog({
             </div>
             <div className="space-y-2">
               <Label htmlFor="meeting-followup">תאריך מעקב (אופציונלי)</Label>
-              <Input
-                id="meeting-followup"
-                type="date"
-                className="rounded-xl"
-                value={followUpDate}
-                onChange={(e) => setFollowUpDate(e.target.value)}
-              />
+              <HebrewDateInput compact value={followUpDate} onChange={(v) => setFollowUpDate(v)} className="rounded-xl" />
               {followUpDate && <p className="text-xs text-muted-foreground">{hebrewDate(followUpDate)}</p>}
             </div>
             <Button

@@ -155,18 +155,88 @@ export const approvePortfolioItem = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-/** תקציר AI לפריט בתיק — מבוסס רק על הנתונים השמורים של הפריט. */
+/**
+ * ניתוח AI מפורט לפריט בתיק התלמיד: מצרף לפריט עצמו את שאר פריטי התיק
+ * (רב-שנתי לפי person_key), את התובנות היומיות של התלמיד, ואת סיכומי
+ * פגישות ה-1:1 של המלמד באותה תקופה. הכל דרך RLS של המשתמש בלבד.
+ */
 export const summarizePortfolioItem = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { data: item, error } = await context.supabase
       .from("student_portfolio_items")
-      .select("id, kind, title, description, school_year, item_date")
+      .select("id, kind, title, description, school_year, item_date, person_key, student_id, class_id")
       .eq("id", data.id)
       .maybeSingle();
     if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     if (!item) throw new Error("הפריט לא נמצא");
+
+    // כל מופעי התלמיד (שנים שונות) לפי המזהה היציב
+    const { data: siblings } = await context.supabase
+      .from("students")
+      .select("id, name")
+      .eq("person_key", item.person_key);
+    const studentIds = Array.from(
+      new Set([...(siblings ?? []).map((s) => s.id), item.student_id].filter(Boolean)),
+    ) as string[];
+    const studentName = (siblings ?? [])[0]?.name ?? "התלמיד";
+
+    const [others, insights, meetings] = await Promise.all([
+      context.supabase
+        .from("student_portfolio_items")
+        .select("kind, title, description, item_date, school_year, ai_summary, approved_at")
+        .eq("person_key", item.person_key)
+        .neq("id", item.id)
+        .order("item_date", { ascending: false })
+        .limit(20),
+      studentIds.length
+        ? context.supabase
+            .from("orchestrator_insights")
+            .select("insight_type, severity, title, description, suggested_action, insight_date")
+            .in("student_id", studentIds)
+            .eq("is_dismissed", false)
+            .order("insight_date", { ascending: false })
+            .limit(25)
+        : Promise.resolve({ data: [], error: null } as never),
+      context.supabase
+        .from("teacher_meetings")
+        .select("meeting_date, summary, action_items, follow_up_date")
+        .order("meeting_date", { ascending: false })
+        .limit(10),
+    ]);
+    if (others.error) console.error("[DB Error]", others.error);
+    if (insights.error) console.error("[DB Error]", insights.error);
+    if (meetings.error) console.error("[DB Error]", meetings.error);
+
+    const kindLabel = (k: string) => portfolioKindLabel[k as PortfolioKind] ?? k;
+    const cut = (s: string | null, n = 400) => (s ? s.slice(0, n) : "—");
+
+    const itemsBlock = (others.data ?? [])
+      .map(
+        (o) =>
+          `- [${kindLabel(o.kind)}] ${o.item_date} · ${o.title}: ${cut(o.description, 220)}` +
+          (o.ai_summary ? ` | תקציר קודם: ${cut(o.ai_summary, 220)}` : "") +
+          (o.approved_at ? " | אושר" : ""),
+      )
+      .join("\n") || "אין פריטים נוספים בתיק.";
+
+    const insightsBlock = (insights.data ?? [])
+      .map(
+        (i) =>
+          `- ${i.insight_date} · ${i.insight_type} (${i.severity}): ${i.title} — ${cut(i.description, 220)}` +
+          (i.suggested_action ? ` | המשך מוצע: ${cut(i.suggested_action, 160)}` : ""),
+      )
+      .join("\n") || "אין תובנות פעילות לתלמיד.";
+
+    const meetingsBlock = (meetings.data ?? [])
+      .map(
+        (m) =>
+          `- ${m.meeting_date}: ${cut(m.summary, 300)}` +
+          (m.action_items ? ` | מטלות: ${cut(m.action_items, 200)}` : "") +
+          (m.follow_up_date ? ` | מעקב: ${m.follow_up_date}` : ""),
+      )
+      .join("\n") || "אין סיכומי פגישות זמינים.";
 
     let summary = "";
     try {
@@ -176,16 +246,21 @@ export const summarizePortfolioItem = createServerFn({ method: "POST" })
           {
             role: "system",
             content:
-              "אתה עוזר פדגוגי בתלמוד תורה. כתוב תקציר קצר בעברית (עד 3 שורות) לפריט בתיק התלמיד. " +
-              "השתמש רק בנתונים שקיבלת, אל תמציא עובדות.",
+              "אתה עוזר פדגוגי בתלמוד תורה. כתוב ניתוח מפורט בעברית לפריט בתיק התלמיד, " +
+              "במבנה הבא בדיוק, כל כותרת בשורה נפרדת ותחתיה 1-3 שורות:\n" +
+              "תמונת מצב:\nמגמות מהתובנות:\nמה עלה בפגישות:\nחוזקות:\nנקודות לחיזוק:\nהמשך מוצע:\n" +
+              "השתמש רק בנתונים שקיבלת ואל תמציא עובדות. אם אין נתונים לסעיף — כתוב 'אין נתונים'. " +
+              "עד 250 מילים בסך הכל.",
           },
           {
             role: "user",
             content:
-              `סוג: ${portfolioKindLabel[item.kind as PortfolioKind] ?? item.kind}\n` +
-              `כותרת: ${item.title}\n` +
-              `פירוט: ${item.description || "—"}\n` +
-              `שנה: ${item.school_year || "—"}\nתאריך: ${item.item_date}`,
+              `תלמיד: ${studentName}\n\n` +
+              `הפריט הנבחן:\nסוג: ${kindLabel(item.kind)}\nכותרת: ${item.title}\n` +
+              `פירוט: ${cut(item.description, 800)}\nשנה: ${item.school_year || "—"}\nתאריך: ${item.item_date}\n\n` +
+              `פריטים נוספים בתיק (רב-שנתי):\n${itemsBlock}\n\n` +
+              `תובנות יומיות של התלמיד:\n${insightsBlock}\n\n` +
+              `סיכומי פגישות 1:1 של המלמד:\n${meetingsBlock}`,
           },
         ],
       });
@@ -200,5 +275,12 @@ export const summarizePortfolioItem = createServerFn({ method: "POST" })
       .update({ ai_summary: trimmed })
       .eq("id", data.id);
     if (upErr) { console.error("[DB Error]", upErr); throw new Error("הפעולה נכשלה. נסה שוב."); }
-    return { summary: trimmed };
+    return {
+      summary: trimmed,
+      sources: {
+        items: (others.data ?? []).length,
+        insights: (insights.data ?? []).length,
+        meetings: (meetings.data ?? []).length,
+      },
+    };
   });

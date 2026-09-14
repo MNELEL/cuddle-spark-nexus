@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { HebrewDateInput } from "@/components/hebrew-date-input";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -240,7 +241,7 @@ function DailyInsightsPage() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="di-date">תאריך</Label>
-              <Input id="di-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+              <HebrewDateInput compact value={date} onChange={(v) => setDate(v)} />
               <p className="text-xs text-muted-foreground">{toHebrewDateFull(date) ?? ""}</p>
             </div>
             <div className="space-y-1.5">
@@ -332,12 +333,7 @@ function DailyInsightsPage() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="di-filter-date">יום בודד</Label>
-              <Input
-                id="di-filter-date"
-                type="date"
-                value={filterDate}
-                onChange={(e) => setFilterDate(e.target.value)}
-              />
+              <HebrewDateInput compact value={filterDate} onChange={(v) => setFilterDate(v)} />
               <p className="text-xs text-muted-foreground">
                 {filterDate ? (toHebrewDateFull(filterDate) ?? "") : "ריק = כל הטווח"}
               </p>

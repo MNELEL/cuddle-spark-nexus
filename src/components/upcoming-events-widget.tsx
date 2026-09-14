@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { HebrewDateInput } from "@/components/hebrew-date-input";
 import { useServerFn } from "@tanstack/react-start";
 import { CalendarClock, Plus } from "lucide-react";
 import { toast } from "sonner";
@@ -156,7 +157,7 @@ export function UpcomingEventsWidget() {
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1.5">
                 <Label htmlFor="ue-date">תאריך</Label>
-                <Input id="ue-date" type="date" value={date} onChange={(ev) => setDate(ev.target.value)} />
+                <HebrewDateInput compact value={date} onChange={(v) => setDate(v)} />
                 <p className="text-[11px] text-muted-foreground">{toHebrewDateFull(date) ?? ""}</p>
               </div>
               <div className="space-y-1.5">
