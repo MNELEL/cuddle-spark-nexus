@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { HebrewDateInput } from "@/components/hebrew-date-input";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { ArrowRight, Sparkles, LineChart as LineChartIcon, Users, RefreshCw, Download } from "lucide-react";
@@ -70,8 +71,8 @@ function PedagogicalPage() {
 
       <Card>
         <CardContent className="flex flex-wrap items-end gap-3 py-4">
-          <div><Label>מתאריך</Label><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></div>
-          <div><Label>עד תאריך</Label><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></div>
+          <div><Label>מתאריך</Label><HebrewDateInput compact value={from} onChange={(v) => setFrom(v)} /></div>
+          <div><Label>עד תאריך</Label><HebrewDateInput compact value={to} onChange={(v) => setTo(v)} /></div>
           <div className="ms-auto flex items-center gap-2">
             {data && (
               <>

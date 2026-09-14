@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { HebrewDateInput } from "@/components/hebrew-date-input";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { ArrowRight, Award, Download, Eye, Plus, Settings, Sparkles, Trash2, Users } from "lucide-react";
@@ -558,11 +559,11 @@ function CertificatesPage() {
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <Label>מתאריך</Label>
-                <Input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} />
+                <HebrewDateInput compact value={customFrom} onChange={(v) => setCustomFrom(v)} />
               </div>
               <div>
                 <Label>עד תאריך</Label>
-                <Input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} />
+                <HebrewDateInput compact value={customTo} onChange={(v) => setCustomTo(v)} />
               </div>
             </div>
           )}

@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { HebrewDateInput } from "@/components/hebrew-date-input";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState, useEffect } from "react";
 import { ArrowRight, Plus, Trash2, Trophy, Gift, Sparkles, Maximize2, Pencil, Star } from "lucide-react";
@@ -328,11 +329,11 @@ function CampaignDialog({ classId, editing, onClose }: { classId: string; editin
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label>מתאריך</Label>
-            <Input type="date" value={start} onChange={(e) => setStart(e.target.value)} />
+            <HebrewDateInput compact value={start} onChange={(v) => setStart(v)} />
           </div>
           <div>
             <Label>עד תאריך</Label>
-            <Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
+            <HebrewDateInput compact value={end} onChange={(v) => setEnd(v)} />
           </div>
         </div>
         <div className="flex items-center gap-2">

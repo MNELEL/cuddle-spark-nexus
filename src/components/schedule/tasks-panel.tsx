@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { HebrewDateInput } from "@/components/hebrew-date-input";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Plus, Printer, Trash2 } from "lucide-react";
@@ -100,7 +101,7 @@ export function TasksPanel({ classId, from, to, defaultDate, heading = "משימ
           </div>
           <div>
             <Label className="text-xs">תאריך</Label>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            <HebrewDateInput compact value={date} onChange={(v) => setDate(v)} />
           </div>
           <div className="flex items-end">
             <Button

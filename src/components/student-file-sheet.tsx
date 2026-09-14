@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { HebrewDateInput } from "@/components/hebrew-date-input";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
@@ -464,7 +465,7 @@ function ParentCommsPanel({ classId, studentId }: Props) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>תאריך</Label>
-              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+              <HebrewDateInput compact value={date} onChange={(v) => setDate(v)} />
             </div>
             <div>
               <Label>ערוץ</Label>
@@ -489,7 +490,7 @@ function ParentCommsPanel({ classId, studentId }: Props) {
             </div>
             <div>
               <Label>תאריך פולו-אפ (אופציונלי)</Label>
-              <Input type="date" value={followUp} onChange={(e) => setFollowUp(e.target.value)} />
+              <HebrewDateInput compact value={followUp} onChange={(v) => setFollowUp(v)} />
             </div>
           </div>
           <Button onClick={() => addM.mutate()} disabled={!summary.trim() || addM.isPending} className="w-full">
@@ -598,7 +599,7 @@ function DisciplinePanel({ classId, studentId }: Props) {
             </div>
             <div>
               <Label>תאריך</Label>
-              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+              <HebrewDateInput compact value={date} onChange={(v) => setDate(v)} />
             </div>
             <div>
               <Label>חומרה (1-5)</Label>

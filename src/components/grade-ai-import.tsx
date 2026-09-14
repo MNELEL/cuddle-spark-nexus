@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { HebrewDateInput } from "@/components/hebrew-date-input";
 import { useServerFn } from "@tanstack/react-start";
 import { Mic, MicOff, Sparkles, Loader2, Check, X } from "lucide-react";
 import { toast } from "sonner";
@@ -191,7 +192,7 @@ function Inner({ classId, students, onClose }: { classId: string; students: Stud
             </div>
             <div>
               <Label>תאריך</Label>
-              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+              <HebrewDateInput compact value={date} onChange={(v) => setDate(v)} />
             </div>
           </div>
 
