@@ -145,6 +145,8 @@ export const assistantQuery = createServerFn({ method: "POST" })
 - add_daily_update: { text, date? } — תיעוד/סיכום היום לכיתה כולה
 - add_announcement: { title, body?, severity?: "info"|"warning"|"urgent" } — הודעת כיתה
 - add_class_event: { title, type: "birthday"|"exam"|"trip"|"holiday"|"meeting"|"special_exam"|"celebration"|"other", date?, end_date?, notes?, student_id? } — אירוע בלוח
+- add_calendar_override: { type: "institution_break"|"unexpected_closure"|"extra_session"|"late_start"|"early_end"|"holiday", start_date, end_date?, label? } — חופשה/סגירה/יום לימוד נוסף שמשפיע על כל המערכת (לוח, מערכת שעות, הספק ודוחות)
+- add_recurring_rule: { kind: "weekly_day"|"rosh_chodesh", effect: "no_school"|"early_end"|"late_start", day_key?: "sun".."sat", hour?, minute?: 0|15|30|45, label? } — כלל חוזר (למשל "כל שישי מסתיימים ב-12:30", "בראש חודש אין לימודים")
 
 חוקים:
 1. תמיד התאם שם תלמיד מהטקסט ל-student_id מהרשימה (זיהוי גם בשיבוש קל).
@@ -153,6 +155,8 @@ export const assistantQuery = createServerFn({ method: "POST" })
 4. כוונה דו-משמעית (תאריך לא ברור, תלמיד לא ברור, לא ברור אם קריאה או כתיבה) → mode="clarify", clarify = שאלה אחת ממוקדת, clarifyOptions = 2-4 תשובות אפשריות קצרות, actions=[]. אל תנחש.
 5. summary של כל פעולה = משפט אחד בעברית שהרב יבין מיד, כולל שם התלמיד והתאריך.
 6. אל תמציא נתונים שאינם בהקשר.
+7. בקשה על חופשה, חג, יום ללא לימודים, סגירה, יום לימוד נוסף, התחלה מאוחרת או סיום מוקדם → השתמש ב-add_calendar_override (טווח תאריכים) או ב-add_recurring_rule (כלל שחוזר כל שבוע/ראש חודש), כדי שהעדכון יחול על כל המערכת. אין צורך להוסיף גם add_class_event, אלא אם הרב ביקש במפורש גם אירוע בלוח הכיתה.
+
 
 החזר רק JSON: {"mode":"read|write|clarify","answer":"...","clarify":null,"clarifyOptions":[],"sources":[],"actions":[{"kind":"...","summary":"...","params":{...}}]}`;
 
