@@ -71,6 +71,15 @@ export function HebrewDateInput({
   const current = parseIso(value);
 
   const commitText = () => {
+    if (text.trim() === "") {
+      // Empty commit: clear the field when allowed, otherwise keep the
+      // previous value and ask for a date (no stuck error on an empty blur).
+      if (clearable) {
+        setError("");
+        onChange("");
+      }
+      return;
+    }
     const parsed = parseHebrewDateInput(text);
     if (!parsed.ok) {
       setError(parsed.error || "תאריך עברי לא מזוהה");
@@ -78,6 +87,12 @@ export function HebrewDateInput({
     }
     setError("");
     onChange(isoOf(parsed.date));
+  };
+
+  const clear = () => {
+    setText("");
+    setError("");
+    onChange("");
   };
 
   const step = (amount: number) => {
