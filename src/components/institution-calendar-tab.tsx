@@ -201,6 +201,22 @@ export function InstitutionCalendarTab() {
                     <Badge variant="outline" className="font-mono-tabular">
                       {c.studentCount} תלמידים
                     </Badge>
+                    {cal.canEdit && c.status === "active" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="ms-auto rounded-xl"
+                        disabled={approveM.isPending}
+                        onClick={() => approveM.mutate(c.id)}
+                      >
+                        {approveM.isPending ? (
+                          <Loader2 className="me-1 h-4 w-4 animate-spin" aria-hidden="true" />
+                        ) : (
+                          <Check className="me-1 h-4 w-4" aria-hidden="true" />
+                        )}
+                        אשר כיתה
+                      </Button>
+                    )}
                   </div>
                   <p className="mt-2 text-xs text-muted-foreground">
                     ימי לימוד:{" "}
