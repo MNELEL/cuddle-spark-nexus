@@ -44,6 +44,9 @@ const KIND_LABELS: Record<AssistantActionKind, string> = {
   add_incident: "אירוע חריג לתלמיד",
   add_class_event: "אירוע בלוח",
   add_announcement: "הודעת כיתה",
+  add_calendar_override: "עדכון לוח השנה",
+  add_recurring_rule: "כלל חוזר במערכת",
+
 };
 
 const PARAM_LABELS: Record<string, string> = {
