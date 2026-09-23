@@ -88,25 +88,48 @@ function ReviewPage() {
           </CardContent>
         </Card>
       ) : (
-        <ul className="space-y-4">
-          {items.map((item) => (
-            <li key={item.id}>
-              <PendingCard
-                item={item}
-                note={notes[item.id] ?? ""}
-                onNoteChange={(v) => setNotes((p) => ({ ...p, [item.id]: v }))}
-                rejectOpen={Boolean(rejectOpen[item.id])}
-                onToggleReject={() =>
-                  setRejectOpen((p) => ({ ...p, [item.id]: !p[item.id] }))
-                }
-                onApprove={() => approveMut.mutate(item.id)}
-                onReject={() => rejectMut.mutate(item.id)}
-                busy={approveMut.isPending || rejectMut.isPending}
-              />
-            </li>
+        <div className="space-y-6">
+          {groups.map(([classId, list]) => (
+            <section key={classId} className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-muted/40 px-3 py-2">
+                <div className="flex items-center gap-2 text-sm font-semibold">
+                  <span>{list[0]?.class_name || "כיתה"}</span>
+                  <Badge variant="outline" className="font-mono-tabular">{list.length}</Badge>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="rounded-xl"
+                  disabled={approveClassMut.isPending || approveMut.isPending || rejectMut.isPending}
+                  onClick={() => approveClassMut.mutate(classId)}
+                >
+                  <Check className="ms-2 h-4 w-4" aria-hidden />
+                  אשר את כל הכיתה
+                </Button>
+              </div>
+              <ul className="space-y-4">
+                {list.map((item) => (
+                  <li key={item.id}>
+                    <PendingCard
+                      item={item}
+                      note={notes[item.id] ?? ""}
+                      onNoteChange={(v) => setNotes((p) => ({ ...p, [item.id]: v }))}
+                      rejectOpen={Boolean(rejectOpen[item.id])}
+                      onToggleReject={() =>
+                        setRejectOpen((p) => ({ ...p, [item.id]: !p[item.id] }))
+                      }
+                      onApprove={() => approveMut.mutate(item.id)}
+                      onReject={() => rejectMut.mutate(item.id)}
+                      busy={approveMut.isPending || rejectMut.isPending || approveClassMut.isPending}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </section>
           ))}
-        </ul>
+        </div>
       )}
+
     </div>
   );
 }
