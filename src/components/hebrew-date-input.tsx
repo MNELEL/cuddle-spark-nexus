@@ -17,7 +17,7 @@ import { useShowGregorian } from "@/lib/date-display";
 import { cn } from "@/lib/utils";
 
 type Props = {
-  /** ISO date, "YYYY-MM-DD". */
+  /** ISO date, "YYYY-MM-DD" — or "" when the field is clearable and empty. */
   value: string;
   onChange: (iso: string) => void;
   label?: string;
@@ -26,6 +26,11 @@ type Props = {
   disabled?: boolean;
   /** Hide the ±day stepper (e.g. inside dense forms). */
   compact?: boolean;
+  /**
+   * Optional/clearable field: clearing the text (or the Gregorian picker)
+   * emits "" instead of a validation error, and a small ✕ button appears.
+   */
+  clearable?: boolean;
 };
 
 function parseIso(iso: string): Date | null {
