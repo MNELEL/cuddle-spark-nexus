@@ -168,6 +168,28 @@ export const getDailyReport = createServerFn({ method: "POST" })
       at(String(a.date).slice(0, 10)).approvals += 1;
     }
 
+    // חופשות/סגירות מוסדיות שחלות על הטווח — כך שדוח התיעוד מסמן ימי חופשה
+    // ולא מציג אותם כימים חסרי תיעוד.
+    const { data: breaks, error: bErr } = await supabase
+      .from("academic_calendar_overrides")
+      .select("start_date,end_date,type,label")
+      .eq("class_id", data.classId)
+      .lte("start_date", data.to)
+      .gte("end_date", data.from);
+    if (bErr) {
+      console.error("[DB Error]", bErr);
+      throw new Error("טעינת הדוח נכשלה");
+    }
+    for (const b of (breaks ?? []) as any[]) {
+      const from = String(b.start_date).slice(0, 10) < data.from ? data.from : String(b.start_date).slice(0, 10);
+      const to = String(b.end_date).slice(0, 10) > data.to ? data.to : String(b.end_date).slice(0, 10);
+      for (let d = new Date(`${from}T00:00:00`); d <= new Date(`${to}T00:00:00`); d.setDate(d.getDate() + 1)) {
+        const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        at(iso).breakInfo = { type: b.type, label: b.label ?? null };
+      }
+    }
+
+
     return {
       class: { id: cls.id, name: cls.name },
       range: { from: data.from, to: data.to },
