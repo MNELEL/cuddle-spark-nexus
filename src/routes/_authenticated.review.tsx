@@ -2,12 +2,17 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
-import { AlertTriangle, Check, ClipboardCheck, X } from "lucide-react";
+import { AlertTriangle, CalendarDays, Check, ClipboardCheck, X } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { HebrewDateInput } from "@/components/hebrew-date-input";
+import { listClasses } from "@/lib/classes.functions";
+import { addClassBreak } from "@/lib/class-break.functions";
 import {
   listPendingUpdates,
   approvePendingUpdate,
@@ -160,6 +165,109 @@ function ReviewPage() {
       )}
 
     </div>
+  );
+}
+
+/** הוספת חופשה לכיתה ישירות ממסך הסקירה, כולל תאריך-החלוף למעבירי שנה. */
+function BreakCard() {
+  const fetchClasses = useServerFn(listClasses);
+  const runAdd = useServerFn(addClassBreak);
+  const qc = useQueryClient();
+
+  const today = new Date().toISOString().slice(0, 10);
+  const [classId, setClassId] = useState("");
+  const [from, setFrom] = useState(today);
+  const [to, setTo] = useState(today);
+  const [label, setLabel] = useState("");
+  const [rolloverDate, setRolloverDate] = useState("");
+
+  const { data: classes = [] } = useQuery({
+    queryKey: ["classes"],
+    queryFn: () => fetchClasses(),
+  });
+  const active = classes.filter((c) => c.status !== "archived");
+  const effectiveClassId = classId || active[0]?.id || "";
+
+  const addMut = useMutation({
+    mutationFn: () =>
+      runAdd({
+        data: {
+          classId: effectiveClassId,
+          startDate: from,
+          endDate: to,
+          label: label.trim(),
+          ...(rolloverDate ? { rolloverDate } : {}),
+        },
+      }),
+    onSuccess: (r) => {
+      setLabel("");
+      void qc.invalidateQueries({ queryKey: ["calendar-overrides"] });
+      void qc.invalidateQueries({ queryKey: ["daily-log-report"] });
+      void qc.invalidateQueries({ queryKey: ["institution-calendar"] });
+      toast.success(
+        `החופשה נרשמה בכיתה ${r.className}` +
+          (r.rolloverStudents ? ` · תאריך-החלוף עודכן ל-${r.rolloverStudents} תלמידים` : ""),
+      );
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "שמירת החופשה נכשלה"),
+  });
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <CalendarDays className="h-4 w-4 text-primary" aria-hidden />
+          הוספת חופשה
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="break-class">כיתה</Label>
+            <select
+              id="break-class"
+              className="h-9 w-full rounded-md border bg-background px-2 text-sm"
+              value={effectiveClassId}
+              onChange={(e) => setClassId(e.target.value)}
+            >
+              {active.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="break-label">תיאור החופשה</Label>
+            <Input
+              id="break-label"
+              value={label}
+              onChange={(e) => setLabel(e.target.value)}
+              placeholder="למשל: בין הזמנים ניסן"
+            />
+          </div>
+          <HebrewDateInput label="מתאריך" value={from} onChange={setFrom} compact />
+          <HebrewDateInput label="עד תאריך" value={to} onChange={setTo} compact />
+        </div>
+        <HebrewDateInput
+          label="תאריך-החלוף לתלמידים שמעבירים שנה (אופציונלי)"
+          value={rolloverDate}
+          onChange={setRolloverDate}
+          compact
+          clearable
+        />
+        <Button
+          className="rounded-xl"
+          disabled={addMut.isPending || label.trim().length < 2 || !effectiveClassId}
+          onClick={() => addMut.mutate()}
+        >
+          רשום חופשה
+        </Button>
+        <p className="text-xs text-muted-foreground">
+          החופשה מופיעה מיד בלוח השנה של הכיתה, בלוח היומי, בדוח התיעוד היומי ובדוח הפגישות של המוסד.
+        </p>
+      </CardContent>
+    </Card>
   );
 }
 
