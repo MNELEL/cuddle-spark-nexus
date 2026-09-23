@@ -7,7 +7,7 @@
  * via the "לועזי" preference, or per-field with the small toggle).
  */
 import { useEffect, useState } from "react";
-import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ import { useShowGregorian } from "@/lib/date-display";
 import { cn } from "@/lib/utils";
 
 type Props = {
-  /** ISO date, "YYYY-MM-DD". */
+  /** ISO date, "YYYY-MM-DD" — or "" when the field is clearable and empty. */
   value: string;
   onChange: (iso: string) => void;
   label?: string;
@@ -26,6 +26,11 @@ type Props = {
   disabled?: boolean;
   /** Hide the ±day stepper (e.g. inside dense forms). */
   compact?: boolean;
+  /**
+   * Optional/clearable field: clearing the text (or the Gregorian picker)
+   * emits "" instead of a validation error, and a small ✕ button appears.
+   */
+  clearable?: boolean;
 };
 
 function parseIso(iso: string): Date | null {
@@ -48,6 +53,7 @@ export function HebrewDateInput({
   className,
   disabled,
   compact,
+  clearable,
 }: Props) {
   const globalGreg = useShowGregorian();
   const [showGreg, setShowGreg] = useState(globalGreg);
@@ -65,6 +71,15 @@ export function HebrewDateInput({
   const current = parseIso(value);
 
   const commitText = () => {
+    if (text.trim() === "") {
+      // Empty commit: clear the field when allowed, otherwise keep the
+      // previous value and ask for a date (no stuck error on an empty blur).
+      if (clearable) {
+        setError("");
+        onChange("");
+      }
+      return;
+    }
     const parsed = parseHebrewDateInput(text);
     if (!parsed.ok) {
       setError(parsed.error || "תאריך עברי לא מזוהה");
@@ -72,6 +87,12 @@ export function HebrewDateInput({
     }
     setError("");
     onChange(isoOf(parsed.date));
+  };
+
+  const clear = () => {
+    setText("");
+    setError("");
+    onChange("");
   };
 
   const step = (amount: number) => {
@@ -127,6 +148,18 @@ export function HebrewDateInput({
             <ChevronLeft className="h-4 w-4" aria-hidden="true" />
           </Button>
         )}
+        {clearable && value && !disabled && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 shrink-0 rounded-xl"
+            aria-label="נקה תאריך"
+            onClick={clear}
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </Button>
+        )}
         <Button
           type="button"
           variant="ghost"
@@ -147,7 +180,7 @@ export function HebrewDateInput({
           value={value}
           disabled={disabled}
           onChange={(e) => {
-            if (e.target.value) onChange(e.target.value);
+            if (e.target.value || clearable) onChange(e.target.value);
           }}
         />
       )}

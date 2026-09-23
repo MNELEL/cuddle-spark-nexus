@@ -203,6 +203,7 @@ export function TeacherMeetingsDialog({
                       <Label htmlFor={`edit-followup-${m.id}`}>תאריך מעקב</Label>
                       <HebrewDateInput
                         compact
+                        clearable
                         id={`edit-followup-${m.id}`}
                         value={editing.followUpDate ?? ""}
                         onChange={(v) => setEditing({ ...editing, followUpDate: v || null })}
@@ -317,7 +318,7 @@ export function TeacherMeetingsDialog({
             </div>
             <div className="space-y-2">
               <Label htmlFor="meeting-followup">תאריך מעקב (אופציונלי)</Label>
-              <HebrewDateInput compact value={followUpDate} onChange={(v) => setFollowUpDate(v)} className="rounded-xl" />
+              <HebrewDateInput compact clearable value={followUpDate} onChange={(v) => setFollowUpDate(v)} className="rounded-xl" />
               {followUpDate && <p className="text-xs text-muted-foreground">{hebrewDate(followUpDate)}</p>}
             </div>
             <Button
