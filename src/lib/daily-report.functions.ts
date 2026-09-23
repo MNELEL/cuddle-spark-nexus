@@ -17,6 +17,8 @@ export type DailyReportDay = {
   grades: { count: number; avgPct: number | null };
   insights: { total: number; high: number; medium: number; low: number };
   approvals: number;
+  /** חופשה/סגירה מוסדית שחלה על היום הזה (מ-academic_calendar_overrides). */
+  breakInfo: { type: string; label: string | null } | null;
 };
 
 export type DailyReport = {
@@ -34,7 +36,9 @@ const emptyDay = (date: string): DailyReportDay => ({
   grades: { count: 0, avgPct: null },
   insights: { total: 0, high: 0, medium: 0, low: 0 },
   approvals: 0,
+  breakInfo: null,
 });
+
 
 const reportInput = z.object({
   classId: z.string().uuid(),
