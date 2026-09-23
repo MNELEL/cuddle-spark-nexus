@@ -206,7 +206,11 @@ function DailyLogReportPage() {
               תובנות: d.insights.total,
               "תובנות חמורות": d.insights.high,
               "אישורי מלמד": d.approvals,
+              חופשה: d.breakInfo
+                ? `${OVERRIDE_LABEL[d.breakInfo.type] ?? "חופשה"}${d.breakInfo.label ? ` · ${d.breakInfo.label}` : ""}`
+                : "",
               "תיעוד יומי": d.notes ?? "",
+
             })),
           ),
           "סיכום יומי",
