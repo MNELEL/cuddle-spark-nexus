@@ -24,6 +24,8 @@ import type { CertTemplateDesign } from "@/lib/ai-certificate.functions";
 import { useHebrewAnchor } from "@/components/hebrew-anchor";
 import { DailyReportDayDialog } from "@/components/daily-report-day-dialog";
 import { hebrewRangePresets, hebrewDayInfo, isoOf } from "@/lib/hebrew-calendar";
+import { OVERRIDE_LABEL } from "@/components/schedule/schedule-context";
+
 import { toHebrewDateFull, hebrewDateTime } from "@/lib/hebrew-date";
 import { useShowGregorian } from "@/lib/date-display";
 import { listStudents } from "@/lib/students.functions";
