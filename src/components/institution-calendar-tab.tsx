@@ -7,7 +7,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { CalendarDays, Loader2, Trash2 } from "lucide-react";
+import { CalendarDays, Check, Loader2, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,6 +23,7 @@ import {
   getInstitutionCalendar,
   setInstitutionBreak,
   deleteInstitutionBreak,
+  approveClassRemainder,
   type InstitutionCalendar,
 } from "@/lib/institution-calendar.functions";
 
