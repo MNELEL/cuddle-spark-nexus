@@ -169,7 +169,9 @@ function InstitutionDashboardPage() {
           <TabsTrigger value="classes">כיתות</TabsTrigger>
           <TabsTrigger value="teachers">מלמדים</TabsTrigger>
           <TabsTrigger value="meetings">פגישות</TabsTrigger>
+          <TabsTrigger value="calendar">לוח שנה</TabsTrigger>
           <TabsTrigger value="staff">צוות ורבנים</TabsTrigger>
+
         </TabsList>
 
         <TabsContent value="classes" className="space-y-6">
