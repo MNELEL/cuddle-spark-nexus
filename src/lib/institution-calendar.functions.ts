@@ -103,7 +103,7 @@ export const getInstitutionCalendar = createServerFn({ method: "GET" })
     const classes = classRows ?? [];
     const ids = classes.map((c) => c.id);
     if (ids.length === 0) {
-      return { canEdit: scope.role === "admin", classes: [], breaks: [] };
+      return { canEdit: true, classes: [], breaks: [] };
     }
 
     const [overrides, settings, students] = await Promise.all([
@@ -160,7 +160,7 @@ export const getInstitutionCalendar = createServerFn({ method: "GET" })
       };
     });
 
-    return { canEdit: scope.role === "admin", classes: out, breaks: allBreaks };
+    return { canEdit: true, classes: out, breaks: allBreaks };
   });
 
 const breakSchema = z
