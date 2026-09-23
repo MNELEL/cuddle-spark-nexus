@@ -42,9 +42,12 @@ async function requireScope(supabase: SupabaseClient<Database>, userId: string) 
   return scope;
 }
 
+/** מנהל מוסד (principal) ומנהל מערכת (admin) רשאים לעדכן את לוח המוסד. */
 async function requireAdminScope(supabase: SupabaseClient<Database>, userId: string) {
   const scope = await requireScope(supabase, userId);
-  if (scope.role !== "admin") throw new Error("רק מנהל מערכת יכול לעדכן את לוח המוסד");
+  if (scope.role !== "admin" && scope.role !== "principal") {
+    throw new Error("אין לך הרשאה לעדכן את לוח המוסד");
+  }
   return scope;
 }
 
