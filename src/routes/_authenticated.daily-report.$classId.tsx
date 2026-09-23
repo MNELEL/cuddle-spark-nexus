@@ -61,6 +61,8 @@ const emptyDay = (date: string): DailyReportDay => ({
   grades: { count: 0, avgPct: null },
   insights: { total: 0, high: 0, medium: 0, low: 0 },
   approvals: 0,
+  breakInfo: null,
+
 });
 
 const STATUS_LABEL: Record<string, string> = {
