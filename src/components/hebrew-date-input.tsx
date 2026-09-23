@@ -148,6 +148,18 @@ export function HebrewDateInput({
             <ChevronLeft className="h-4 w-4" aria-hidden="true" />
           </Button>
         )}
+        {clearable && value && !disabled && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 shrink-0 rounded-xl"
+            aria-label="נקה תאריך"
+            onClick={clear}
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </Button>
+        )}
         <Button
           type="button"
           variant="ghost"
@@ -168,7 +180,7 @@ export function HebrewDateInput({
           value={value}
           disabled={disabled}
           onChange={(e) => {
-            if (e.target.value) onChange(e.target.value);
+            if (e.target.value || clearable) onChange(e.target.value);
           }}
         />
       )}
