@@ -7,7 +7,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { CalendarDays, Loader2, Trash2 } from "lucide-react";
+import { CalendarDays, Check, Loader2, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,6 +23,7 @@ import {
   getInstitutionCalendar,
   setInstitutionBreak,
   deleteInstitutionBreak,
+  approveClassRemainder,
   type InstitutionCalendar,
 } from "@/lib/institution-calendar.functions";
 
@@ -34,6 +35,7 @@ export function InstitutionCalendarTab() {
   const fetchCalendar = useServerFn(getInstitutionCalendar);
   const runSet = useServerFn(setInstitutionBreak);
   const runDelete = useServerFn(deleteInstitutionBreak);
+  const runApproveClass = useServerFn(approveClassRemainder);
   const qc = useQueryClient();
 
   const [from, setFrom] = useState(todayIso());
@@ -75,6 +77,20 @@ export function InstitutionCalendarTab() {
       );
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "שמירת החופשה נכשלה"),
+  });
+
+  const approveM = useMutation({
+    mutationFn: (classId: string) => runApproveClass({ data: { classId } }),
+    onSuccess: (r) => {
+      invalidate();
+      void qc.invalidateQueries({ queryKey: ["pending-updates"] });
+      toast.success(
+        `אושרו: ${r.approvedPending} פריטים ממתינים · ${r.approvedMeetings} פגישות · ` +
+          `${r.approvedPortfolio} דוחות בתיק · ${r.approvedDays} ימי תיעוד`,
+      );
+      if (r.failed.length > 0) toast.error(r.failed[0] ?? "חלק מהפריטים לא אושרו");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "אישור הכיתה נכשל"),
   });
 
   const delM = useMutation({
@@ -185,6 +201,22 @@ export function InstitutionCalendarTab() {
                     <Badge variant="outline" className="font-mono-tabular">
                       {c.studentCount} תלמידים
                     </Badge>
+                    {cal.canEdit && c.status === "active" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="ms-auto rounded-xl"
+                        disabled={approveM.isPending}
+                        onClick={() => approveM.mutate(c.id)}
+                      >
+                        {approveM.isPending ? (
+                          <Loader2 className="me-1 h-4 w-4 animate-spin" aria-hidden="true" />
+                        ) : (
+                          <Check className="me-1 h-4 w-4" aria-hidden="true" />
+                        )}
+                        אשר כיתה
+                      </Button>
+                    )}
                   </div>
                   <p className="mt-2 text-xs text-muted-foreground">
                     ימי לימוד:{" "}

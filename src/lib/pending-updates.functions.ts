@@ -102,7 +102,7 @@ async function loadOwnedPending(
 }
 
 /** כותבת בפועל את הפריט המאושר (כרגע רק אירוע חריג) ומסמנת approved. */
-async function applyApproval(
+export async function applyApproval(
   supabase: SupabaseClient<Database>,
   row: { id: string; class_id: string; intent: string; payload: unknown },
   reviewNotes?: string,

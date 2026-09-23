@@ -42,9 +42,12 @@ async function requireScope(supabase: SupabaseClient<Database>, userId: string) 
   return scope;
 }
 
+/** מנהל מוסד (principal) ומנהל מערכת (admin) רשאים לעדכן את לוח המוסד. */
 async function requireAdminScope(supabase: SupabaseClient<Database>, userId: string) {
   const scope = await requireScope(supabase, userId);
-  if (scope.role !== "admin") throw new Error("רק מנהל מערכת יכול לעדכן את לוח המוסד");
+  if (scope.role !== "admin" && scope.role !== "principal") {
+    throw new Error("אין לך הרשאה לעדכן את לוח המוסד");
+  }
   return scope;
 }
 
@@ -100,7 +103,7 @@ export const getInstitutionCalendar = createServerFn({ method: "GET" })
     const classes = classRows ?? [];
     const ids = classes.map((c) => c.id);
     if (ids.length === 0) {
-      return { canEdit: scope.role === "admin", classes: [], breaks: [] };
+      return { canEdit: true, classes: [], breaks: [] };
     }
 
     const [overrides, settings, students] = await Promise.all([
@@ -157,7 +160,7 @@ export const getInstitutionCalendar = createServerFn({ method: "GET" })
       };
     });
 
-    return { canEdit: scope.role === "admin", classes: out, breaks: allBreaks };
+    return { canEdit: true, classes: out, breaks: allBreaks };
   });
 
 const breakSchema = z
@@ -274,4 +277,148 @@ export const deleteInstitutionBreak = createServerFn({ method: "POST" })
     if (dErr) { console.error("[DB Error]", dErr); throw new Error("מחיקת החופשה נכשלה"); }
 
     return { ok: true as const };
+  });
+
+/**
+ * "אישור כיתה" מתוך פאנל המוסד: מנהל המוסד מאשר בלחיצה אחת את כל מה שנותר
+ * בכיתה — פריטי העוזר החכם שממתינים, פריטי התיק (כולל פגישות 1:1) שטרם אושרו,
+ * וימי התיעוד היומי שאין להם אישור מלמד.
+ */
+export const approveClassRemainder = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ classId: uuid }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const scope = await requireAdminScope(supabase, userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { applyApproval } = await import("@/lib/pending-updates.functions");
+
+    const { data: cls, error: cErr } = await supabaseAdmin
+      .from("classes")
+      .select("id,name,owner_id")
+      .eq("id", data.classId)
+      .eq("institution_id", scope.institutionId)
+      .maybeSingle();
+    if (cErr) { console.error("[DB Error]", cErr); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    if (!cls) throw new Error("אין הרשאה לכיתה זו");
+
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("display_name")
+      .eq("id", userId)
+      .maybeSingle();
+    const approverName = profile?.display_name || "מנהל המוסד";
+    const nowIso = new Date().toISOString();
+
+    // 1) פריטי העוזר החכם שממתינים לאישור בכיתה
+    const { data: pending } = await supabaseAdmin
+      .from("pending_updates")
+      .select("id,class_id,intent,payload")
+      .eq("class_id", data.classId)
+      .eq("status", "pending");
+    let approvedPending = 0;
+    const failed: string[] = [];
+    for (const row of pending ?? []) {
+      try {
+        await applyApproval(supabaseAdmin, row, `אושר על ידי ${approverName}`);
+        approvedPending += 1;
+      } catch (e) {
+        failed.push(e instanceof Error ? e.message : "פריט שלא ניתן לאישור");
+      }
+    }
+
+    // 2) פריטי התיק (דוחות ופגישות 1:1) שטרם אושרו
+    const { data: portfolio, error: pErr } = await supabaseAdmin
+      .from("student_portfolio_items")
+      .update({ approved_at: nowIso })
+      .eq("class_id", data.classId)
+      .is("approved_at", null)
+      .select("id,kind");
+    if (pErr) { console.error("[DB Error]", pErr); throw new Error("אישור פריטי התיק נכשל"); }
+    const approvedMeetings = (portfolio ?? []).filter((p) => p.kind === "meeting").length;
+    const approvedPortfolio = (portfolio ?? []).length - approvedMeetings;
+
+    // 3) ימי תיעוד יומי שאין להם אישור מלמד (180 הימים האחרונים)
+    const since = new Date(Date.now() - 1000 * 60 * 60 * 24 * 180).toISOString().slice(0, 10);
+    const [attendance, grades, insights, approvals] = await Promise.all([
+      supabaseAdmin.from("attendance").select("student_id,date").eq("class_id", data.classId).gte("date", since),
+      supabaseAdmin.from("grades").select("student_id,date").eq("class_id", data.classId).gte("date", since),
+      supabaseAdmin
+        .from("orchestrator_insights")
+        .select("student_id,insight_date")
+        .eq("class_id", data.classId)
+        .gte("insight_date", since),
+      supabaseAdmin
+        .from("daily_log_approvals")
+        .select("student_id,date")
+        .eq("class_id", data.classId)
+        .gte("date", since),
+    ]);
+    for (const r of [attendance, grades, insights, approvals]) {
+      if (r.error) { console.error("[DB Error]", r.error); throw new Error("טעינת התיעוד נכשלה"); }
+    }
+
+    // רק תלמידים שקיימים כרגע בכיתה (תיעוד היסטורי עשוי להצביע על תלמיד שנמחק)
+    const { data: roster, error: rErr } = await supabaseAdmin
+      .from("students")
+      .select("id")
+      .eq("class_id", data.classId);
+    if (rErr) { console.error("[DB Error]", rErr); throw new Error("טעינת רשימת התלמידים נכשלה"); }
+    const rosterIds = new Set((roster ?? []).map((s) => s.id));
+
+    const existing = new Set((approvals.data ?? []).map((a) => `${a.student_id}|${a.date}`));
+    const pairs = new Map<string, { student_id: string; date: string }>();
+    const add = (studentId: string | null, date: string | null) => {
+      if (!studentId || !date || !rosterIds.has(studentId)) return;
+      const day = String(date).slice(0, 10);
+      const key = `${studentId}|${day}`;
+      if (existing.has(key)) return;
+      pairs.set(key, { student_id: studentId, date: day });
+    };
+    for (const a of attendance.data ?? []) add(a.student_id, a.date);
+    for (const g of grades.data ?? []) add(g.student_id, g.date);
+    for (const i of insights.data ?? []) add(i.student_id, i.insight_date);
+
+    let approvedDays = 0;
+    if (pairs.size > 0) {
+      const rows = Array.from(pairs.values()).map((p) => ({
+        owner_id: cls.owner_id,
+        class_id: data.classId,
+        student_id: p.student_id,
+        date: p.date,
+        approver_name: approverName,
+        notes: "אושר מפאנל המוסד",
+      }));
+      const { data: inserted, error: aErr } = await supabaseAdmin
+        .from("daily_log_approvals")
+        .upsert(rows, { onConflict: "student_id,date" })
+        .select("id");
+      if (aErr) { console.error("[DB Error]", aErr); throw new Error("אישור התיעוד היומי נכשל"); }
+      approvedDays = (inserted ?? []).length;
+    }
+
+    await supabaseAdmin.from("app_logs").insert({
+      source: AUDIT_SOURCE_TEACHERS,
+      level: "info",
+      message: `אישור כיתה מפאנל המוסד: ${cls.name}`,
+      user_id: userId,
+      context: {
+        action: "institution.class_approved",
+        institution_id: scope.institutionId,
+        class_id: data.classId,
+        pending: approvedPending,
+        meetings: approvedMeetings,
+        portfolio: approvedPortfolio,
+        daily_logs: approvedDays,
+      },
+    });
+
+    return {
+      ok: true as const,
+      approvedPending,
+      approvedMeetings,
+      approvedPortfolio,
+      approvedDays,
+      failed,
+    };
   });
