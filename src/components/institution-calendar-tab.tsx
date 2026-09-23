@@ -35,6 +35,7 @@ export function InstitutionCalendarTab() {
   const fetchCalendar = useServerFn(getInstitutionCalendar);
   const runSet = useServerFn(setInstitutionBreak);
   const runDelete = useServerFn(deleteInstitutionBreak);
+  const runApproveClass = useServerFn(approveClassRemainder);
   const qc = useQueryClient();
 
   const [from, setFrom] = useState(todayIso());
@@ -76,6 +77,20 @@ export function InstitutionCalendarTab() {
       );
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "שמירת החופשה נכשלה"),
+  });
+
+  const approveM = useMutation({
+    mutationFn: (classId: string) => runApproveClass({ data: { classId } }),
+    onSuccess: (r) => {
+      invalidate();
+      void qc.invalidateQueries({ queryKey: ["pending-updates"] });
+      toast.success(
+        `אושרו: ${r.approvedPending} פריטים ממתינים · ${r.approvedMeetings} פגישות · ` +
+          `${r.approvedPortfolio} דוחות בתיק · ${r.approvedDays} ימי תיעוד`,
+      );
+      if (r.failed.length > 0) toast.error(r.failed[0] ?? "חלק מהפריטים לא אושרו");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "אישור הכיתה נכשל"),
   });
 
   const delM = useMutation({
