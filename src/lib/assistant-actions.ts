@@ -132,7 +132,64 @@ export const ASSISTANT_ACTION_FIELDS: Record<string, AssistantField[]> = {
     { key: "notes", label: "הערות", type: "textarea" },
     { key: "student_id", label: "תלמיד (לא חובה)", type: "select", options: [] },
   ],
+  add_calendar_override: [
+    {
+      key: "type", label: "סוג", type: "select", required: true,
+      options: [
+        { value: "institution_break", label: "חופשה" },
+        { value: "holiday", label: "חג" },
+        { value: "unexpected_closure", label: "סגירה בלתי צפויה" },
+        { value: "extra_session", label: "לימוד נוסף" },
+        { value: "late_start", label: "התחלה מאוחרת" },
+        { value: "early_end", label: "סיום מוקדם" },
+      ],
+    },
+    { key: "start_date", label: "מתאריך", type: "date", required: true },
+    { key: "end_date", label: "עד תאריך", type: "date" },
+    { key: "label", label: "תיאור", type: "text" },
+  ],
+  add_recurring_rule: [
+    {
+      key: "kind", label: "סוג הכלל", type: "select", required: true,
+      options: [
+        { value: "weekly_day", label: "כל שבוע ביום קבוע" },
+        { value: "rosh_chodesh", label: "ראש חודש (מחושב אוטומטית)" },
+      ],
+    },
+    {
+      key: "effect", label: "השפעה", type: "select", required: true,
+      options: [
+        { value: "no_school", label: "אין לימודים" },
+        { value: "early_end", label: "סיום מוקדם" },
+        { value: "late_start", label: "התחלה מאוחרת" },
+      ],
+    },
+    {
+      key: "day_key", label: "יום בשבוע", type: "select",
+      options: [
+        { value: "sun", label: "ראשון" },
+        { value: "mon", label: "שני" },
+        { value: "tue", label: "שלישי" },
+        { value: "wed", label: "רביעי" },
+        { value: "thu", label: "חמישי" },
+        { value: "fri", label: "שישי" },
+        { value: "sat", label: "שבת" },
+      ],
+    },
+    { key: "hour", label: "שעה", type: "number" },
+    {
+      key: "minute", label: "דקות", type: "select",
+      options: [
+        { value: "0", label: "00" },
+        { value: "15", label: "15" },
+        { value: "30", label: "30" },
+        { value: "45", label: "45" },
+      ],
+    },
+    { key: "label", label: "תיאור", type: "text" },
+  ],
 };
+
 
 export function fieldsForKind(kind: string): AssistantField[] {
   return ASSISTANT_ACTION_FIELDS[kind] ?? [];
