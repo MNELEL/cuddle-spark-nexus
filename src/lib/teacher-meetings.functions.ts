@@ -523,7 +523,10 @@ export const getInstitutionMeetingsReport = createServerFn({ method: "POST" })
         ? Math.round((meetings.length / teachers.length) * 10) / 10
         : 0,
       avgSummaryLength: meetings.length ? Math.round(summaryChars / meetings.length) : 0,
+      aiSummaryLength: aiSummary ? aiSummary.trim().length : 0,
       meetingsWithActionItems: withActions,
       actionItemsRate: meetings.length ? withActions / meetings.length : 0,
+      breaks,
     };
+
   });
