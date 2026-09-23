@@ -31,21 +31,24 @@ export const getStudentSummary = createServerFn({ method: "POST" })
       .eq("person_key", student.person_key)
       .maybeSingle();
     if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    const r = row as {
+      id?: string; start_date?: string | null; approved_at?: string | null;
+      ai_summary?: string | null; trends?: string | null;
+    } | null;
     return {
       studentName: student.name,
       personKey: student.person_key,
       /** ברירת המחדל לתאריך-החלוף היא זו של רשומת התלמיד. */
-      summary: row
-        ? (row as Record<string, unknown>)
-        : {
-            id: null,
-            person_key: student.person_key,
-            start_date: student.start_date,
-            approved_at: null,
-            ai_summary: "",
-            trends: "",
-          },
+      summary: {
+        id: r?.id ?? null,
+        person_key: student.person_key,
+        start_date: r ? (r.start_date ?? null) : student.start_date,
+        approved_at: r?.approved_at ?? null,
+        ai_summary: r?.ai_summary ?? "",
+        trends: r?.trends ?? "",
+      },
     };
+
   });
 
 /** שמירת תאריך-החלוף בתקציר התלמיד (ריק = ללא תאריך). */
