@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { AlertTriangle, Check, ClipboardCheck, X } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,9 +11,11 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   listPendingUpdates,
   approvePendingUpdate,
+  approveClassPendingUpdates,
   rejectPendingUpdate,
   type PendingUpdateItem,
 } from "@/lib/pending-updates.functions";
+
 import { hebrewDate, hebrewDateTime } from "@/lib/hebrew-date";
 
 export const Route = createFileRoute("/_authenticated/review")({
