@@ -19,6 +19,8 @@ export const ASSISTANT_ACTION_KINDS = [
   "add_incident",
   "add_class_event",
   "add_announcement",
+  "add_calendar_override",
+  "add_recurring_rule",
 ] as const;
 
 const ActionSchema = z.object({
@@ -34,7 +36,10 @@ const CLASS_LEVEL_KINDS = new Set<AssistantActionKind>([
   "add_daily_update",
   "add_announcement",
   "add_class_event",
+  "add_calendar_override",
+  "add_recurring_rule",
 ]);
+
 
 export type AssistantReply = {
   /** read = תשובה מיידית · write = פעולות לסקירה · clarify = נדרשת הבהרה */
