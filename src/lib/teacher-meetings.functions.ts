@@ -316,6 +316,15 @@ export type MeetingsReportTeacher = {
   openFollowUps: string[];
   /** ממוצע פגישות עם מטלות מוגדרות (0–1) עבור התקופה. */
   actionItemsRate: number;
+  /** סיכום מפורט של הפגישות האחרונות בתקופה. */
+  recentMeetings: {
+    date: string;
+    summary: string;
+    actionItems: string | null;
+    followUpDate: string | null;
+  }[];
+  /** חופשות שחלות על הכיתות של המלמד — כך שהדוח והלוח מתעדכנים יחד. */
+  breakLabels: string[];
 };
 
 /** תקופות הדוח: חודש, רבעון, שנה או הכל. */
@@ -339,11 +348,22 @@ export type MeetingsReport = {
   avgMeetingsPerTeacher: number;
   /** אורך ממוצע של סיכום פגישה בתווים. */
   avgSummaryLength: number;
+  /** אורך תקציר ה-AI שהופק (0 כשלא הופק). */
+  aiSummaryLength: number;
   /** מספר הפגישות שכוללות מטלות. */
   meetingsWithActionItems: number;
   /** ממוצע פגישות עם מטלות מכלל הפגישות (0–1). */
   actionItemsRate: number;
+  /** חופשות המוסד בתקופה, עם הכיתות שמתעדכנות איתן. */
+  breaks: {
+    startDate: string;
+    endDate: string;
+    type: string;
+    label: string | null;
+    classNames: string[];
+  }[];
 };
+
 
 const reportSchema = z.object({
   withAi: z.boolean().optional(),
