@@ -24,6 +24,8 @@ import { InstitutionClassAssignmentsCard } from "@/components/institution-class-
 import { TeacherChangeHistory } from "@/components/teacher-change-history";
 import { TeacherMeetingsDialog } from "@/components/teacher-meetings-dialog";
 import { InstitutionMeetingsTab } from "@/components/institution-meetings-tab";
+import { InstitutionCalendarTab } from "@/components/institution-calendar-tab";
+
 import { Textarea } from "@/components/ui/textarea";
 import { renameInstitutionTeacher } from "@/lib/institution-staff.functions";
 import { Search, ChevronLeft, Pencil, Building2, Users, GraduationCap, Archive, UserPlus, Loader2 } from "lucide-react";
