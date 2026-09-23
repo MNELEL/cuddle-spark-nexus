@@ -358,10 +358,18 @@ export const approveClassRemainder = createServerFn({ method: "POST" })
       if (r.error) { console.error("[DB Error]", r.error); throw new Error("טעינת התיעוד נכשלה"); }
     }
 
+    // רק תלמידים שקיימים כרגע בכיתה (תיעוד היסטורי עשוי להצביע על תלמיד שנמחק)
+    const { data: roster, error: rErr } = await supabaseAdmin
+      .from("students")
+      .select("id")
+      .eq("class_id", data.classId);
+    if (rErr) { console.error("[DB Error]", rErr); throw new Error("טעינת רשימת התלמידים נכשלה"); }
+    const rosterIds = new Set((roster ?? []).map((s) => s.id));
+
     const existing = new Set((approvals.data ?? []).map((a) => `${a.student_id}|${a.date}`));
     const pairs = new Map<string, { student_id: string; date: string }>();
     const add = (studentId: string | null, date: string | null) => {
-      if (!studentId || !date) return;
+      if (!studentId || !date || !rosterIds.has(studentId)) return;
       const day = String(date).slice(0, 10);
       const key = `${studentId}|${day}`;
       if (existing.has(key)) return;
