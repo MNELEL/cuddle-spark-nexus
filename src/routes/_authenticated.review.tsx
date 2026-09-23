@@ -37,7 +37,8 @@ function ReviewPage() {
   const fetchList = useServerFn(listPendingUpdates);
   const runApprove = useServerFn(approvePendingUpdate);
   const runReject = useServerFn(rejectPendingUpdate);
-  const qc = useQueryClient();
+  const runApproveClass = useServerFn(approveClassPendingUpdates);
+
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [rejectOpen, setRejectOpen] = useState<Record<string, boolean>>({});
 
