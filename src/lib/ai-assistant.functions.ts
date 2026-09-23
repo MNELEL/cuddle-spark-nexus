@@ -383,16 +383,70 @@ export const executeAssistantAction = createServerFn({ method: "POST" })
         .enum(["birthday", "exam", "trip", "holiday", "meeting", "special_exam", "celebration", "other"])
         .safeParse(String(params.type ?? "other"));
       if (!typeParsed.success) throw new Error("סוג אירוע לא תקין");
+      const start = safeDate(params.date);
+      const end = optionalDate(params.end_date);
       const { error } = await supabase.from("class_events").insert({
         class_id: data.classId,
         title,
         type: typeParsed.data,
-        date: safeDate(params.date),
-        end_date: optionalDate(params.end_date),
+        date: start,
+        end_date: end,
         notes: String(params.notes ?? "").slice(0, 2000) || null,
         student_id: sid || null,
       });
       if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+      // חג בלוח הכיתה משפיע גם על מערכת השעות, ההספק והדוחות.
+      if (typeParsed.data === "holiday") {
+        const { error: ovrErr } = await supabase.from("academic_calendar_overrides").insert({
+          class_id: data.classId,
+          start_date: start,
+          end_date: end ?? start,
+          type: "holiday",
+          label: title,
+        });
+        if (ovrErr) console.error("[DB Error]", ovrErr);
+      }
+    } else if (kind === "add_calendar_override") {
+      const typeParsed = z
+        .enum(["institution_break", "unexpected_closure", "extra_session", "late_start", "early_end", "holiday"])
+        .safeParse(String(params.type ?? "institution_break"));
+      if (!typeParsed.success) throw new Error("סוג עדכון לוח לא תקין");
+      const start = safeDate(params.start_date ?? params.date);
+      const end = optionalDate(params.end_date) ?? start;
+      if (end < start) throw new Error("תאריך הסיום מוקדם מתאריך ההתחלה");
+      const { error } = await supabase.from("academic_calendar_overrides").insert({
+        class_id: data.classId,
+        start_date: start,
+        end_date: end,
+        type: typeParsed.data,
+        label: String(params.label ?? params.title ?? "").slice(0, 200) || null,
+      });
+      if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    } else if (kind === "add_recurring_rule") {
+      const kindParsed = z.enum(["weekly_day", "rosh_chodesh"]).safeParse(String(params.kind ?? "weekly_day"));
+      const effectParsed = z.enum(["no_school", "early_end", "late_start"]).safeParse(String(params.effect ?? "no_school"));
+      if (!kindParsed.success) throw new Error("סוג כלל לא תקין");
+      if (!effectParsed.success) throw new Error("סוג השפעה לא תקין");
+      const dayParsed = z.enum(["sun", "mon", "tue", "wed", "thu", "fri", "sat"])
+        .safeParse(String(params.day_key ?? ""));
+      if (kindParsed.data === "weekly_day" && !dayParsed.success) throw new Error("חסר יום בשבוע לכלל השבועי");
+      const hourRaw = Number(params.hour);
+      const hour = Number.isFinite(hourRaw) && hourRaw >= 0 && hourRaw <= 23 ? Math.floor(hourRaw) : null;
+      if (effectParsed.data !== "no_school" && hour == null) throw new Error("חסרה שעה לכלל");
+      const minuteRaw = Number(params.minute ?? 0);
+      const minute = [0, 15, 30, 45].includes(minuteRaw) ? minuteRaw : 0;
+      const { error } = await supabase.from("recurring_schedule_rules").insert({
+        class_id: data.classId,
+        kind: kindParsed.data,
+        day_key: kindParsed.data === "weekly_day" ? dayParsed.data! : null,
+        effect: effectParsed.data,
+        hour,
+        minute,
+        label: String(params.label ?? "").slice(0, 200) || null,
+        active: true,
+      });
+      if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
     }
+
     return { ok: true };
   });
