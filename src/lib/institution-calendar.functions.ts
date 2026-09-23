@@ -380,7 +380,7 @@ export const approveClassRemainder = createServerFn({ method: "POST" })
       }));
       const { data: inserted, error: aErr } = await supabaseAdmin
         .from("daily_log_approvals")
-        .upsert(rows, { onConflict: "class_id,student_id,date" })
+        .upsert(rows, { onConflict: "student_id,date" })
         .select("id");
       if (aErr) { console.error("[DB Error]", aErr); throw new Error("אישור התיעוד היומי נכשל"); }
       approvedDays = (inserted ?? []).length;
