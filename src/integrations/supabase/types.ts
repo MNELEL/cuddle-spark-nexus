@@ -3025,6 +3025,48 @@ export type Database = {
           },
         ]
       }
+      student_summaries: {
+        Row: {
+          ai_summary: string
+          approved_at: string | null
+          class_id: string | null
+          created_at: string
+          id: string
+          person_key: string
+          start_date: string | null
+          student_id: string | null
+          trends: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_summary?: string
+          approved_at?: string | null
+          class_id?: string | null
+          created_at?: string
+          id?: string
+          person_key: string
+          start_date?: string | null
+          student_id?: string | null
+          trends?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          ai_summary?: string
+          approved_at?: string | null
+          class_id?: string | null
+          created_at?: string
+          id?: string
+          person_key?: string
+          start_date?: string | null
+          student_id?: string | null
+          trends?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       students: {
         Row: {
           accommodation_note: string | null

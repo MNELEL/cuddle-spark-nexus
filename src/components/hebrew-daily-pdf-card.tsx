@@ -18,8 +18,10 @@ import { CertificateTemplateSelect } from "@/components/certificate-template-sel
 import { useHebrewAnchor } from "@/components/hebrew-anchor";
 import type { CertTemplateDesign } from "@/lib/ai-certificate.functions";
 import { getDailyReport, getDailyReportDetails } from "@/lib/daily-report.functions";
-import { isoOf } from "@/lib/hebrew-calendar";
+import { isoOf, hebrewDayInfo } from "@/lib/hebrew-calendar";
+import { HebrewDateInput } from "@/components/hebrew-date-input";
 import { useShowGregorian } from "@/lib/date-display";
+
 
 const STATUS_LABEL: Record<string, string> = {
   present: "נוכח",
@@ -36,7 +38,10 @@ type ClassOption = { id: string; name: string };
  */
 export function HebrewDailyPdfCard({ classes }: { classes: ClassOption[] }) {
   const { date, info, elapsedFromInfo } = useHebrewAnchor();
-  const iso = isoOf(date);
+  const anchorIso = isoOf(date);
+  const [pickedIso, setPickedIso] = useState<string>("");
+  const iso = pickedIso || anchorIso;
+  const dayInfo = hebrewDayInfo(new Date(`${iso}T00:00:00`));
   const [classId, setClassId] = useState<string>(classes[0]?.id ?? "");
   const [templateId, setTemplateId] = useState<string | null>(null);
   const [design, setDesign] = useState<CertTemplateDesign | undefined>(undefined);
@@ -54,6 +59,7 @@ export function HebrewDailyPdfCard({ classes }: { classes: ClassOption[] }) {
     queryFn: () => reportFn({ data: { classId: activeClassId, from: iso, to: iso, studentId: null } }),
     enabled: Boolean(activeClassId),
   });
+
 
   const day = report?.days?.[0];
 
@@ -109,7 +115,7 @@ export function HebrewDailyPdfCard({ classes }: { classes: ClassOption[] }) {
       const { blob, filename } = await buildDailyReportPdf({
         className: report.class.name,
         range: { from: iso, to: iso },
-        rangeLabel: info.full,
+        rangeLabel: dayInfo.full,
         studentCount: report.studentCount,
         days: report.days.length ? report.days : [],
         entries: Array.from(perStudent.values()),
@@ -131,7 +137,7 @@ export function HebrewDailyPdfCard({ classes }: { classes: ClassOption[] }) {
       <CardHeader className="pb-3">
         <CardTitle className="font-display text-base">PDF של תיעוד היום</CardTitle>
         <CardDescription>
-          התאריך נלקח מהלוח עצמו: {info.full} · תאריך-החלוף: {elapsedFromInfo.full}
+          התאריך העברי של הקובץ: {dayInfo.full} · תאריך-החלוף: {elapsedFromInfo.full}
           {" · "}
           {showGregorian ? "הקובץ יכלול גם תאריך לועזי" : "הקובץ בתאריך עברי בלבד"}
         </CardDescription>
@@ -153,7 +159,27 @@ export function HebrewDailyPdfCard({ classes }: { classes: ClassOption[] }) {
               </SelectContent>
             </Select>
           </div>
-          <div className="flex items-end">
+          <div className="space-y-1.5">
+            <HebrewDateInput
+              id="hpdf-date"
+              label="תאריך עברי לקובץ"
+              value={iso}
+              onChange={(v) => setPickedIso(v)}
+              compact
+            />
+            {pickedIso && pickedIso !== anchorIso && (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="rounded-xl text-xs"
+                onClick={() => setPickedIso("")}
+              >
+                חזור לתאריך הלוח ({info.full})
+              </Button>
+            )}
+          </div>
+          <div className="flex items-end sm:col-span-2">
             <CertificateTemplateSelect
               value={templateId}
               onChange={(id, d) => {
@@ -164,6 +190,7 @@ export function HebrewDailyPdfCard({ classes }: { classes: ClassOption[] }) {
             />
           </div>
         </div>
+
         <div className="flex flex-wrap gap-2 text-xs">
           <Badge variant="outline">נוכחות {day?.attendance.total ?? 0}</Badge>
           <Badge variant="outline">ציונים {day?.grades.count ?? 0}</Badge>

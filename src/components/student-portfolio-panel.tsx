@@ -17,6 +17,8 @@ import {
   PORTFOLIO_KINDS, portfolioKindLabel, type PortfolioKind,
 } from "@/lib/portfolio.functions";
 import { hebrewDate } from "@/lib/hebrew-date";
+import { StudentSummaryCard } from "@/components/student-summary-card";
+
 
 export function StudentPortfolioPanel({ studentId }: { studentId: string }) {
   const load = useServerFn(getStudentPortfolio);
@@ -97,7 +99,9 @@ export function StudentPortfolioPanel({ studentId }: { studentId: string }) {
 
   return (
     <div className="space-y-4">
+      <StudentSummaryCard studentId={studentId} />
       <Card>
+
         <CardContent className="space-y-2 pt-4">
           <div className="flex items-center gap-2">
             <History className="h-4 w-4 text-primary" aria-hidden="true" />
