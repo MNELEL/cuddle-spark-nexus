@@ -115,7 +115,7 @@ export function HebrewDailyPdfCard({ classes }: { classes: ClassOption[] }) {
       const { blob, filename } = await buildDailyReportPdf({
         className: report.class.name,
         range: { from: iso, to: iso },
-        rangeLabel: info.full,
+        rangeLabel: dayInfo.full,
         studentCount: report.studentCount,
         days: report.days.length ? report.days : [],
         entries: Array.from(perStudent.values()),
@@ -137,7 +137,7 @@ export function HebrewDailyPdfCard({ classes }: { classes: ClassOption[] }) {
       <CardHeader className="pb-3">
         <CardTitle className="font-display text-base">PDF של תיעוד היום</CardTitle>
         <CardDescription>
-          התאריך נלקח מהלוח עצמו: {info.full} · תאריך-החלוף: {elapsedFromInfo.full}
+          התאריך העברי של הקובץ: {dayInfo.full} · תאריך-החלוף: {elapsedFromInfo.full}
           {" · "}
           {showGregorian ? "הקובץ יכלול גם תאריך לועזי" : "הקובץ בתאריך עברי בלבד"}
         </CardDescription>
@@ -159,7 +159,27 @@ export function HebrewDailyPdfCard({ classes }: { classes: ClassOption[] }) {
               </SelectContent>
             </Select>
           </div>
-          <div className="flex items-end">
+          <div className="space-y-1.5">
+            <HebrewDateInput
+              id="hpdf-date"
+              label="תאריך עברי לקובץ"
+              value={iso}
+              onChange={(v) => setPickedIso(v)}
+              compact
+            />
+            {pickedIso && pickedIso !== anchorIso && (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="rounded-xl text-xs"
+                onClick={() => setPickedIso("")}
+              >
+                חזור לתאריך הלוח ({info.full})
+              </Button>
+            )}
+          </div>
+          <div className="flex items-end sm:col-span-2">
             <CertificateTemplateSelect
               value={templateId}
               onChange={(id, d) => {
@@ -170,6 +190,7 @@ export function HebrewDailyPdfCard({ classes }: { classes: ClassOption[] }) {
             />
           </div>
         </div>
+
         <div className="flex flex-wrap gap-2 text-xs">
           <Badge variant="outline">נוכחות {day?.attendance.total ?? 0}</Badge>
           <Badge variant="outline">ציונים {day?.grades.count ?? 0}</Badge>
