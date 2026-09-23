@@ -53,6 +53,7 @@ export function HebrewDateInput({
   className,
   disabled,
   compact,
+  clearable,
 }: Props) {
   const globalGreg = useShowGregorian();
   const [showGreg, setShowGreg] = useState(globalGreg);
