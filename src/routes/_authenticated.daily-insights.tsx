@@ -333,7 +333,7 @@ function DailyInsightsPage() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="di-filter-date">יום בודד</Label>
-              <HebrewDateInput compact value={filterDate} onChange={(v) => setFilterDate(v)} />
+              <HebrewDateInput compact clearable value={filterDate} onChange={(v) => setFilterDate(v)} />
               <p className="text-xs text-muted-foreground">
                 {filterDate ? (toHebrewDateFull(filterDate) ?? "") : "ריק = כל הטווח"}
               </p>

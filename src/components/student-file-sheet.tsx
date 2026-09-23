@@ -490,7 +490,7 @@ function ParentCommsPanel({ classId, studentId }: Props) {
             </div>
             <div>
               <Label>תאריך פולו-אפ (אופציונלי)</Label>
-              <HebrewDateInput compact value={followUp} onChange={(v) => setFollowUp(v)} />
+              <HebrewDateInput compact clearable value={followUp} onChange={(v) => setFollowUp(v)} />
             </div>
           </div>
           <Button onClick={() => addM.mutate()} disabled={!summary.trim() || addM.isPending} className="w-full">
