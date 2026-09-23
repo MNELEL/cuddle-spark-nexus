@@ -24,6 +24,8 @@ import { InstitutionClassAssignmentsCard } from "@/components/institution-class-
 import { TeacherChangeHistory } from "@/components/teacher-change-history";
 import { TeacherMeetingsDialog } from "@/components/teacher-meetings-dialog";
 import { InstitutionMeetingsTab } from "@/components/institution-meetings-tab";
+import { InstitutionCalendarTab } from "@/components/institution-calendar-tab";
+
 import { Textarea } from "@/components/ui/textarea";
 import { renameInstitutionTeacher } from "@/lib/institution-staff.functions";
 import { Search, ChevronLeft, Pencil, Building2, Users, GraduationCap, Archive, UserPlus, Loader2 } from "lucide-react";
@@ -169,7 +171,9 @@ function InstitutionDashboardPage() {
           <TabsTrigger value="classes">כיתות</TabsTrigger>
           <TabsTrigger value="teachers">מלמדים</TabsTrigger>
           <TabsTrigger value="meetings">פגישות</TabsTrigger>
+          <TabsTrigger value="calendar">לוח שנה</TabsTrigger>
           <TabsTrigger value="staff">צוות ורבנים</TabsTrigger>
+
         </TabsList>
 
         <TabsContent value="classes" className="space-y-6">
@@ -282,7 +286,12 @@ function InstitutionDashboardPage() {
           <InstitutionMeetingsTab canEdit={institution.role === "admin"} />
         </TabsContent>
 
+        <TabsContent value="calendar">
+          <InstitutionCalendarTab />
+        </TabsContent>
+
         <TabsContent value="staff">
+
           <InstitutionStaffCard canEdit />
         </TabsContent>
       </Tabs>

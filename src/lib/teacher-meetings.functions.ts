@@ -316,6 +316,15 @@ export type MeetingsReportTeacher = {
   openFollowUps: string[];
   /** ממוצע פגישות עם מטלות מוגדרות (0–1) עבור התקופה. */
   actionItemsRate: number;
+  /** סיכום מפורט של הפגישות האחרונות בתקופה. */
+  recentMeetings: {
+    date: string;
+    summary: string;
+    actionItems: string | null;
+    followUpDate: string | null;
+  }[];
+  /** חופשות שחלות על הכיתות של המלמד — כך שהדוח והלוח מתעדכנים יחד. */
+  breakLabels: string[];
 };
 
 /** תקופות הדוח: חודש, רבעון, שנה או הכל. */
@@ -339,11 +348,22 @@ export type MeetingsReport = {
   avgMeetingsPerTeacher: number;
   /** אורך ממוצע של סיכום פגישה בתווים. */
   avgSummaryLength: number;
+  /** אורך תקציר ה-AI שהופק (0 כשלא הופק). */
+  aiSummaryLength: number;
   /** מספר הפגישות שכוללות מטלות. */
   meetingsWithActionItems: number;
   /** ממוצע פגישות עם מטלות מכלל הפגישות (0–1). */
   actionItemsRate: number;
+  /** חופשות המוסד בתקופה, עם הכיתות שמתעדכנות איתן. */
+  breaks: {
+    startDate: string;
+    endDate: string;
+    type: string;
+    label: string | null;
+    classNames: string[];
+  }[];
 };
+
 
 const reportSchema = z.object({
   withAi: z.boolean().optional(),
@@ -383,22 +403,55 @@ export const getInstitutionMeetingsReport = createServerFn({ method: "POST" })
     const teacherIds = Array.from(new Set(meetings.map((m) => m.teacher_id)));
     const names: Record<string, string> = {};
     const classNames: Record<string, string[]> = {};
+    /** classId -> { name, ownerId } לכל כיתות המוסד — לצורך שיוך החופשות. */
+    const classInfo = new Map<string, { name: string; ownerId: string }>();
+
+    const { data: allClasses, error: acErr } = await supabaseAdmin
+      .from("classes")
+      .select("id, name, owner_id, status")
+      .eq("institution_id", scope.institutionId);
+    if (acErr) { console.error("[DB Error]", acErr); throw new Error("הפעולה נכשלה. נסה שוב."); }
+    for (const c of allClasses ?? []) {
+      if (c.status === "archived") continue;
+      classInfo.set(c.id, { name: c.name, ownerId: c.owner_id });
+      if (teacherIds.includes(c.owner_id)) (classNames[c.owner_id] ??= []).push(c.name);
+    }
+
     if (teacherIds.length > 0) {
-      const [{ data: profiles, error: pErr }, { data: classes, error: cErr }] = await Promise.all([
-        supabaseAdmin.from("profiles").select("id, display_name").in("id", teacherIds),
-        supabaseAdmin
-          .from("classes")
-          .select("name, owner_id, status")
-          .eq("institution_id", scope.institutionId)
-          .in("owner_id", teacherIds),
-      ]);
+      const { data: profiles, error: pErr } = await supabaseAdmin
+        .from("profiles")
+        .select("id, display_name")
+        .in("id", teacherIds);
       if (pErr) { console.error("[DB Error]", pErr); throw new Error("הפעולה נכשלה. נסה שוב."); }
-      if (cErr) { console.error("[DB Error]", cErr); throw new Error("הפעולה נכשלה. נסה שוב."); }
       for (const p of profiles ?? []) names[p.id] = p.display_name ?? "";
-      for (const c of classes ?? []) {
-        if (c.status === "archived") continue;
-        (classNames[c.owner_id] ??= []).push(c.name);
+    }
+
+    // חופשות המוסד בתקופה — כדי שהדוח יציג אותן יחד עם הכיתות שמתעדכנות.
+    const classIds = Array.from(classInfo.keys());
+    let breaks: MeetingsReport["breaks"] = [];
+    const breakLabelsByTeacher: Record<string, Set<string>> = {};
+    if (classIds.length > 0) {
+      let oq = supabaseAdmin
+        .from("academic_calendar_overrides")
+        .select("class_id, start_date, end_date, type, label")
+        .in("class_id", classIds);
+      if (from) oq = oq.gte("end_date", from);
+      const { data: overrides, error: oErr } = await oq.order("start_date", { ascending: false });
+      if (oErr) { console.error("[DB Error]", oErr); throw new Error("הפעולה נכשלה. נסה שוב."); }
+
+      const grouped = new Map<string, MeetingsReport["breaks"][number]>();
+      for (const o of overrides ?? []) {
+        const info = classInfo.get(o.class_id);
+        if (!info) continue;
+        const key = `${o.start_date}|${o.end_date}|${o.type}|${o.label ?? ""}`;
+        const entry =
+          grouped.get(key) ??
+          { startDate: o.start_date, endDate: o.end_date, type: o.type, label: o.label, classNames: [] };
+        entry.classNames.push(info.name);
+        grouped.set(key, entry);
+        if (o.label) (breakLabelsByTeacher[info.ownerId] ??= new Set()).add(o.label);
       }
+      breaks = Array.from(grouped.values());
     }
 
     const teachers: MeetingsReportTeacher[] = teacherIds.map((id) => {
@@ -416,8 +469,16 @@ export const getInstitutionMeetingsReport = createServerFn({ method: "POST" })
         actionItemsRate: own.length
           ? own.filter((m) => (m.action_items ?? "").trim().length > 0).length / own.length
           : 0,
+        recentMeetings: own.slice(0, 5).map((m) => ({
+          date: m.meeting_date,
+          summary: m.summary ?? "",
+          actionItems: m.action_items ?? null,
+          followUpDate: m.follow_up_date ?? null,
+        })),
+        breakLabels: Array.from(breakLabelsByTeacher[id] ?? []).slice(0, 5),
       };
     }).sort((a, b) => b.meetingCount - a.meetingCount);
+
 
     let aiSummary: string | null = null;
     if (data.withAi && meetings.length > 0) {
@@ -462,7 +523,10 @@ export const getInstitutionMeetingsReport = createServerFn({ method: "POST" })
         ? Math.round((meetings.length / teachers.length) * 10) / 10
         : 0,
       avgSummaryLength: meetings.length ? Math.round(summaryChars / meetings.length) : 0,
+      aiSummaryLength: aiSummary ? aiSummary.trim().length : 0,
       meetingsWithActionItems: withActions,
       actionItemsRate: meetings.length ? withActions / meetings.length : 0,
+      breaks,
     };
+
   });

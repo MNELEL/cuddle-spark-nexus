@@ -94,24 +94,59 @@ export function InstitutionMeetingsTab({ canEdit }: { canEdit: boolean }) {
               <Badge variant="outline" className="font-mono-tabular">
                 פגישות עם מטלות {report.meetingsWithActionItems} ({Math.round(report.actionItemsRate * 100)}%)
               </Badge>
+              {report.aiSummaryLength > 0 && (
+                <Badge variant="outline" className="font-mono-tabular">
+                  אורך תקציר AI {report.aiSummaryLength} תווים
+                </Badge>
+              )}
             </div>
+            {report.breaks.length > 0 && (
+              <div className="rounded-xl border p-3 text-xs">
+                <p className="mb-1 font-medium">חופשות בתקופה — הכיתות מתעדכנות יחד:</p>
+                <ul className="space-y-1 text-muted-foreground">
+                  {report.breaks.slice(0, 8).map((b) => (
+                    <li key={`${b.startDate}-${b.endDate}-${b.label ?? ""}`}>
+                      {hebrewDate(b.startDate)}
+                      {b.endDate !== b.startDate ? ` – ${hebrewDate(b.endDate)}` : ""}
+                      {b.label ? ` · ${b.label}` : ""} · כיתות: {b.classNames.join(", ")}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <ul className="divide-y text-sm">
               {report.teachers.map((t) => (
-                <li key={t.teacherId} className="flex items-start justify-between gap-3 py-2">
-                  <div className="min-w-0">
-                    <div className="truncate font-medium">הרב {t.teacherName}</div>
-                    <div className="text-xs text-muted-foreground">
-                      כיתות: {t.classNames.join(", ") || "ללא"}
-                      {t.lastMeetingDate ? ` · פגישה אחרונה: ${hebrewDate(t.lastMeetingDate)}` : ""}
-                      {t.openFollowUps.length > 0
-                        ? ` · מעקבים: ${t.openFollowUps.map((d) => hebrewDate(d)).join(", ")}`
-                        : ""}
+                <li key={t.teacherId} className="space-y-1 py-2">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="truncate font-medium">הרב {t.teacherName}</div>
+                      <div className="text-xs text-muted-foreground">
+                        כיתות: {t.classNames.join(", ") || "ללא"}
+                        {t.lastMeetingDate ? ` · פגישה אחרונה: ${hebrewDate(t.lastMeetingDate)}` : ""}
+                        {t.openFollowUps.length > 0
+                          ? ` · מעקבים: ${t.openFollowUps.map((d) => hebrewDate(d)).join(", ")}`
+                          : ""}
+                        {t.breakLabels.length > 0 ? ` · חופשות: ${t.breakLabels.join(", ")}` : ""}
+                      </div>
                     </div>
+                    <Badge variant="outline" className="shrink-0 font-mono-tabular">{t.meetingCount}</Badge>
                   </div>
-                  <Badge variant="outline" className="shrink-0 font-mono-tabular">{t.meetingCount}</Badge>
+                  {t.recentMeetings.length > 0 && (
+                    <ul className="space-y-1 ps-2 text-xs text-muted-foreground">
+                      {t.recentMeetings.map((m, i) => (
+                        <li key={`${t.teacherId}-${m.date}-${i}`}>
+                          <span className="font-medium">{hebrewDate(m.date)}: </span>
+                          {m.summary}
+                          {m.actionItems ? ` · מטלות: ${m.actionItems}` : ""}
+                          {m.followUpDate ? ` · מעקב: ${hebrewDate(m.followUpDate)}` : ""}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </li>
               ))}
             </ul>
+
             <Button
               variant="outline"
               size="sm"

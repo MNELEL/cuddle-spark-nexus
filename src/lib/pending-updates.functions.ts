@@ -101,60 +101,112 @@ async function loadOwnedPending(
   return row;
 }
 
-/** מאשרת פריט: כותבת בפועל ל-discipline_events ומסמנת approved. */
+/** כותבת בפועל את הפריט המאושר (כרגע רק אירוע חריג) ומסמנת approved. */
+async function applyApproval(
+  supabase: SupabaseClient<Database>,
+  row: { id: string; class_id: string; intent: string; payload: unknown },
+  reviewNotes?: string,
+) {
+  const payload = (row.payload ?? {}) as Record<string, unknown>;
+
+  if (row.intent !== "add_incident") throw new Error("סוג פריט שאינו נתמך לאישור");
+
+  const severityParsed = z
+    .enum(["low", "medium", "high"])
+    .safeParse(String(payload.severity ?? "medium"));
+  if (!severityParsed.success) throw new Error("דרגת חומרה לא תקינה");
+  const severityHe = SEVERITY_HE[severityParsed.data];
+
+  const description = String(payload.description ?? "").slice(0, 1900);
+  if (!description.trim()) throw new Error("חסר תיאור לאירוע החריג");
+
+  const studentId = z.string().uuid().safeParse(String(payload.student_id ?? ""));
+  if (!studentId.success) throw new Error("מזהה תלמיד לא תקין");
+
+  const { error } = await supabase.from("discipline_events").insert({
+    class_id: row.class_id,
+    student_id: studentId.data,
+    type: "negative",
+    category: String(payload.category ?? "incident").slice(0, 80),
+    description: `[אירוע חריג · חומרה ${severityHe}] ${description}`,
+    date: safeDate(payload.date),
+  });
+  if (error) {
+    console.error("[DB Error]", error);
+    throw new Error("רישום האירוע נכשל. נסה שוב.");
+  }
+
+  const { error: uErr } = await supabase
+    .from("pending_updates")
+    .update({
+      status: "approved",
+      reviewed_at: new Date().toISOString(),
+      ...(reviewNotes ? { review_notes: reviewNotes.slice(0, 2000) } : {}),
+    })
+    .eq("id", row.id);
+
+  if (uErr) {
+    console.error("[DB Error]", uErr);
+    throw new Error("עדכון הסטטוס נכשל");
+  }
+}
+
+/** מאשרת פריט בודד. */
 export const approvePendingUpdate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => idInput.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const row = await loadOwnedPending(supabase, data.id, userId);
-    const payload = (row.payload ?? {}) as Record<string, unknown>;
-
-    if (row.intent === "add_incident") {
-      const severityParsed = z
-        .enum(["low", "medium", "high"])
-        .safeParse(String(payload.severity ?? "medium"));
-      if (!severityParsed.success) throw new Error("דרגת חומרה לא תקינה");
-      const severityHe = SEVERITY_HE[severityParsed.data];
-
-      const description = String(payload.description ?? "").slice(0, 1900);
-      if (!description.trim()) throw new Error("חסר תיאור לאירוע החריג");
-
-      const studentId = z.string().uuid().safeParse(String(payload.student_id ?? ""));
-      if (!studentId.success) throw new Error("מזהה תלמיד לא תקין");
-
-      const { error } = await supabase.from("discipline_events").insert({
-        class_id: row.class_id,
-        student_id: studentId.data,
-        type: "negative",
-        category: String(payload.category ?? "incident").slice(0, 80),
-        description: `[אירוע חריג · חומרה ${severityHe}] ${description}`,
-        date: safeDate(payload.date),
-      });
-      if (error) {
-        console.error("[DB Error]", error);
-        throw new Error("רישום האירוע נכשל. נסה שוב.");
-      }
-    } else {
-      throw new Error("סוג פריט שאינו נתמך לאישור");
-    }
-
-    const { error: uErr } = await supabase
-      .from("pending_updates")
-      .update({
-        status: "approved",
-        reviewed_at: new Date().toISOString(),
-        ...(data.reviewNotes ? { review_notes: data.reviewNotes.slice(0, 2000) } : {}),
-      })
-      .eq("id", data.id);
-
-    if (uErr) {
-      console.error("[DB Error]", uErr);
-      throw new Error("עדכון הסטטוס נכשל");
-    }
-
+    await applyApproval(supabase, row, data.reviewNotes);
     return { ok: true as const };
   });
+
+/** אישור כל הפריטים הממתינים בכיתה אחת — "אישור כיתה" במסך הסקירה. */
+export const approveClassPendingUpdates = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z.object({ classId: z.string().uuid(), reviewNotes: z.string().max(2000).optional() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    const { data: cls, error: cErr } = await supabase
+      .from("classes")
+      .select("id")
+      .eq("id", data.classId)
+      .eq("owner_id", userId)
+      .maybeSingle();
+    if (cErr) {
+      console.error("[DB Error]", cErr);
+      throw new Error("הפעולה נכשלה. נסה שוב.");
+    }
+    if (!cls) throw new Error("אין הרשאה לכיתה זו");
+
+    const { data: rows, error } = await supabase
+      .from("pending_updates")
+      .select("id,class_id,intent,payload")
+      .eq("class_id", data.classId)
+      .eq("status", "pending");
+    if (error) {
+      console.error("[DB Error]", error);
+      throw new Error("טעינת הפריטים נכשלה");
+    }
+
+    let approved = 0;
+    const failed: string[] = [];
+    for (const row of rows ?? []) {
+      try {
+        await applyApproval(supabase, row, data.reviewNotes);
+        approved += 1;
+      } catch (e) {
+        failed.push(e instanceof Error ? e.message : "פריט שלא ניתן לאישור");
+      }
+    }
+
+    return { ok: true as const, approved, failed };
+  });
+
 
 /** דוחה פריט — לא נכתב דבר ל-discipline_events. */
 export const rejectPendingUpdate = createServerFn({ method: "POST" })

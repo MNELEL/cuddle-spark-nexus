@@ -24,6 +24,8 @@ import type { CertTemplateDesign } from "@/lib/ai-certificate.functions";
 import { useHebrewAnchor } from "@/components/hebrew-anchor";
 import { DailyReportDayDialog } from "@/components/daily-report-day-dialog";
 import { hebrewRangePresets, hebrewDayInfo, isoOf } from "@/lib/hebrew-calendar";
+import { OVERRIDE_LABEL } from "@/components/schedule/schedule-context";
+
 import { toHebrewDateFull, hebrewDateTime } from "@/lib/hebrew-date";
 import { useShowGregorian } from "@/lib/date-display";
 import { listStudents } from "@/lib/students.functions";
@@ -61,6 +63,8 @@ const emptyDay = (date: string): DailyReportDay => ({
   grades: { count: 0, avgPct: null },
   insights: { total: 0, high: 0, medium: 0, low: 0 },
   approvals: 0,
+  breakInfo: null,
+
 });
 
 const STATUS_LABEL: Record<string, string> = {
@@ -202,7 +206,11 @@ function DailyLogReportPage() {
               תובנות: d.insights.total,
               "תובנות חמורות": d.insights.high,
               "אישורי מלמד": d.approvals,
+              חופשה: d.breakInfo
+                ? `${OVERRIDE_LABEL[d.breakInfo.type] ?? "חופשה"}${d.breakInfo.label ? ` · ${d.breakInfo.label}` : ""}`
+                : "",
               "תיעוד יומי": d.notes ?? "",
+
             })),
           ),
           "סיכום יומי",
@@ -500,11 +508,13 @@ function DailyLogReportPage() {
           {rows.map((d) => {
             const info = hebrewDayInfo(new Date(`${d.date}T00:00:00`));
             const empty =
+              !d.breakInfo &&
               !d.notes &&
               d.attendance.total === 0 &&
               d.grades.count === 0 &&
               d.insights.total === 0 &&
               d.approvals === 0;
+
             return (
               <li
                 key={d.date}
@@ -521,6 +531,13 @@ function DailyLogReportPage() {
                         {h}
                       </Badge>
                     ))}
+                    {d.breakInfo && (
+                      <Badge variant="secondary">
+                        {OVERRIDE_LABEL[d.breakInfo.type] ?? "חופשה"}
+                        {d.breakInfo.label ? ` · ${d.breakInfo.label}` : ""}
+                      </Badge>
+                    )}
+
                   </div>
                   <div className="flex flex-wrap gap-1 text-[11px]">
                     {d.attendance.total > 0 && (

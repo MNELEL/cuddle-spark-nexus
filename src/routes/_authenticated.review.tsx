@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { AlertTriangle, Check, ClipboardCheck, X } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,9 +11,11 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   listPendingUpdates,
   approvePendingUpdate,
+  approveClassPendingUpdates,
   rejectPendingUpdate,
   type PendingUpdateItem,
 } from "@/lib/pending-updates.functions";
+
 import { hebrewDate, hebrewDateTime } from "@/lib/hebrew-date";
 
 export const Route = createFileRoute("/_authenticated/review")({
@@ -35,7 +37,9 @@ function ReviewPage() {
   const fetchList = useServerFn(listPendingUpdates);
   const runApprove = useServerFn(approvePendingUpdate);
   const runReject = useServerFn(rejectPendingUpdate);
+  const runApproveClass = useServerFn(approveClassPendingUpdates);
   const qc = useQueryClient();
+
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [rejectOpen, setRejectOpen] = useState<Record<string, boolean>>({});
 
@@ -68,6 +72,28 @@ function ReviewPage() {
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "הדחייה נכשלה"),
   });
 
+  const approveClassMut = useMutation({
+    mutationFn: (classId: string) => runApproveClass({ data: { classId } }),
+    onSuccess: (r) => {
+      invalidate();
+      if (r.approved > 0) toast.success(`אושרו ${r.approved} פריטים בכיתה`);
+      if (r.failed.length > 0) toast.error(r.failed[0] ?? "חלק מהפריטים לא אושרו");
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "אישור הכיתה נכשל"),
+  });
+
+  /** קיבוץ הפריטים לפי כיתה — כדי לאשר כיתה שלמה בלחיצה אחת. */
+  const groups = useMemo(() => {
+    const map = new Map<string, PendingUpdateItem[]>();
+    for (const item of items) {
+      const arr = map.get(item.class_id) ?? [];
+      arr.push(item);
+      map.set(item.class_id, arr);
+    }
+    return Array.from(map.entries());
+  }, [items]);
+
+
   return (
     <div className="space-y-6" dir="rtl">
       <div>
@@ -88,25 +114,48 @@ function ReviewPage() {
           </CardContent>
         </Card>
       ) : (
-        <ul className="space-y-4">
-          {items.map((item) => (
-            <li key={item.id}>
-              <PendingCard
-                item={item}
-                note={notes[item.id] ?? ""}
-                onNoteChange={(v) => setNotes((p) => ({ ...p, [item.id]: v }))}
-                rejectOpen={Boolean(rejectOpen[item.id])}
-                onToggleReject={() =>
-                  setRejectOpen((p) => ({ ...p, [item.id]: !p[item.id] }))
-                }
-                onApprove={() => approveMut.mutate(item.id)}
-                onReject={() => rejectMut.mutate(item.id)}
-                busy={approveMut.isPending || rejectMut.isPending}
-              />
-            </li>
+        <div className="space-y-6">
+          {groups.map(([classId, list]) => (
+            <section key={classId} className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-muted/40 px-3 py-2">
+                <div className="flex items-center gap-2 text-sm font-semibold">
+                  <span>{list[0]?.class_name || "כיתה"}</span>
+                  <Badge variant="outline" className="font-mono-tabular">{list.length}</Badge>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="rounded-xl"
+                  disabled={approveClassMut.isPending || approveMut.isPending || rejectMut.isPending}
+                  onClick={() => approveClassMut.mutate(classId)}
+                >
+                  <Check className="ms-2 h-4 w-4" aria-hidden />
+                  אשר את כל הכיתה
+                </Button>
+              </div>
+              <ul className="space-y-4">
+                {list.map((item) => (
+                  <li key={item.id}>
+                    <PendingCard
+                      item={item}
+                      note={notes[item.id] ?? ""}
+                      onNoteChange={(v) => setNotes((p) => ({ ...p, [item.id]: v }))}
+                      rejectOpen={Boolean(rejectOpen[item.id])}
+                      onToggleReject={() =>
+                        setRejectOpen((p) => ({ ...p, [item.id]: !p[item.id] }))
+                      }
+                      onApprove={() => approveMut.mutate(item.id)}
+                      onReject={() => rejectMut.mutate(item.id)}
+                      busy={approveMut.isPending || rejectMut.isPending || approveClassMut.isPending}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </section>
           ))}
-        </ul>
+        </div>
       )}
+
     </div>
   );
 }
