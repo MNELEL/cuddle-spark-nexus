@@ -68,6 +68,28 @@ function ReviewPage() {
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "הדחייה נכשלה"),
   });
 
+  const approveClassMut = useMutation({
+    mutationFn: (classId: string) => runApproveClass({ data: { classId } }),
+    onSuccess: (r) => {
+      invalidate();
+      if (r.approved > 0) toast.success(`אושרו ${r.approved} פריטים בכיתה`);
+      if (r.failed.length > 0) toast.error(r.failed[0] ?? "חלק מהפריטים לא אושרו");
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "אישור הכיתה נכשל"),
+  });
+
+  /** קיבוץ הפריטים לפי כיתה — כדי לאשר כיתה שלמה בלחיצה אחת. */
+  const groups = useMemo(() => {
+    const map = new Map<string, PendingUpdateItem[]>();
+    for (const item of items) {
+      const arr = map.get(item.class_id) ?? [];
+      arr.push(item);
+      map.set(item.class_id, arr);
+    }
+    return Array.from(map.entries());
+  }, [items]);
+
+
   return (
     <div className="space-y-6" dir="rtl">
       <div>
