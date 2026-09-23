@@ -502,11 +502,13 @@ function DailyLogReportPage() {
           {rows.map((d) => {
             const info = hebrewDayInfo(new Date(`${d.date}T00:00:00`));
             const empty =
+              !d.breakInfo &&
               !d.notes &&
               d.attendance.total === 0 &&
               d.grades.count === 0 &&
               d.insights.total === 0 &&
               d.approvals === 0;
+
             return (
               <li
                 key={d.date}
