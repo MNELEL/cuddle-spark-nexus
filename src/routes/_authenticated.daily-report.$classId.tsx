@@ -523,6 +523,13 @@ function DailyLogReportPage() {
                         {h}
                       </Badge>
                     ))}
+                    {d.breakInfo && (
+                      <Badge variant="secondary">
+                        {OVERRIDE_LABEL[d.breakInfo.type] ?? "חופשה"}
+                        {d.breakInfo.label ? ` · ${d.breakInfo.label}` : ""}
+                      </Badge>
+                    )}
+
                   </div>
                   <div className="flex flex-wrap gap-1 text-[11px]">
                     {d.attendance.total > 0 && (
