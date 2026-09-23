@@ -104,6 +104,9 @@ function ReviewPage() {
         </p>
       </div>
 
+      <BreakCard />
+
+
       {isLoading ? (
         <p className="py-10 text-center text-sm text-muted-foreground">טוען פריטים…</p>
       ) : items.length === 0 ? (
