@@ -284,7 +284,12 @@ function InstitutionDashboardPage() {
           <InstitutionMeetingsTab canEdit={institution.role === "admin"} />
         </TabsContent>
 
+        <TabsContent value="calendar">
+          <InstitutionCalendarTab />
+        </TabsContent>
+
         <TabsContent value="staff">
+
           <InstitutionStaffCard canEdit />
         </TabsContent>
       </Tabs>
