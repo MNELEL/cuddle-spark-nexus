@@ -35,7 +35,7 @@ export const addClassBreak = createServerFn({ method: "POST" })
 
     const { data: cls, error: cErr } = await supabase
       .from("classes")
-      .select("id,status,name")
+      .select("id,status,name,parent_class_id")
       .eq("id", data.classId)
       .eq("owner_id", userId)
       .maybeSingle();
@@ -59,7 +59,9 @@ export const addClassBreak = createServerFn({ method: "POST" })
     }
 
     let rolloverStudents = 0;
-    if (data.rolloverDate) {
+    // תאריך-החלוף מוחל רק על כיתה שנוצרה במעבר שנה (יש לה כיתת אם) —
+    // אחרת לא נוגעים בתאריכי ההתחלה המקוריים של התלמידים.
+    if (data.rolloverDate && cls.parent_class_id) {
       const { data: updated, error: uErr } = await supabase
         .from("students")
         .update({ start_date: data.rolloverDate })

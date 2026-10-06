@@ -148,10 +148,14 @@ export const generateStudentSummary = createServerFn({ method: "POST" })
         .in("student_id", studentIds)
         .order("date", { ascending: false })
         .limit(40),
+      // פגישות 1:1 מתוך תיק התלמיד בלבד (פריטים מסוג "meeting" שאושרו לתיק),
+      // כדי שתקציר התלמיד לא ישלב פגישות סגל מוסדיות שאינן קשורות אליו.
       context.supabase
-        .from("teacher_meetings")
-        .select("meeting_date, summary, action_items, follow_up_date")
-        .order("meeting_date", { ascending: false })
+        .from("student_portfolio_items")
+        .select("item_date, title, description, approved_at")
+        .eq("person_key", student.person_key)
+        .eq("kind", "meeting")
+        .order("item_date", { ascending: false })
         .limit(10),
     ]);
     for (const r of [items, insights, attendance, grades, meetings]) {
@@ -179,7 +183,9 @@ export const generateStudentSummary = createServerFn({ method: "POST" })
       .map((g) => `- ${g.date} · ${g.subject ?? "כללי"}: ${g.value}/${g.max_value}`)
       .join("\n") || "אין ציונים.";
     const meetingsBlock = (meetings.data ?? [])
-      .map((m) => `- ${m.meeting_date}: ${cut(m.summary, 300)}${m.action_items ? ` | מטלות: ${cut(m.action_items, 160)}` : ""}`)
+      .map((m) =>
+        `- ${m.item_date} · ${m.title ?? "פגישה 1:1"}: ${cut(m.description)}${m.approved_at ? " | אושר" : ""}`,
+      )
       .join("\n") || "אין סיכומי פגישות.";
 
     let text = "";
