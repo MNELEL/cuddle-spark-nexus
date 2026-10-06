@@ -183,7 +183,9 @@ export const generateStudentSummary = createServerFn({ method: "POST" })
       .map((g) => `- ${g.date} · ${g.subject ?? "כללי"}: ${g.value}/${g.max_value}`)
       .join("\n") || "אין ציונים.";
     const meetingsBlock = (meetings.data ?? [])
-      .map((m) => `- ${m.meeting_date}: ${cut(m.summary, 300)}${m.action_items ? ` | מטלות: ${cut(m.action_items, 160)}` : ""}`)
+      .map((m) =>
+        `- ${m.item_date} · ${m.title ?? "פגישה 1:1"}: ${cut(m.description)}${m.approved_at ? " | אושר" : ""}`,
+      )
       .join("\n") || "אין סיכומי פגישות.";
 
     let text = "";
