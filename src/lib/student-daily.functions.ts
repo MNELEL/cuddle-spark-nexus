@@ -156,6 +156,29 @@ export const saveStudentDaily = createServerFn({ method: "POST" })
 
     if (changes.length === 0) return { ok: true, changes: 0 };
 
+    // הכנסה אוטומטית לתיק התלמיד — מאושרת מיד, בלי שלב "ממתין לאישור".
+    const { data: stu } = await supabase
+      .from("students")
+      .select("person_key")
+      .eq("id", data.studentId)
+      .maybeSingle();
+    if (stu?.person_key) {
+      const now = new Date().toISOString();
+      const kind = data.insight?.severity === "high" ? "difficulty" : data.grade ? "assessment" : "note";
+      const { error: pErr } = await supabase.from("student_portfolio_items").insert({
+        user_id: userId,
+        person_key: stu.person_key,
+        student_id: data.studentId,
+        class_id: classId,
+        kind,
+        title: data.insight?.title ?? "תיעוד יומי",
+        description: changes.join(" · "),
+        item_date: data.date,
+        approved_at: now,
+      });
+      if (pErr) console.error("[DB Error] portfolio auto-insert", pErr);
+    }
+
     await supabase.from("app_logs").insert({
       user_id: userId,
       source: AUDIT_SOURCE_STUDENT_DAILY,
