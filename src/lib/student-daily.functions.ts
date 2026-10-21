@@ -122,7 +122,8 @@ export const saveStudentDaily = createServerFn({ method: "POST" })
         { onConflict: "student_id,date" },
       );
       if (error) { console.error("[DB Error]", error); throw new Error("שמירת הנוכחות נכשלה."); }
-      changes.push(`נוכחות: ${data.status}`);
+      const statusHe = { present: "נוכח", absent: "חסר", late: "איחר", excused: "חיסור מוצדק" }[data.status];
+      changes.push(`נוכחות: ${statusHe}`);
     }
 
     if (data.grade) {
