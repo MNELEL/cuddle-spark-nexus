@@ -43,6 +43,8 @@ import { Route as AuthenticatedReviewRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedScheduleRulesRouteImport } from './routes/_authenticated.schedule-rules'
 import { Route as AuthenticatedSoundBoardRouteImport } from './routes/_authenticated.sound-board'
 import { Route as AuthenticatedSoundTestRouteImport } from './routes/_authenticated.sound-test'
+import { Route as AuthenticatedSugyaGeneratorRouteImport } from './routes/_authenticated.sugya-generator'
+import { Route as AuthenticatedTeacherAdvisorRouteImport } from './routes/_authenticated.teacher-advisor'
 import { Route as AuthenticatedToolkitRouteImport } from './routes/_authenticated.toolkit'
 import { Route as AuthenticatedUserManagementRouteImport } from './routes/_authenticated.user-management'
 import { Route as AuthenticatedWeeklySheetRouteImport } from './routes/_authenticated.weekly-sheet'
@@ -281,6 +283,18 @@ const AuthenticatedSoundTestRoute = AuthenticatedSoundTestRouteImport.update({
   path: '/sound-test',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedSugyaGeneratorRoute =
+  AuthenticatedSugyaGeneratorRouteImport.update({
+    id: '/sugya-generator',
+    path: '/sugya-generator',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedTeacherAdvisorRoute =
+  AuthenticatedTeacherAdvisorRouteImport.update({
+    id: '/teacher-advisor',
+    path: '/teacher-advisor',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedToolkitRoute = AuthenticatedToolkitRouteImport.update({
   id: '/toolkit',
   path: '/toolkit',
@@ -659,6 +673,8 @@ export interface FileRoutesByFullPath {
   '/schedule-rules': typeof AuthenticatedScheduleRulesRoute
   '/sound-board': typeof AuthenticatedSoundBoardRoute
   '/sound-test': typeof AuthenticatedSoundTestRoute
+  '/sugya-generator': typeof AuthenticatedSugyaGeneratorRoute
+  '/teacher-advisor': typeof AuthenticatedTeacherAdvisorRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
   '/user-management': typeof AuthenticatedUserManagementRoute
   '/weekly-sheet': typeof AuthenticatedWeeklySheetRoute
@@ -750,6 +766,8 @@ export interface FileRoutesByTo {
   '/schedule-rules': typeof AuthenticatedScheduleRulesRoute
   '/sound-board': typeof AuthenticatedSoundBoardRoute
   '/sound-test': typeof AuthenticatedSoundTestRoute
+  '/sugya-generator': typeof AuthenticatedSugyaGeneratorRoute
+  '/teacher-advisor': typeof AuthenticatedTeacherAdvisorRoute
   '/toolkit': typeof AuthenticatedToolkitRoute
   '/user-management': typeof AuthenticatedUserManagementRoute
   '/weekly-sheet': typeof AuthenticatedWeeklySheetRoute
@@ -846,6 +864,8 @@ export interface FileRoutesById {
   '/_authenticated/schedule-rules': typeof AuthenticatedScheduleRulesRoute
   '/_authenticated/sound-board': typeof AuthenticatedSoundBoardRoute
   '/_authenticated/sound-test': typeof AuthenticatedSoundTestRoute
+  '/_authenticated/sugya-generator': typeof AuthenticatedSugyaGeneratorRoute
+  '/_authenticated/teacher-advisor': typeof AuthenticatedTeacherAdvisorRoute
   '/_authenticated/toolkit': typeof AuthenticatedToolkitRoute
   '/_authenticated/user-management': typeof AuthenticatedUserManagementRoute
   '/_authenticated/weekly-sheet': typeof AuthenticatedWeeklySheetRoute
@@ -943,6 +963,8 @@ export interface FileRouteTypes {
     | '/schedule-rules'
     | '/sound-board'
     | '/sound-test'
+    | '/sugya-generator'
+    | '/teacher-advisor'
     | '/toolkit'
     | '/user-management'
     | '/weekly-sheet'
@@ -1034,6 +1056,8 @@ export interface FileRouteTypes {
     | '/schedule-rules'
     | '/sound-board'
     | '/sound-test'
+    | '/sugya-generator'
+    | '/teacher-advisor'
     | '/toolkit'
     | '/user-management'
     | '/weekly-sheet'
@@ -1129,6 +1153,8 @@ export interface FileRouteTypes {
     | '/_authenticated/schedule-rules'
     | '/_authenticated/sound-board'
     | '/_authenticated/sound-test'
+    | '/_authenticated/sugya-generator'
+    | '/_authenticated/teacher-advisor'
     | '/_authenticated/toolkit'
     | '/_authenticated/user-management'
     | '/_authenticated/weekly-sheet'
@@ -1453,6 +1479,20 @@ declare module '@tanstack/react-router' {
       path: '/sound-test'
       fullPath: '/sound-test'
       preLoaderRoute: typeof AuthenticatedSoundTestRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/sugya-generator': {
+      id: '/_authenticated/sugya-generator'
+      path: '/sugya-generator'
+      fullPath: '/sugya-generator'
+      preLoaderRoute: typeof AuthenticatedSugyaGeneratorRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/teacher-advisor': {
+      id: '/_authenticated/teacher-advisor'
+      path: '/teacher-advisor'
+      fullPath: '/teacher-advisor'
+      preLoaderRoute: typeof AuthenticatedTeacherAdvisorRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/toolkit': {
@@ -1910,6 +1950,8 @@ interface AuthenticatedRouteChildren {
   AuthenticatedScheduleRulesRoute: typeof AuthenticatedScheduleRulesRoute
   AuthenticatedSoundBoardRoute: typeof AuthenticatedSoundBoardRoute
   AuthenticatedSoundTestRoute: typeof AuthenticatedSoundTestRoute
+  AuthenticatedSugyaGeneratorRoute: typeof AuthenticatedSugyaGeneratorRoute
+  AuthenticatedTeacherAdvisorRoute: typeof AuthenticatedTeacherAdvisorRoute
   AuthenticatedToolkitRoute: typeof AuthenticatedToolkitRoute
   AuthenticatedUserManagementRoute: typeof AuthenticatedUserManagementRoute
   AuthenticatedWeeklySheetRoute: typeof AuthenticatedWeeklySheetRoute
@@ -1962,6 +2004,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedScheduleRulesRoute: AuthenticatedScheduleRulesRoute,
   AuthenticatedSoundBoardRoute: AuthenticatedSoundBoardRoute,
   AuthenticatedSoundTestRoute: AuthenticatedSoundTestRoute,
+  AuthenticatedSugyaGeneratorRoute: AuthenticatedSugyaGeneratorRoute,
+  AuthenticatedTeacherAdvisorRoute: AuthenticatedTeacherAdvisorRoute,
   AuthenticatedToolkitRoute: AuthenticatedToolkitRoute,
   AuthenticatedUserManagementRoute: AuthenticatedUserManagementRoute,
   AuthenticatedWeeklySheetRoute: AuthenticatedWeeklySheetRoute,

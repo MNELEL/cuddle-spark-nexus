@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { AUDIT_SOURCE_STUDENT_DAILY } from "./audit-sources";
+import { dailySnapshotDescription } from "./daily-portfolio-snapshot";
 
 /**
  * תיעוד יומי לתלמיד בודד מתוך ה-CRM: נוכחות, ציון ותובנה יומית —
@@ -173,7 +174,7 @@ export const saveStudentDaily = createServerFn({ method: "POST" })
         class_id: classId,
         kind,
         title: data.insight?.title ?? "תיעוד יומי",
-        description: changes.join(" · "),
+        description: [...changes, data.insight?.description, data.attendanceNotes].filter(Boolean).join(" · "),
         item_date: data.date,
         approved_at: now,
       });
@@ -189,6 +190,37 @@ export const saveStudentDaily = createServerFn({ method: "POST" })
     });
 
     return { ok: true, changes: changes.length };
+  });
+
+/** משיכת הנתונים שכבר נשמרו היום לתיק — ללא שינוי ציונים או נוכחות. */
+export const captureTodayToPortfolio = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ studentId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const db = context.supabase;
+    const classId = await ownedStudent(db, data.studentId, context.userId);
+    const now = new Date().toISOString();
+    const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jerusalem", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date(now));
+    const part = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+    const date = `${part("year")}-${part("month")}-${part("day")}`;
+    const [student, att, grades, insights] = await Promise.all([
+      db.from("students").select("person_key").eq("id", data.studentId).single(),
+      db.from("attendance").select("status,notes").eq("student_id", data.studentId).eq("date", date).maybeSingle(),
+      db.from("grades").select("id,subject,value,max_value,notes").eq("student_id", data.studentId).eq("date", date),
+      db.from("orchestrator_insights").select("id,severity,title,description").eq("student_id", data.studentId).eq("insight_date", date),
+    ]);
+    if ([student, att, grades, insights].some((r) => r.error) || !student.data) throw new Error("טעינת התיעוד לתיק נכשלה.");
+    if (!att.data && !grades.data?.length && !insights.data?.length) throw new Error("לא נשמר תיעוד להיום. שמור נוכחות, ציון או סיכום תחילה.");
+    const entry: StudentDailyEntry = {
+      attendance: att.data ? { status: att.data.status, notes: att.data.notes ?? "" } : null,
+      grades: (grades.data ?? []).map((g) => ({ id: g.id, subject: g.subject ?? "", value: Number(g.value), max_value: Number(g.max_value), notes: g.notes ?? "" })),
+      insights: (insights.data ?? []).map((i) => ({ id: i.id, severity: i.severity, title: i.title, description: i.description ?? "" })),
+    };
+    const { data: item, error } = await db.from("student_portfolio_items").insert({ user_id: context.userId, person_key: student.data.person_key, student_id: data.studentId, class_id: classId,
+      item_date: date, approved_at: now, kind: entry.grades.length ? "assessment" : "note", title: "תיעוד היום · משיכה אוטומטית", description: dailySnapshotDescription(entry, date, now),
+    }).select("id,approved_at").single();
+    if (error || !item) throw new Error("התיעוד לא נכנס לתיק. נסה שוב.");
+    return item;
   });
 
 /** היסטוריית שינויים של התיעוד היומי לתלמיד. */
