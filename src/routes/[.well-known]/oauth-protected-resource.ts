@@ -12,7 +12,15 @@ import mcp from "../../lib/mcp/index";
 export const Route = createFileRoute("/.well-known/oauth-protected-resource")({
   server: {
     handlers: {
-      ANY: createTanStackOAuthProtectedResourceMetadataHandler(mcp, { resourcePath: "/mcp", metadataPath: "/.well-known/oauth-protected-resource", trustForwardedHost: true }),
+      ANY: createTanStackOAuthProtectedResourceMetadataHandler(mcp, {
+        resourcePath: "/mcp",
+        metadataPath: "/.well-known/oauth-protected-resource",
+        // Trusting X-Forwarded-Host/-Proto is safe on Lovable hosting only (its
+        // proxies overwrite both headers); remove these options behind other proxies.
+        trustForwardedHost: true,
+        forwardedHostTrustedByPlatform: true,
+        trustForwardedProto: true,
+      }),
     },
   },
 });
