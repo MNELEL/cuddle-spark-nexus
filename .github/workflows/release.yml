@@ -70,7 +70,7 @@ jobs:
       # workflow, commit, and runner. Verify with:
       #   gh attestation verify release/build-<tag>.tar.gz --repo <owner>/<repo>
       - name: Attest build provenance (artifact)
-        uses: actions/attest-build-provenance@v3
+        uses: actions/attest-build-provenance@v4
         with:
           subject-path: |
             release/build-${{ github.ref_name }}.tar.gz
