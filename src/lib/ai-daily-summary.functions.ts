@@ -49,6 +49,8 @@ export const suggestStudentDailySummary = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }): Promise<DailySummarySuggestion> => {
+    const { requireActiveAITrial } = await import("./ai-entitlement.server");
+    await requireActiveAITrial(context.supabase, context.userId);
     const supabase = context.supabase as any;
 
     const { data: student, error: sErr } = await supabase

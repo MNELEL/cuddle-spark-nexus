@@ -33,6 +33,8 @@ export const ocrGradesImage = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<{ text: string }> => {
     const { supabase } = context;
+    const { requireActiveAITrial } = await import("./ai-entitlement.server");
+    await requireActiveAITrial(supabase, context.userId);
     const { data: students, error } = await supabase
       .from("students").select("id,name").eq("class_id", data.classId);
     if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
@@ -82,6 +84,8 @@ export const parseGradesFromText = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<{ rows: ParsedGradeRow[]; raw: string }> => {
     const { supabase } = context;
+    const { requireActiveAITrial } = await import("./ai-entitlement.server");
+    await requireActiveAITrial(supabase, context.userId);
     const { data: students, error } = await supabase
       .from("students").select("id,name").eq("class_id", data.classId);
     if (error) { console.error("[DB Error]", error); throw new Error("הפעולה נכשלה. נסה שוב."); }
