@@ -38,6 +38,7 @@ import {
 } from "@/lib/student-field-validation";
 import { daysUntilLabel, hebrewDate, hebrewDateTime, nextHebrewBirthday, toHebrewDateLabel } from "@/lib/hebrew-date";
 import { StudentPortfolioPanel } from "@/components/student-portfolio-panel";
+import { StudentAppreciationLetter } from "@/components/student-appreciation-letter";
 
 type Props = {
   open: boolean;
@@ -209,7 +210,8 @@ function StudentFileSheetInner(props: Props) {
           <SheetDescription>
             התיעוד של היום, מסמכים, שיחות עם הורים ואירועי משמעת — כל ההיסטוריה במקום אחד.
           </SheetDescription>
-          <div className="mt-2">
+          <div className="mt-2 flex flex-wrap gap-2">
+            <StudentAppreciationLetter key={studentId} studentId={studentId} />
             <Button size="sm" variant="outline" onClick={() => setEmailOpen(true)}>
               <Mail className="ms-1 h-4 w-4" /> צור מייל להורים
             </Button>

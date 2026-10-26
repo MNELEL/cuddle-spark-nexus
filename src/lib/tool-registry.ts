@@ -60,6 +60,8 @@ export const TOOLS: ToolEntry[] = [
   { to: "/poll/$classId", section: "motivation", requires: "classes", classScoped: true, icon: "MessageSquare", label: "סקר כיתה חי", desc: "שאלה לכיתה עם תוצאות בזמן אמת" },
 
   // --- assess ---
+  { to: "/sugya-generator", section: "assess", requires: "any", icon: "BookOpen", label: "מחולל סוגיות כיתה · Claude", desc: "מקצוע ומקום לימוד" },
+  { to: "/teacher-advisor", section: "assess", requires: "any", icon: "Sparkles", label: "היועץ הפדגוגי למלמד · Claude", desc: "דילמה כיתתית ותוכנית בשלושה צעדים" },
   { to: "/questions", section: "assess", requires: "any", icon: "ClipboardList", label: "מאגר שאלות", desc: "בנק שאלות לפי נושא ומקצוע" },
   { to: "/insights", section: "assess", requires: "any", icon: "LineChart", label: "תובנות", desc: "מגמות ציונים, נוכחות והתנהגות" },
   { to: "/daily-insights", section: "assess", requires: "classes", icon: "Lightbulb", label: "תובנות יומיות", desc: "הזנה ועריכה של תובנות יומיות לכיתה ולתלמיד לפי תאריך עברי" },
