@@ -109,6 +109,8 @@ export const suggestCertificateNotes = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => suggestSchema.parse(d))
   .handler(async ({ data, context }): Promise<CertNoteSuggestion[]> => {
+    const { requireActiveAITrial } = await import("./ai-entitlement.server");
+    await requireActiveAITrial(context.supabase, context.userId);
     const { classId, studentId, from, to } = data;
 
     const [studentRes, gradesRes, behRes, attRes] = await Promise.all([
@@ -250,7 +252,9 @@ function pickHex(v: unknown, fallback: string): string {
 export const analyzeCertificateTemplate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => inputSchema.parse(d))
-  .handler(async ({ data }): Promise<CertTemplateDesign> => {
+  .handler(async ({ data, context }): Promise<CertTemplateDesign> => {
+    const { requireActiveAITrial } = await import("./ai-entitlement.server");
+    await requireActiveAITrial(context.supabase, context.userId);
     const system = `אתה מנתח תבנית עיצוב חזותית של תעודה מתמונה.
 נתח אך ורק את המבנה החזותי: אל תקרא ואל תחזיר תוכן, שמות, מקצועות או ציונים.
 זהה:
