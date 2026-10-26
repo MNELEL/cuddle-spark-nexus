@@ -31,6 +31,14 @@ describe("selected AI trial enforcement", () => {
       expect(source.indexOf("await requireActiveAITrial")).toBeLessThan(source.indexOf("await callLovableAI"));
     }
   });
+  it("gates each certificate AI action before calling the provider", () => {
+    const source = readFileSync("src/lib/ai-certificate.functions.ts", "utf8");
+    for (const action of ["analyzeCertificatePhoto", "suggestCertificateNotes", "analyzeCertificateTemplate"]) {
+      const body = source.split(`export const ${action} =`)[1].split("export const ")[0];
+      expect(body.indexOf("await requireActiveAITrial")).toBeGreaterThan(0);
+      expect(body.indexOf("await requireActiveAITrial")).toBeLessThan(body.indexOf("await callLovableAI"));
+    }
+  });
 });
 
 describe("bounded Drive downloads", () => {
