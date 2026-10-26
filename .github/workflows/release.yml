@@ -76,7 +76,7 @@ jobs:
             release/build-${{ github.ref_name }}.tar.gz
 
       - name: Attest SBOM
-        uses: actions/attest-sbom@v3
+        uses: actions/attest-sbom@v4
         with:
           subject-path: release/build-${{ github.ref_name }}.tar.gz
           sbom-path: sbom/sbom-spdx.json
