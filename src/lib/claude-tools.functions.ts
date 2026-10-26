@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { advisorInput, interventionPlan, sugyaInput, sugyaResult } from "./claude-tools.schemas";
+import { hebrewDate } from "./hebrew-date";
 
 const BLOCK_SOURCE = "claude-tools-access-block";
 async function generate(context: { supabase: any; userId: string }, key: string | undefined, system: string, input: unknown) {
@@ -59,7 +60,11 @@ export const generateAppreciationLetter = createServerFn({ method: "POST" }).mid
     if (!attendance.data?.length && !grades.data?.length && !notes.data?.length) throw new Error("אין תיעוד או ציונים בחודש האחרון למכתב אישי.");
     const raw = await generate(context, process.env['LOVABLE_API_KEY'],
       'נסח מכתב הערכה אישי וחם מאת הרב המלמד להורי התלמיד, לפי התיעוד בלבד. הדגש הצלחות אמיתיות והתקדמות שניתן להוכיח; אין להמציא הישגים, לחשוף מידע רגיש, להזכיר תלמידים אחרים או לשלוח את המכתב. החזר JSON בלבד: {"subject":"","body":""}.',
-      { studentName: student.name, className: cls.name, attendance: attendance.data, grades: grades.data, dailyNotes: notes.data });
+      { studentName: student.name, className: cls.name,
+        attendance: (attendance.data ?? []).map((a) => ({ ...a, date: hebrewDate(a.date) })),
+        grades: (grades.data ?? []).map((g) => ({ ...g, date: hebrewDate(g.date) })),
+        dailyNotes: (notes.data ?? []).map((n) => ({ ...n, insight_date: hebrewDate(n.insight_date) })),
+      });
     const { parseClaudeJson } = await import("./claude-tools.server");
     return z.object({ subject: z.string(), body: z.string() }).parse(parseClaudeJson(raw));
   });

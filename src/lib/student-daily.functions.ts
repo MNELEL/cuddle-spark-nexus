@@ -109,6 +109,8 @@ export const saveStudentDaily = createServerFn({ method: "POST" })
     const supabase = context.supabase as any;
     const userId = context.userId;
     const classId = await ownedStudent(supabase, data.studentId, userId);
+    // Manual insights and audit logs are privileged writes after ownership verification.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const changes: string[] = [];
 
     if (data.status) {
@@ -142,7 +144,7 @@ export const saveStudentDaily = createServerFn({ method: "POST" })
     }
 
     if (data.insight) {
-      const { error } = await supabase.from("orchestrator_insights").insert({
+      const { error } = await supabaseAdmin.from("orchestrator_insights").insert({
         owner_id: userId,
         class_id: classId,
         student_id: data.studentId,
@@ -178,10 +180,10 @@ export const saveStudentDaily = createServerFn({ method: "POST" })
         item_date: data.date,
         approved_at: now,
       });
-      if (pErr) console.error("[DB Error] portfolio auto-insert", pErr);
+      if (pErr) throw new Error("התיעוד נשמר אך לא נכנס לתיק. השתמש במשיכת תיעוד היום כדי להשלים.");
     }
 
-    await supabase.from("app_logs").insert({
+    await supabaseAdmin.from("app_logs").insert({
       user_id: userId,
       source: AUDIT_SOURCE_STUDENT_DAILY,
       level: "info",
