@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "sdk_version": "0.26.1",
+  "sdk_version": "3.3.0",
   "path": "/mcp",
   "auth": {
     "type": "oauth",
@@ -26,7 +26,7 @@
           "openWorldHint": false
         },
         "inputSchema": {
-          "$schema": "http://json-schema.org/draft-07/schema#",
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
           "type": "object",
           "properties": {
             "status": {
@@ -38,7 +38,8 @@
                 "all"
               ]
             }
-          }
+          },
+          "additionalProperties": false
         },
         "outputSchema": null
       },
@@ -52,7 +53,7 @@
           "openWorldHint": false
         },
         "inputSchema": {
-          "$schema": "http://json-schema.org/draft-07/schema#",
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
           "type": "object",
           "properties": {
             "class_id": {
@@ -64,7 +65,8 @@
           },
           "required": [
             "class_id"
-          ]
+          ],
+          "additionalProperties": false
         },
         "outputSchema": null
       },
@@ -78,7 +80,7 @@
           "openWorldHint": false
         },
         "inputSchema": {
-          "$schema": "http://json-schema.org/draft-07/schema#",
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
           "type": "object",
           "properties": {
             "class_id": {
@@ -98,7 +100,8 @@
           },
           "required": [
             "class_id"
-          ]
+          ],
+          "additionalProperties": false
         },
         "outputSchema": null
       },
@@ -112,7 +115,7 @@
           "openWorldHint": false
         },
         "inputSchema": {
-          "$schema": "http://json-schema.org/draft-07/schema#",
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
           "type": "object",
           "properties": {
             "class_id": {
@@ -150,7 +153,8 @@
             "class_id",
             "student_id",
             "points"
-          ]
+          ],
+          "additionalProperties": false
         },
         "outputSchema": null
       },
@@ -164,7 +168,7 @@
           "openWorldHint": false
         },
         "inputSchema": {
-          "$schema": "http://json-schema.org/draft-07/schema#",
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
           "type": "object",
           "properties": {
             "class_id": {
@@ -196,7 +200,8 @@
             "class_id",
             "student_id",
             "title"
-          ]
+          ],
+          "additionalProperties": false
         },
         "outputSchema": null
       },
@@ -210,7 +215,7 @@
           "openWorldHint": false
         },
         "inputSchema": {
-          "$schema": "http://json-schema.org/draft-07/schema#",
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
           "type": "object",
           "properties": {
             "class_id": {
@@ -226,7 +231,8 @@
           },
           "required": [
             "class_id"
-          ]
+          ],
+          "additionalProperties": false
         },
         "outputSchema": null
       }

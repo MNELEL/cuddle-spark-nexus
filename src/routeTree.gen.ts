@@ -26,7 +26,6 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as ThemeTestRouteImport } from './routes/theme-test'
 import { Route as ToolsRouteImport } from './routes/tools'
-import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as AuthenticatedBellScheduleRouteImport } from './routes/_authenticated.bell-schedule'
 import { Route as AuthenticatedClassAnchorsRouteImport } from './routes/_authenticated.class-anchors'
@@ -71,7 +70,6 @@ import { Route as ToolsIndexRouteImport } from './routes/tools.index'
 import { Route as ToolsExamGeneratorRouteImport } from './routes/tools.exam-generator'
 import { Route as ToolsGroupMakerRouteImport } from './routes/tools.group-maker'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
-import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as AuthenticatedAnalyticsClassIdRouteImport } from './routes/_authenticated.analytics.$classId'
 import { Route as AuthenticatedBulletinsClassIdRouteImport } from './routes/_authenticated.bulletins.$classId'
 import { Route as AuthenticatedCalendarClassIdRouteImport } from './routes/_authenticated.calendar.$classId'
@@ -188,12 +186,6 @@ const ToolsRoute = ToolsRouteImport.update({
   path: '/tools',
   getParentRoute: () => rootRouteImport,
 } as any)
-const Char91DotmcpChar93ListToolsRoute =
-  Char91DotmcpChar93ListToolsRouteImport.update({
-    id: '/.mcp/list-tools',
-    path: '/.mcp/list-tools',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const Char91DotwellKnownChar93OauthProtectedResourceRoute =
   Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
     id: '/.well-known/oauth-protected-resource',
@@ -432,12 +424,6 @@ const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
   path: '/.lovable/oauth/consent',
   getParentRoute: () => rootRouteImport,
 } as any)
-const Char91DotmcpChar93InvokeToolToolRoute =
-  Char91DotmcpChar93InvokeToolToolRouteImport.update({
-    id: '/.mcp/invoke-tool/$tool',
-    path: '/.mcp/invoke-tool/$tool',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const AuthenticatedAnalyticsClassIdRoute =
   AuthenticatedAnalyticsClassIdRouteImport.update({
     id: '/analytics/$classId',
@@ -642,7 +628,6 @@ export interface FileRoutesByFullPath {
   '/support': typeof SupportRoute
   '/theme-test': typeof ThemeTestRoute
   '/tools': typeof ToolsRouteWithChildren
-  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/bell-schedule': typeof AuthenticatedBellScheduleRoute
   '/class-anchors': typeof AuthenticatedClassAnchorsRoute
@@ -687,7 +672,6 @@ export interface FileRoutesByFullPath {
   '/parents-guide/': typeof ParentsGuideIndexRoute
   '/tools/': typeof ToolsIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
-  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/analytics/$classId': typeof AuthenticatedAnalyticsClassIdRoute
   '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
   '/calendar/$classId': typeof AuthenticatedCalendarClassIdRoute
@@ -733,7 +717,6 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
   '/theme-test': typeof ThemeTestRoute
-  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/bell-schedule': typeof AuthenticatedBellScheduleRoute
   '/class-anchors': typeof AuthenticatedClassAnchorsRoute
@@ -777,7 +760,6 @@ export interface FileRoutesByTo {
   '/parents-guide': typeof ParentsGuideIndexRoute
   '/tools': typeof ToolsIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
-  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/analytics/$classId': typeof AuthenticatedAnalyticsClassIdRoute
   '/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
   '/calendar/$classId': typeof AuthenticatedCalendarClassIdRoute
@@ -829,7 +811,6 @@ export interface FileRoutesById {
   '/support': typeof SupportRoute
   '/theme-test': typeof ThemeTestRoute
   '/tools': typeof ToolsRouteWithChildren
-  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_authenticated/bell-schedule': typeof AuthenticatedBellScheduleRoute
   '/_authenticated/class-anchors': typeof AuthenticatedClassAnchorsRoute
@@ -874,7 +855,6 @@ export interface FileRoutesById {
   '/parents-guide/': typeof ParentsGuideIndexRoute
   '/tools/': typeof ToolsIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
-  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/_authenticated/analytics/$classId': typeof AuthenticatedAnalyticsClassIdRoute
   '/_authenticated/bulletins/$classId': typeof AuthenticatedBulletinsClassIdRoute
   '/_authenticated/calendar/$classId': typeof AuthenticatedCalendarClassIdRoute
@@ -926,7 +906,6 @@ export interface FileRouteTypes {
     | '/support'
     | '/theme-test'
     | '/tools'
-    | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/bell-schedule'
     | '/class-anchors'
@@ -971,7 +950,6 @@ export interface FileRouteTypes {
     | '/parents-guide/'
     | '/tools/'
     | '/.lovable/oauth/consent'
-    | '/.mcp/invoke-tool/$tool'
     | '/analytics/$classId'
     | '/bulletins/$classId'
     | '/calendar/$classId'
@@ -1017,7 +995,6 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/support'
     | '/theme-test'
-    | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/bell-schedule'
     | '/class-anchors'
@@ -1061,7 +1038,6 @@ export interface FileRouteTypes {
     | '/parents-guide'
     | '/tools'
     | '/.lovable/oauth/consent'
-    | '/.mcp/invoke-tool/$tool'
     | '/analytics/$classId'
     | '/bulletins/$classId'
     | '/calendar/$classId'
@@ -1112,7 +1088,6 @@ export interface FileRouteTypes {
     | '/support'
     | '/theme-test'
     | '/tools'
-    | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/_authenticated/bell-schedule'
     | '/_authenticated/class-anchors'
@@ -1157,7 +1132,6 @@ export interface FileRouteTypes {
     | '/parents-guide/'
     | '/tools/'
     | '/.lovable/oauth/consent'
-    | '/.mcp/invoke-tool/$tool'
     | '/_authenticated/analytics/$classId'
     | '/_authenticated/bulletins/$classId'
     | '/_authenticated/calendar/$classId'
@@ -1209,12 +1183,10 @@ export interface RootRouteChildren {
   SupportRoute: typeof SupportRoute
   ThemeTestRoute: typeof ThemeTestRoute
   ToolsRoute: typeof ToolsRouteWithChildren
-  Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   CSlugRoute: typeof CSlugRoute
   PTokenRoute: typeof PTokenRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
-  Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1336,13 +1308,6 @@ declare module '@tanstack/react-router' {
       path: '/tools'
       fullPath: '/tools'
       preLoaderRoute: typeof ToolsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/.mcp/list-tools': {
-      id: '/.mcp/list-tools'
-      path: '/.mcp/list-tools'
-      fullPath: '/.mcp/list-tools'
-      preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/.well-known/oauth-protected-resource': {
@@ -1651,13 +1616,6 @@ declare module '@tanstack/react-router' {
       path: '/.lovable/oauth/consent'
       fullPath: '/.lovable/oauth/consent'
       preLoaderRoute: typeof DotlovableOauthConsentRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/.mcp/invoke-tool/$tool': {
-      id: '/.mcp/invoke-tool/$tool'
-      path: '/.mcp/invoke-tool/$tool'
-      fullPath: '/.mcp/invoke-tool/$tool'
-      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/analytics/$classId': {
@@ -2125,13 +2083,11 @@ const rootRouteChildren: RootRouteChildren = {
   SupportRoute: SupportRoute,
   ThemeTestRoute: ThemeTestRoute,
   ToolsRoute: ToolsRouteWithChildren,
-  Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
   CSlugRoute: CSlugRoute,
   PTokenRoute: PTokenRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
-  Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
