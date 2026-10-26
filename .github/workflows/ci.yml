@@ -153,7 +153,7 @@ jobs:
           output-file: sbom/sbom-spdx.json
 
       - name: Upload SBOM bundle
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sbom-${{ github.sha }}
           path: sbom/
@@ -222,7 +222,7 @@ jobs:
 
       - name: Upload notification test report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: notifications-report-${{ github.sha }}
           path: notifications-report.json
@@ -297,7 +297,7 @@ jobs:
 
       - name: Upload student_profiles test report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: student-profiles-report-${{ github.sha }}
           path: student-profiles-report.json
@@ -335,7 +335,7 @@ jobs:
 
       - name: Upload Lighthouse reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: lighthouse-${{ github.sha }}
           path: |
