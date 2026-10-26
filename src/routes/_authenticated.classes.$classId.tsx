@@ -40,7 +40,7 @@ import {
 import { ClassTeacherName } from "@/components/class-teacher-name";
 import { ClassLibraryStatus } from "@/components/class-library-status";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowRight, Heart, Ban, MoveHorizontal, Pencil, Plus, Trash2, FolderOpen, FileText, Sparkles, Trophy, Users, Library, Monitor, Upload, Printer, Copy, Dices, Globe2, Award, ScanText, TrendingUp, CalendarDays, Wand2, MessageSquare, MoreHorizontal, LayoutGrid } from "lucide-react";
+import { ArrowRight, Heart, Ban, MoveHorizontal, Pencil, Plus, Trash2, FolderOpen, FileText, Sparkles, Trophy, Users, Library, Monitor, Upload, Printer, Copy, Dices, Globe2, Award, ScanText, TrendingUp, CalendarDays, Wand2, MessageSquare, MoreHorizontal, LayoutGrid, Pin } from "lucide-react";
 import { useShowGregorian } from "@/lib/date-display";
 import { toast } from "sonner";
 import { copyList, printList } from "@/lib/print-list";
@@ -58,6 +58,7 @@ import { ScoreBadge } from "@/components/score-badge";
 import { StudentFileSheet } from "@/components/student-file-sheet";
 import { AiAssistantDock } from "@/components/ai-assistant-dock";
 import { LessonsTab } from "@/components/lessons-tab";
+import { DayTrackingPanel } from "@/components/day-tracking-panel";
 import { SeatFillGrid } from "@/components/seat-fill-grid";
 import { openCommandPalette } from "@/components/global-command-palette";
 import { isValidClassId } from "@/lib/class-id-guard";
@@ -79,14 +80,10 @@ function ActionBtn({ icon: Icon, label, variant = "outline" }: { icon: typeof Up
   );
 }
 
-function ClassActionGrid({ classId, onSeating }: { classId: string; onSeating: () => void }) {
+function ClassActionGrid({ classId }: { classId: string }) {
   return (
     // הכפתורים מרוכזים לקבוצות לפי נושא (הושבה / ספרייה / דוחות) כדי להפחית עומס
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-      <Button size="sm" className="w-full justify-start transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none motion-reduce:hover:translate-y-0" onClick={onSeating}>
-        <LayoutGrid className="ms-1 h-4 w-4 shrink-0" />
-        <span className="truncate">סידור הושבה</span>
-      </Button>
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -135,6 +132,22 @@ function ClassActionGrid({ classId, onSeating }: { classId: string; onSeating: (
         <span className="truncate">עוד כלים</span>
       </Button>
     </div>
+  );
+}
+
+/* קטע מתקפל: התוכן נטען רק כשפותחים, כדי שהמסך יישאר קל */
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <details
+      className="rounded-2xl border bg-card/50"
+      onToggle={(e) => setOpen((e.currentTarget as HTMLDetailsElement).open)}
+    >
+      <summary className="cursor-pointer select-none p-3 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring">
+        {title}
+      </summary>
+      <div className="p-3 pt-0">{open ? children : null}</div>
+    </details>
   );
 }
 
@@ -199,7 +212,18 @@ function YearChain({ classId }: { classId: string }) {
 }
 
 type ClassSearch = { q?: string; field?: string; tab?: string; sort?: string; page?: number };
-const CLASS_TABS = ["students", "relations", "groups", "seating", "tracking", "crm", "lessons", "hebrew-dates"] as const;
+const CLASS_TABS = ["students", "seating", "day", "more"] as const;
+type ClassTab = (typeof CLASS_TABS)[number];
+// כתובות ישנות ממשיכות לעבוד ומופנות למקום החדש של אותו תוכן
+const LEGACY_TABS: Record<string, ClassTab> = {
+  relations: "seating", groups: "students", tracking: "day", crm: "more", lessons: "more", "hebrew-dates": "more",
+};
+const normalizeTab = (t?: string | null): ClassTab | null => {
+  if (!t) return null;
+  if ((CLASS_TABS as readonly string[]).includes(t)) return t as ClassTab;
+  return LEGACY_TABS[t] ?? null;
+};
+const START_TAB_KEY = "class-start-tab";
 
 export const Route = createFileRoute("/_authenticated/classes/$classId")({
   component: ClassDetail,
@@ -256,9 +280,20 @@ function ClassDetail() {
   const validClass = isValidClassId(classId);
   // Entering a class should immediately show the seating map — that is what the
   // teacher looks at first when walking into the room; the URL may override it.
-  const tab = CLASS_TABS.includes(search.tab as (typeof CLASS_TABS)[number])
-    ? (search.tab as string)
-    : "seating";
+  // מסך הפתיחה נשמר במכשיר. כתובת עם tab מפורש גוברת עליו.
+  const [startTab, setStartTab] = useState<ClassTab | null>(null);
+  useEffect(() => {
+    let saved: string | null = null;
+    try { saved = localStorage.getItem(START_TAB_KEY); } catch { /* אחסון חסום */ }
+    setStartTab(normalizeTab(saved) ?? "seating");
+  }, []);
+  const tab: ClassTab | null = normalizeTab(search.tab) ?? startTab;
+  const makeStartTab = () => {
+    if (!tab) return;
+    try { localStorage.setItem(START_TAB_KEY, tab); } catch { /* אחסון חסום */ }
+    setStartTab(tab);
+    toast.success("מסך הפתיחה עודכן");
+  };
   const { date: anchorDate } = useHebrewAnchor();
   const setTab = (t: string) =>
     void navigate({ search: (prev) => ({ ...prev, tab: t }), replace: true });
@@ -314,13 +349,11 @@ function ClassDetail() {
         <Link to="/classes" className="text-sm text-muted-foreground hover:underline flex items-center gap-1">
           <ArrowRight className="h-4 w-4" /> חזרה לכיתות
         </Link>
+        <Link to="/school" className="text-sm text-muted-foreground hover:underline">בית הספר</Link>
       </div>
-      {isArchived ? <ArchivedBanner classId={classId} /> : <ClassActionGrid classId={classId} onSeating={() => setTab("seating")} />}
+      {isArchived ? <ArchivedBanner classId={classId} /> : <ClassActionGrid classId={classId} />}
       <ClassAnnouncementsBanner classId={classId} readOnly={isArchived} />
-      <div className="relative overflow-hidden rounded-2xl border bg-primary p-6 text-primary-foreground shadow-sm">
-        <div className="pointer-events-none absolute inset-0 opacity-20">
-          <SeatFillGrid rows={4} cols={12} className="h-full" />
-        </div>
+      <div className="relative overflow-hidden rounded-2xl border bg-primary p-4 text-primary-foreground shadow-sm sm:p-6">
         <div className="relative z-10">
           {clsLoading ? (
             <div aria-busy="true" aria-label="טוען פרטי כיתה">
@@ -332,14 +365,14 @@ function ClassDetail() {
           ) : (
             <>
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="font-display text-3xl font-bold tracking-tight">{cls?.name ?? "כיתה"}</h1>
+                <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">{cls?.name ?? "כיתה"}</h1>
                 {academicYear && (
                   <Badge variant="secondary" className="font-mono-tabular">{academicYear}</Badge>
                 )}
                 {isArchived && <Badge variant="secondary">בארכיון · לצפייה בלבד</Badge>}
               </div>
               <p className="mt-1 text-sm text-primary-foreground/85 font-mono-tabular">
-                {students.length} תלמידים · {relations.length} אילוצים
+                {students.length} תלמידים
               </p>
               <div className="mt-1">
                 <ClassTeacherName
@@ -357,20 +390,32 @@ function ClassDetail() {
 
       <ClassLibraryStatus classId={classId} />
 
-      <Tabs value={tab} onValueChange={setTab} dir="rtl">
-        <TabsList className="flex-wrap h-auto">
-          <TabsTrigger value="students">תלמידים</TabsTrigger>
-          <TabsTrigger value="relations">אילוצים</TabsTrigger>
-          <TabsTrigger value="groups">קבוצות</TabsTrigger>
-          <TabsTrigger value="seating">סידור הושבה</TabsTrigger>
-          <TabsTrigger value="tracking">ציונים ונוכחות</TabsTrigger>
-          <TabsTrigger value="crm">CRM פדגוגי</TabsTrigger>
-          <TabsTrigger value="lessons">הקלטות שיעור</TabsTrigger>
-          <TabsTrigger value="hebrew-dates">תאריכים עבריים</TabsTrigger>
-        </TabsList>
+      <Tabs value={tab ?? ""} onValueChange={setTab} dir="rtl">
+        <div className="flex flex-wrap items-center gap-2">
+          <TabsList className="h-auto flex-wrap">
+            <TabsTrigger value="students">תלמידים</TabsTrigger>
+            <TabsTrigger value="seating">סידור הושבה</TabsTrigger>
+            <TabsTrigger value="day">דשבורד יומי</TabsTrigger>
+            <TabsTrigger value="more">עוד</TabsTrigger>
+          </TabsList>
+          {tab && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="ms-auto"
+              disabled={startTab === tab}
+              onClick={makeStartTab}
+            >
+              <Pin className="ms-1 h-4 w-4" />
+              {startTab === tab ? "מסך הפתיחה" : "קבע כמסך פתיחה"}
+            </Button>
+          )}
+        </div>
 
-        <TabsContent value="students" className="mt-4">
-          <div className="mb-3"><ImportExportBar classId={classId} /></div>
+        {tab === null && <Skeleton className="mt-4 h-64 w-full" />}
+
+        <TabsContent value="students" className="mt-4 space-y-4">
+          <ImportExportBar classId={classId} />
           <StudentsTab
             classId={classId}
             students={students as Student[]}
@@ -384,38 +429,49 @@ function ClassDetail() {
             page={page}
             onPageChange={setPage}
           />
+          <Section title="קבוצות לימוד">
+            <GroupsTab classId={classId} />
+          </Section>
         </TabsContent>
 
-        <TabsContent value="relations" className="mt-4">
-          <RelationsTab classId={classId} students={students as Student[]} relations={relations as never} />
-        </TabsContent>
-
-        <TabsContent value="groups" className="mt-4">
-          <GroupsTab classId={classId} />
-        </TabsContent>
-
-        <TabsContent value="seating" className="mt-4">
-          <div className="mb-3"><ImportExportBar classId={classId} /></div>
+        <TabsContent value="seating" className="mt-4 space-y-4">
           <SeatingGrid classId={classId} />
+          <Section title={`אילוצי ישיבה (${relations.length})`}>
+            <RelationsTab classId={classId} students={students as Student[]} relations={relations as never} />
+          </Section>
+          <Section title="שמירה וייצוא">
+            <ImportExportBar classId={classId} />
+          </Section>
         </TabsContent>
 
-        <TabsContent value="tracking" className="mt-4">
-          <TrackingTab classId={classId} />
+        <TabsContent value="day" className="mt-4">
+          {isArchived ? (
+            <Card><CardContent className="py-8 text-center text-sm text-muted-foreground">
+              הכיתה בארכיון, ולכן אי אפשר לתעד בה ימים חדשים. אפשר להחזיר אותה לפעילות מהכפתור שבראש הדף.
+            </CardContent></Card>
+          ) : (
+            <DayTrackingPanel classId={classId} />
+          )}
         </TabsContent>
 
-        <TabsContent value="crm" className="mt-4">
-          <CrmTab classId={classId} />
-        </TabsContent>
-
-        <TabsContent value="lessons" className="mt-4">
-          <LessonsTab classId={classId} />
-        </TabsContent>
-
-        <TabsContent value="hebrew-dates" className="mt-4 space-y-4">
-          <HebrewDatePanel editable />
-          <DailyLogEditor classId={classId} />
-          <ClassRangeExportCard classId={classId} />
-          <HebrewWeeksCard date={anchorDate} />
+        <TabsContent value="more" className="mt-4 space-y-3">
+          <Section title="תזכורות, נקודות ודירוג הכיתה">
+            <CrmTab classId={classId} />
+          </Section>
+          <Section title="ציונים ויעדים">
+            <TrackingTab classId={classId} />
+          </Section>
+          <Section title="הקלטות שיעור">
+            <LessonsTab classId={classId} />
+          </Section>
+          <Section title="תאריכים עבריים ודוחות טווח">
+            <div className="space-y-4">
+              <HebrewDatePanel editable />
+              <DailyLogEditor classId={classId} />
+              <ClassRangeExportCard classId={classId} />
+              <HebrewWeeksCard date={anchorDate} />
+            </div>
+          </Section>
         </TabsContent>
       </Tabs>
       <AiAssistantDock classId={classId} />
@@ -888,7 +944,14 @@ function StudentRow({
       <CardContent className="flex items-center justify-between py-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="font-semibold">{student.name}</span>
+            <button
+              type="button"
+              onClick={onOpenFile}
+              aria-label={`פתח תיק תלמיד: ${student.name}`}
+              className="text-start font-semibold hover:underline focus-visible:underline"
+            >
+              {student.name}
+            </button>
             {score && <ScoreBadge score={score} size="sm" />}
           </div>
           <div className="mt-1 flex flex-wrap gap-1">

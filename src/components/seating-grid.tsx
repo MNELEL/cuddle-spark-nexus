@@ -870,14 +870,12 @@ export function SeatingGrid({ classId }: { classId: string }) {
     <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
       <div className={`space-y-4 ${highContrast ? "contrast-125 [&_*]:!border-foreground/60" : ""}`}>
         <div aria-live="polite" aria-atomic="true" className="sr-only">{announcement}</div>
-        {/* Toolbar: grouped by intent — first "arrange", then "room", then "view" */}
+        {/* סרגל מצומצם: רק הפעולות השכיחות. שאר הכלים תחת "כלים נוספים" */}
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-card p-2">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="hidden text-[11px] font-semibold text-muted-foreground sm:inline">סידור</span>
             <Button size="sm" onClick={() => smartM.mutate()} disabled={smartM.isPending || students.length === 0}>
               <Sparkles className="ms-1 h-4 w-4" /> מיון חכם
             </Button>
-            <SeatingWizardModal classId={classId} studentNameById={new Map(students.map((s) => [s.id, s.name]))} />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button size="sm" variant="outline" disabled={students.length === 0}>
@@ -902,11 +900,6 @@ export function SeatingGrid({ classId }: { classId: string }) {
               disabled={!canRedo(history) || redoM.isPending} title="בצע מחדש את השינוי שבוטל">
               <Redo2 className="ms-1 h-4 w-4" /> בצע מחדש{canRedo(history) ? ` (${history.future.length})` : ""}
             </Button>
-            <span className="mx-1 hidden h-5 w-px bg-border sm:inline-block" aria-hidden />
-            <span className="hidden text-[11px] font-semibold text-muted-foreground sm:inline">סביבת הכיתה</span>
-            <Button size="sm" variant={editEnv ? "default" : "outline"} onClick={() => setEditEnv((v) => !v)} title="הוסף/הזז אובייקטי סביבה">
-              <Presentation className="ms-1 h-4 w-4" /> {editEnv ? "סיים עריכה" : "עריכת סביבה"}
-            </Button>
             {selectedId && (
               <Button size="sm" variant="ghost" onClick={() => setSelectedId(null)}>
                 בטל בחירה
@@ -918,8 +911,7 @@ export function SeatingGrid({ classId }: { classId: string }) {
               </Button>
             )}
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="flex items-center gap-1 text-[11px] text-muted-foreground" aria-live="polite">
+          <span className="flex items-center gap-1 text-[11px] text-muted-foreground" aria-live="polite">
               {moveM.isPending || saveObjectsM.isPending || hideM.isPending || lockM.isPending ? (
                 <><Loader2 className="h-3.5 w-3.5 animate-spin" /> שומר…</>
               ) : (
@@ -928,6 +920,16 @@ export function SeatingGrid({ classId }: { classId: string }) {
                 </>
               )}
             </span>
+        </div>
+        <details className="rounded-xl border bg-card">
+          <summary className="cursor-pointer select-none p-2 text-sm font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring">
+            כלים נוספים
+          </summary>
+          <div className="flex flex-wrap items-center gap-2 border-t p-2">
+            <SeatingWizardModal classId={classId} studentNameById={new Map(students.map((s) => [s.id, s.name]))} />
+            <Button size="sm" variant={editEnv ? "default" : "outline"} onClick={() => setEditEnv((v) => !v)} title="הוסף/הזז אובייקטי סביבה">
+              <Presentation className="ms-1 h-4 w-4" /> {editEnv ? "סיים עריכה" : "עריכת סביבה"}
+            </Button>
             <Button size="sm" variant="ghost" onClick={handlePrint} title="הדפסת פריסת ההושבה">
               <Printer className="ms-1 h-4 w-4" /> הדפסה
             </Button>
@@ -1062,7 +1064,7 @@ export function SeatingGrid({ classId }: { classId: string }) {
             </Dialog>
             <SeatingSnapshots classId={classId} />
           </div>
-        </div>
+        </details>
 
         {editEnv && <RoomObjectPalette />}
 

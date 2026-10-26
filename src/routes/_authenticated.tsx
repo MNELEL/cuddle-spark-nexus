@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { LogOut, Wrench, Sparkles, LineChart, Library, ShieldCheck, Settings } from "lucide-react";
+import { LogOut, Wrench, Sparkles, LineChart, Library, ShieldCheck, Settings, Building2 } from "lucide-react";
 import { TorahLogo } from "@/components/torah-logo";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -113,6 +113,9 @@ function AuthLayout() {
             <span className="truncate font-bold">הכיתה שלי</span>
           </Link>
           <nav className="hidden items-center gap-1 md:flex">
+            <Link to="/school" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
+              <Building2 className="me-1 inline h-4 w-4" />בית הספר
+            </Link>
             <Link to="/toolkit" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
               <Wrench className="me-1 inline h-4 w-4" />ארגז כלים
             </Link>

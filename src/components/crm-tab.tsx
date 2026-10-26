@@ -23,7 +23,6 @@ import {
 } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Trash2, Bell, Award, Star, Calendar as CalIcon, CheckCircle2, NotebookPen } from "lucide-react";
-import { StudentDailyCard } from "@/components/student-daily-card";
 import { toast } from "sonner";
 import { hebrewDate } from "@/lib/hebrew-date";
 import { HebrewRangeFilter, type DateRange } from "@/components/hebrew-range-filter";
@@ -67,7 +66,7 @@ export function CrmTab({ classId }: { classId: string }) {
   });
 
   if (students.length === 0) {
-    return <Card><CardContent className="py-10 text-center text-muted-foreground">הוסף תלמידים כדי להשתמש ב-CRM.</CardContent></Card>;
+    return <Card><CardContent className="py-10 text-center text-muted-foreground">הוסף תלמידים כדי להשתמש בתזכורות ובנקודות.</CardContent></Card>;
   }
 
   return (
@@ -76,7 +75,6 @@ export function CrmTab({ classId }: { classId: string }) {
         <TabsTrigger value="reminders"><Bell className="ms-1 h-4 w-4" /> תזכורות</TabsTrigger>
         <TabsTrigger value="points"><Award className="ms-1 h-4 w-4" /> נקודות התנהגות</TabsTrigger>
         <TabsTrigger value="leaderboard"><Star className="ms-1 h-4 w-4" /> טבלת מובילים</TabsTrigger>
-        <TabsTrigger value="daily"><NotebookPen className="ms-1 h-4 w-4" /> תיעוד יומי</TabsTrigger>
       </TabsList>
 
       <TabsContent value="reminders" className="mt-4">
@@ -87,9 +85,6 @@ export function CrmTab({ classId }: { classId: string }) {
       </TabsContent>
       <TabsContent value="leaderboard" className="mt-4">
         <Leaderboard students={students as Student[]} scoreInputs={scoreInputs} />
-      </TabsContent>
-      <TabsContent value="daily" className="mt-4">
-        <StudentDailyCard classId={classId} students={students as Student[]} />
       </TabsContent>
     </Tabs>
   );

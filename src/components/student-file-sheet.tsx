@@ -7,6 +7,7 @@ import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
 } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { StudentDailyCard } from "@/components/student-daily-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,8 +19,7 @@ import {
 } from "@/components/ui/select";
 import {
   FileText, Phone, MessageCircle, Mail, Users, Plus, Trash2,
-  Download, Upload, ShieldAlert, ShieldCheck, Calendar, Lock, IdCard, Loader2,
-} from "lucide-react";
+  Download, Upload, ShieldAlert, ShieldCheck, Calendar, Lock, IdCard, Loader2, NotebookPen } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   listStudentDocuments, upsertStudentDocument, deleteStudentDocument, getDocumentSignedUrl,
@@ -207,7 +207,7 @@ function StudentFileSheetInner(props: Props) {
         <SheetHeader>
           <SheetTitle className="font-display text-2xl">תיק תלמיד · {studentName}</SheetTitle>
           <SheetDescription>
-            מסמכים, יומן שיחות עם הורים ויומן אירועים משמעתיים — כל ההיסטוריה במקום אחד.
+            התיעוד של היום, מסמכים, שיחות עם הורים ואירועי משמעת — כל ההיסטוריה במקום אחד.
           </SheetDescription>
           <div className="mt-2">
             <Button size="sm" variant="outline" onClick={() => setEmailOpen(true)}>
@@ -215,27 +215,33 @@ function StudentFileSheetInner(props: Props) {
             </Button>
           </div>
         </SheetHeader>
-        <Tabs defaultValue="documents" dir="rtl" className="mt-4">
-          <TabsList className="w-full">
-            <TabsTrigger value="documents" className="flex-1">
+        <Tabs defaultValue="today" dir="rtl" className="mt-4">
+          <TabsList className="h-auto w-full justify-start overflow-x-auto">
+            <TabsTrigger value="today" className="shrink-0">
+              <NotebookPen className="ms-1 h-4 w-4" /> היום
+            </TabsTrigger>
+            <TabsTrigger value="documents" className="shrink-0">
               <FileText className="ms-1 h-4 w-4" /> מסמכים
             </TabsTrigger>
-            <TabsTrigger value="parents" className="flex-1">
+            <TabsTrigger value="parents" className="shrink-0">
               <Phone className="ms-1 h-4 w-4" /> שיחות עם הורים
             </TabsTrigger>
-            <TabsTrigger value="discipline" className="flex-1">
+            <TabsTrigger value="discipline" className="shrink-0">
               <ShieldAlert className="ms-1 h-4 w-4" /> משמעת
             </TabsTrigger>
-            <TabsTrigger value="profile" className="flex-1">
+            <TabsTrigger value="profile" className="shrink-0">
               <Lock className="ms-1 h-4 w-4" /> פרופיל תלמיד
             </TabsTrigger>
-            <TabsTrigger value="contact" className="flex-1">
+            <TabsTrigger value="contact" className="shrink-0">
               <IdCard className="ms-1 h-4 w-4" /> פרטי קשר
             </TabsTrigger>
-            <TabsTrigger value="portfolio" className="flex-1">
+            <TabsTrigger value="portfolio" className="shrink-0">
               <Calendar className="ms-1 h-4 w-4" /> תיק רב-שנתי
             </TabsTrigger>
           </TabsList>
+          <TabsContent value="today" className="mt-4">
+            <StudentDailyCard classId={classId} students={[{ id: studentId, name: studentName }]} />
+          </TabsContent>
           <TabsContent value="documents" className="mt-4">
             <DocumentsPanel {...props} />
           </TabsContent>

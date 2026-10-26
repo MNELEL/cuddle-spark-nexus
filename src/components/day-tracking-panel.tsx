@@ -1,11 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { ArrowRight, Check, ChevronLeft, ChevronRight, Flag, Minus, Save, Trash2, X } from "lucide-react";
-import { getClass } from "@/lib/classes.functions";
-import { useClassFallbackRedirect } from "@/hooks/use-class-fallback";
+import { Check, ChevronLeft, ChevronRight, Flag, Minus, Save, Trash2, X } from "lucide-react";
 import { listStudents } from "@/lib/students.functions";
 import {
   addDayBonus, addDayEvent, deleteDayBonus, deleteDayEvent,
@@ -15,24 +12,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-
-export const Route = createFileRoute("/_authenticated/classes/$classId/day")({
-  head: () => ({
-    meta: [
-      { title: "מעקב יומי · הכיתה שלי" },
-      { name: "robots", content: "noindex, nofollow" },
-    ],
-  }),
-  component: DayTracking,
-});
+import { StudentFileSheet } from "@/components/student-file-sheet";
 
 type Student = { id: string; name: string };
 
 const RATING_COLS = [
-  { key: "readiness", label: "מוכנות" },
-  { key: "listening", label: "הקשבה" },
-  { key: "behavior", label: "התנהגות" },
-  { key: "work_done", label: "עבודות" },
+  { key: "readiness", label: "מוכנות", short: "מ" },
+  { key: "listening", label: "הקשבה", short: "ה" },
+  { key: "behavior", label: "התנהגות", short: "ת" },
+  { key: "work_done", label: "עבודות", short: "ע" },
 ] as const;
 type RatingKey = (typeof RATING_COLS)[number]["key"];
 type Rating = Record<RatingKey, number>;
@@ -76,10 +64,12 @@ function shiftIso(s: string, n: number) {
 const hebFmt = new Intl.DateTimeFormat("he-IL-u-ca-hebrew", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 const gregFmt = new Intl.DateTimeFormat("he-IL", { day: "numeric", month: "numeric", year: "numeric" });
 
-function DayTracking() {
-  const { classId } = Route.useParams();
+/**
+ * הדשבורד היומי: טבלה אחת לכל הכיתה, עם נוכחות וכל שעות היום יחד.
+ * לחיצה על משבצת מחליפה בין טוב, בינוני וחלש. הנוכחות נשמרת באותה טבלת `attendance` שבה משתמשים שאר המסכים.
+ */
+export function DayTrackingPanel({ classId }: { classId: string }) {
   const qc = useQueryClient();
-  const getC = useServerFn(getClass);
   const listS = useServerFn(listStudents);
   const dayFn = useServerFn(getDayData);
   const saveRatingsFn = useServerFn(saveDayRatings);
@@ -89,11 +79,6 @@ function DayTracking() {
   const [date, setDate] = useState<string | null>(null);
   useEffect(() => { setDate(toIso(new Date())); }, []);
 
-  const { data: cls, isLoading: clsLoading } = useQuery({
-    queryKey: ["class", classId],
-    queryFn: () => getC({ data: { id: classId } }),
-  });
-  useClassFallbackRedirect(!clsLoading && !cls);
   const { data: students = [] } = useQuery({
     queryKey: ["students", classId],
     queryFn: () => listS({ data: { classId } }),
@@ -104,19 +89,15 @@ function DayTracking() {
     queryFn: () => dayFn({ data: { classId, date: date! } }),
   }) as { data: DayData | undefined; isLoading: boolean };
 
-  const [slotId, setSlotId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Record<string, Rating>>({});
   const [touched, setTouched] = useState<string[]>([]);
   const [attDraft, setAttDraft] = useState<Record<string, string>>({});
   const [eventFor, setEventFor] = useState<Student | null>(null);
+  const [fileFor, setFileFor] = useState<Student | null>(null);
 
   useEffect(() => { setDraft({}); setTouched([]); setAttDraft({}); }, [date]);
 
   const ratedSlots = useMemo(() => (day?.slots ?? []).filter((s) => s.rated), [day]);
-  useEffect(() => {
-    if (ratedSlots.length && !ratedSlots.some((s) => s.id === slotId)) setSlotId(ratedSlots[0]!.id);
-  }, [ratedSlots, slotId]);
-
   const saved = useMemo(() => {
     const m = new Map<string, Rating>();
     for (const r of day?.ratings ?? []) {
@@ -153,24 +134,21 @@ function DayTracking() {
   }, [dirty]);
 
   const cycleAtt = (id: string) => setAttDraft((d) => ({ ...d, [id]: ATT[statusOf(id)]!.next }));
-  const allPresent = () =>
-    setAttDraft(Object.fromEntries(students.map((s) => [s.id, "present"])));
+  const allPresent = () => setAttDraft(Object.fromEntries(students.map((s) => [s.id, "present"])));
 
-  const cycleRating = (studentId: string, col: RatingKey) => {
-    if (!slotId) return;
-    const cur = ratingOf(studentId, slotId);
-    setDraft((d) => ({ ...d, [`${studentId}|${slotId}`]: { ...cur, [col]: nextLevel(cur[col]) } }));
-    setTouched((t) => (t.includes(slotId) ? t : [...t, slotId]));
+  const cycleRating = (studentId: string, sid: string, col: RatingKey) => {
+    const cur = ratingOf(studentId, sid);
+    setDraft((d) => ({ ...d, [`${studentId}|${sid}`]: { ...cur, [col]: nextLevel(cur[col]) } }));
+    setTouched((t) => (t.includes(sid) ? t : [...t, sid]));
   };
-  const allGood = () => {
-    if (!slotId) return;
-    if (savedSlotIds.has(slotId) && !window.confirm("לאפס את כל הדירוגים בשעה הזו ל״טוב״?")) return;
+  const allGoodSlot = (sid: string) => {
+    if (savedSlotIds.has(sid) && !touched.includes(sid) && !window.confirm("לאפס את כל הדירוגים בשעה הזו ל״טוב״?")) return;
     setDraft((d) => {
       const n = { ...d };
-      for (const s of students) n[`${s.id}|${slotId}`] = { ...GOOD };
+      for (const s of students) n[`${s.id}|${sid}`] = { ...GOOD };
       return n;
     });
-    setTouched((t) => (t.includes(slotId) ? t : [...t, slotId]));
+    setTouched((t) => (t.includes(sid) ? t : [...t, sid]));
   };
 
   const saveM = useMutation({
@@ -193,6 +171,8 @@ function DayTracking() {
     },
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["day", classId, date] });
+      // הנוכחות משותפת למסכי הציונים, הדוחות והתובנות
+      qc.invalidateQueries({ queryKey: ["score-inputs", classId] });
       setDraft({}); setTouched([]); setAttDraft({});
       toast.success("נשמר");
     },
@@ -209,20 +189,11 @@ function DayTracking() {
     setDate(toIso(new Date()));
   };
 
-  const currentSlot = ratedSlots.find((s) => s.id === slotId) ?? null;
-  const slotUnsaved = currentSlot ? !savedSlotIds.has(currentSlot.id) && !touched.includes(currentSlot.id) : false;
+  const noAttendanceYet = !!day && attSaved.size === 0 && Object.keys(attDraft).length === 0;
 
   return (
-    <div dir="rtl" className="min-h-screen bg-background p-3 pb-28 md:p-8 md:pb-28">
-      <div className="mx-auto max-w-3xl space-y-4">
-        <div className="flex items-center justify-between gap-2">
-          <Link to="/classes/$classId" params={{ classId }} className="shrink-0">
-            <Button variant="ghost" size="sm"><ArrowRight className="ms-1 h-4 w-4" /> חזרה</Button>
-          </Link>
-          <h1 className="font-display text-lg font-bold md:text-2xl">מעקב יומי{cls?.name ? ` · ${cls.name}` : ""}</h1>
-          <span className="w-16" aria-hidden="true" />
-        </div>
-
+    <div className="pb-24">
+      <div className="space-y-3">
         {/* בחירת יום */}
         <div className="flex items-center justify-between gap-2 rounded-xl border bg-card p-2">
           <Button variant="outline" size="icon" aria-label="יום קודם" onClick={() => go(-1)}>
@@ -240,109 +211,97 @@ function DayTracking() {
           </div>
         </div>
 
-        {/* נוכחות */}
-        <section aria-labelledby="att-title" className="rounded-xl border bg-card p-3">
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <div>
-              <h2 id="att-title" className="font-bold">נוכחות</h2>
-              {day && attSaved.size === 0 && Object.keys(attDraft).length === 0 && (
-                <p className="text-xs text-muted-foreground">עדיין לא נשמרה נוכחות ליום הזה</p>
-              )}
-            </div>
-            <Button size="sm" variant="outline" onClick={allPresent}>כולם נוכחים</Button>
-          </div>
-          <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
-            {students.map((s) => {
-              const meta = ATT[statusOf(s.id)]!;
-              return (
-                <button
-                  key={s.id}
-                  type="button"
-                  onClick={() => cycleAtt(s.id)}
-                  aria-label={`${s.name}: ${meta.text}. לחיצה מחליפה סטטוס`}
-                  className={`flex min-h-11 items-center justify-between gap-2 rounded-lg border px-2 py-1 text-start text-sm ${meta.cls}`}
-                >
-                  <span className="line-clamp-2 leading-tight">{s.name}</span>
-                  <span className="shrink-0 text-xs font-bold">{meta.text}</span>
-                </button>
-              );
-            })}
-          </div>
-        </section>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs text-muted-foreground">
+            מ מוכנות · ה הקשבה · ת התנהגות · ע עבודות. לחיצה על משבצת מחליפה: טוב, בינוני, חלש. לחיצה על שם פותחת את תיק התלמיד.
+            {noAttendanceYet ? " עדיין לא נשמרה נוכחות ליום הזה." : ""}
+          </p>
+          <Button size="sm" variant="outline" onClick={allPresent} disabled={!students.length}>כולם נוכחים</Button>
+        </div>
 
-        {/* דירוג לפי שעה */}
-        <section aria-labelledby="rate-title" className="rounded-xl border bg-card">
-          <div className="space-y-2 p-3">
-            <h2 id="rate-title" className="font-bold">דירוג לפי שעה</h2>
-            {dayLoading && <p className="text-sm text-muted-foreground">טוען...</p>}
-            {day && ratedSlots.length === 0 && (
-              <p className="text-sm text-muted-foreground">אין שעות לדירוג בסדר היום של הכיתה.</p>
-            )}
-            <div className="flex gap-1.5 overflow-x-auto pb-1" role="group" aria-label="בחירת שעה">
-              {ratedSlots.map((s) => {
-                const active = s.id === slotId;
-                const done = savedSlotIds.has(s.id);
-                return (
-                  <button
-                    key={s.id}
-                    type="button"
-                    aria-pressed={active}
-                    onClick={() => setSlotId(s.id)}
-                    className={`flex min-h-10 shrink-0 items-center gap-1 rounded-full border px-3 text-sm ${
-                      active ? "border-primary bg-primary text-primary-foreground" : "bg-background"
-                    }`}
-                  >
-                    {s.label}
-                    {done && <Check className="h-3.5 w-3.5" aria-label="מולא" />}
-                    {touched.includes(s.id) && <span className="h-1.5 w-1.5 rounded-full bg-current" aria-label="יש שינויים" />}
-                  </button>
-                );
-              })}
-            </div>
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-xs text-muted-foreground">
-                {slotUnsaved ? "ערכי ברירת המחדל מוצגים כ״טוב״ ועדיין לא נשמרו. " : ""}
-                לחיצה על משבצת מחליפה: טוב, בינוני, חלש.
-              </p>
-              <Button size="sm" variant="outline" onClick={allGood} disabled={!slotId}>הכל טוב</Button>
-            </div>
-          </div>
+        {dayLoading && <p className="text-sm text-muted-foreground">טוען...</p>}
+        {day && ratedSlots.length === 0 && (
+          <p className="text-sm text-muted-foreground">אין שעות לדירוג בסדר היום של הכיתה.</p>
+        )}
 
-          {currentSlot && (
-            <div className="overflow-x-auto">
-              <table className="w-full table-fixed border-collapse">
-                <caption className="sr-only">דירוג תלמידים בשעה {currentSlot.label}</caption>
-                <colgroup>
-                  <col />
-                  <col className="w-11" />
-                  {RATING_COLS.map((c) => <col key={c.key} className="w-12" />)}
-                </colgroup>
+        {students.length > 0 && (
+          <section aria-label="טבלת היום" className="rounded-xl border bg-card">
+            <div className="max-h-[75vh] overflow-auto">
+              <table className="border-separate border-spacing-0 text-sm">
+                <caption className="sr-only">נוכחות ודירוג של כל תלמידי הכיתה בכל שעות היום</caption>
                 <thead>
-                  <tr className="border-y bg-muted/50 text-[11px] text-muted-foreground">
-                    <th scope="col" className="py-1.5 ps-3 pe-1 text-start font-medium">תלמיד</th>
-                    <th scope="col" className="py-1.5 text-center font-medium"><span className="sr-only">חוסרים ואירועים</span><Flag className="mx-auto h-3.5 w-3.5" aria-hidden="true" /></th>
-                    {RATING_COLS.map((c) => (
-                      <th key={c.key} scope="col" className="py-1.5 text-center font-medium">{c.label}</th>
+                  <tr>
+                    <th scope="col" rowSpan={2} className="sticky right-0 top-0 z-30 min-w-[8rem] max-w-[8rem] border-b border-l bg-muted px-2 py-1 text-start text-xs font-semibold">תלמיד</th>
+                    <th scope="col" rowSpan={2} className="sticky top-0 z-20 w-14 border-b border-l bg-muted px-1 text-xs font-semibold">נוכחות</th>
+                    <th scope="col" rowSpan={2} className="sticky top-0 z-20 w-11 border-b border-l bg-muted">
+                      <span className="sr-only">חוסרים, אירועים ובונוסים</span>
+                      <Flag className="mx-auto h-3.5 w-3.5" aria-hidden="true" />
+                    </th>
+                    {ratedSlots.map((s) => (
+                      <th key={s.id} scope="colgroup" colSpan={4} className="sticky top-0 z-20 h-9 border-b border-l bg-muted px-1 text-xs font-semibold">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <span className="whitespace-nowrap">{s.label}</span>
+                          {savedSlotIds.has(s.id) && <Check className="h-3.5 w-3.5 text-emerald-600" aria-label="מולא" />}
+                          <button
+                            type="button"
+                            onClick={() => allGoodSlot(s.id)}
+                            aria-label={`${s.label}: הכל טוב`}
+                            className="whitespace-nowrap rounded border bg-background px-1.5 text-[10px] font-normal"
+                          >
+                            הכל טוב
+                          </button>
+                        </div>
+                      </th>
                     ))}
+                  </tr>
+                  <tr>
+                    {ratedSlots.flatMap((s) =>
+                      RATING_COLS.map((c, ci) => (
+                        <th
+                          key={`${s.id}-${c.key}`}
+                          scope="col"
+                          className={`sticky top-9 z-20 h-7 w-10 border-b bg-muted text-[11px] font-medium text-muted-foreground ${ci === RATING_COLS.length - 1 ? "border-l" : ""}`}
+                        >
+                          <abbr title={c.label} className="no-underline">{c.short}</abbr>
+                          <span className="sr-only"> {s.label}: {c.label}</span>
+                        </th>
+                      )),
+                    )}
                   </tr>
                 </thead>
                 <tbody>
                   {students.map((s) => {
                     const away = isAway(s.id);
-                    const r = ratingOf(s.id, currentSlot.id);
+                    const att = ATT[statusOf(s.id)]!;
                     const count = countByStudent.get(s.id) ?? 0;
                     return (
-                      <tr key={s.id} className={`border-b last:border-b-0 ${away ? "opacity-50" : ""}`}>
-                        <th scope="row" className="py-1 ps-3 pe-1 text-start text-sm font-medium leading-tight">
-                          {s.name}
-                          {away && <span className="ms-1 text-xs font-normal text-muted-foreground">(חסר)</span>}
+                      <tr key={s.id} className={away ? "opacity-60" : ""}>
+                        <th scope="row" className="sticky right-0 z-10 min-w-[8rem] max-w-[8rem] border-b border-l bg-card px-2 py-1 text-start text-xs font-medium leading-tight">
+                          <button
+                            type="button"
+                            onClick={() => setFileFor(s)}
+                            aria-label={`פתח תיק תלמיד: ${s.name}`}
+                            className="text-start hover:underline focus-visible:underline"
+                          >
+                            {s.name}
+                          </button>
                         </th>
-                        <td className="p-0.5">
+                        <td className="border-b border-l p-0.5">
+                          <button
+                            type="button"
+                            onClick={() => cycleAtt(s.id)}
+                            aria-label={`${s.name}, נוכחות: ${att.text}. לחיצה מחליפה סטטוס`}
+                            className={`flex h-9 w-full items-center justify-center rounded-md border text-[11px] font-bold ${att.cls}`}
+                          >
+                            {att.text}
+                          </button>
+                        </td>
+                        <td className="border-b border-l p-0.5">
                           <button
                             type="button"
                             onClick={() => setEventFor(s)}
                             aria-label={`${s.name}: חוסרים, אירועים ובונוסים${count ? ` (${count})` : ""}`}
-                            className={`relative flex h-11 w-full items-center justify-center rounded-md border ${count ? "border-primary text-primary" : "text-muted-foreground"}`}
+                            className={`relative flex h-9 w-full items-center justify-center rounded-md border ${count ? "border-primary text-primary" : "text-muted-foreground"}`}
                           >
                             <Flag className="h-4 w-4" />
                             {count > 0 && (
@@ -352,23 +311,27 @@ function DayTracking() {
                             )}
                           </button>
                         </td>
-                        {RATING_COLS.map((c) => {
-                          const v = r[c.key];
-                          const meta = LEVEL[v]!;
-                          const Icon = meta.Icon;
-                          return (
-                            <td key={c.key} className="p-0.5">
-                              <button
-                                type="button"
-                                onClick={() => cycleRating(s.id, c.key)}
-                                aria-label={`${s.name}, ${c.label}: ${meta.text}`}
-                                title={meta.text}
-                                className={`flex h-11 w-full items-center justify-center rounded-md border ${meta.cls} ${slotUnsaved ? "border-dashed opacity-60" : ""}`}
-                              >
-                                <Icon className="h-5 w-5" aria-hidden="true" />
-                              </button>
-                            </td>
-                          );
+                        {ratedSlots.flatMap((sl) => {
+                          const r = ratingOf(s.id, sl.id);
+                          const unsaved = !savedSlotIds.has(sl.id) && !touched.includes(sl.id);
+                          return RATING_COLS.map((c, ci) => {
+                            const v = r[c.key];
+                            const meta = LEVEL[v]!;
+                            const Icon = meta.Icon;
+                            return (
+                              <td key={`${sl.id}-${c.key}`} className={`border-b p-0.5 ${ci === RATING_COLS.length - 1 ? "border-l" : ""}`}>
+                                <button
+                                  type="button"
+                                  onClick={() => cycleRating(s.id, sl.id, c.key)}
+                                  aria-label={`${s.name}, ${sl.label}, ${c.label}: ${meta.text}`}
+                                  title={meta.text}
+                                  className={`flex h-9 w-9 items-center justify-center rounded-md border ${meta.cls} ${unsaved ? "border-dashed opacity-60" : ""}`}
+                                >
+                                  <Icon className="h-4 w-4" aria-hidden="true" />
+                                </button>
+                              </td>
+                            );
+                          });
                         })}
                       </tr>
                     );
@@ -376,8 +339,8 @@ function DayTracking() {
                 </tbody>
               </table>
             </div>
-          )}
-        </section>
+          </section>
+        )}
       </div>
 
       {/* פס שמירה */}
@@ -402,6 +365,15 @@ function DayTracking() {
           student={eventFor}
           day={day}
           onClose={() => setEventFor(null)}
+        />
+      )}
+      {fileFor && (
+        <StudentFileSheet
+          open
+          onOpenChange={(o) => { if (!o) setFileFor(null); }}
+          classId={classId}
+          studentId={fileFor.id}
+          studentName={fileFor.name}
         />
       )}
     </div>
