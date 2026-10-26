@@ -125,14 +125,14 @@
   "overrides": {
     "js-yaml": "^4.3.0",
     "seroval": "^1.6.12",
-    "dompurify": "^3.4.12",
+    "dompurify": "^3.4.17",
     "undici": "8.10.0",
     "**/undici": "8.10.0"
   },
   "resolutions": {
     "js-yaml": "^4.3.0",
     "seroval": "^1.6.12",
-    "dompurify": "^3.4.12",
+    "dompurify": "^3.4.17",
     "undici": "8.10.0",
     "**/undici": "8.10.0"
   }
