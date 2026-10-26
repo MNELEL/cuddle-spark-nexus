@@ -101,6 +101,7 @@ import { Route as AuthenticatedStudentViewClassIdRouteImport } from './routes/_a
 import { Route as AuthenticatedWeeklyScheduleClassIdRouteImport } from './routes/_authenticated.weekly-schedule.$classId'
 import { Route as BlogClassroomManagementStrategiesIndexRouteImport } from './routes/blog.classroom-management-strategies.index'
 import { Route as BlogClassroomManagementStrategiesChecklistRouteImport } from './routes/blog.classroom-management-strategies.checklist'
+import { Route as AuthenticatedClassesClassIdDayRouteImport } from './routes/_authenticated.classes.$classId.day'
 import { Route as AuthenticatedClassesClassIdDisplayRouteImport } from './routes/_authenticated.classes.$classId.display'
 
 const IndexRoute = IndexRouteImport.update({
@@ -611,6 +612,12 @@ const BlogClassroomManagementStrategiesChecklistRoute =
     path: '/checklist',
     getParentRoute: () => BlogClassroomManagementStrategiesRoute,
   } as any)
+const AuthenticatedClassesClassIdDayRoute =
+  AuthenticatedClassesClassIdDayRouteImport.update({
+    id: '/day',
+    path: '/day',
+    getParentRoute: () => AuthenticatedClassesClassIdRoute,
+  } as any)
 const AuthenticatedClassesClassIdDisplayRoute =
   AuthenticatedClassesClassIdDisplayRouteImport.update({
     id: '/display',
@@ -710,6 +717,7 @@ export interface FileRoutesByFullPath {
   '/resources/': typeof AuthenticatedResourcesIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/blog/classroom-management-strategies/': typeof BlogClassroomManagementStrategiesIndexRoute
+  '/classes/$classId/day': typeof AuthenticatedClassesClassIdDayRoute
   '/classes/$classId/display': typeof AuthenticatedClassesClassIdDisplayRoute
 }
 export interface FileRoutesByTo {
@@ -799,6 +807,7 @@ export interface FileRoutesByTo {
   '/resources': typeof AuthenticatedResourcesIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/blog/classroom-management-strategies': typeof BlogClassroomManagementStrategiesIndexRoute
+  '/classes/$classId/day': typeof AuthenticatedClassesClassIdDayRoute
   '/classes/$classId/display': typeof AuthenticatedClassesClassIdDisplayRoute
 }
 export interface FileRoutesById {
@@ -895,6 +904,7 @@ export interface FileRoutesById {
   '/_authenticated/resources/': typeof AuthenticatedResourcesIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/blog/classroom-management-strategies/': typeof BlogClassroomManagementStrategiesIndexRoute
+  '/_authenticated/classes/$classId/day': typeof AuthenticatedClassesClassIdDayRoute
   '/_authenticated/classes/$classId/display': typeof AuthenticatedClassesClassIdDisplayRoute
 }
 export interface FileRouteTypes {
@@ -991,6 +1001,7 @@ export interface FileRouteTypes {
     | '/resources/'
     | '/settings/'
     | '/blog/classroom-management-strategies/'
+    | '/classes/$classId/day'
     | '/classes/$classId/display'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -1080,6 +1091,7 @@ export interface FileRouteTypes {
     | '/resources'
     | '/settings'
     | '/blog/classroom-management-strategies'
+    | '/classes/$classId/day'
     | '/classes/$classId/display'
   id:
     | '__root__'
@@ -1175,6 +1187,7 @@ export interface FileRouteTypes {
     | '/_authenticated/resources/'
     | '/_authenticated/settings/'
     | '/blog/classroom-management-strategies/'
+    | '/_authenticated/classes/$classId/day'
     | '/_authenticated/classes/$classId/display'
   fileRoutesById: FileRoutesById
 }
@@ -1850,6 +1863,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogClassroomManagementStrategiesChecklistRouteImport
       parentRoute: typeof BlogClassroomManagementStrategiesRoute
     }
+    '/_authenticated/classes/$classId/day': {
+      id: '/_authenticated/classes/$classId/day'
+      path: '/day'
+      fullPath: '/classes/$classId/day'
+      preLoaderRoute: typeof AuthenticatedClassesClassIdDayRouteImport
+      parentRoute: typeof AuthenticatedClassesClassIdRoute
+    }
     '/_authenticated/classes/$classId/display': {
       id: '/_authenticated/classes/$classId/display'
       path: '/display'
@@ -1861,11 +1881,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedClassesClassIdRouteChildren {
+  AuthenticatedClassesClassIdDayRoute: typeof AuthenticatedClassesClassIdDayRoute
   AuthenticatedClassesClassIdDisplayRoute: typeof AuthenticatedClassesClassIdDisplayRoute
 }
 
 const AuthenticatedClassesClassIdRouteChildren: AuthenticatedClassesClassIdRouteChildren =
   {
+    AuthenticatedClassesClassIdDayRoute: AuthenticatedClassesClassIdDayRoute,
     AuthenticatedClassesClassIdDisplayRoute:
       AuthenticatedClassesClassIdDisplayRoute,
   }

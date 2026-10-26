@@ -619,6 +619,44 @@ export type Database = {
           },
         ]
       }
+      class_day_slots: {
+        Row: {
+          active: boolean
+          class_id: string
+          created_at: string
+          id: string
+          label: string
+          order_index: number
+          rated: boolean
+        }
+        Insert: {
+          active?: boolean
+          class_id: string
+          created_at?: string
+          id?: string
+          label: string
+          order_index?: number
+          rated?: boolean
+        }
+        Update: {
+          active?: boolean
+          class_id?: string
+          created_at?: string
+          id?: string
+          label?: string
+          order_index?: number
+          rated?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_day_slots_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       class_duty_assignments: {
         Row: {
           class_id: string
@@ -1258,6 +1296,51 @@ export type Database = {
           },
           {
             foreignKeyName: "daily_log_approvals_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daily_student_events: {
+        Row: {
+          class_id: string
+          created_at: string
+          date: string
+          id: string
+          kind: string
+          note: string | null
+          student_id: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          date: string
+          id?: string
+          kind: string
+          note?: string | null
+          student_id: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          date?: string
+          id?: string
+          kind?: string
+          note?: string | null
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_student_events_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_student_events_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "students"
@@ -2704,6 +2787,70 @@ export type Database = {
           },
         ]
       }
+      session_ratings: {
+        Row: {
+          behavior: number
+          class_id: string
+          created_at: string
+          date: string
+          id: string
+          listening: number
+          readiness: number
+          slot_id: string
+          student_id: string
+          updated_at: string
+          work_done: number
+        }
+        Insert: {
+          behavior?: number
+          class_id: string
+          created_at?: string
+          date: string
+          id?: string
+          listening?: number
+          readiness?: number
+          slot_id: string
+          student_id: string
+          updated_at?: string
+          work_done?: number
+        }
+        Update: {
+          behavior?: number
+          class_id?: string
+          created_at?: string
+          date?: string
+          id?: string
+          listening?: number
+          readiness?: number
+          slot_id?: string
+          student_id?: string
+          updated_at?: string
+          work_done?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_ratings_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_ratings_slot_id_fkey"
+            columns: ["slot_id"]
+            isOneToOne: false
+            referencedRelation: "class_day_slots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_ratings_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sound_preferences: {
         Row: {
           created_at: string
@@ -3612,6 +3759,41 @@ export type Database = {
         }
         Relationships: []
       }
+      weekly_class_settings: {
+        Row: {
+          class_id: string
+          created_at: string
+          id: string
+          signature_subject: string | null
+          updated_at: string
+          week_start: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          id?: string
+          signature_subject?: string | null
+          updated_at?: string
+          week_start: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          id?: string
+          signature_subject?: string | null
+          updated_at?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekly_class_settings_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       weekly_lessons: {
         Row: {
           class_id: string
@@ -3674,6 +3856,57 @@ export type Database = {
             columns: ["library_item_id"]
             isOneToOne: false
             referencedRelation: "teaching_resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      weekly_student_records: {
+        Row: {
+          class_id: string
+          created_at: string
+          dvar_torah_delivered: boolean
+          id: string
+          note: string | null
+          parent_signed: boolean
+          student_id: string
+          updated_at: string
+          week_start: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          dvar_torah_delivered?: boolean
+          id?: string
+          note?: string | null
+          parent_signed?: boolean
+          student_id: string
+          updated_at?: string
+          week_start: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          dvar_torah_delivered?: boolean
+          id?: string
+          note?: string | null
+          parent_signed?: boolean
+          student_id?: string
+          updated_at?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekly_student_records_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "weekly_student_records_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
             referencedColumns: ["id"]
           },
         ]
