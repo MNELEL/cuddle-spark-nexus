@@ -6,7 +6,9 @@ import { advisorInput, interventionPlan, sugyaInput, sugyaResult } from "./claud
 const BLOCK_SOURCE = "claude-tools-access-block";
 async function generate(context: { supabase: any; userId: string }, key: string | undefined, system: string, input: unknown) {
   if (!key) throw new Error("שירות Claude אינו מוגדר כרגע.");
-  const { data: blocked, error: readError } = await context.supabase.from("app_logs").select("message").eq("user_id", context.userId).eq("source", BLOCK_SOURCE).limit(1);
+  // The authenticated handler has authorized the caller; diagnostic logs are service-only.
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: blocked, error: readError } = await supabaseAdmin.from("app_logs").select("message").eq("source", BLOCK_SOURCE).limit(1);
   if (readError) throw new Error("לא ניתן לבדוק את זמינות שירות Claude.");
   if (blocked?.length) throw new Error(blocked[0].message);
   const { runClaude } = await import("./claude-tools.server");
@@ -16,10 +18,12 @@ async function generate(context: { supabase: any; userId: string }, key: string 
     const provider = error && typeof error === "object" && "error" in error ? error.error as any : null;
     const message = provider?.error?.message ?? provider?.message ?? (error instanceof Error ? error.message : "הבקשה נכשלה.");
     if (status === 402 || status === 403) {
-      const { error: writeError } = await context.supabase.from("app_logs").insert({ user_id: context.userId, source: BLOCK_SOURCE, level: "warn", message });
+      const { error: writeError } = await supabaseAdmin.from("app_logs").insert({ user_id: context.userId, source: BLOCK_SOURCE, level: "warn", message });
       if (writeError) throw new Error("השירות חסום ולא ניתן לשמור את מצב החסימה.");
     }
-    throw new Error(message);
+    const failure = new Error(message);
+    if (status) Object.assign(failure, { statusCode: status });
+    throw failure;
   }
 }
 
