@@ -13,7 +13,9 @@ export const suggestPollQuestion = createServerFn({ method: "POST" })
       className: z.string().max(100).optional(),
     }).parse(d),
   )
-  .handler(async ({ data }): Promise<PollSuggestion> => {
+  .handler(async ({ data, context }): Promise<PollSuggestion> => {
+    const { requireActiveAITrial } = await import("./ai-entitlement.server");
+    await requireActiveAITrial(context.supabase, context.userId);
     const topicLine = data.topic ? `נושא: ${data.topic}.` : "בחר נושא מעניין לדיון כיתתי.";
     const classLine = data.className ? `שם הכיתה: ${data.className}.` : "";
 

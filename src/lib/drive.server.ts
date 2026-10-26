@@ -4,6 +4,8 @@
  * בתוך ה-handler, לעולם לא נחשפות לדפדפן.
  */
 
+import { ACCEPT_LIBRARY_ALL, MAX_LIBRARY_UPLOAD_MB, validateUploadFile } from "./upload-accept";
+
 export type DriveFile = {
   id: string;
   name: string;
@@ -113,12 +115,24 @@ export async function driveListFolder(folderId: string): Promise<DriveFolderList
 /** הורדת תוכן קובץ (או ייצוא של מסמך Google) — מחזיר את הבייטים + שם + MIME. */
 export async function driveDownloadFile(f: DriveFile): Promise<{ bytes: ArrayBuffer; name: string; mime: string }> {
   const gw = openGateway();
+  // Resolve metadata from Drive, never trust caller-provided MIME, size or filename.
+  const metadata = await fetch(`${gw.base}/files/${encodeURIComponent(f.id)}?fields=id,name,mimeType,size`, {
+    method: "GET", headers: gw.headers,
+  });
+  if (!metadata.ok) throw new Error("טעינת פרטי הקובץ מ-Google Drive נכשלה.");
+  f = await metadata.json() as DriveFile;
+  const maxBytes = MAX_LIBRARY_UPLOAD_MB * 1024 * 1024;
+  if (f.size && Number(f.size) > maxBytes) throw new Error(`הקובץ גדול מ-${MAX_LIBRARY_UPLOAD_MB}MB.`);
+  const mime = driveFileMime(f);
+  const name = driveFileName(f);
+  const typeCheck = validateUploadFile(new File(["x"], name, { type: mime }), ACCEPT_LIBRARY_ALL, MAX_LIBRARY_UPLOAD_MB);
+  if (!typeCheck.ok) throw new Error(typeCheck.message);
   const target = GOOGLE_EXPORT[f.mimeType];
   let url: string;
   if (target) {
-    url = `${gw.base}/files/${f.id}/export?mimeType=${encodeURIComponent(target.mime)}`;
+    url = `${gw.base}/files/${encodeURIComponent(f.id)}/export?mimeType=${encodeURIComponent(target.mime)}`;
   } else {
-    url = `${gw.base}/files/${f.id}?alt=media`;
+    url = `${gw.base}/files/${encodeURIComponent(f.id)}?alt=media`;
   }
   const res = await fetch(url, { method: "GET", headers: gw.headers });
   if (!res.ok) {
@@ -126,9 +140,34 @@ export async function driveDownloadFile(f: DriveFile): Promise<{ bytes: ArrayBuf
     console.error(`[Drive download ${res.status}]`, text);
     throw new Error(`הורדת "${f.name}" מ-Google Drive נכשלה.`);
   }
-  return {
-    bytes: await res.arrayBuffer(),
-    name: driveFileName(f),
-    mime: driveFileMime(f),
-  };
+  return { bytes: await readDriveBytes(res, maxBytes), name, mime };
+}
+
+/** Limit actual bytes as they arrive, including responses without Content-Length. */
+export async function readDriveBytes(res: Response, maxBytes: number): Promise<ArrayBuffer> {
+  if (Number(res.headers.get("content-length")) > maxBytes) {
+    await res.body?.cancel();
+    throw new Error("הקובץ גדול מהמגבלה המותרת בספרייה.");
+  }
+  if (!res.body) throw new Error("הקובץ ריק.");
+  const reader = res.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > maxBytes) {
+        await reader.cancel();
+        throw new Error("הקובץ גדול מהמגבלה המותרת בספרייה.");
+      }
+      chunks.push(value);
+    }
+  } finally { reader.releaseLock(); }
+  if (!size) throw new Error("הקובץ ריק.");
+  const bytes = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+  return bytes.buffer;
 }

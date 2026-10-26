@@ -132,8 +132,7 @@ async function sendReminderDigestEmail(digest: TeacherDigest): Promise<boolean> 
     if (error) {
       console.error("[reminder-alerts] Resend returned an error:", {
         ownerId: digest.ownerId,
-        email: digest.email,
-        error,
+        failure: "email_provider_error",
       });
       return false;
     }
@@ -141,8 +140,7 @@ async function sendReminderDigestEmail(digest: TeacherDigest): Promise<boolean> 
   } catch (err) {
     console.error("[reminder-alerts] Unexpected error sending digest via Resend:", {
       ownerId: digest.ownerId,
-      email: digest.email,
-      error: err instanceof Error ? err.message : String(err),
+      failure: "email_send_failed",
     });
     return false;
   }

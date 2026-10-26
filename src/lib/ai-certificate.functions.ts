@@ -36,7 +36,9 @@ const inputSchema = z.object({
 export const analyzeCertificatePhoto = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => inputSchema.parse(d))
-  .handler(async ({ data }): Promise<CertOcrResult> => {
+  .handler(async ({ data, context }): Promise<CertOcrResult> => {
+    const { requireActiveAITrial } = await import("./ai-entitlement.server");
+    await requireActiveAITrial(context.supabase, context.userId);
     const system = `אתה מזהה תעודות מודפסות של תלמידי תלמוד תורה / ישיבות / בתי ספר בעברית.
 חלץ בקפדנות: שם התלמיד, שם הכיתה, שם המוסד, תקופה, ומקצועות עם הערכה מילולית או אחוז.
 התאם הערכה מילולית ל־6 התוויות: "מצוין", "טוב מאוד", "כמעט טוב מאוד", "טוב", "כמעט טוב", "להשתדל יותר".
