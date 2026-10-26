@@ -90,6 +90,7 @@ import { Route as AuthenticatedResourcesIndexRouteImport } from './routes/_authe
 import { Route as AuthenticatedResourcesResourceIdRouteImport } from './routes/_authenticated.resources.$resourceId'
 import { Route as AuthenticatedResourcesGenerateRouteImport } from './routes/_authenticated.resources.generate'
 import { Route as AuthenticatedResourcesUploadLogRouteImport } from './routes/_authenticated.resources.upload-log'
+import { Route as AuthenticatedSchoolIndexRouteImport } from './routes/_authenticated.school.index'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated.settings.index'
 import { Route as AuthenticatedSettingsSplatRouteImport } from './routes/_authenticated.settings.$'
 import { Route as AuthenticatedSettingsBrandRouteImport } from './routes/_authenticated.settings.brand'
@@ -99,8 +100,9 @@ import { Route as AuthenticatedStudentViewClassIdRouteImport } from './routes/_a
 import { Route as AuthenticatedWeeklyScheduleClassIdRouteImport } from './routes/_authenticated.weekly-schedule.$classId'
 import { Route as BlogClassroomManagementStrategiesIndexRouteImport } from './routes/blog.classroom-management-strategies.index'
 import { Route as BlogClassroomManagementStrategiesChecklistRouteImport } from './routes/blog.classroom-management-strategies.checklist'
-import { Route as AuthenticatedClassesClassIdDayRouteImport } from './routes/_authenticated.classes.$classId.day'
 import { Route as AuthenticatedClassesClassIdDisplayRouteImport } from './routes/_authenticated.classes.$classId.display'
+import { Route as AuthenticatedClassesClassIdDayRouteImport } from './routes/_authenticated.classes.$classId_.day'
+import { Route as AuthenticatedSchoolTeacherUserIdRouteImport } from './routes/_authenticated.school.teacher.$userId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -544,6 +546,12 @@ const AuthenticatedResourcesUploadLogRoute =
     path: '/resources/upload-log',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedSchoolIndexRoute =
+  AuthenticatedSchoolIndexRouteImport.update({
+    id: '/school/',
+    path: '/school/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedSettingsIndexRoute =
   AuthenticatedSettingsIndexRouteImport.update({
     id: '/settings/',
@@ -598,17 +606,23 @@ const BlogClassroomManagementStrategiesChecklistRoute =
     path: '/checklist',
     getParentRoute: () => BlogClassroomManagementStrategiesRoute,
   } as any)
-const AuthenticatedClassesClassIdDayRoute =
-  AuthenticatedClassesClassIdDayRouteImport.update({
-    id: '/day',
-    path: '/day',
-    getParentRoute: () => AuthenticatedClassesClassIdRoute,
-  } as any)
 const AuthenticatedClassesClassIdDisplayRoute =
   AuthenticatedClassesClassIdDisplayRouteImport.update({
     id: '/display',
     path: '/display',
     getParentRoute: () => AuthenticatedClassesClassIdRoute,
+  } as any)
+const AuthenticatedClassesClassIdDayRoute =
+  AuthenticatedClassesClassIdDayRouteImport.update({
+    id: '/classes/$classId_/day',
+    path: '/classes/$classId/day',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedSchoolTeacherUserIdRoute =
+  AuthenticatedSchoolTeacherUserIdRouteImport.update({
+    id: '/school/teacher/$userId',
+    path: '/school/teacher/$userId',
+    getParentRoute: () => AuthenticatedRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -699,10 +713,12 @@ export interface FileRoutesByFullPath {
   '/blog/classroom-management-strategies/checklist': typeof BlogClassroomManagementStrategiesChecklistRoute
   '/classes/': typeof AuthenticatedClassesIndexRoute
   '/resources/': typeof AuthenticatedResourcesIndexRoute
+  '/school/': typeof AuthenticatedSchoolIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/blog/classroom-management-strategies/': typeof BlogClassroomManagementStrategiesIndexRoute
-  '/classes/$classId/day': typeof AuthenticatedClassesClassIdDayRoute
   '/classes/$classId/display': typeof AuthenticatedClassesClassIdDisplayRoute
+  '/classes/$classId/day': typeof AuthenticatedClassesClassIdDayRoute
+  '/school/teacher/$userId': typeof AuthenticatedSchoolTeacherUserIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -787,10 +803,12 @@ export interface FileRoutesByTo {
   '/blog/classroom-management-strategies/checklist': typeof BlogClassroomManagementStrategiesChecklistRoute
   '/classes': typeof AuthenticatedClassesIndexRoute
   '/resources': typeof AuthenticatedResourcesIndexRoute
+  '/school': typeof AuthenticatedSchoolIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/blog/classroom-management-strategies': typeof BlogClassroomManagementStrategiesIndexRoute
-  '/classes/$classId/day': typeof AuthenticatedClassesClassIdDayRoute
   '/classes/$classId/display': typeof AuthenticatedClassesClassIdDisplayRoute
+  '/classes/$classId/day': typeof AuthenticatedClassesClassIdDayRoute
+  '/school/teacher/$userId': typeof AuthenticatedSchoolTeacherUserIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -882,10 +900,12 @@ export interface FileRoutesById {
   '/blog/classroom-management-strategies/checklist': typeof BlogClassroomManagementStrategiesChecklistRoute
   '/_authenticated/classes/': typeof AuthenticatedClassesIndexRoute
   '/_authenticated/resources/': typeof AuthenticatedResourcesIndexRoute
+  '/_authenticated/school/': typeof AuthenticatedSchoolIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/blog/classroom-management-strategies/': typeof BlogClassroomManagementStrategiesIndexRoute
-  '/_authenticated/classes/$classId/day': typeof AuthenticatedClassesClassIdDayRoute
   '/_authenticated/classes/$classId/display': typeof AuthenticatedClassesClassIdDisplayRoute
+  '/_authenticated/classes/$classId_/day': typeof AuthenticatedClassesClassIdDayRoute
+  '/_authenticated/school/teacher/$userId': typeof AuthenticatedSchoolTeacherUserIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -977,10 +997,12 @@ export interface FileRouteTypes {
     | '/blog/classroom-management-strategies/checklist'
     | '/classes/'
     | '/resources/'
+    | '/school/'
     | '/settings/'
     | '/blog/classroom-management-strategies/'
-    | '/classes/$classId/day'
     | '/classes/$classId/display'
+    | '/classes/$classId/day'
+    | '/school/teacher/$userId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1065,10 +1087,12 @@ export interface FileRouteTypes {
     | '/blog/classroom-management-strategies/checklist'
     | '/classes'
     | '/resources'
+    | '/school'
     | '/settings'
     | '/blog/classroom-management-strategies'
-    | '/classes/$classId/day'
     | '/classes/$classId/display'
+    | '/classes/$classId/day'
+    | '/school/teacher/$userId'
   id:
     | '__root__'
     | '/'
@@ -1159,10 +1183,12 @@ export interface FileRouteTypes {
     | '/blog/classroom-management-strategies/checklist'
     | '/_authenticated/classes/'
     | '/_authenticated/resources/'
+    | '/_authenticated/school/'
     | '/_authenticated/settings/'
     | '/blog/classroom-management-strategies/'
-    | '/_authenticated/classes/$classId/day'
     | '/_authenticated/classes/$classId/display'
+    | '/_authenticated/classes/$classId_/day'
+    | '/_authenticated/school/teacher/$userId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1758,6 +1784,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedResourcesUploadLogRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/school/': {
+      id: '/_authenticated/school/'
+      path: '/school'
+      fullPath: '/school/'
+      preLoaderRoute: typeof AuthenticatedSchoolIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/settings/': {
       id: '/_authenticated/settings/'
       path: '/settings'
@@ -1821,13 +1854,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogClassroomManagementStrategiesChecklistRouteImport
       parentRoute: typeof BlogClassroomManagementStrategiesRoute
     }
-    '/_authenticated/classes/$classId/day': {
-      id: '/_authenticated/classes/$classId/day'
-      path: '/day'
-      fullPath: '/classes/$classId/day'
-      preLoaderRoute: typeof AuthenticatedClassesClassIdDayRouteImport
-      parentRoute: typeof AuthenticatedClassesClassIdRoute
-    }
     '/_authenticated/classes/$classId/display': {
       id: '/_authenticated/classes/$classId/display'
       path: '/display'
@@ -1835,17 +1861,29 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClassesClassIdDisplayRouteImport
       parentRoute: typeof AuthenticatedClassesClassIdRoute
     }
+    '/_authenticated/classes/$classId_/day': {
+      id: '/_authenticated/classes/$classId_/day'
+      path: '/classes/$classId/day'
+      fullPath: '/classes/$classId/day'
+      preLoaderRoute: typeof AuthenticatedClassesClassIdDayRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/school/teacher/$userId': {
+      id: '/_authenticated/school/teacher/$userId'
+      path: '/school/teacher/$userId'
+      fullPath: '/school/teacher/$userId'
+      preLoaderRoute: typeof AuthenticatedSchoolTeacherUserIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
 interface AuthenticatedClassesClassIdRouteChildren {
-  AuthenticatedClassesClassIdDayRoute: typeof AuthenticatedClassesClassIdDayRoute
   AuthenticatedClassesClassIdDisplayRoute: typeof AuthenticatedClassesClassIdDisplayRoute
 }
 
 const AuthenticatedClassesClassIdRouteChildren: AuthenticatedClassesClassIdRouteChildren =
   {
-    AuthenticatedClassesClassIdDayRoute: AuthenticatedClassesClassIdDayRoute,
     AuthenticatedClassesClassIdDisplayRoute:
       AuthenticatedClassesClassIdDisplayRoute,
   }
@@ -1901,7 +1939,10 @@ interface AuthenticatedRouteChildren {
   AuthenticatedWeeklyScheduleClassIdRoute: typeof AuthenticatedWeeklyScheduleClassIdRoute
   AuthenticatedClassesIndexRoute: typeof AuthenticatedClassesIndexRoute
   AuthenticatedResourcesIndexRoute: typeof AuthenticatedResourcesIndexRoute
+  AuthenticatedSchoolIndexRoute: typeof AuthenticatedSchoolIndexRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
+  AuthenticatedClassesClassIdDayRoute: typeof AuthenticatedClassesClassIdDayRoute
+  AuthenticatedSchoolTeacherUserIdRoute: typeof AuthenticatedSchoolTeacherUserIdRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -1953,7 +1994,10 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedWeeklyScheduleClassIdRoute,
   AuthenticatedClassesIndexRoute: AuthenticatedClassesIndexRoute,
   AuthenticatedResourcesIndexRoute: AuthenticatedResourcesIndexRoute,
+  AuthenticatedSchoolIndexRoute: AuthenticatedSchoolIndexRoute,
   AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
+  AuthenticatedClassesClassIdDayRoute: AuthenticatedClassesClassIdDayRoute,
+  AuthenticatedSchoolTeacherUserIdRoute: AuthenticatedSchoolTeacherUserIdRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
@@ -2092,13 +2136,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
