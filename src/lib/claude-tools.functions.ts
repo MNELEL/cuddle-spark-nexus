@@ -5,6 +5,13 @@ import { advisorInput, interventionPlan, sugyaInput, sugyaResult } from "./claud
 import { hebrewDate } from "./hebrew-date";
 
 const BLOCK_SOURCE = "claude-tools-access-block";
+const objectSchema = (properties: Record<string, unknown>) => ({ type: "object", properties, required: Object.keys(properties), additionalProperties: false });
+const stringSchema = { type: "string" };
+const outputSchemas = {
+  sugya: objectSchema({ title: stringSchema, introduction: stringSchema, discussion: { type: "array", items: stringSchema }, nextLesson: stringSchema, sourceCaution: stringSchema }),
+  advisor: objectSchema({ summary: stringSchema, steps: { type: "array", items: objectSchema({ title: stringSchema, action: stringSchema, success: stringSchema }) } }),
+  letter: objectSchema({ subject: stringSchema, body: stringSchema }),
+};
 async function generate(context: { supabase: any; userId: string }, key: string | undefined, system: string, input: unknown) {
   if (!key) throw new Error("שירות Claude אינו מוגדר כרגע.");
   // The authenticated handler has authorized the caller; diagnostic logs are service-only.
@@ -13,7 +20,8 @@ async function generate(context: { supabase: any; userId: string }, key: string 
   if (readError) throw new Error("לא ניתן לבדוק את זמינות שירות Claude.");
   if (blocked?.length) throw new Error(blocked[0].message);
   const { runClaude } = await import("./claude-tools.server");
-  try { return await runClaude(key, system, input); }
+  const schema = input && typeof input === "object" && "studentName" in input ? outputSchemas.letter : input && typeof input === "object" && "dilemma" in input ? outputSchemas.advisor : outputSchemas.sugya;
+  try { return await runClaude(key, system, input, schema); }
   catch (error) {
     const status = error && typeof error === "object" && "status" in error ? Number(error.status) : 0;
     const provider = error && typeof error === "object" && "error" in error ? error.error as any : null;
