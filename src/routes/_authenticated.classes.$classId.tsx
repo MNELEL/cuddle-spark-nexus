@@ -296,24 +296,24 @@ function ClassDetail() {
   };
   const { date: anchorDate } = useHebrewAnchor();
   const setTab = (t: string) =>
-    void navigate({ search: (prev) => ({ ...prev, tab: t }), replace: true });
+    void navigate({ search: (prev: ClassSearch) => ({ ...prev, tab: t }), replace: true });
   const query = search.q ?? "";
   const searchField: SearchField = (search.field && search.field in SEARCH_FIELDS)
     ? (search.field as SearchField)
     : "full_name";
   const setQuery = (q: string) =>
     // כל שינוי בסינון מאפס את הדף כדי שהמצב בכתובת יישאר מדויק
-    void navigate({ search: (prev) => ({ ...prev, q: q || undefined, page: undefined }), replace: true });
+    void navigate({ search: (prev: ClassSearch) => ({ ...prev, q: q || undefined, page: undefined }), replace: true });
   const setSearchField = (f: SearchField) =>
-    void navigate({ search: (prev) => ({ ...prev, field: f === "full_name" ? undefined : f, page: undefined }), replace: true });
+    void navigate({ search: (prev: ClassSearch) => ({ ...prev, field: f === "full_name" ? undefined : f, page: undefined }), replace: true });
   const sortKey: SortKey = (search.sort && search.sort in SORT_OPTIONS)
     ? (search.sort as SortKey)
     : "first_name";
   const setSortKey = (k: SortKey) =>
-    void navigate({ search: (prev) => ({ ...prev, sort: k === "first_name" ? undefined : k, page: undefined }), replace: true });
+    void navigate({ search: (prev: ClassSearch) => ({ ...prev, sort: k === "first_name" ? undefined : k, page: undefined }), replace: true });
   const page = Math.max(1, search.page ?? 1);
   const setPage = (p: number) =>
-    void navigate({ search: (prev) => ({ ...prev, page: p > 1 ? p : undefined }), replace: true });
+    void navigate({ search: (prev: ClassSearch) => ({ ...prev, page: p > 1 ? p : undefined }), replace: true });
   useEffect(() => { if (validClass) recordClassVisit(classId); }, [classId, validClass]);
   const getC = useServerFn(getClass);
   const listS = useServerFn(listStudents);
