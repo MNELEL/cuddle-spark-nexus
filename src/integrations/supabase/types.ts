@@ -152,6 +152,111 @@ export type Database = {
         }
         Relationships: []
       }
+      assistant_memory: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          kind: string
+          source_thread_id: string | null
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          kind?: string
+          source_thread_id?: string | null
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          source_thread_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assistant_memory_source_thread_id_fkey"
+            columns: ["source_thread_id"]
+            isOneToOne: false
+            referencedRelation: "assistant_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assistant_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          role: string
+          thread_id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          role: string
+          thread_id: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          role?: string
+          thread_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assistant_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "assistant_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assistant_threads: {
+        Row: {
+          class_id: string | null
+          created_at: string
+          id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          class_id?: string | null
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          class_id?: string | null
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assistant_threads_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attendance: {
         Row: {
           class_id: string
@@ -629,6 +734,7 @@ export type Database = {
           label: string
           order_index: number
           rated: boolean
+          subject: string | null
         }
         Insert: {
           active?: boolean
@@ -639,6 +745,7 @@ export type Database = {
           label: string
           order_index?: number
           rated?: boolean
+          subject?: string | null
         }
         Update: {
           active?: boolean
@@ -649,6 +756,7 @@ export type Database = {
           label?: string
           order_index?: number
           rated?: boolean
+          subject?: string | null
         }
         Relationships: [
           {
@@ -1909,6 +2017,62 @@ export type Database = {
           },
         ]
       }
+      pacing_plan_weeks: {
+        Row: {
+          amount: number
+          class_id: string
+          created_at: string
+          edited: boolean
+          from_label: string | null
+          id: string
+          lessons: number
+          status: string
+          subject: string
+          to_label: string | null
+          topics: string | null
+          updated_at: string
+          week_start: string
+        }
+        Insert: {
+          amount?: number
+          class_id: string
+          created_at?: string
+          edited?: boolean
+          from_label?: string | null
+          id?: string
+          lessons?: number
+          status?: string
+          subject: string
+          to_label?: string | null
+          topics?: string | null
+          updated_at?: string
+          week_start: string
+        }
+        Update: {
+          amount?: number
+          class_id?: string
+          created_at?: string
+          edited?: boolean
+          from_label?: string | null
+          id?: string
+          lessons?: number
+          status?: string
+          subject?: string
+          to_label?: string | null
+          topics?: string | null
+          updated_at?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pacing_plan_weeks_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pacing_recalc_log: {
         Row: {
           ai_recommendation: string | null
@@ -1944,6 +2108,53 @@ export type Database = {
           units_behind_count?: number | null
         }
         Relationships: []
+      }
+      pacing_subject_plans: {
+        Row: {
+          class_id: string
+          created_at: string
+          id: string
+          mode: string
+          start_number: number
+          subject: string
+          topics: Json
+          total_amount: number | null
+          unit_label: string
+          updated_at: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          id?: string
+          mode?: string
+          start_number?: number
+          subject: string
+          topics?: Json
+          total_amount?: number | null
+          unit_label?: string
+          updated_at?: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          id?: string
+          mode?: string
+          start_number?: number
+          subject?: string
+          topics?: Json
+          total_amount?: number | null
+          unit_label?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pacing_subject_plans_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       parent_communications: {
         Row: {
@@ -3802,6 +4013,51 @@ export type Database = {
             columns: ["class_id"]
             isOneToOne: false
             referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      weekly_honors: {
+        Row: {
+          class_id: string
+          created_at: string
+          id: string
+          kind: string
+          note: string | null
+          student_id: string
+          week_start: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          id?: string
+          kind: string
+          note?: string | null
+          student_id: string
+          week_start: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          note?: string | null
+          student_id?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekly_honors_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "weekly_honors_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
             referencedColumns: ["id"]
           },
         ]
