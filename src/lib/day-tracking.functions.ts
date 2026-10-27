@@ -38,18 +38,23 @@ export const CRITERION_LISTENING: DayCriterion = { key: "listening", label: "ה�
 export const CRITERION_BEHAVIOR: DayCriterion = { key: "behavior", label: "התנהגות" };
 export const CRITERION_WORK: DayCriterion = { key: "work_done", label: "עבודות" };
 export const CRITERION_PRAYER: DayCriterion = { key: "prayer", label: "תפילה" };
-const LESSON_CRITERIA = [CRITERION_READINESS, CRITERION_LISTENING, CRITERION_BEHAVIOR, CRITERION_WORK];
+/** עמודה בלי קטגוריות היא עמודה אחת עם ציון כולל, שנשמר תחת המפתח הזה. */
+export const OVERALL_KEY = "overall";
 
-/** סדר היום ההתחלתי. נוצר פעם אחת לכל כיתה, ואפשר לשנות אותו (שעות וקריטריונים) מתוך המסך. */
+/**
+ * סדר היום ההתחלתי. נוצר פעם אחת לכל כיתה, ואפשר לשנות אותו מתוך המסך.
+ * ברירת המחדל לשעה: ציון אחד (טוב, בינוני, חלש) בלי קטגוריות. פיצול לקטגוריות נעשה ב"עריכת עמודות".
+ * תפילה: התנהגות ותפילה, לפי בקשת המשתמש.
+ */
 const DEFAULT_SLOTS: { label: string; rated: boolean; criteria: DayCriterion[] }[] = [
   { label: "נוכחות", rated: false, criteria: [] },
   { label: "תפילה", rated: true, criteria: [CRITERION_BEHAVIOR, CRITERION_PRAYER] },
-  { label: "שיעור 1", rated: true, criteria: LESSON_CRITERIA },
+  { label: "שיעור 1", rated: true, criteria: [] },
   { label: "ארוחת בוקר", rated: false, criteria: [] },
-  { label: "שיעור 2", rated: true, criteria: LESSON_CRITERIA },
+  { label: "שיעור 2", rated: true, criteria: [] },
   { label: "ארוחת צהריים", rated: false, criteria: [] },
-  { label: "שיעור 3", rated: true, criteria: LESSON_CRITERIA },
-  { label: "שיעור הרמת כיסא", rated: true, criteria: LESSON_CRITERIA },
+  { label: "שיעור 3", rated: true, criteria: [] },
+  { label: "שיעור הרמת כיסא", rated: true, criteria: [] },
 ];
 
 async function ownedClass(supabase: any, classId: string, userId: string) {
@@ -197,7 +202,9 @@ export const saveDayRatings = createServerFn({ method: "POST" })
     const studentIds = new Set((stu.data ?? []).map((s: any) => s.id as string));
     const keysBySlot = new Map<string, Set<string>>();
     for (const sl of (slt.data ?? []) as any[]) {
-      keysBySlot.set(sl.id as string, new Set(((sl.criteria ?? []) as DayCriterion[]).map((c) => c.key)));
+      const crit = ((sl.criteria ?? []) as DayCriterion[]).map((c) => c.key);
+      // שעה בלי קטגוריות: מותר רק הציון הכולל
+      keysBySlot.set(sl.id as string, new Set(crit.length ? crit : [OVERALL_KEY]));
     }
     for (const r of data.rows) {
       const allowed = keysBySlot.get(r.slotId);

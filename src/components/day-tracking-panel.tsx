@@ -2,12 +2,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { ArrowDown, ArrowUp, Check, ChevronLeft, ChevronRight, Flag, Minus, Save, Settings2, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, CheckCheck, ChevronLeft, ChevronRight, Flag, Minus, Printer, Save, Settings2, Trash2, X } from "lucide-react";
 import { listStudents } from "@/lib/students.functions";
 import {
   addDayBonus, addDayEvent, deleteDayBonus, deleteDayEvent,
   deleteDaySlot, getDayData, moveDaySlot, saveDayAttendance, saveDayRatings, saveDaySlot,
-  CRITERION_BEHAVIOR, CRITERION_LISTENING, CRITERION_PRAYER, CRITERION_READINESS, CRITERION_WORK,
+  CRITERION_BEHAVIOR, CRITERION_LISTENING, CRITERION_PRAYER, CRITERION_READINESS, CRITERION_WORK, OVERALL_KEY,
   type DayCriterion, type DayData, type DayEventKind, type DaySlot,
 } from "@/lib/day-tracking.functions";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,21 @@ type Rating = Record<string, number>;
 const ABBR: Record<string, string> = { readiness: "מוכ", listening: "הקש", behavior: "התנ", work_done: "עבו", prayer: "תפי" };
 const abbr = (c: DayCriterion) => ABBR[c.key] ?? c.label.slice(0, 3);
 const SUGGESTED: DayCriterion[] = [CRITERION_READINESS, CRITERION_LISTENING, CRITERION_BEHAVIOR, CRITERION_WORK, CRITERION_PRAYER];
-const LESSON_DEFAULT: DayCriterion[] = [CRITERION_READINESS, CRITERION_LISTENING, CRITERION_BEHAVIOR, CRITERION_WORK];
+const OVERALL: DayCriterion = { key: OVERALL_KEY, label: "ציון" };
+/** עמודה בלי קטגוריות היא עמודה אחת עם ציון כולל. */
+const colsOf = (s: DaySlot): DayCriterion[] => (s.criteria.length ? s.criteria : [OVERALL]);
+// רוחב העמודה בטבלה משתנה לפי מספר הקטגוריות (rem)
+const CRIT_REM = 2.5;
+const SINGLE_REM = 3.5;
+const slotRem = (s: DaySlot) => (s.criteria.length ? s.criteria.length * CRIT_REM : SINGLE_REM);
+const NAME_REM = 8;
+const ATT_REM = 3.5;
+const FLAG_REM = 2.75;
+// ציון כולל בלי נתון שמור: אם נשמרו בעבר קטגוריות, הציון הנמוך ביותר; אחרת "טוב"
+const overallFallback = (saved?: Rating) => {
+  const vals = saved ? Object.values(saved).filter((v) => v >= 1 && v <= 3) : [];
+  return vals.length ? Math.min(...vals) : 3;
+};
 
 // הרמה מסומנת גם בצורה ובטקסט, לא רק בצבע.
 const LEVEL: Record<number, { text: string; cls: string; Icon: typeof Check }> = {
@@ -113,10 +127,8 @@ export function DayTrackingPanel({ classId }: { classId: string }) {
 
   useEffect(() => { setDraft({}); setTouched([]); setAttDraft({}); }, [date]);
 
-  const ratedSlots = useMemo(
-    () => (day?.slots ?? []).filter((s) => s.rated && s.criteria.length > 0),
-    [day],
-  );
+  const ratedSlots = useMemo(() => (day?.slots ?? []).filter((s) => s.rated), [day]);
+  const tableRem = NAME_REM + ATT_REM + FLAG_REM + ratedSlots.reduce((n, s) => n + slotRem(s), 0);
   const saved = useMemo(() => {
     const m = new Map<string, Rating>();
     for (const r of day?.ratings ?? []) m.set(`${r.student_id}|${r.slot_id}`, r.scores);
@@ -141,7 +153,10 @@ export function DayTrackingPanel({ classId }: { classId: string }) {
   const ratingOf = (studentId: string, slot: DaySlot): Rating => {
     const key = `${studentId}|${slot.id}`;
     const out: Rating = {};
-    for (const c of slot.criteria) out[c.key] = draft[key]?.[c.key] ?? saved.get(key)?.[c.key] ?? 3;
+    const sv = saved.get(key);
+    for (const c of colsOf(slot)) {
+      out[c.key] = draft[key]?.[c.key] ?? sv?.[c.key] ?? (c.key === OVERALL_KEY ? overallFallback(sv) : 3);
+    }
     return out;
   };
 
@@ -163,7 +178,7 @@ export function DayTrackingPanel({ classId }: { classId: string }) {
   };
   const allGoodSlot = (slot: DaySlot) => {
     if (savedSlotIds.has(slot.id) && !touched.includes(slot.id) && !window.confirm("לאפס את כל הדירוגים בשעה הזו ל״טוב״?")) return;
-    const good: Rating = Object.fromEntries(slot.criteria.map((c) => [c.key, 3]));
+    const good: Rating = Object.fromEntries(colsOf(slot).map((c) => [c.key, 3]));
     setDraft((d) => {
       const n = { ...d };
       for (const s of students) n[`${s.id}|${slot.id}`] = { ...good };
@@ -211,6 +226,65 @@ export function DayTrackingPanel({ classId }: { classId: string }) {
     setDate(toIso(new Date()));
   };
 
+  /** הדפסה של כל הטבלה בדף אחד (לרוחב), כולל מה שעדיין לא נשמר. נפתחת במסגרת נסתרת כדי לא להיחתך בגלילה. */
+  const printDay = () => {
+    if (!date) return;
+    const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    const sym: Record<number, string> = { 3: "✓", 2: "~", 1: "✗" };
+    const attText: Record<string, string> = { present: "נוכח", absent: "חסר", late: "איחר", excused: "מוצדק" };
+    const nameOf = (id: string) => { const s = students.find((x) => x.id === id); return s ? formatStudentName(s, nameFormat) : ""; };
+    const head1 = ratedSlots.map((s) => `<th colspan="${colsOf(s).length}">${esc(s.label)}</th>`).join("");
+    const head2 = ratedSlots.map((s) => colsOf(s).map((c) => `<th class="sub">${s.criteria.length ? esc(abbr(c)) : ""}</th>`).join("")).join("");
+    const rows = students.map((s) => {
+      const cells = ratedSlots.map((sl) => {
+        const r = ratingOf(s.id, sl);
+        return colsOf(sl).map((c) => `<td class="c l${r[c.key] ?? 3}">${sym[r[c.key] ?? 3]}</td>`).join("");
+      }).join("");
+      const n = countByStudent.get(s.id) ?? 0;
+      return `<tr class="${isAway(s.id) ? "away" : ""}"><th class="name">${esc(formatStudentName(s, nameFormat))}</th><td class="c">${esc(attText[statusOf(s.id)] ?? "")}</td><td class="c">${n || ""}</td>${cells}</tr>`;
+    }).join("");
+    const legendMap = new Map<string, string>();
+    for (const sl of ratedSlots) for (const c of sl.criteria) legendMap.set(abbr(c), c.label);
+    const legend = [...legendMap].map(([a, l]) => `${esc(a)} = ${esc(l)}`).join(" · ");
+    const notes: string[] = [];
+    for (const e of day?.events ?? []) notes.push(`${esc(nameOf(e.student_id))}: ${esc(EVENT_LABEL[e.kind])}${e.note ? " — " + esc(e.note) : ""}`);
+    for (const b of day?.bonuses ?? []) notes.push(`${esc(nameOf(b.student_id))}: בונוס ${b.points}${b.note ? " — " + esc(b.note) : ""}`);
+    const html = `<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><title>דשבורד יומי</title><style>
+      @page { size: A4 landscape; margin: 8mm; }
+      * { box-sizing: border-box; }
+      body { font-family: Arial, "Segoe UI", sans-serif; font-size: 10px; color: #111; margin: 0; }
+      h1 { font-size: 14px; margin: 0 0 6px; }
+      table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+      th, td { border: 1px solid #888; padding: 2px 1px; text-align: center; overflow: hidden; }
+      th.name { text-align: right; width: 34mm; padding: 2px 4px; font-weight: 600; }
+      th { background: #eee; font-size: 9px; }
+      th.sub { font-weight: 400; }
+      thead { display: table-header-group; }
+      tr { page-break-inside: avoid; }
+      td.c { font-size: 11px; }
+      td.l3 { color: #1a7f37; } td.l2 { color: #9a6700; background: #fff8e1; } td.l1 { color: #cf222e; background: #ffebe9; font-weight: 700; }
+      tr.away { color: #777; }
+      p { margin: 6px 0 0; font-size: 9px; }
+      ul { margin: 4px 0 0; padding-inline-start: 14px; font-size: 9px; }
+    </style></head><body>
+      <h1>דשבורד יומי · ${esc(hebFmt.format(fromIso(date)))} (${esc(gregFmt.format(fromIso(date)))})</h1>
+      <table><thead>
+        <tr><th rowspan="2" class="name">תלמיד</th><th rowspan="2" style="width:13mm">נוכחות</th><th rowspan="2" style="width:9mm">אירועים</th>${head1}</tr>
+        <tr>${head2}</tr>
+      </thead><tbody>${rows}</tbody></table>
+      <p>✓ טוב · ~ בינוני · ✗ חלש${legend ? " · " + legend : ""}</p>
+      ${notes.length ? `<ul>${notes.map((n) => `<li>${n}</li>`).join("")}</ul>` : ""}
+    </body></html>`;
+    const frame = document.createElement("iframe");
+    frame.setAttribute("aria-hidden", "true");
+    frame.style.cssText = "position:fixed;inset-inline-end:0;bottom:0;width:0;height:0;border:0;";
+    document.body.appendChild(frame);
+    const w = frame.contentWindow;
+    if (!w) { frame.remove(); toast.error("ההדפסה לא זמינה בדפדפן הזה"); return; }
+    w.document.open(); w.document.write(html); w.document.close();
+    setTimeout(() => { w.focus(); w.print(); setTimeout(() => frame.remove(), 2000); }, 300);
+  };
+
   const noAttendanceYet = !!day && attSaved.size === 0 && Object.keys(attDraft).length === 0;
 
   return (
@@ -242,6 +316,9 @@ export function DayTrackingPanel({ classId }: { classId: string }) {
             <Button size="sm" variant="outline" onClick={() => setEditing(true)} disabled={!day}>
               <Settings2 className="ms-1 h-4 w-4" /> עריכת עמודות
             </Button>
+            <Button size="sm" variant="outline" onClick={printDay} disabled={!students.length || !date}>
+              <Printer className="ms-1 h-4 w-4" /> הדפסה
+            </Button>
             <Button size="sm" variant="outline" onClick={allPresent} disabled={!students.length}>כולם נוכחים</Button>
           </div>
         </div>
@@ -254,28 +331,41 @@ export function DayTrackingPanel({ classId }: { classId: string }) {
         {students.length > 0 && (
           <section aria-label="טבלת היום" className="rounded-xl border bg-card">
             <div className="max-h-[75vh] overflow-auto">
-              <table className="border-separate border-spacing-0 text-sm">
+              <table className="table-fixed border-separate border-spacing-0 text-sm" style={{ width: `${tableRem}rem` }}>
+                <colgroup>
+                  <col style={{ width: `${NAME_REM}rem` }} />
+                  <col style={{ width: `${ATT_REM}rem` }} />
+                  <col style={{ width: `${FLAG_REM}rem` }} />
+                  {ratedSlots.flatMap((s) =>
+                    colsOf(s).map((c) => (
+                      <col key={`${s.id}-${c.key}`} style={{ width: `${s.criteria.length ? CRIT_REM : SINGLE_REM}rem` }} />
+                    )),
+                  )}
+                </colgroup>
                 <caption className="sr-only">נוכחות ודירוג של כל תלמידי הכיתה בכל שעות היום</caption>
                 <thead>
                   <tr>
-                    <th scope="col" rowSpan={2} className="sticky right-0 top-0 z-30 min-w-[8rem] max-w-[8rem] border-b border-l bg-muted px-2 py-1 text-start text-xs font-semibold">תלמיד</th>
-                    <th scope="col" rowSpan={2} className="sticky top-0 z-20 w-14 border-b border-l bg-muted px-1 text-xs font-semibold">נוכחות</th>
-                    <th scope="col" rowSpan={2} className="sticky top-0 z-20 w-11 border-b border-l bg-muted">
+                    <th scope="col" rowSpan={2} className="sticky right-0 top-0 z-30 border-b border-l bg-muted px-2 py-1 text-start text-xs font-semibold">תלמיד</th>
+                    <th scope="col" rowSpan={2} className="sticky top-0 z-20 border-b border-l bg-muted px-1 text-xs font-semibold">נוכחות</th>
+                    <th scope="col" rowSpan={2} className="sticky top-0 z-20 border-b border-l bg-muted">
                       <span className="sr-only">חוסרים, אירועים ובונוסים</span>
                       <Flag className="mx-auto h-3.5 w-3.5" aria-hidden="true" />
                     </th>
                     {ratedSlots.map((s) => (
-                      <th key={s.id} scope="colgroup" colSpan={s.criteria.length} className="sticky top-0 z-20 h-9 border-b border-l bg-muted px-1 text-xs font-semibold">
-                        <div className="flex items-center justify-center gap-1.5">
-                          <span className="whitespace-nowrap">{s.label}</span>
-                          {savedSlotIds.has(s.id) && <Check className="h-3.5 w-3.5 text-emerald-600" aria-label="מולא" />}
+                      <th key={s.id} scope="colgroup" colSpan={colsOf(s).length} className="sticky top-0 z-20 h-12 border-b border-l bg-muted px-0.5 text-xs font-semibold">
+                        <div className="flex flex-col items-center gap-0.5">
+                          <span className="line-clamp-2 break-words text-[11px] leading-tight">
+                            {s.label}
+                            {savedSlotIds.has(s.id) && <Check className="ms-0.5 inline h-3 w-3 text-emerald-600" aria-label="מולא" />}
+                          </span>
                           <button
                             type="button"
                             onClick={() => allGoodSlot(s)}
                             aria-label={`${s.label}: הכל טוב`}
-                            className="whitespace-nowrap rounded border bg-background px-1.5 text-[10px] font-normal"
+                            title="הכל טוב"
+                            className="rounded border bg-background px-1 py-0.5 text-muted-foreground hover:text-foreground"
                           >
-                            הכל טוב
+                            <CheckCheck className="h-3 w-3" aria-hidden="true" />
                           </button>
                         </div>
                       </th>
@@ -283,13 +373,13 @@ export function DayTrackingPanel({ classId }: { classId: string }) {
                   </tr>
                   <tr>
                     {ratedSlots.flatMap((s) =>
-                      s.criteria.map((c, ci) => (
+                      colsOf(s).map((c, ci, arr) => (
                         <th
                           key={`${s.id}-${c.key}`}
                           scope="col"
-                          className={`sticky top-9 z-20 h-7 w-10 border-b bg-muted text-[11px] font-medium text-muted-foreground ${ci === s.criteria.length - 1 ? "border-l" : ""}`}
+                          className={`sticky top-12 z-20 h-7 border-b bg-muted text-[11px] font-medium text-muted-foreground ${ci === arr.length - 1 ? "border-l" : ""}`}
                         >
-                          <abbr title={c.label} className="no-underline">{abbr(c)}</abbr>
+                          {s.criteria.length > 0 && <abbr title={c.label} className="no-underline">{abbr(c)}</abbr>}
                           <span className="sr-only"> {s.label}: {c.label}</span>
                         </th>
                       )),
@@ -303,7 +393,7 @@ export function DayTrackingPanel({ classId }: { classId: string }) {
                     const count = countByStudent.get(s.id) ?? 0;
                     return (
                       <tr key={s.id} className={away ? "opacity-60" : ""}>
-                        <th scope="row" className="sticky right-0 z-10 min-w-[8rem] max-w-[8rem] border-b border-l bg-card px-2 py-1 text-start text-xs font-medium leading-tight">
+                        <th scope="row" className="sticky right-0 z-10 border-b border-l bg-card px-2 py-1 text-start text-xs font-medium leading-tight">
                           <button
                             type="button"
                             onClick={() => setFileFor(s)}
@@ -341,18 +431,18 @@ export function DayTrackingPanel({ classId }: { classId: string }) {
                         {ratedSlots.flatMap((sl) => {
                           const r = ratingOf(s.id, sl);
                           const unsaved = !savedSlotIds.has(sl.id) && !touched.includes(sl.id);
-                          return sl.criteria.map((c, ci) => {
+                          return colsOf(sl).map((c, ci, arr) => {
                             const v = r[c.key] ?? 3;
                             const meta = LEVEL[v]!;
                             const Icon = meta.Icon;
                             return (
-                              <td key={`${sl.id}-${c.key}`} className={`border-b p-0.5 ${ci === sl.criteria.length - 1 ? "border-l" : ""}`}>
+                              <td key={`${sl.id}-${c.key}`} className={`border-b p-0.5 ${ci === arr.length - 1 ? "border-l" : ""}`}>
                                 <button
                                   type="button"
                                   onClick={() => cycleRating(s.id, sl, c.key)}
                                   aria-label={`${s.name}, ${sl.label}, ${c.label}: ${meta.text}`}
                                   title={meta.text}
-                                  className={`flex h-9 w-9 items-center justify-center rounded-md border ${meta.cls} ${unsaved ? "border-dashed opacity-60" : ""}`}
+                                  className={`mx-auto flex h-9 w-9 items-center justify-center rounded-md border ${meta.cls} ${unsaved ? "border-dashed opacity-60" : ""}`}
                                 >
                                   <Icon className="h-4 w-4" aria-hidden="true" />
                                 </button>
@@ -490,7 +580,7 @@ function SlotsEditor({ classId, date, slots, onClose }: {
         <DialogHeader>
           <DialogTitle>עריכת עמודות</DialogTitle>
           <DialogDescription>
-            אפשר להוסיף או למחוק שעות, ולבחור לכל שעה אילו דירוגים יופיעו בה. כל שינוי נשמר מיד. מחיקה רק מסתירה את העמודה, והנתונים שנשמרו נשארים.
+            לכל שעה יש כברירת מחדל ציון אחד (טוב, בינוני, חלש). אפשר לפצל שעה לקטגוריות, להוסיף ולמחוק שעות. הרוחב בטבלה מתאים את עצמו. כל שינוי נשמר מיד. מחיקה רק מסתירה את העמודה, והנתונים שנשמרו נשארים.
           </DialogDescription>
         </DialogHeader>
 
@@ -535,7 +625,7 @@ function SlotsEditor({ classId, date, slots, onClose }: {
                   onChange={(e) =>
                     update(s, {
                       rated: e.target.checked,
-                      criteria: e.target.checked && s.criteria.length === 0 ? LESSON_DEFAULT : s.criteria,
+                      criteria: s.criteria,
                     })
                   }
                 />
@@ -544,6 +634,11 @@ function SlotsEditor({ classId, date, slots, onClose }: {
 
               {s.rated && (
                 <div className="flex flex-wrap items-center gap-1.5">
+                  {s.criteria.length === 0 && (
+                    <span className="rounded-full border bg-muted/50 px-2 py-0.5 text-sm text-muted-foreground">
+                      ציון אחד: טוב, בינוני, חלש
+                    </span>
+                  )}
                   {s.criteria.map((c) => (
                     <span key={c.key} className="inline-flex items-center gap-1 rounded-full border bg-muted/50 px-2 py-0.5 text-sm">
                       {c.label}
@@ -558,6 +653,16 @@ function SlotsEditor({ classId, date, slots, onClose }: {
                       </button>
                     </span>
                   ))}
+                  {s.criteria.length > 1 && (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => update(s, { criteria: [] })}
+                      className="rounded-full border px-2 py-0.5 text-xs text-muted-foreground hover:bg-accent disabled:opacity-50"
+                    >
+                      חזרה לציון אחד
+                    </button>
+                  )}
                   {s.criteria.length < 8 && (
                     <AddCriterion
                       existing={s.criteria}
@@ -581,7 +686,7 @@ function SlotsEditor({ classId, date, slots, onClose }: {
               onKeyDown={(e) => {
                 if (e.key === "Enter" && newLabel.trim()) {
                   e.preventDefault();
-                  saveM.mutate({ data: { classId, label: newLabel.trim(), rated: true, criteria: LESSON_DEFAULT } });
+                  saveM.mutate({ data: { classId, label: newLabel.trim(), rated: true, criteria: [] } });
                   setNewLabel("");
                 }
               }}
@@ -592,7 +697,7 @@ function SlotsEditor({ classId, date, slots, onClose }: {
               type="button"
               disabled={busy || !newLabel.trim()}
               onClick={() => {
-                saveM.mutate({ data: { classId, label: newLabel.trim(), rated: true, criteria: LESSON_DEFAULT } });
+                saveM.mutate({ data: { classId, label: newLabel.trim(), rated: true, criteria: [] } });
                 setNewLabel("");
               }}
             >

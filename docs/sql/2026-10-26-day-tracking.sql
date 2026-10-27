@@ -126,3 +126,12 @@ where rated = true and criteria = '[]'::jsonb;
 -- 8. סדר ידני של תלמידים (הורץ ב-26/10/2026). null = עדיין בלי מקום קבוע; מוצג בסוף, לפי שם.
 alter table public.students add column if not exists sort_order integer;
 
+-- 9. ברירת מחדל חדשה לשעה: ציון אחד בלי קטגוריות (criteria = []), שנשמר ב-scores תחת המפתח 'overall'.
+-- פיצול לקטגוריות נעשה ב"עריכת עמודות". הקוד החדש מציג שעה בלי קטגוריות כעמודה אחת (הישן הסתיר אותה).
+-- להרצה רק אחרי שהקוד החדש באוויר: איפוס שעות שעדיין במבנה ארבע-הקטגוריות המקורי (לא נוגע בתפילה ובשעות ששונו ידנית).
+-- הנתונים שנשמרו בעבר לא נמחקים. בעמודה אחת מוצג הציון הנמוך ביותר מבין הקטגוריות שנשמרו באותו יום.
+-- update public.class_day_slots s set criteria = '[]'::jsonb
+-- from public.classes c
+-- where c.id = s.class_id and c.owner_id = '<מזהה הבעלים>' and s.rated = true and s.label <> 'תפילה'
+--   and s.criteria = '[{"key":"readiness","label":"מוכנות"},{"key":"listening","label":"הקשבה"},{"key":"behavior","label":"התנהגות"},{"key":"work_done","label":"עבודות"}]'::jsonb;
+
