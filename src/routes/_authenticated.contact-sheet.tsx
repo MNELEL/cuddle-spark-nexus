@@ -17,6 +17,7 @@ import {
 } from "@/lib/contact-entries.functions";
 import { CONTACT_CATEGORIES, CONTACT_DEFAULTS } from "@/lib/contact-defaults";
 
+import { WeekScheduleCard } from "@/components/schedule/week-schedule-card";
 export const Route = createFileRoute("/_authenticated/contact-sheet")({
   component: ContactSheetPage,
   head: () => ({
@@ -149,6 +150,13 @@ function ContactSheetPage() {
               ))}
             </SelectContent>
           </Select>
+
+          {classId !== "all" && <details className="rounded-xl border bg-card print:hidden">
+            <summary className="cursor-pointer select-none p-3 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring">מערכת השעות של הכיתה</summary>
+            <div className="p-3 pt-0">
+              <WeekScheduleCard classId={classId} />
+            </div>
+          </details>}
 
           <div className="flex flex-wrap gap-2">
             <Button variant="secondary" size="sm" onClick={() => prefill.mutate()} disabled={prefill.isPending}>

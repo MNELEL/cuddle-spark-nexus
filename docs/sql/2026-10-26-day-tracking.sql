@@ -135,3 +135,8 @@ alter table public.students add column if not exists sort_order integer;
 -- where c.id = s.class_id and c.owner_id = '<מזהה הבעלים>' and s.rated = true and s.label <> 'תפילה'
 --   and s.criteria = '[{"key":"readiness","label":"מוכנות"},{"key":"listening","label":"הקשבה"},{"key":"behavior","label":"התנהגות"},{"key":"work_done","label":"עבודות"}]'::jsonb;
 
+-- 10. עמודות הדשבורד היומי לפי מערכת השעות (הורץ ב-27/10/2026). subject = שם המקצוע שממנו נגזרה העמודה.
+-- null = עמודה ידנית (הישנה). האילוץ מונע כפילות בקריאות מקבילות; שורות עם subject null לא מושפעות ממנו.
+alter table public.class_day_slots add column if not exists subject text;
+alter table public.class_day_slots add constraint class_day_slots_class_subject_key unique (class_id, subject);
+

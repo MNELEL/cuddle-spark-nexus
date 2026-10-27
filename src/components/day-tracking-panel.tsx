@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
@@ -324,6 +325,17 @@ export function DayTrackingPanel({ classId }: { classId: string }) {
         </div>
 
         {dayLoading && <p className="text-sm text-muted-foreground">טוען...</p>}
+        {day?.closure && (
+          <div role="status" className="rounded-lg border border-amber-300 bg-amber-100 px-3 py-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
+            אין לימודים ביום הזה: {day.closure.label}
+          </div>
+        )}
+        {day?.mode === "timetable" && (
+          <p className="text-xs text-muted-foreground">
+            העמודות לפי מערכת השעות של היום, ומתעדכנות מעצמן כשמשנים אותה.{" "}
+            <Link to="/weekly-schedule/$classId" params={{ classId }} className="underline">לעריכת המערכת</Link>
+          </p>
+        )}
         {day && ratedSlots.length === 0 && (
           <p className="text-sm text-muted-foreground">אין עמודות לדירוג. אפשר להוסיף מ״עריכת עמודות״.</p>
         )}
@@ -352,7 +364,7 @@ export function DayTrackingPanel({ classId }: { classId: string }) {
                       <Flag className="mx-auto h-3.5 w-3.5" aria-hidden="true" />
                     </th>
                     {ratedSlots.map((s) => (
-                      <th key={s.id} scope="colgroup" colSpan={colsOf(s).length} className="sticky top-0 z-20 h-12 border-b border-l bg-muted px-0.5 text-xs font-semibold">
+                      <th key={s.id} scope="colgroup" colSpan={colsOf(s).length} title={s.times ? `${s.label}: ${s.times}` : s.label} className="sticky top-0 z-20 h-12 border-b border-l bg-muted px-0.5 text-xs font-semibold">
                         <div className="flex flex-col items-center gap-0.5">
                           <span className="line-clamp-2 break-words text-[11px] leading-tight">
                             {s.label}
@@ -494,7 +506,7 @@ export function DayTrackingPanel({ classId }: { classId: string }) {
         />
       )}
       {editing && date && day && (
-        <SlotsEditor classId={classId} date={date} slots={day.slots} onClose={() => setEditing(false)} />
+        <SlotsEditor classId={classId} date={date} slots={day.slots} mode={day.mode} onClose={() => setEditing(false)} />
       )}
     </div>
   );
@@ -545,8 +557,8 @@ function AddCriterion({ existing, onAdd, disabled }: {
 }
 
 /** עריכת עמודות: הוספה, מחיקה, שינוי שם והזזה של שעות, והוספה והסרה של קריטריונים בכל שעה. */
-function SlotsEditor({ classId, date, slots, onClose }: {
-  classId: string; date: string; slots: DaySlot[]; onClose: () => void;
+function SlotsEditor({ classId, date, slots, mode, onClose }: {
+  classId: string; date: string; slots: DaySlot[]; mode: DayData["mode"]; onClose: () => void;
 }) {
   const qc = useQueryClient();
   const saveFn = useServerFn(saveDaySlot);
@@ -580,7 +592,9 @@ function SlotsEditor({ classId, date, slots, onClose }: {
         <DialogHeader>
           <DialogTitle>עריכת עמודות</DialogTitle>
           <DialogDescription>
-            לכל שעה יש כברירת מחדל ציון אחד (טוב, בינוני, חלש). אפשר לפצל שעה לקטגוריות, להוסיף ולמחוק שעות. הרוחב בטבלה מתאים את עצמו. כל שינוי נשמר מיד. מחיקה רק מסתירה את העמודה, והנתונים שנשמרו נשארים.
+            {mode === "timetable"
+              ? "העמודות נקבעות לפי מערכת השעות של היום. כאן בוחרים לכל מקצוע אם לדרג אותו ובאילו קטגוריות. כל שינוי נשמר מיד. הסתרה רק מסתירה את העמודה, והנתונים שנשמרו נשארים."
+              : "לכל שעה יש כברירת מחדל ציון אחד (טוב, בינוני, חלש). אפשר לפצל שעה לקטגוריות, להוסיף ולמחוק שעות. הרוחב בטבלה מתאים את עצמו. כל שינוי נשמר מיד. מחיקה רק מסתירה את העמודה, והנתונים שנשמרו נשארים."}
           </DialogDescription>
         </DialogHeader>
 
@@ -598,6 +612,8 @@ function SlotsEditor({ classId, date, slots, onClose }: {
                     if (v && v !== s.label) update(s, { label: v });
                   }}
                 />
+                {mode === "manual" && (
+                  <>
                 <Button type="button" variant="ghost" size="icon" aria-label="הזז למעלה" disabled={busy}
                   onClick={() => moveM.mutate({ data: { classId, slotId: s.id, direction: "up" } })}>
                   <ArrowUp className="h-4 w-4" />
@@ -606,9 +622,11 @@ function SlotsEditor({ classId, date, slots, onClose }: {
                   onClick={() => moveM.mutate({ data: { classId, slotId: s.id, direction: "down" } })}>
                   <ArrowDown className="h-4 w-4" />
                 </Button>
+                  </>
+                )}
                 <Button type="button" variant="ghost" size="icon" aria-label={`מחק את ${s.label}`} disabled={busy}
                   onClick={() => {
-                    if (window.confirm(`למחוק את "${s.label}"? העמודה תוסתר, והנתונים שנשמרו נשארים.`)) {
+                    if (window.confirm(mode === "timetable" ? `להסתיר את "${s.label}" מהטבלה? הנתונים שנשמרו נשארים.` : `למחוק את "${s.label}"? העמודה תוסתר, והנתונים שנשמרו נשארים.`)) {
                       delM.mutate({ data: { classId, slotId: s.id } });
                     }
                   }}>
@@ -676,6 +694,7 @@ function SlotsEditor({ classId, date, slots, onClose }: {
           ))}
         </ul>
 
+        {mode === "manual" ? (
         <section className="space-y-2 border-t pt-3">
           <h3 className="text-sm font-bold">שעה חדשה</h3>
           <div className="flex gap-2">
@@ -705,6 +724,12 @@ function SlotsEditor({ classId, date, slots, onClose }: {
             </Button>
           </div>
         </section>
+        ) : (
+          <p className="border-t pt-3 text-sm text-muted-foreground">
+            כדי להוסיף או להסיר שיעור, מעדכנים את מערכת השעות, והעמודות כאן מתעדכנות אוטומטית.{" "}
+            <Link to="/weekly-schedule/$classId" params={{ classId }} className="underline">לעריכת המערכת</Link>
+          </p>
+        )}
       </DialogContent>
     </Dialog>
   );

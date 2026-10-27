@@ -19,6 +19,7 @@ import {
   type WeeklySheetDraft,
 } from "@/lib/weekly-sheet";
 
+import { WeekScheduleCard } from "@/components/schedule/week-schedule-card";
 export const Route = createFileRoute("/_authenticated/weekly-sheet")({
   component: WeeklySheetPage,
   head: () => ({
@@ -142,6 +143,13 @@ function WeeklySheetPage() {
           </div>
         </CardContent>
       </Card>
+
+      {classId !== "general" && <details className="rounded-xl border bg-card print:hidden">
+            <summary className="cursor-pointer select-none p-3 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring">מערכת השעות של הכיתה</summary>
+            <div className="p-3 pt-0">
+              <WeekScheduleCard classId={classId} />
+            </div>
+          </details>}
 
       <Card>
         <CardHeader className="pb-3">

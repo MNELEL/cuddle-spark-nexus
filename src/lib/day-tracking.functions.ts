@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { closureFor, closureText, dayKeyOfIso, hhmm, lessonName, weekStartIso } from "@/lib/schedule-view";
 
 /**
  * מעקב יומי לכיתה: שעות היום, דירוג לכל תלמיד בכל שעה,
@@ -18,6 +19,10 @@ export type DaySlot = {
   order_index: number;
   rated: boolean;
   criteria: DayCriterion[];
+  /** שעה שנגזרת ממערכת השעות: שם המקצוע. null בשעה ידנית */
+  subject: string | null;
+  /** שעות השיעורים של המקצוע ביום הזה, כמו "08:30, 10:15" */
+  times?: string;
 };
 /** scores: מפתח קריטריון ← 1 חלש, 2 בינוני, 3 טוב */
 export type DayRating = { student_id: string; slot_id: string; scores: Record<string, number> };
@@ -26,6 +31,10 @@ export type DayEvent = { id: string; student_id: string; kind: DayEventKind; not
 export type DayAttendance = { student_id: string; status: string };
 export type DayBonus = { id: string; student_id: string; points: number; note: string };
 export type DayData = {
+  /** timetable: העמודות לפי מערכת השעות של היום. manual: סדר היום הידני (כשאין מערכת ליום, או כשכבר דורגו בו) */
+  mode: "timetable" | "manual";
+  /** יום ללא לימודים לפי לוח השנה */
+  closure: { label: string; type: string } | null;
   slots: DaySlot[];
   ratings: DayRating[];
   events: DayEvent[];
@@ -67,13 +76,14 @@ async function ownedClass(supabase: any, classId: string, userId: string) {
   if (!data || data.owner_id !== userId) throw new Error("הכיתה לא נמצאה");
 }
 
-async function loadSlots(supabase: any, classId: string): Promise<DaySlot[]> {
-  const { data, error } = await supabase
+async function loadSlots(supabase: any, classId: string, opts: { manualOnly?: boolean } = {}): Promise<DaySlot[]> {
+  let q = supabase
     .from("class_day_slots")
-    .select("id,label,order_index,rated,criteria")
+    .select("id,label,order_index,rated,criteria,subject")
     .eq("class_id", classId)
-    .eq("active", true)
-    .order("order_index", { ascending: true });
+    .eq("active", true);
+  if (opts.manualOnly) q = q.is("subject", null);
+  const { data, error } = await q.order("order_index", { ascending: true });
   if (error) { console.error("[DB Error]", error); throw new Error("טעינת סדר היום נכשלה."); }
   return ((data ?? []) as any[]).map((r) => ({
     id: r.id as string,
@@ -81,10 +91,15 @@ async function loadSlots(supabase: any, classId: string): Promise<DaySlot[]> {
     order_index: r.order_index as number,
     rated: Boolean(r.rated),
     criteria: Array.isArray(r.criteria) ? (r.criteria as DayCriterion[]) : [],
+    subject: (r.subject ?? null) as string | null,
   }));
 }
 
-/** כל נתוני היום: שעות, דירוגים, נוכחות, אירועים ובונוסים. */
+/**
+ * כל נתוני היום: עמודות, דירוגים, נוכחות, אירועים ובונוסים.
+ * העמודות נגזרות ממערכת השעות של היום (weekly_lessons), כך ששינוי במערכת מתעדכן כאן מעצמו.
+ * ביום בלי שיעורים במערכת, או ביום שכבר דורג בעמודות הידניות הישנות, מוצג סדר היום הידני.
+ */
 export const getDayData = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ classId: z.string().uuid(), date: isoDate }).parse(d))
@@ -92,8 +107,8 @@ export const getDayData = createServerFn({ method: "POST" })
     const supabase = context.supabase as any;
     await ownedClass(supabase, data.classId, context.userId);
 
-    let slots = await loadSlots(supabase, data.classId);
-    if (slots.length === 0) {
+    let manual = await loadSlots(supabase, data.classId, { manualOnly: true });
+    if (manual.length === 0) {
       const { error } = await supabase.from("class_day_slots").insert(
         DEFAULT_SLOTS.map((s, i) => ({
           class_id: data.classId,
@@ -104,10 +119,10 @@ export const getDayData = createServerFn({ method: "POST" })
         })),
       );
       if (error) { console.error("[DB Error]", error); throw new Error("יצירת סדר היום נכשלה."); }
-      slots = await loadSlots(supabase, data.classId);
+      manual = await loadSlots(supabase, data.classId, { manualOnly: true });
     }
 
-    const [ratings, events, att, bonus] = await Promise.all([
+    const [ratings, events, att, bonus, lessonsRes, closuresRes] = await Promise.all([
       supabase
         .from("session_ratings")
         .select("student_id,slot_id,scores,readiness,listening,behavior,work_done")
@@ -131,15 +146,93 @@ export const getDayData = createServerFn({ method: "POST" })
         .eq("date", data.date)
         .eq("category", "bonus")
         .order("created_at", { ascending: true }),
+      supabase
+        .from("weekly_lessons")
+        .select("subject,title,hour,minute")
+        .eq("class_id", data.classId)
+        .eq("week_start", weekStartIso(data.date))
+        .eq("day_key", dayKeyOfIso(data.date)),
+      supabase
+        .from("academic_calendar_overrides")
+        .select("start_date,end_date,type,label")
+        .eq("class_id", data.classId)
+        .lte("start_date", data.date)
+        .gte("end_date", data.date),
     ]);
-    for (const r of [ratings, events, att, bonus]) {
+    for (const r of [ratings, events, att, bonus, lessonsRes, closuresRes]) {
       if (r.error) { console.error("[DB Error]", r.error); throw new Error("טעינת נתוני היום נכשלה."); }
     }
 
+    const ratingRows = (ratings.data ?? []) as any[];
+    const manualIds = new Set(manual.map((s) => s.id));
+    const hasManualRatings = ratingRows.some((r) => manualIds.has(r.slot_id as string));
+
+    // שיעורי היום לפי המערכת, בסדר שעות, מקובצים לפי מקצוע
+    const lessons = ((lessonsRes.data ?? []) as any[])
+      .map((l) => ({ name: lessonName({ subject: l.subject, title: l.title ?? "" }), hour: l.hour as number, minute: (l.minute ?? 0) as number }))
+      .filter((l) => l.name)
+      .sort((a, b) => a.hour - b.hour || a.minute - b.minute);
+    const timetable = lessons.length > 0 && !hasManualRatings;
+
+    let slots: DaySlot[] = manual;
+    if (timetable) {
+      const order: string[] = [];
+      const timesBy = new Map<string, string[]>();
+      for (const l of lessons) {
+        if (!timesBy.has(l.name)) { timesBy.set(l.name, []); order.push(l.name); }
+        timesBy.get(l.name)!.push(hhmm(l.hour, l.minute));
+      }
+      const loadSubjectRows = async () => {
+        const { data: rows, error } = await supabase
+          .from("class_day_slots")
+          .select("id,label,order_index,rated,criteria,subject,active")
+          .eq("class_id", data.classId)
+          .not("subject", "is", null);
+        if (error) { console.error("[DB Error]", error); throw new Error("טעינת העמודות נכשלה."); }
+        return (rows ?? []) as any[];
+      };
+      let rows = await loadSubjectRows();
+      const have = new Set(rows.map((r) => r.subject as string));
+      const missing = order.filter((n) => !have.has(n));
+      if (missing.length) {
+        const base = Math.max(100, ...rows.map((r) => r.order_index as number)) + 1;
+        const { error } = await supabase.from("class_day_slots").upsert(
+          missing.map((name, i) => ({
+            class_id: data.classId,
+            label: name,
+            rated: true,
+            criteria: name.includes("תפילה") ? [CRITERION_BEHAVIOR, CRITERION_PRAYER] : [],
+            order_index: base + i,
+            subject: name,
+          })),
+          { onConflict: "class_id,subject", ignoreDuplicates: true },
+        );
+        if (error) { console.error("[DB Error]", error); throw new Error("יצירת העמודות נכשלה."); }
+        rows = await loadSubjectRows();
+      }
+      const bySubject = new Map(rows.map((r) => [r.subject as string, r]));
+      slots = order
+        .map((name) => bySubject.get(name))
+        .filter((r): r is any => !!r && r.active !== false)
+        .map((r) => ({
+          id: r.id as string,
+          label: r.label as string,
+          order_index: r.order_index as number,
+          rated: Boolean(r.rated),
+          criteria: Array.isArray(r.criteria) ? (r.criteria as DayCriterion[]) : [],
+          subject: r.subject as string,
+          times: (timesBy.get(r.subject as string) ?? []).join(", "),
+        }));
+    }
+
+    const closure = closureFor(data.date, (closuresRes.data ?? []) as any[]);
+
     return {
+      mode: timetable ? "timetable" : "manual",
+      closure: closure ? { label: closureText(closure), type: closure.type } : null,
       slots,
       // שורות ישנות נשמרו בעמודות הקבועות; scores גובר עליהן כשהוא קיים
-      ratings: ((ratings.data ?? []) as any[]).map((r) => ({
+      ratings: ratingRows.map((r) => ({
         student_id: r.student_id as string,
         slot_id: r.slot_id as string,
         scores: {
@@ -412,7 +505,7 @@ export const saveDaySlot = createServerFn({ method: "POST" })
       return { ok: true };
     }
 
-    const slots = await loadSlots(supabase, data.classId);
+    const slots = await loadSlots(supabase, data.classId, { manualOnly: true });
     if (slots.length >= MAX_SLOTS) throw new Error(`אפשר עד ${MAX_SLOTS} שעות ביום`);
     const nextOrder = slots.reduce((m, s) => Math.max(m, s.order_index), 0) + 1;
     const { error } = await supabase.from("class_day_slots").insert({
@@ -457,7 +550,7 @@ export const moveDaySlot = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const supabase = context.supabase as any;
     await ownedClass(supabase, data.classId, context.userId);
-    const slots = await loadSlots(supabase, data.classId);
+    const slots = await loadSlots(supabase, data.classId, { manualOnly: true });
     const i = slots.findIndex((s) => s.id === data.slotId);
     const j = data.direction === "up" ? i - 1 : i + 1;
     if (i < 0 || j < 0 || j >= slots.length) return { ok: true };

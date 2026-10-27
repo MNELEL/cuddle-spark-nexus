@@ -34,6 +34,7 @@ import { bulletinToMarkdown } from "@/lib/text-export";
 import { getClass } from "@/lib/classes.functions";
 import { hebrewDateTime } from "@/lib/hebrew-date";
 
+import { WeekScheduleCard } from "@/components/schedule/week-schedule-card";
 export const Route = createFileRoute("/_authenticated/bulletins/$classId")({
   head: () => ({ meta: [{ name: "robots", content: "noindex, nofollow" }] }),
   component: BulletinsPage,
@@ -452,6 +453,9 @@ function BulletinsPage() {
 
                 <section>
                   <h2 className="mb-2 text-lg font-semibold text-primary">ההספק הלימודי</h2>
+                  <div className="mb-3 print:hidden">
+                    <WeekScheduleCard classId={classId} weekOf={editing.startDate} />
+                  </div>
                   <div className="space-y-2">
                     {SCHEDULE_ROWS.map((row) => {
                       const cur = ((editing.study_schedule ?? {}) as Record<string, Record<string, string>>)[row.key] ?? {};

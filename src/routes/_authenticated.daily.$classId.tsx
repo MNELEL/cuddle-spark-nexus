@@ -24,6 +24,7 @@ import { hebrewDateWithWeekday } from "@/lib/hebrew-date";
 import { toast } from "sonner";
 
 
+import { DayScheduleStrip } from "@/components/schedule/day-schedule-strip";
 export const Route = createFileRoute("/_authenticated/daily/$classId")({
   head: () => ({ meta: [{ name: "robots", content: "noindex, nofollow" }] }),
   component: DailySummaryPage,
@@ -251,6 +252,8 @@ function DailySummaryPage() {
             {hebrewDate(date)} · הופק {hebrewDate(todayStr())} · {TEACHER_LABEL} המלמד
           </p>
         </header>
+
+        <DayScheduleStrip classId={classId} date={date} />
 
         {isLoading && <p className="text-muted-foreground">טוען נתונים...</p>}
 

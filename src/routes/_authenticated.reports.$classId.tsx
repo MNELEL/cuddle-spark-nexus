@@ -24,6 +24,7 @@ import { PdfPreviewModal } from "@/components/pdf-preview-modal";
 import { HebrewRangeFilter } from "@/components/hebrew-range-filter";
 import { toHebrewDateFull } from "@/lib/hebrew-date";
 
+import { WeekScheduleCard } from "@/components/schedule/week-schedule-card";
 export const Route = createFileRoute("/_authenticated/reports/$classId")({
   head: () => ({
     meta: [
@@ -236,6 +237,13 @@ function ReportsPage() {
           </div>
         </CardContent>
       </Card>
+
+      <details className="rounded-xl border bg-card print:hidden">
+            <summary className="cursor-pointer select-none p-3 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring">מערכת השעות של הכיתה</summary>
+            <div className="p-3 pt-0">
+              <WeekScheduleCard classId={classId} />
+            </div>
+          </details>
 
       <div id="report-printable" className="report-print-area space-y-4 bg-card rounded-2xl border p-8 print:border-0 print:shadow-none print:p-0">
         <header className="border-b pb-4">
