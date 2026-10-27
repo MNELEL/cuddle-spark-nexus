@@ -624,6 +624,7 @@ export type Database = {
           active: boolean
           class_id: string
           created_at: string
+          criteria: Json
           id: string
           label: string
           order_index: number
@@ -633,6 +634,7 @@ export type Database = {
           active?: boolean
           class_id: string
           created_at?: string
+          criteria?: Json
           id?: string
           label: string
           order_index?: number
@@ -642,6 +644,7 @@ export type Database = {
           active?: boolean
           class_id?: string
           created_at?: string
+          criteria?: Json
           id?: string
           label?: string
           order_index?: number
@@ -2799,6 +2802,7 @@ export type Database = {
           id: string
           listening: number
           readiness: number
+          scores: Json
           slot_id: string
           student_id: string
           updated_at: string
@@ -2812,6 +2816,7 @@ export type Database = {
           id?: string
           listening?: number
           readiness?: number
+          scores?: Json
           slot_id: string
           student_id: string
           updated_at?: string
@@ -2825,6 +2830,7 @@ export type Database = {
           id?: string
           listening?: number
           readiness?: number
+          scores?: Json
           slot_id?: string
           student_id?: string
           updated_at?: string
@@ -3246,6 +3252,7 @@ export type Database = {
           seat_col: number | null
           seat_locked: boolean
           seat_row: number | null
+          sort_order: number | null
           start_date: string | null
         }
         Insert: {
@@ -3276,6 +3283,7 @@ export type Database = {
           seat_col?: number | null
           seat_locked?: boolean
           seat_row?: number | null
+          sort_order?: number | null
           start_date?: string | null
         }
         Update: {
@@ -3306,6 +3314,7 @@ export type Database = {
           seat_col?: number | null
           seat_locked?: boolean
           seat_row?: number | null
+          sort_order?: number | null
           start_date?: string | null
         }
         Relationships: [
