@@ -148,7 +148,7 @@ function AuthLayout() {
         </div>
       </header>
       <main className="container mx-auto px-3 py-6 sm:px-6">
-        <div className="mb-3"><HomeQuickNav /></div>
+        <div className="mb-3 md:hidden"><HomeQuickNav /></div>
         <ToolBreadcrumbs />
         <ToolAccessGuard>
           <Outlet />

@@ -28,7 +28,11 @@ type Student = {
   seat_row: number | null; seat_col: number | null;
 };
 
-export function ImportExportBar({ classId }: { classId: string }) {
+/**
+ * mode="data": ייבוא וייצוא נתונים (מסך תלמידים). mode="seating": שמירת סידור וסידורים שמורים (מסך הושבה).
+ * בלי mode מוצג הכל, כמו קודם.
+ */
+export function ImportExportBar({ classId, mode = "all" }: { classId: string; mode?: "all" | "data" | "seating" }) {
   const qc = useQueryClient();
   const listS = useServerFn(listStudents);
   const getC = useServerFn(getClass);
@@ -160,6 +164,8 @@ export function ImportExportBar({ classId }: { classId: string }) {
 
   return (
     <div className="flex flex-wrap items-center gap-2">
+      {mode !== "seating" && (
+        <>
       <RosterImportDialog classId={classId} existingNames={existingNames} />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -194,6 +200,11 @@ export function ImportExportBar({ classId }: { classId: string }) {
         </DropdownMenuContent>
       </DropdownMenu>
 
+        </>
+      )}
+
+      {mode !== "data" && (
+        <>
       <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
         <DialogTrigger asChild>
           <Button size="sm" variant="outline"><Save className="ms-1 h-4 w-4" /> שמור סידור</Button>
@@ -241,6 +252,8 @@ export function ImportExportBar({ classId }: { classId: string }) {
           )}
         </DialogContent>
       </Dialog>
+        </>
+      )}
     </div>
   );
 }

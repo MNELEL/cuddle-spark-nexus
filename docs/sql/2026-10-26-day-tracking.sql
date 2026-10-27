@@ -102,3 +102,24 @@ alter table public.institutions
   add column if not exists kind text not null default 'talmud_torah'
   check (kind in ('talmud_torah','cheder','yeshiva'));
 
+-- 7. קריטריונים מוגדרים לכל שעה (הורץ ב-26/10/2026). הוספה בלבד, בלי לפגוע בנתונים קיימים.
+-- class_day_slots.criteria: מערך של {key, label}, לפי הסדר שבו העמודות מוצגות. ריק = שעה בלי דירוג.
+-- session_ratings.scores: אובייקט {key: 1|2|3}. העמודות הקבועות הישנות (readiness, listening, behavior, work_done)
+-- נשארו בינתיים כדי שהקוד הקודם ימשיך לעבוד; הקוד החדש קורא מהן רק כשאין scores.
+alter table public.class_day_slots add column if not exists criteria jsonb not null default '[]'::jsonb;
+alter table public.session_ratings add column if not exists scores jsonb not null default '{}'::jsonb;
+
+update public.session_ratings
+set scores = jsonb_build_object('readiness', readiness, 'listening', listening, 'behavior', behavior, 'work_done', work_done)
+where scores = '{}'::jsonb;
+
+update public.class_day_slots
+set criteria = case
+  when label = 'תפילה' then '[{"key":"behavior","label":"התנהגות"},{"key":"prayer","label":"תפילה"}]'::jsonb
+  else '[{"key":"readiness","label":"מוכנות"},{"key":"listening","label":"הקשבה"},{"key":"behavior","label":"התנהגות"},{"key":"work_done","label":"עבודות"}]'::jsonb
+end
+where rated = true and criteria = '[]'::jsonb;
+
+-- ניקוי עתידי, רק אחרי שהקוד החדש באוויר ונבדק (פעולה בלתי הפיכה):
+-- alter table public.session_ratings drop column readiness, drop column listening, drop column behavior, drop column work_done;
+

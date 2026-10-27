@@ -10,15 +10,17 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "תאריך לא תקין");
 const level = z.number().int().min(1).max(3);
 
-export type DaySlot = { id: string; label: string; order_index: number; rated: boolean };
-export type DayRating = {
-  student_id: string;
-  slot_id: string;
-  readiness: number;
-  listening: number;
-  behavior: number;
-  work_done: number;
+/** קריטריון לדירוג בתוך שעה (עמודה): מפתח יציב ושם לתצוגה. */
+export type DayCriterion = { key: string; label: string };
+export type DaySlot = {
+  id: string;
+  label: string;
+  order_index: number;
+  rated: boolean;
+  criteria: DayCriterion[];
 };
+/** scores: מפתח קריטריון ← 1 חלש, 2 בינוני, 3 טוב */
+export type DayRating = { student_id: string; slot_id: string; scores: Record<string, number> };
 export type DayEventKind = "missing_writing" | "missing_books" | "exceptional";
 export type DayEvent = { id: string; student_id: string; kind: DayEventKind; note: string };
 export type DayAttendance = { student_id: string; status: string };
@@ -31,16 +33,23 @@ export type DayData = {
   bonuses: DayBonus[];
 };
 
-/** סדר היום ההתחלתי. נוצר פעם אחת לכל כיתה, ואפשר לשנות אותו אחר כך. */
-const DEFAULT_SLOTS: { label: string; rated: boolean }[] = [
-  { label: "נוכחות", rated: false },
-  { label: "תפילה", rated: true },
-  { label: "שיעור 1", rated: true },
-  { label: "ארוחת בוקר", rated: false },
-  { label: "שיעור 2", rated: true },
-  { label: "ארוחת צהריים", rated: false },
-  { label: "שיעור 3", rated: true },
-  { label: "שיעור הרמת כיסא", rated: true },
+export const CRITERION_READINESS: DayCriterion = { key: "readiness", label: "מוכנות" };
+export const CRITERION_LISTENING: DayCriterion = { key: "listening", label: "הקשבה" };
+export const CRITERION_BEHAVIOR: DayCriterion = { key: "behavior", label: "התנהגות" };
+export const CRITERION_WORK: DayCriterion = { key: "work_done", label: "עבודות" };
+export const CRITERION_PRAYER: DayCriterion = { key: "prayer", label: "תפילה" };
+const LESSON_CRITERIA = [CRITERION_READINESS, CRITERION_LISTENING, CRITERION_BEHAVIOR, CRITERION_WORK];
+
+/** סדר היום ההתחלתי. נוצר פעם אחת לכל כיתה, ואפשר לשנות אותו (שעות וקריטריונים) מתוך המסך. */
+const DEFAULT_SLOTS: { label: string; rated: boolean; criteria: DayCriterion[] }[] = [
+  { label: "נוכחות", rated: false, criteria: [] },
+  { label: "תפילה", rated: true, criteria: [CRITERION_BEHAVIOR, CRITERION_PRAYER] },
+  { label: "שיעור 1", rated: true, criteria: LESSON_CRITERIA },
+  { label: "ארוחת בוקר", rated: false, criteria: [] },
+  { label: "שיעור 2", rated: true, criteria: LESSON_CRITERIA },
+  { label: "ארוחת צהריים", rated: false, criteria: [] },
+  { label: "שיעור 3", rated: true, criteria: LESSON_CRITERIA },
+  { label: "שיעור הרמת כיסא", rated: true, criteria: LESSON_CRITERIA },
 ];
 
 async function ownedClass(supabase: any, classId: string, userId: string) {
@@ -56,12 +65,18 @@ async function ownedClass(supabase: any, classId: string, userId: string) {
 async function loadSlots(supabase: any, classId: string): Promise<DaySlot[]> {
   const { data, error } = await supabase
     .from("class_day_slots")
-    .select("id,label,order_index,rated")
+    .select("id,label,order_index,rated,criteria")
     .eq("class_id", classId)
     .eq("active", true)
     .order("order_index", { ascending: true });
   if (error) { console.error("[DB Error]", error); throw new Error("טעינת סדר היום נכשלה."); }
-  return (data ?? []) as DaySlot[];
+  return ((data ?? []) as any[]).map((r) => ({
+    id: r.id as string,
+    label: r.label as string,
+    order_index: r.order_index as number,
+    rated: Boolean(r.rated),
+    criteria: Array.isArray(r.criteria) ? (r.criteria as DayCriterion[]) : [],
+  }));
 }
 
 /** כל נתוני היום: שעות, דירוגים, נוכחות, אירועים ובונוסים. */
@@ -79,6 +94,7 @@ export const getDayData = createServerFn({ method: "POST" })
           class_id: data.classId,
           label: s.label,
           rated: s.rated,
+          criteria: s.criteria,
           order_index: i + 1,
         })),
       );
@@ -89,7 +105,7 @@ export const getDayData = createServerFn({ method: "POST" })
     const [ratings, events, att, bonus] = await Promise.all([
       supabase
         .from("session_ratings")
-        .select("student_id,slot_id,readiness,listening,behavior,work_done")
+        .select("student_id,slot_id,scores,readiness,listening,behavior,work_done")
         .eq("class_id", data.classId)
         .eq("date", data.date),
       supabase
@@ -117,7 +133,18 @@ export const getDayData = createServerFn({ method: "POST" })
 
     return {
       slots,
-      ratings: (ratings.data ?? []) as DayRating[],
+      // שורות ישנות נשמרו בעמודות הקבועות; scores גובר עליהן כשהוא קיים
+      ratings: ((ratings.data ?? []) as any[]).map((r) => ({
+        student_id: r.student_id as string,
+        slot_id: r.slot_id as string,
+        scores: {
+          readiness: r.readiness,
+          listening: r.listening,
+          behavior: r.behavior,
+          work_done: r.work_done,
+          ...(r.scores ?? {}),
+        } as Record<string, number>,
+      })),
       events: ((events.data ?? []) as any[]).map((e) => ({
         id: e.id as string,
         student_id: e.student_id as string,
@@ -147,10 +174,7 @@ export const saveDayRatings = createServerFn({ method: "POST" })
             z.object({
               studentId: z.string().uuid(),
               slotId: z.string().uuid(),
-              readiness: level,
-              listening: level,
-              behavior: level,
-              workDone: level,
+              scores: z.record(z.string().regex(/^[a-z0-9_]{1,40}$/), level),
             }),
           )
           .min(1)
@@ -164,16 +188,21 @@ export const saveDayRatings = createServerFn({ method: "POST" })
 
     const [stu, slt] = await Promise.all([
       supabase.from("students").select("id").eq("class_id", data.classId),
-      supabase.from("class_day_slots").select("id").eq("class_id", data.classId),
+      supabase.from("class_day_slots").select("id,criteria").eq("class_id", data.classId),
     ]);
     if (stu.error || slt.error) {
       console.error("[DB Error]", stu.error ?? slt.error);
       throw new Error("בדיקת הנתונים נכשלה.");
     }
     const studentIds = new Set((stu.data ?? []).map((s: any) => s.id as string));
-    const slotIds = new Set((slt.data ?? []).map((s: any) => s.id as string));
-    if (data.rows.some((r) => !studentIds.has(r.studentId) || !slotIds.has(r.slotId))) {
-      throw new Error("נתונים לא תקינים");
+    const keysBySlot = new Map<string, Set<string>>();
+    for (const sl of (slt.data ?? []) as any[]) {
+      keysBySlot.set(sl.id as string, new Set(((sl.criteria ?? []) as DayCriterion[]).map((c) => c.key)));
+    }
+    for (const r of data.rows) {
+      const allowed = keysBySlot.get(r.slotId);
+      if (!studentIds.has(r.studentId) || !allowed) throw new Error("נתונים לא תקינים");
+      if (Object.keys(r.scores).some((k) => !allowed.has(k))) throw new Error("נתונים לא תקינים");
     }
 
     const now = new Date().toISOString();
@@ -183,10 +212,7 @@ export const saveDayRatings = createServerFn({ method: "POST" })
         student_id: r.studentId,
         slot_id: r.slotId,
         date: data.date,
-        readiness: r.readiness,
-        listening: r.listening,
-        behavior: r.behavior,
-        work_done: r.workDone,
+        scores: r.scores,
         updated_at: now,
       })),
       { onConflict: "student_id,date,slot_id" },
@@ -338,5 +364,103 @@ export const deleteDayBonus = createServerFn({ method: "POST" })
       .eq("class_id", data.classId)
       .eq("category", "bonus");
     if (error) { console.error("[DB Error]", error); throw new Error("מחיקת הבונוס נכשלה."); }
+    return { ok: true };
+  });
+
+/* ---------- ניהול עמודות: שעות וקריטריונים ---------- */
+
+const criterionSchema = z.object({
+  key: z.string().regex(/^[a-z0-9_]{1,40}$/, "מפתח לא תקין"),
+  label: z.string().trim().min(1, "יש להזין שם").max(24, "השם ארוך מדי"),
+});
+const MAX_SLOTS = 14;
+
+/** יצירה (בלי slotId) או עדכון של שעה: שם, האם מדורגת, והקריטריונים שלה. */
+export const saveDaySlot = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z
+      .object({
+        classId: z.string().uuid(),
+        slotId: z.string().uuid().optional(),
+        label: z.string().trim().min(1, "יש להזין שם").max(30, "השם ארוך מדי"),
+        rated: z.boolean(),
+        criteria: z.array(criterionSchema).max(8, "אפשר עד 8 קריטריונים בשעה"),
+      })
+      .refine((v) => new Set(v.criteria.map((c) => c.key)).size === v.criteria.length, "קריטריון כפול")
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const supabase = context.supabase as any;
+    await ownedClass(supabase, data.classId, context.userId);
+    const criteria = data.rated ? data.criteria : [];
+
+    if (data.slotId) {
+      const { error } = await supabase
+        .from("class_day_slots")
+        .update({ label: data.label, rated: data.rated, criteria })
+        .eq("id", data.slotId)
+        .eq("class_id", data.classId);
+      if (error) { console.error("[DB Error]", error); throw new Error("שמירת השעה נכשלה."); }
+      return { ok: true };
+    }
+
+    const slots = await loadSlots(supabase, data.classId);
+    if (slots.length >= MAX_SLOTS) throw new Error(`אפשר עד ${MAX_SLOTS} שעות ביום`);
+    const nextOrder = slots.reduce((m, s) => Math.max(m, s.order_index), 0) + 1;
+    const { error } = await supabase.from("class_day_slots").insert({
+      class_id: data.classId,
+      label: data.label,
+      rated: data.rated,
+      criteria,
+      order_index: nextOrder,
+    });
+    if (error) { console.error("[DB Error]", error); throw new Error("יצירת השעה נכשלה."); }
+    return { ok: true };
+  });
+
+/** מחיקת שעה: העמודה מוסתרת, והדירוגים שנשמרו בעבר נשארים במסד. */
+export const deleteDaySlot = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ classId: z.string().uuid(), slotId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const supabase = context.supabase as any;
+    await ownedClass(supabase, data.classId, context.userId);
+    const { error } = await supabase
+      .from("class_day_slots")
+      .update({ active: false })
+      .eq("id", data.slotId)
+      .eq("class_id", data.classId);
+    if (error) { console.error("[DB Error]", error); throw new Error("מחיקת השעה נכשלה."); }
+    return { ok: true };
+  });
+
+/** הזזת שעה למעלה או למטה בסדר היום. */
+export const moveDaySlot = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z
+      .object({
+        classId: z.string().uuid(),
+        slotId: z.string().uuid(),
+        direction: z.enum(["up", "down"]),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const supabase = context.supabase as any;
+    await ownedClass(supabase, data.classId, context.userId);
+    const slots = await loadSlots(supabase, data.classId);
+    const i = slots.findIndex((s) => s.id === data.slotId);
+    const j = data.direction === "up" ? i - 1 : i + 1;
+    if (i < 0 || j < 0 || j >= slots.length) return { ok: true };
+    [slots[i], slots[j]] = [slots[j]!, slots[i]!];
+    const results = await Promise.all(
+      slots.map((s, idx) =>
+        supabase.from("class_day_slots").update({ order_index: idx + 1 }).eq("id", s.id).eq("class_id", data.classId),
+      ),
+    );
+    const failed = results.find((r: any) => r.error);
+    if (failed) { console.error("[DB Error]", failed.error); throw new Error("שינוי הסדר נכשל."); }
     return { ok: true };
   });

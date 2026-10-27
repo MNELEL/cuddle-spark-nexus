@@ -35,12 +35,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ClassTeacherName } from "@/components/class-teacher-name";
 import { ClassLibraryStatus } from "@/components/class-library-status";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowRight, Heart, Ban, MoveHorizontal, Pencil, Plus, Trash2, FolderOpen, FileText, Sparkles, Trophy, Users, Library, Monitor, Upload, Printer, Copy, Dices, Globe2, Award, ScanText, TrendingUp, CalendarDays, Wand2, MessageSquare, MoreHorizontal, LayoutGrid, Pin } from "lucide-react";
+import { ArrowRight, Heart, Ban, MoveHorizontal, Pencil, Plus, Trash2, FolderOpen, FileText, Sparkles, Trophy, Users, Library, Monitor, Upload, Printer, Copy, Dices, Globe2, Award, ScanText, TrendingUp, CalendarDays, Wand2, MessageSquare, MoreHorizontal, LayoutGrid, Pin, Search, Megaphone } from "lucide-react";
 import { useShowGregorian } from "@/lib/date-display";
 import { toast } from "sonner";
 import { copyList, printList } from "@/lib/print-list";
@@ -80,58 +80,46 @@ function ActionBtn({ icon: Icon, label, variant = "outline" }: { icon: typeof Up
   );
 }
 
-function ClassActionGrid({ classId }: { classId: string }) {
+/** כל כלי הכיתה בתפריט אחד, בפינת כותרת הכיתה (במקום שורת כפתורים נפרדת). */
+function ClassToolsMenu({ classId, onAddAnnouncement }: { classId: string; onAddAnnouncement: () => void }) {
   return (
-    // הכפתורים מרוכזים לקבוצות לפי נושא (הושבה / ספרייה / דוחות) כדי להפחית עומס
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="w-full justify-start">
-            <Library className="ms-1 h-4 w-4 shrink-0" />
-            <span className="truncate">ספרייה וחומרים</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-56 text-right">
-          <DropdownMenuLabel>ספרייה וחומרים</DropdownMenuLabel>
-          <DropdownMenuItem asChild>
-            <Link to="/ingest" search={{ classId }}><Upload className="ms-1 h-4 w-4" /> העלאה חכמה</Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link to="/resources"><Library className="ms-1 h-4 w-4" /> ספריית חומרי הוראה</Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link to="/weekly-schedule/$classId" params={{ classId }}><CalendarDays className="ms-1 h-4 w-4" /> מערכת שבועית</Link>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="w-full justify-start">
-            <FileText className="ms-1 h-4 w-4 shrink-0" />
-            <span className="truncate">דוחות וקשר</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-56 text-right">
-          <DropdownMenuLabel>דוחות וקשר עם הורים</DropdownMenuLabel>
-          <DropdownMenuItem asChild>
-            <Link to="/daily/$classId" params={{ classId }}><FileText className="ms-1 h-4 w-4" /> סיכום יומי</Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link to="/reports/$classId" params={{ classId }}><TrendingUp className="ms-1 h-4 w-4" /> דוחות כיתה</Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link to="/bulletins/$classId" params={{ classId }}><MessageSquare className="ms-1 h-4 w-4" /> עלון להורים</Link>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      <Button variant="outline" size="sm" className="w-full justify-start transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none motion-reduce:hover:translate-y-0" onClick={openCommandPalette}>
-        <MoreHorizontal className="ms-1 h-4 w-4 shrink-0" />
-        <span className="truncate">עוד כלים</span>
-      </Button>
-    </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="secondary" size="sm">
+          <MoreHorizontal className="ms-1 h-4 w-4" /> כלי הכיתה
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-60 text-right">
+        <DropdownMenuLabel>ספרייה וחומרים</DropdownMenuLabel>
+        <DropdownMenuItem asChild>
+          <Link to="/ingest" search={{ classId }}><Upload className="ms-1 h-4 w-4" /> העלאה חכמה</Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/resources"><Library className="ms-1 h-4 w-4" /> ספריית חומרי הוראה</Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/weekly-schedule/$classId" params={{ classId }}><CalendarDays className="ms-1 h-4 w-4" /> מערכת שבועית</Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>דוחות וקשר עם הורים</DropdownMenuLabel>
+        <DropdownMenuItem asChild>
+          <Link to="/daily/$classId" params={{ classId }}><FileText className="ms-1 h-4 w-4" /> סיכום יומי</Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/reports/$classId" params={{ classId }}><TrendingUp className="ms-1 h-4 w-4" /> דוחות כיתה</Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/bulletins/$classId" params={{ classId }}><MessageSquare className="ms-1 h-4 w-4" /> עלון להורים</Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={onAddAnnouncement}>
+          <Megaphone className="ms-1 h-4 w-4" /> הודעה חשובה לכיתה
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={openCommandPalette}>
+          <Search className="ms-1 h-4 w-4" /> חיפוש כלים…
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -287,6 +275,7 @@ function ClassDetail() {
     try { saved = localStorage.getItem(START_TAB_KEY); } catch { /* אחסון חסום */ }
     setStartTab(normalizeTab(saved) ?? "seating");
   }, []);
+  const [annOpen, setAnnOpen] = useState(false);
   const tab: ClassTab | null = normalizeTab(search.tab) ?? startTab;
   const makeStartTab = () => {
     if (!tab) return;
@@ -349,11 +338,14 @@ function ClassDetail() {
         <Link to="/classes" className="text-sm text-muted-foreground hover:underline flex items-center gap-1">
           <ArrowRight className="h-4 w-4" /> חזרה לכיתות
         </Link>
-        <Link to="/school" className="text-sm text-muted-foreground hover:underline">בית הספר</Link>
       </div>
-      {isArchived ? <ArchivedBanner classId={classId} /> : <ClassActionGrid classId={classId} />}
-      <ClassAnnouncementsBanner classId={classId} readOnly={isArchived} />
+      {isArchived && <ArchivedBanner classId={classId} />}
       <div className="relative overflow-hidden rounded-2xl border bg-primary p-4 text-primary-foreground shadow-sm sm:p-6">
+        {!isArchived && (
+          <div className="absolute end-3 top-3 z-20">
+            <ClassToolsMenu classId={classId} onAddAnnouncement={() => setAnnOpen(true)} />
+          </div>
+        )}
         <div className="relative z-10">
           {clsLoading ? (
             <div aria-busy="true" aria-label="טוען פרטי כיתה">
@@ -386,9 +378,14 @@ function ClassDetail() {
         </div>
       </div>
 
-      <YearChain classId={classId} />
+      <ClassAnnouncementsBanner
+        classId={classId}
+        readOnly={isArchived}
+        addOpen={annOpen}
+        onAddOpenChange={setAnnOpen}
+      />
 
-      <ClassLibraryStatus classId={classId} />
+      <YearChain classId={classId} />
 
       <Tabs value={tab ?? ""} onValueChange={setTab} dir="rtl">
         <div className="flex flex-wrap items-center gap-2">
@@ -401,13 +398,14 @@ function ClassDetail() {
           {tab && (
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               className="ms-auto"
               disabled={startTab === tab}
               onClick={makeStartTab}
+              aria-label={startTab === tab ? "זה מסך הפתיחה של הכיתה" : "קבע את המסך הזה כמסך פתיחה"}
+              title={startTab === tab ? "מסך הפתיחה" : "קבע כמסך פתיחה"}
             >
-              <Pin className="ms-1 h-4 w-4" />
-              {startTab === tab ? "מסך הפתיחה" : "קבע כמסך פתיחה"}
+              <Pin className={`h-4 w-4 ${startTab === tab ? "fill-current" : ""}`} />
             </Button>
           )}
         </div>
@@ -415,7 +413,6 @@ function ClassDetail() {
         {tab === null && <Skeleton className="mt-4 h-64 w-full" />}
 
         <TabsContent value="students" className="mt-4 space-y-4">
-          <ImportExportBar classId={classId} />
           <StudentsTab
             classId={classId}
             students={students as Student[]}
@@ -432,6 +429,9 @@ function ClassDetail() {
           <Section title="קבוצות לימוד">
             <GroupsTab classId={classId} />
           </Section>
+          <Section title="ייבוא וייצוא נתונים">
+            <ImportExportBar classId={classId} mode="data" />
+          </Section>
         </TabsContent>
 
         <TabsContent value="seating" className="mt-4 space-y-4">
@@ -439,8 +439,8 @@ function ClassDetail() {
           <Section title={`אילוצי ישיבה (${relations.length})`}>
             <RelationsTab classId={classId} students={students as Student[]} relations={relations as never} />
           </Section>
-          <Section title="שמירה וייצוא">
-            <ImportExportBar classId={classId} />
+          <Section title="סידורים שמורים">
+            <ImportExportBar classId={classId} mode="seating" />
           </Section>
         </TabsContent>
 
@@ -457,6 +457,9 @@ function ClassDetail() {
         <TabsContent value="more" className="mt-4 space-y-3">
           <Section title="תזכורות, נקודות ודירוג הכיתה">
             <CrmTab classId={classId} />
+          </Section>
+          <Section title="חומרי הוראה מהספרייה">
+            <ClassLibraryStatus classId={classId} />
           </Section>
           <Section title="ציונים ויעדים">
             <TrackingTab classId={classId} />
@@ -718,22 +721,49 @@ function StudentsTab({
   return (
     <div className="space-y-3">
 
-      <div className="flex flex-wrap justify-end gap-2">
-        <div className="me-auto flex items-center gap-2">
-          <Label htmlFor="students-sort" className="text-xs text-muted-foreground">מיון</Label>
-          <Select value={sortKey} onValueChange={(v) => changeSort(v as SortKey)}>
-            <SelectTrigger id="students-sort" className="h-9 w-44 text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {Object.entries(SORT_OPTIONS).map(([k, label]) => (
-                <SelectItem key={k} value={k} className="text-xs">{label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative min-w-[200px] flex-1">
+          <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+          <Input
+            id="students-search"
+            type="search"
+            aria-label="חיפוש תלמיד"
+            className="h-9 rounded-xl ps-9 text-sm"
+            placeholder={`חיפוש לפי ${SEARCH_FIELDS[searchField]}…`}
+            value={query}
+            onChange={(e) => onQueryChange(e.target.value)}
+          />
         </div>
+        <Select value={searchField} onValueChange={(v) => changeSearchField(v as SearchField)}>
+          <SelectTrigger id="students-search-field" aria-label="שדה החיפוש" className="h-9 w-40 text-xs">
+            <span className="me-1 text-muted-foreground">לפי:</span><SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {Object.entries(SEARCH_FIELDS).map(([k, label]) => (
+              <SelectItem key={k} value={k} className="text-xs">{label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={sortKey} onValueChange={(v) => changeSort(v as SortKey)}>
+          <SelectTrigger id="students-sort" aria-label="מיון" className="h-9 w-44 text-xs">
+            <span className="me-1 text-muted-foreground">מיון:</span><SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {Object.entries(SORT_OPTIONS).map(([k, label]) => (
+              <SelectItem key={k} value={k} className="text-xs">{label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
+          <DialogTrigger asChild>
+            <Button><Plus className="ms-1 h-4 w-4" /> הוסף תלמיד</Button>
+          </DialogTrigger>
+          <StudentDialog classId={classId} editing={editing} onClose={() => { setOpen(false); setEditing(null); }} />
+        </Dialog>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">
-              <MoreHorizontal className="ms-1 h-4 w-4" /> פעולות נוספות
+            <Button variant="outline" size="icon" aria-label="פעולות נוספות על הרשימה" title="פעולות נוספות">
+              <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-52 text-right">
@@ -749,61 +779,21 @@ function StudentsTab({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
-          <DialogTrigger asChild>
-            <Button><Plus className="ms-1 h-4 w-4" /> הוסף תלמיד</Button>
-          </DialogTrigger>
-          <StudentDialog classId={classId} editing={editing} onClose={() => { setOpen(false); setEditing(null); }} />
-        </Dialog>
       </div>
 
-      <div className="rounded-2xl border bg-card/50 p-3">
-        <div className="flex flex-wrap items-end gap-2">
-          <div className="min-w-[180px] flex-1">
-            <Label htmlFor="students-search" className="text-xs text-muted-foreground">חיפוש תלמיד</Label>
-            <Input
-              id="students-search"
-              type="search"
-              className="h-9 rounded-xl text-sm"
-              placeholder={`חיפוש לפי ${SEARCH_FIELDS[searchField]}…`}
-              value={query}
-              onChange={(e) => onQueryChange(e.target.value)}
-            />
-          </div>
-          <div>
-            <Label htmlFor="students-search-field" className="text-xs text-muted-foreground">שדה החיפוש</Label>
-            <Select value={searchField} onValueChange={(v) => changeSearchField(v as SearchField)}>
-              <SelectTrigger id="students-search-field" className="h-9 w-36 text-xs"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {Object.entries(SEARCH_FIELDS).map(([k, label]) => (
-                  <SelectItem key={k} value={k} className="text-xs">{label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {isDirty && (
-            <Button variant="ghost" size="sm" className="rounded-xl" onClick={resetFilters}>
-              איפוס סינון ומיון
-            </Button>
-          )}
+      {isDirty && (
+        <div className="flex flex-wrap items-center gap-2 text-xs" aria-live="polite">
+          <span className="font-mono-tabular text-muted-foreground">{sorted.length} מתוך {students.length}</span>
+          <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={resetFilters}>
+            איפוס סינון ומיון
+          </Button>
         </div>
-
-        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs" aria-live="polite">
-          <Badge variant="secondary">מיון פעיל: {SORT_OPTIONS[sortKey]}</Badge>
-          <Badge variant="outline">חיפוש בשדה: {SEARCH_FIELDS[searchField]}</Badge>
-          <span className="text-muted-foreground font-mono-tabular">{sorted.length} מתוך {students.length}</span>
-          {sample.length > 0 && (
-            <span className="text-muted-foreground">
-              דוגמאות מהשדה הנבחר: {sample.join(" · ")}
-            </span>
-          )}
-        </div>
-        {searchField === "last_name" && (
-          <p className="mt-1 text-xs text-muted-foreground">
-            אם לתלמיד לא הוזן שם משפחה, המערכת גוזרת אותו מהמילים שאחרי השם הפרטי בשם המלא.
-          </p>
-        )}
-      </div>
+      )}
+      {searchField === "last_name" && (
+        <p className="text-xs text-muted-foreground">
+          אם לתלמיד לא הוזן שם משפחה, המערכת גוזרת אותו מהמילים שאחרי השם הפרטי בשם המלא.
+        </p>
+      )}
 
       <UpcomingBirthdays students={students} />
 

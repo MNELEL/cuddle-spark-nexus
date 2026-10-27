@@ -23,14 +23,23 @@ const SEVERITY: Record<Severity, { label: string; box: string; badge: string }> 
   critical: { label: "דחוף", box: "border-destructive/50 bg-destructive/10", badge: "bg-destructive/20 text-destructive" },
 };
 
-export function ClassAnnouncementsBanner({ classId, readOnly = false }: { classId: string; readOnly?: boolean }) {
+/**
+ * addOpen / onAddOpenChange: כשהם מועברים, חלון ההוספה נשלט מבחוץ (מתפריט כלי הכיתה),
+ * וגם כפתור "הודעה חשובה" וכרטיס הריק לא מוצגים.
+ */
+export function ClassAnnouncementsBanner({ classId, readOnly = false, addOpen, onAddOpenChange }: {
+  classId: string; readOnly?: boolean; addOpen?: boolean; onAddOpenChange?: (o: boolean) => void;
+}) {
   const qc = useQueryClient();
   const listFn = useServerFn(listClassAnnouncements);
   const createFn = useServerFn(createClassAnnouncement);
   const deleteFn = useServerFn(deleteClassAnnouncement);
   const stateFn = useServerFn(setAnnouncementState);
   const [showDismissed, setShowDismissed] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [innerOpen, setInnerOpen] = useState(false);
+  const controlled = onAddOpenChange !== undefined;
+  const open = controlled ? Boolean(addOpen) : innerOpen;
+  const setOpen = controlled ? onAddOpenChange! : setInnerOpen;
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [severity, setSeverity] = useState<Severity>("warning");
@@ -73,11 +82,13 @@ export function ClassAnnouncementsBanner({ classId, readOnly = false }: { classI
 
   const AddDialog = (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="sm" variant="outline" className="rounded-xl">
-          <Plus className="ms-1 h-4 w-4" /> הודעה חשובה
-        </Button>
-      </DialogTrigger>
+      {!controlled && (
+        <DialogTrigger asChild>
+          <Button size="sm" variant="outline" className="rounded-xl">
+            <Plus className="ms-1 h-4 w-4" /> הודעה חשובה
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent dir="rtl">
         <DialogHeader><DialogTitle>הודעה חשובה לכיתה</DialogTitle></DialogHeader>
         <div className="space-y-3">
@@ -110,6 +121,7 @@ export function ClassAnnouncementsBanner({ classId, readOnly = false }: { classI
   );
 
   if (visible.length === 0 && dismissed.length === 0) {
+    if (controlled) return readOnly ? null : <>{AddDialog}</>;
     return readOnly ? null : (
       <div className="flex items-center justify-between gap-2 rounded-2xl border border-dashed p-3 text-xs text-muted-foreground">
         <span className="flex items-center gap-1"><Megaphone className="h-4 w-4" /> אין הודעות חשובות לכיתה זו</span>

@@ -2,12 +2,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Check, ChevronLeft, ChevronRight, Flag, Minus, Save, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, ChevronLeft, ChevronRight, Flag, Minus, Save, Settings2, Trash2, X } from "lucide-react";
 import { listStudents } from "@/lib/students.functions";
 import {
   addDayBonus, addDayEvent, deleteDayBonus, deleteDayEvent,
-  getDayData, saveDayAttendance, saveDayRatings,
-  type DayData, type DayEventKind,
+  deleteDaySlot, getDayData, moveDaySlot, saveDayAttendance, saveDayRatings, saveDaySlot,
+  CRITERION_BEHAVIOR, CRITERION_LISTENING, CRITERION_PRAYER, CRITERION_READINESS, CRITERION_WORK,
+  type DayCriterion, type DayData, type DayEventKind, type DaySlot,
 } from "@/lib/day-tracking.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,15 +17,12 @@ import { StudentFileSheet } from "@/components/student-file-sheet";
 
 type Student = { id: string; name: string };
 
-const RATING_COLS = [
-  { key: "readiness", label: "מוכנות", short: "מ" },
-  { key: "listening", label: "הקשבה", short: "ה" },
-  { key: "behavior", label: "התנהגות", short: "ת" },
-  { key: "work_done", label: "עבודות", short: "ע" },
-] as const;
-type RatingKey = (typeof RATING_COLS)[number]["key"];
-type Rating = Record<RatingKey, number>;
-const GOOD: Rating = { readiness: 3, listening: 3, behavior: 3, work_done: 3 };
+// דירוג של תלמיד בשעה אחת: מפתח קריטריון ← 1 חלש, 2 בינוני, 3 טוב
+type Rating = Record<string, number>;
+const ABBR: Record<string, string> = { readiness: "מוכ", listening: "הקש", behavior: "התנ", work_done: "עבו", prayer: "תפי" };
+const abbr = (c: DayCriterion) => ABBR[c.key] ?? c.label.slice(0, 3);
+const SUGGESTED: DayCriterion[] = [CRITERION_READINESS, CRITERION_LISTENING, CRITERION_BEHAVIOR, CRITERION_WORK, CRITERION_PRAYER];
+const LESSON_DEFAULT: DayCriterion[] = [CRITERION_READINESS, CRITERION_LISTENING, CRITERION_BEHAVIOR, CRITERION_WORK];
 
 // הרמה מסומנת גם בצורה ובטקסט, לא רק בצבע.
 const LEVEL: Record<number, { text: string; cls: string; Icon: typeof Check }> = {
@@ -66,7 +64,8 @@ const gregFmt = new Intl.DateTimeFormat("he-IL", { day: "numeric", month: "numer
 
 /**
  * הדשבורד היומי: טבלה אחת לכל הכיתה, עם נוכחות וכל שעות היום יחד.
- * לחיצה על משבצת מחליפה בין טוב, בינוני וחלש. הנוכחות נשמרת באותה טבלת `attendance` שבה משתמשים שאר המסכים.
+ * לכל שעה קריטריונים משלה (אפשר להוסיף ולמחוק). לחיצה על משבצת מחליפה בין טוב, בינוני וחלש.
+ * הנוכחות נשמרת באותה טבלת `attendance` שבה משתמשים שאר המסכים.
  */
 export function DayTrackingPanel({ classId }: { classId: string }) {
   const qc = useQueryClient();
@@ -94,17 +93,17 @@ export function DayTrackingPanel({ classId }: { classId: string }) {
   const [attDraft, setAttDraft] = useState<Record<string, string>>({});
   const [eventFor, setEventFor] = useState<Student | null>(null);
   const [fileFor, setFileFor] = useState<Student | null>(null);
+  const [editing, setEditing] = useState(false);
 
   useEffect(() => { setDraft({}); setTouched([]); setAttDraft({}); }, [date]);
 
-  const ratedSlots = useMemo(() => (day?.slots ?? []).filter((s) => s.rated), [day]);
+  const ratedSlots = useMemo(
+    () => (day?.slots ?? []).filter((s) => s.rated && s.criteria.length > 0),
+    [day],
+  );
   const saved = useMemo(() => {
     const m = new Map<string, Rating>();
-    for (const r of day?.ratings ?? []) {
-      m.set(`${r.student_id}|${r.slot_id}`, {
-        readiness: r.readiness, listening: r.listening, behavior: r.behavior, work_done: r.work_done,
-      });
-    }
+    for (const r of day?.ratings ?? []) m.set(`${r.student_id}|${r.slot_id}`, r.scores);
     return m;
   }, [day]);
   const savedSlotIds = useMemo(() => new Set((day?.ratings ?? []).map((r) => r.slot_id)), [day]);
@@ -122,8 +121,13 @@ export function DayTrackingPanel({ classId }: { classId: string }) {
 
   const statusOf = (id: string) => attDraft[id] ?? attSaved.get(id) ?? "present";
   const isAway = (id: string) => statusOf(id) === "absent" || statusOf(id) === "excused";
-  const ratingOf = (studentId: string, sid: string): Rating =>
-    draft[`${studentId}|${sid}`] ?? saved.get(`${studentId}|${sid}`) ?? GOOD;
+  // ערך לכל קריטריון של השעה: טיוטה, אחרת השמור, אחרת "טוב"
+  const ratingOf = (studentId: string, slot: DaySlot): Rating => {
+    const key = `${studentId}|${slot.id}`;
+    const out: Rating = {};
+    for (const c of slot.criteria) out[c.key] = draft[key]?.[c.key] ?? saved.get(key)?.[c.key] ?? 3;
+    return out;
+  };
 
   const dirty = touched.length > 0 || Object.keys(attDraft).length > 0;
   useEffect(() => {
@@ -136,19 +140,20 @@ export function DayTrackingPanel({ classId }: { classId: string }) {
   const cycleAtt = (id: string) => setAttDraft((d) => ({ ...d, [id]: ATT[statusOf(id)]!.next }));
   const allPresent = () => setAttDraft(Object.fromEntries(students.map((s) => [s.id, "present"])));
 
-  const cycleRating = (studentId: string, sid: string, col: RatingKey) => {
-    const cur = ratingOf(studentId, sid);
-    setDraft((d) => ({ ...d, [`${studentId}|${sid}`]: { ...cur, [col]: nextLevel(cur[col]) } }));
-    setTouched((t) => (t.includes(sid) ? t : [...t, sid]));
+  const cycleRating = (studentId: string, slot: DaySlot, key: string) => {
+    const cur = ratingOf(studentId, slot);
+    setDraft((d) => ({ ...d, [`${studentId}|${slot.id}`]: { ...cur, [key]: nextLevel(cur[key] ?? 3) } }));
+    setTouched((t) => (t.includes(slot.id) ? t : [...t, slot.id]));
   };
-  const allGoodSlot = (sid: string) => {
-    if (savedSlotIds.has(sid) && !touched.includes(sid) && !window.confirm("לאפס את כל הדירוגים בשעה הזו ל״טוב״?")) return;
+  const allGoodSlot = (slot: DaySlot) => {
+    if (savedSlotIds.has(slot.id) && !touched.includes(slot.id) && !window.confirm("לאפס את כל הדירוגים בשעה הזו ל״טוב״?")) return;
+    const good: Rating = Object.fromEntries(slot.criteria.map((c) => [c.key, 3]));
     setDraft((d) => {
       const n = { ...d };
-      for (const s of students) n[`${s.id}|${sid}`] = { ...GOOD };
+      for (const s of students) n[`${s.id}|${slot.id}`] = { ...good };
       return n;
     });
-    setTouched((t) => (t.includes(sid) ? t : [...t, sid]));
+    setTouched((t) => (t.includes(slot.id) ? t : [...t, slot.id]));
   };
 
   const saveM = useMutation({
@@ -159,12 +164,13 @@ export function DayTrackingPanel({ classId }: { classId: string }) {
         status: status as "present" | "absent" | "late" | "excused",
       }));
       if (attRows.length) await saveAttFn({ data: { classId, date, rows: attRows } });
-      const rows: { studentId: string; slotId: string; readiness: number; listening: number; behavior: number; workDone: number }[] = [];
+      const rows: { studentId: string; slotId: string; scores: Rating }[] = [];
       for (const sid of touched) {
+        const slot = ratedSlots.find((x) => x.id === sid);
+        if (!slot) continue;
         for (const s of students) {
           if (isAway(s.id)) continue;
-          const r = ratingOf(s.id, sid);
-          rows.push({ studentId: s.id, slotId: sid, readiness: r.readiness, listening: r.listening, behavior: r.behavior, workDone: r.work_done });
+          rows.push({ studentId: s.id, slotId: sid, scores: ratingOf(s.id, slot) });
         }
       }
       if (rows.length) await saveRatingsFn({ data: { classId, date, rows } });
@@ -213,15 +219,20 @@ export function DayTrackingPanel({ classId }: { classId: string }) {
 
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-xs text-muted-foreground">
-            מ מוכנות · ה הקשבה · ת התנהגות · ע עבודות. לחיצה על משבצת מחליפה: טוב, בינוני, חלש. לחיצה על שם פותחת את תיק התלמיד.
+            לחיצה על משבצת מחליפה: טוב, בינוני, חלש. לחיצה על שם פותחת את תיק התלמיד.
             {noAttendanceYet ? " עדיין לא נשמרה נוכחות ליום הזה." : ""}
           </p>
-          <Button size="sm" variant="outline" onClick={allPresent} disabled={!students.length}>כולם נוכחים</Button>
+          <div className="flex items-center gap-1.5">
+            <Button size="sm" variant="outline" onClick={() => setEditing(true)} disabled={!day}>
+              <Settings2 className="ms-1 h-4 w-4" /> עריכת עמודות
+            </Button>
+            <Button size="sm" variant="outline" onClick={allPresent} disabled={!students.length}>כולם נוכחים</Button>
+          </div>
         </div>
 
         {dayLoading && <p className="text-sm text-muted-foreground">טוען...</p>}
         {day && ratedSlots.length === 0 && (
-          <p className="text-sm text-muted-foreground">אין שעות לדירוג בסדר היום של הכיתה.</p>
+          <p className="text-sm text-muted-foreground">אין עמודות לדירוג. אפשר להוסיף מ״עריכת עמודות״.</p>
         )}
 
         {students.length > 0 && (
@@ -238,13 +249,13 @@ export function DayTrackingPanel({ classId }: { classId: string }) {
                       <Flag className="mx-auto h-3.5 w-3.5" aria-hidden="true" />
                     </th>
                     {ratedSlots.map((s) => (
-                      <th key={s.id} scope="colgroup" colSpan={4} className="sticky top-0 z-20 h-9 border-b border-l bg-muted px-1 text-xs font-semibold">
+                      <th key={s.id} scope="colgroup" colSpan={s.criteria.length} className="sticky top-0 z-20 h-9 border-b border-l bg-muted px-1 text-xs font-semibold">
                         <div className="flex items-center justify-center gap-1.5">
                           <span className="whitespace-nowrap">{s.label}</span>
                           {savedSlotIds.has(s.id) && <Check className="h-3.5 w-3.5 text-emerald-600" aria-label="מולא" />}
                           <button
                             type="button"
-                            onClick={() => allGoodSlot(s.id)}
+                            onClick={() => allGoodSlot(s)}
                             aria-label={`${s.label}: הכל טוב`}
                             className="whitespace-nowrap rounded border bg-background px-1.5 text-[10px] font-normal"
                           >
@@ -256,13 +267,13 @@ export function DayTrackingPanel({ classId }: { classId: string }) {
                   </tr>
                   <tr>
                     {ratedSlots.flatMap((s) =>
-                      RATING_COLS.map((c, ci) => (
+                      s.criteria.map((c, ci) => (
                         <th
                           key={`${s.id}-${c.key}`}
                           scope="col"
-                          className={`sticky top-9 z-20 h-7 w-10 border-b bg-muted text-[11px] font-medium text-muted-foreground ${ci === RATING_COLS.length - 1 ? "border-l" : ""}`}
+                          className={`sticky top-9 z-20 h-7 w-10 border-b bg-muted text-[11px] font-medium text-muted-foreground ${ci === s.criteria.length - 1 ? "border-l" : ""}`}
                         >
-                          <abbr title={c.label} className="no-underline">{c.short}</abbr>
+                          <abbr title={c.label} className="no-underline">{abbr(c)}</abbr>
                           <span className="sr-only"> {s.label}: {c.label}</span>
                         </th>
                       )),
@@ -312,17 +323,17 @@ export function DayTrackingPanel({ classId }: { classId: string }) {
                           </button>
                         </td>
                         {ratedSlots.flatMap((sl) => {
-                          const r = ratingOf(s.id, sl.id);
+                          const r = ratingOf(s.id, sl);
                           const unsaved = !savedSlotIds.has(sl.id) && !touched.includes(sl.id);
-                          return RATING_COLS.map((c, ci) => {
-                            const v = r[c.key];
+                          return sl.criteria.map((c, ci) => {
+                            const v = r[c.key] ?? 3;
                             const meta = LEVEL[v]!;
                             const Icon = meta.Icon;
                             return (
-                              <td key={`${sl.id}-${c.key}`} className={`border-b p-0.5 ${ci === RATING_COLS.length - 1 ? "border-l" : ""}`}>
+                              <td key={`${sl.id}-${c.key}`} className={`border-b p-0.5 ${ci === sl.criteria.length - 1 ? "border-l" : ""}`}>
                                 <button
                                   type="button"
-                                  onClick={() => cycleRating(s.id, sl.id, c.key)}
+                                  onClick={() => cycleRating(s.id, sl, c.key)}
                                   aria-label={`${s.name}, ${sl.label}, ${c.label}: ${meta.text}`}
                                   title={meta.text}
                                   className={`flex h-9 w-9 items-center justify-center rounded-md border ${meta.cls} ${unsaved ? "border-dashed opacity-60" : ""}`}
@@ -376,7 +387,205 @@ export function DayTrackingPanel({ classId }: { classId: string }) {
           studentName={fileFor.name}
         />
       )}
+      {editing && date && day && (
+        <SlotsEditor classId={classId} date={date} slots={day.slots} onClose={() => setEditing(false)} />
+      )}
     </div>
+  );
+}
+
+/** הוספת קריטריון לשעה: הצעות מהירות או שם חופשי. */
+function AddCriterion({ existing, onAdd, disabled }: {
+  existing: DayCriterion[]; onAdd: (c: DayCriterion) => void; disabled: boolean;
+}) {
+  const [label, setLabel] = useState("");
+  const missing = SUGGESTED.filter((s) => !existing.some((e) => e.key === s.key));
+  const add = (c: DayCriterion) => { onAdd(c); setLabel(""); };
+  const addCustom = () => {
+    const l = label.trim();
+    if (!l || existing.some((e) => e.label === l)) return;
+    const standard = SUGGESTED.find((s) => s.label === l);
+    add(standard ?? { key: `c_${Math.random().toString(36).slice(2, 8) || "x"}`, label: l });
+  };
+  return (
+    <div className="flex w-full flex-wrap items-center gap-1.5">
+      {missing.map((s) => (
+        <button
+          key={s.key}
+          type="button"
+          disabled={disabled}
+          onClick={() => add(s)}
+          className="rounded-full border border-dashed px-2 py-0.5 text-xs hover:bg-accent disabled:opacity-50"
+        >
+          + {s.label}
+        </button>
+      ))}
+      <div className="flex items-center gap-1">
+        <Input
+          className="h-8 w-32"
+          value={label}
+          maxLength={24}
+          onChange={(e) => setLabel(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustom(); } }}
+          placeholder="קריטריון חדש"
+          aria-label="שם קריטריון חדש"
+        />
+        <Button type="button" size="sm" variant="outline" disabled={disabled || !label.trim()} onClick={addCustom}>
+          הוסף
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/** עריכת עמודות: הוספה, מחיקה, שינוי שם והזזה של שעות, והוספה והסרה של קריטריונים בכל שעה. */
+function SlotsEditor({ classId, date, slots, onClose }: {
+  classId: string; date: string; slots: DaySlot[]; onClose: () => void;
+}) {
+  const qc = useQueryClient();
+  const saveFn = useServerFn(saveDaySlot);
+  const delFn = useServerFn(deleteDaySlot);
+  const moveFn = useServerFn(moveDaySlot);
+  const refresh = () => qc.invalidateQueries({ queryKey: ["day", classId, date] });
+  const onError = (e: unknown) => toast.error(e instanceof Error ? e.message : "השמירה נכשלה");
+  const saveM = useMutation({ mutationFn: saveFn, onSuccess: refresh, onError });
+  const delM = useMutation({ mutationFn: delFn, onSuccess: refresh, onError });
+  const moveM = useMutation({ mutationFn: moveFn, onSuccess: refresh, onError });
+  const busy = saveM.isPending || delM.isPending || moveM.isPending;
+
+  const [newLabel, setNewLabel] = useState("");
+  // "נוכחות" יש לה עמודה משלה בטבלה, ולכן לא מופיעה כאן
+  const list = slots.filter((s) => s.label !== "נוכחות");
+
+  const update = (s: DaySlot, patch: { label?: string; rated?: boolean; criteria?: DayCriterion[] }) =>
+    saveM.mutate({
+      data: {
+        classId,
+        slotId: s.id,
+        label: patch.label ?? s.label,
+        rated: patch.rated ?? s.rated,
+        criteria: patch.criteria ?? s.criteria,
+      },
+    });
+
+  return (
+    <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent dir="rtl" className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
+        <DialogHeader>
+          <DialogTitle>עריכת עמודות</DialogTitle>
+          <DialogDescription>
+            אפשר להוסיף או למחוק שעות, ולבחור לכל שעה אילו דירוגים יופיעו בה. כל שינוי נשמר מיד. מחיקה רק מסתירה את העמודה, והנתונים שנשמרו נשארים.
+          </DialogDescription>
+        </DialogHeader>
+
+        <ul className="space-y-2">
+          {list.map((s) => (
+            <li key={s.id} className="space-y-2 rounded-lg border p-2">
+              <div className="flex items-center gap-1">
+                <Input
+                  key={`${s.id}-${s.label}`}
+                  defaultValue={s.label}
+                  maxLength={30}
+                  aria-label="שם השעה"
+                  onBlur={(e) => {
+                    const v = e.target.value.trim();
+                    if (v && v !== s.label) update(s, { label: v });
+                  }}
+                />
+                <Button type="button" variant="ghost" size="icon" aria-label="הזז למעלה" disabled={busy}
+                  onClick={() => moveM.mutate({ data: { classId, slotId: s.id, direction: "up" } })}>
+                  <ArrowUp className="h-4 w-4" />
+                </Button>
+                <Button type="button" variant="ghost" size="icon" aria-label="הזז למטה" disabled={busy}
+                  onClick={() => moveM.mutate({ data: { classId, slotId: s.id, direction: "down" } })}>
+                  <ArrowDown className="h-4 w-4" />
+                </Button>
+                <Button type="button" variant="ghost" size="icon" aria-label={`מחק את ${s.label}`} disabled={busy}
+                  onClick={() => {
+                    if (window.confirm(`למחוק את "${s.label}"? העמודה תוסתר, והנתונים שנשמרו נשארים.`)) {
+                      delM.mutate({ data: { classId, slotId: s.id } });
+                    }
+                  }}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4"
+                  checked={s.rated}
+                  disabled={busy}
+                  onChange={(e) =>
+                    update(s, {
+                      rated: e.target.checked,
+                      criteria: e.target.checked && s.criteria.length === 0 ? LESSON_DEFAULT : s.criteria,
+                    })
+                  }
+                />
+                להציג בטבלת הדירוג
+              </label>
+
+              {s.rated && (
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {s.criteria.map((c) => (
+                    <span key={c.key} className="inline-flex items-center gap-1 rounded-full border bg-muted/50 px-2 py-0.5 text-sm">
+                      {c.label}
+                      <button
+                        type="button"
+                        aria-label={`הסר את ${c.label} מ${s.label}`}
+                        disabled={busy}
+                        className="rounded-full p-0.5 hover:bg-accent disabled:opacity-50"
+                        onClick={() => update(s, { criteria: s.criteria.filter((x) => x.key !== c.key) })}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </span>
+                  ))}
+                  {s.criteria.length < 8 && (
+                    <AddCriterion
+                      existing={s.criteria}
+                      disabled={busy}
+                      onAdd={(c) => update(s, { criteria: [...s.criteria, c] })}
+                    />
+                  )}
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+
+        <section className="space-y-2 border-t pt-3">
+          <h3 className="text-sm font-bold">שעה חדשה</h3>
+          <div className="flex gap-2">
+            <Input
+              value={newLabel}
+              maxLength={30}
+              onChange={(e) => setNewLabel(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && newLabel.trim()) {
+                  e.preventDefault();
+                  saveM.mutate({ data: { classId, label: newLabel.trim(), rated: true, criteria: LESSON_DEFAULT } });
+                  setNewLabel("");
+                }
+              }}
+              placeholder="למשל: שיעור 4, הפסקה, תפילת מנחה"
+              aria-label="שם השעה החדשה"
+            />
+            <Button
+              type="button"
+              disabled={busy || !newLabel.trim()}
+              onClick={() => {
+                saveM.mutate({ data: { classId, label: newLabel.trim(), rated: true, criteria: LESSON_DEFAULT } });
+                setNewLabel("");
+              }}
+            >
+              הוסף שעה
+            </Button>
+          </div>
+        </section>
+      </DialogContent>
+    </Dialog>
   );
 }
 
