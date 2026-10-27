@@ -14,11 +14,8 @@ const outputSchemas = {
 };
 async function generate(context: { supabase: any; userId: string }, key: string | undefined, system: string, input: unknown) {
   if (!key) throw new Error("שירות Claude אינו מוגדר כרגע.");
-  // The authenticated handler has authorized the caller; diagnostic logs are service-only.
+  // Logs are diagnostic only: a past provider failure must never block a new request.
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data: blocked, error: readError } = await supabaseAdmin.from("app_logs").select("message").eq("source", BLOCK_SOURCE).limit(1);
-  if (readError) throw new Error("לא ניתן לבדוק את זמינות שירות Claude.");
-  if (blocked?.length) throw new Error(blocked[0].message);
   const { runClaude } = await import("./claude-tools.server");
   const schema = input && typeof input === "object" && "studentName" in input ? outputSchemas.letter : input && typeof input === "object" && "dilemma" in input ? outputSchemas.advisor : outputSchemas.sugya;
   try { return await runClaude(key, system, input, schema); }
@@ -27,8 +24,12 @@ async function generate(context: { supabase: any; userId: string }, key: string 
     const provider = error && typeof error === "object" && "error" in error ? error.error as any : null;
     const message = provider?.error?.message ?? provider?.message ?? (error instanceof Error ? error.message : "הבקשה נכשלה.");
     if (status === 402 || status === 403) {
-      const { error: writeError } = await supabaseAdmin.from("app_logs").insert({ user_id: context.userId, source: BLOCK_SOURCE, level: "warn", message });
-      if (writeError) throw new Error("השירות חסום ולא ניתן לשמור את מצב החסימה.");
+      try {
+        const { error: writeError } = await supabaseAdmin.from("app_logs").insert({ user_id: context.userId, source: BLOCK_SOURCE, level: "warn", message });
+        if (writeError) console.error("[Claude diagnostic log]", writeError);
+      } catch (logError) {
+        console.error("[Claude diagnostic log]", logError);
+      }
     }
     const failure = new Error(message);
     if (status) Object.assign(failure, { statusCode: status });
