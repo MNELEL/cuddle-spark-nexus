@@ -56,7 +56,6 @@ import { listClassScoreInputs } from "@/lib/scoring.functions";
 import { computeStudentScore } from "@/lib/performance-score";
 import { ScoreBadge } from "@/components/score-badge";
 import { StudentFileSheet } from "@/components/student-file-sheet";
-import { AiAssistantDock } from "@/components/ai-assistant-dock";
 import { LessonsTab } from "@/components/lessons-tab";
 import { DayTrackingPanel } from "@/components/day-tracking-panel";
 import { reorderStudents } from "@/lib/student-order.functions";
@@ -546,7 +545,6 @@ function ClassDetail() {
           </Section>
         </TabsContent>
       </Tabs>
-      <AiAssistantDock classId={classId} />
     </div>
   );
 }

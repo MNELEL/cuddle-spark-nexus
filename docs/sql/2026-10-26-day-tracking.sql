@@ -185,3 +185,61 @@ create policy pacing_plan_weeks_owner_all on public.pacing_plan_weeks for all to
   with check (exists (select 1 from public.classes c where c.id = pacing_plan_weeks.class_id and c.owner_id = auth.uid()));
 revoke all on public.pacing_plan_weeks from anon;
 
+-- 12. סוכן העוזר האישי (הורץ ב-27/10/2026): מצטייני ומשקיעני השבוע, שיחות שמורות וזיכרון.
+-- weekly_honors: kind = excellent (מצטיין) | investing (משקיע). שיחות וזיכרון שייכים למשתמש בלבד (user_id = auth.uid()).
+create table public.weekly_honors (
+  id uuid primary key default gen_random_uuid(),
+  class_id uuid not null references public.classes(id) on delete cascade,
+  student_id uuid not null references public.students(id) on delete cascade,
+  week_start date not null,
+  kind text not null check (kind in ('excellent','investing')),
+  note text,
+  created_at timestamptz not null default now(),
+  unique (student_id, week_start, kind)
+);
+create index weekly_honors_class_week_idx on public.weekly_honors (class_id, week_start);
+alter table public.weekly_honors enable row level security;
+create policy weekly_honors_owner_all on public.weekly_honors for all to authenticated
+  using (exists (select 1 from public.classes c where c.id = weekly_honors.class_id and c.owner_id = auth.uid()))
+  with check (exists (select 1 from public.classes c where c.id = weekly_honors.class_id and c.owner_id = auth.uid()));
+revoke all on public.weekly_honors from anon;
+
+create table public.assistant_threads (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null,
+  class_id uuid references public.classes(id) on delete set null,
+  title text not null default '',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index assistant_threads_user_idx on public.assistant_threads (user_id, updated_at desc);
+alter table public.assistant_threads enable row level security;
+create policy assistant_threads_owner_all on public.assistant_threads for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+revoke all on public.assistant_threads from anon;
+
+create table public.assistant_messages (
+  id uuid primary key default gen_random_uuid(),
+  thread_id uuid not null references public.assistant_threads(id) on delete cascade,
+  user_id uuid not null,
+  role text not null check (role in ('user','assistant')),
+  content text not null,
+  created_at timestamptz not null default now()
+);
+create index assistant_messages_thread_idx on public.assistant_messages (thread_id, created_at);
+alter table public.assistant_messages enable row level security;
+create policy assistant_messages_owner_all on public.assistant_messages for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+revoke all on public.assistant_messages from anon;
+
+create table public.assistant_memory (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null,
+  kind text not null default 'fact' check (kind in ('style','fact','preference')),
+  content text not null check (char_length(content) between 3 and 400),
+  source_thread_id uuid references public.assistant_threads(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+create index assistant_memory_user_idx on public.assistant_memory (user_id, created_at desc);
+alter table public.assistant_memory enable row level security;
+create policy assistant_memory_owner_all on public.assistant_memory for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+revoke all on public.assistant_memory from anon;
+

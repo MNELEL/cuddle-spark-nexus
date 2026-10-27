@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { GlobalAssistant } from "@/components/global-assistant";
 import { LogOut, Wrench, Sparkles, LineChart, Library, ShieldCheck, Settings, Building2 } from "lucide-react";
 import { TorahLogo } from "@/components/torah-logo";
 import { ThemeSwitcher } from "@/components/theme-switcher";
@@ -156,6 +157,7 @@ function AuthLayout() {
       </main>
       <ThemeSync />
       <GlobalCommandPalette />
+      <GlobalAssistant />
     </div>
   );
 }

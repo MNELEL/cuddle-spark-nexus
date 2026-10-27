@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -10,16 +10,21 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Sparkles, Mic, MicOff, Send, Check, X, Loader2, HelpCircle, BookOpen,
-  ExternalLink, AlertCircle, Pencil,
+  ExternalLink, AlertCircle, Pencil, Paperclip, History, Brain, Trash2, ArrowLeft,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  assistantQuery, executeAssistantAction,
+  executeAssistantAction,
   type AssistantAction, type AssistantActionKind, type AssistantReply,
 } from "@/lib/ai-assistant.functions";
+import { assistantAgentQuery } from "@/lib/assistant-agent.functions";
+import {
+  addAssistantMemory, deleteAssistantMemory, deleteAssistantThread, getAssistantThread,
+  learnFromThread, listAssistantMemory, listAssistantThreads,
+} from "@/lib/assistant-memory.functions";
 import { fieldsForKind, missingRequiredFields, isActionReady } from "@/lib/assistant-actions";
 import { AssistantSnapshotTable } from "@/components/assistant-snapshot-table";
 
@@ -46,7 +51,14 @@ const KIND_LABELS: Record<AssistantActionKind, string> = {
   add_announcement: "הודעת כיתה",
   add_calendar_override: "עדכון לוח השנה",
   add_recurring_rule: "כלל חוזר במערכת",
-
+  set_weekly_honor: "מצטיין או משקיע השבוע",
+  save_pacing_subject: "הגדרת הספק למקצוע",
+  compute_pacing: "חישוב תוכנית שנתית",
+  approve_pacing: "אישור התוכנית ויישום בשיעורים",
+  edit_pacing_week: "שינוי כמות בשבוע בתוכנית",
+  set_day_column: "עמודה בדשבורד היומי",
+  swap_seats: "החלפת מקומות ישיבה",
+  import_timetable: "ייבוא מערכת שעות מתמונה",
 };
 
 const PARAM_LABELS: Record<string, string> = {
@@ -62,6 +74,16 @@ const PARAM_LABELS: Record<string, string> = {
   severity: "חומרה",
   title: "כותרת",
   type: "סוג",
+  kind: "סוג",
+  week_start: "שבוע",
+  amount: "כמות",
+  total_amount: "כמות כוללת",
+  unit_label: "יחידה",
+  mode: "אופן הגדרה",
+  rated: "מדורג",
+  criteria: "קטגוריות",
+  topics: "נושאים",
+  replace: "להחליף את הקיים",
 };
 
 const VALUE_LABELS: Record<string, string> = {
@@ -72,9 +94,15 @@ const VALUE_LABELS: Record<string, string> = {
   exam: "מבחן", special_exam: "מבחן מיוחד", trip: "טיול", holiday: "חג",
   meeting_event: "מפגש", birthday: "יום הולדת", celebration: "שמחה", other: "אחר",
   positive: "חיובי", negative: "שלילי", neutral: "ניטרלי",
+  excellent: "מצטיין", investing: "משקיע", amount: "כמות", topics: "נושאים", both: "כמות ונושאים",
 };
 
 const SUGGESTIONS = [
+  "מי גר ברחוב ארלוזרוב?",
+  "מי עוד לא חגג יום הולדת עברי השנה?",
+  "מי עוד לא היה מצטיין השבוע?",
+  "מי יכול להיות משקיע השבוע לפי נוכחות ועבודות?",
+  "פתח לי את תכנון הקצב השנתי",
   "מי נעדר השבוע יותר מפעמיים?",
   "תוסיף ליוסי 85 בחומש",
   "תיעוד היום: סיימנו את פרק ב' בגמרא, שיעור חזרה מחר",
@@ -83,6 +111,21 @@ const SUGGESTIONS = [
   "הודעה לכיתה: מחר יוצאים לטיול, להביא כובע",
   "רשום שדיברתי עם אבא של משה בטלפון על שיפור בהתנהגות",
 ];
+
+/** מקטין תמונה ל-1600 פיקסלים לכל היותר, כדי שלא תכביד על השליחה. */
+async function fileToDataUrl(file: File): Promise<string> {
+  const bmp = await createImageBitmap(file);
+  const scale = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+  const c = document.createElement("canvas");
+  c.width = Math.round(bmp.width * scale);
+  c.height = Math.round(bmp.height * scale);
+  c.getContext("2d")!.drawImage(bmp, 0, 0, c.width, c.height);
+  return c.toDataURL("image/jpeg", 0.82);
+}
+const localIso = () => {
+  const n = new Date();
+  return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}-${String(n.getDate()).padStart(2, "0")}`;
+};
 
 /** הפרמטרים המשמעותיים של פעולה, בעברית קריאה. */
 function readableParams(a: AssistantAction): string {
@@ -104,18 +147,48 @@ export function AiAssistantDock({ classId }: { classId: string }) {
   const [reply, setReply] = useState<AssistantReply | null>(null);
   const [pending, setPending] = useState<AssistantAction[]>([]);
   const [history, setHistory] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
+  const [threadId, setThreadId] = useState<string | null>(null);
+  const [image, setImage] = useState<string | null>(null);
+  const [view, setView] = useState<"chat" | "history" | "memory">("chat");
+  const [memText, setMemText] = useState("");
+  const fileRef = useRef<HTMLInputElement | null>(null);
   const recRef = useRef<SR | null>(null);
   const qc = useQueryClient();
+  const navigate = useNavigate();
 
-  const askFn = useServerFn(assistantQuery);
+  const askFn = useServerFn(assistantAgentQuery);
   const execFn = useServerFn(executeAssistantAction);
+  const listThreadsFn = useServerFn(listAssistantThreads);
+  const getThreadFn = useServerFn(getAssistantThread);
+  const delThreadFn = useServerFn(deleteAssistantThread);
+  const listMemFn = useServerFn(listAssistantMemory);
+  const addMemFn = useServerFn(addAssistantMemory);
+  const delMemFn = useServerFn(deleteAssistantMemory);
+  const learnFn = useServerFn(learnFromThread);
+
+  const threadsQ = useQuery({ queryKey: ["assistant-threads"], queryFn: () => listThreadsFn(), enabled: open && view === "history" });
+  const memoryQ = useQuery({ queryKey: ["assistant-memory"], queryFn: () => listMemFn(), enabled: open && view === "memory" });
+
+  function go(path: string) {
+    const [p, q] = path.split("?");
+    setOpen(false);
+    void navigate({ to: p as never, search: (q ? Object.fromEntries(new URLSearchParams(q)) : {}) as never });
+  }
 
   const ask = useMutation({
     mutationFn: (prompt: string) =>
-      askFn({ data: { classId, text: prompt.trim(), history: history.slice(-4) } }),
+      askFn({
+        data: {
+          classId, text: prompt.trim(), history: history.slice(-6), threadId,
+          today: localIso(), path: window.location.pathname, ...(image ? { image } : {}),
+        },
+      }),
     onSuccess: (r, prompt) => {
       setReply(r);
       setPending(r.actions);
+      if (r.threadId) setThreadId(r.threadId);
+      setImage(null);
+      if (r.navigation?.length === 1 && r.actions.length === 0) go(r.navigation[0]!.path);
       setHistory((h) =>
         [...h, { role: "user" as const, content: prompt.trim() },
           { role: "assistant" as const, content: r.clarify || r.answer }].slice(-6),
@@ -174,15 +247,39 @@ export function AiAssistantDock({ classId }: { classId: string }) {
   }
 
   function reset() {
-    setText(""); setReply(null); setPending([]); setHistory([]);
+    setText(""); setReply(null); setPending([]); setHistory([]); setThreadId(null); setImage(null); setView("chat");
+  }
+
+  /** בסגירת החלון: לומדים מהשיחה סגנון והעדפות (ברקע, בלי להפריע). */
+  function closeAndLearn() {
+    if (threadId && history.filter((m) => m.role === "user").length >= 2) void learnFn({ data: { threadId } }).catch(() => {});
+  }
+
+  async function pickImage(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    e.target.value = "";
+    if (!f) return;
+    try {
+      const url = await fileToDataUrl(f);
+      if (url.length > 6_500_000) { toast.error("התמונה גדולה מדי"); return; }
+      setImage(url);
+    } catch { toast.error("לא הצלחתי לקרוא את התמונה"); }
+  }
+
+  async function openThread(id: string) {
+    try {
+      const msgs = await getThreadFn({ data: { id } });
+      setHistory(msgs.slice(-6).map((m) => ({ role: m.role, content: m.content })));
+      setThreadId(id); setReply(null); setPending([]); setView("chat");
+    } catch (e) { toast.error(e instanceof Error ? e.message : "שגיאה"); }
   }
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
+    <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { closeAndLearn(); reset(); } }}>
       <DialogTrigger asChild>
         <Button
           size="lg"
-          className="fixed bottom-6 start-6 z-40 h-14 w-14 rounded-full shadow-lg p-0 bg-gradient-to-br from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700"
+          className="fixed bottom-20 start-6 z-40 md:bottom-6 h-14 w-14 rounded-full shadow-lg p-0 bg-gradient-to-br from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700"
           title="עוזר הרב"
           aria-label="עוזר הרב — פתח מסייע AI"
         >
@@ -195,9 +292,65 @@ export function AiAssistantDock({ classId }: { classId: string }) {
             <Sparkles className="h-5 w-5 text-amber-500" />
             עוזר הרב — שאל או בקש בקול / בכתב
           </DialogTitle>
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            <Button type="button" size="sm" variant={view === "history" ? "secondary" : "ghost"} className="h-8" onClick={() => setView(view === "history" ? "chat" : "history")}>
+              <History className="ms-1 h-4 w-4" /> שיחות קודמות
+            </Button>
+            <Button type="button" size="sm" variant={view === "memory" ? "secondary" : "ghost"} className="h-8" onClick={() => setView(view === "memory" ? "chat" : "memory")}>
+              <Brain className="ms-1 h-4 w-4" /> מה העוזר זוכר
+            </Button>
+          </div>
         </DialogHeader>
 
-        <div className="space-y-3">
+        {view === "history" && (
+          <div className="space-y-2" aria-label="שיחות קודמות">
+            {threadsQ.isLoading && <p className="text-sm text-muted-foreground">טוען...</p>}
+            {threadsQ.data?.length === 0 && <p className="text-sm text-muted-foreground">עוד אין שיחות שמורות.</p>}
+            <ul className="space-y-1.5">
+              {(threadsQ.data ?? []).map((t) => (
+                <li key={t.id} className="flex items-center gap-1.5">
+                  <Button type="button" variant="outline" className="h-auto flex-1 justify-start py-2 text-start text-sm font-normal" onClick={() => openThread(t.id)}>
+                    <span className="line-clamp-1">{t.title || "שיחה"}</span>
+                    <span className="ms-auto ps-2 text-xs text-muted-foreground">{new Date(t.updated_at).toLocaleDateString("he-IL")}</span>
+                  </Button>
+                  <Button type="button" variant="ghost" size="icon" aria-label="מחק שיחה"
+                    onClick={() => void delThreadFn({ data: { id: t.id } }).then(() => qc.invalidateQueries({ queryKey: ["assistant-threads"] }))}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {view === "memory" && (
+          <div className="space-y-3" aria-label="זיכרון העוזר">
+            <p className="text-xs text-muted-foreground">
+              העוזר לומד מהשיחות איך אתה אוהב לעבוד, ומשתמש בזה בשיחות הבאות. לא נשמרים שמות תלמידים. אפשר למחוק כל פריט.
+            </p>
+            <div className="flex gap-2">
+              <Input value={memText} maxLength={400} onChange={(e) => setMemText(e.target.value)} placeholder="למשל: אני אוהב עלון קצר עם נקודות" aria-label="פריט חדש לזיכרון" />
+              <Button type="button" disabled={memText.trim().length < 3}
+                onClick={() => void addMemFn({ data: { content: memText.trim(), kind: "preference" } }).then(() => { setMemText(""); qc.invalidateQueries({ queryKey: ["assistant-memory"] }); })}>
+                זכור
+              </Button>
+            </div>
+            {memoryQ.data?.length === 0 && <p className="text-sm text-muted-foreground">עוד אין פריטים בזיכרון.</p>}
+            <ul className="space-y-1.5">
+              {(memoryQ.data ?? []).map((m) => (
+                <li key={m.id} className="flex items-start justify-between gap-2 rounded-md border px-2 py-1.5 text-sm">
+                  <span>{m.content}</span>
+                  <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0" aria-label="מחק מהזיכרון"
+                    onClick={() => void delMemFn({ data: { id: m.id } }).then(() => qc.invalidateQueries({ queryKey: ["assistant-memory"] }))}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <div className={view === "chat" ? "space-y-3" : "hidden"}>
           {history.length > 0 && (
             <div className="space-y-1 rounded-md border bg-muted/30 p-2 text-xs">
               {history.slice(0, -2).map((m, i) => (
@@ -221,11 +374,25 @@ export function AiAssistantDock({ classId }: { classId: string }) {
               aria-label="בקשה לעוזר הרב"
             />
             <div className="absolute top-2 end-2 flex gap-1">
+              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={pickImage} aria-label="צירוף תמונה" />
+              <Button type="button" size="icon" variant={image ? "secondary" : "outline"} onClick={() => fileRef.current?.click()} title="צרף תמונה, למשל מערכת שעות" aria-label="צרף תמונה">
+                <Paperclip className="h-4 w-4" />
+              </Button>
               <Button type="button" size="icon" variant={recording ? "destructive" : "outline"} onClick={toggleRec} title="הקלטה" aria-label={recording ? "עצור הקלטה" : "התחל הקלטה קולית"}>
                 {recording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
               </Button>
             </div>
           </div>
+
+          {image && (
+            <div className="flex items-center gap-2 rounded-md border p-1.5">
+              <img src={image} alt="תמונה מצורפת" className="h-14 w-14 rounded object-cover" />
+              <span className="text-xs text-muted-foreground">התמונה תישלח עם הבקשה הבאה</span>
+              <Button type="button" variant="ghost" size="icon" className="ms-auto h-7 w-7" onClick={() => setImage(null)} aria-label="הסר תמונה">
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
 
           {!reply && !ask.isPending && (
             <div className="flex flex-wrap gap-1.5">
@@ -271,8 +438,20 @@ export function AiAssistantDock({ classId }: { classId: string }) {
             <Card className="border-amber/30 bg-amber/5">
               <CardContent className="space-y-2 py-3">
                 <p className="whitespace-pre-wrap text-sm">{reply.answer}</p>
-                {reply.mode === "read" && (
-                  <AssistantSnapshotTable rows={reply.snapshot ?? []} />
+                {(reply.navigation?.length ?? 0) > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {reply.navigation!.map((n) => (
+                      <Button key={n.path} type="button" size="sm" variant="secondary" onClick={() => go(n.path)}>
+                        <ArrowLeft className="ms-1 h-4 w-4" /> פתח: {n.label}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+                {reply.mode === "read" && (reply.snapshot?.length ?? 0) > 0 && (
+                  <details className="rounded-md border">
+                    <summary className="cursor-pointer select-none p-2 text-xs font-medium">טבלת מצב הכיתה</summary>
+                    <div className="p-2"><AssistantSnapshotTable rows={reply.snapshot ?? []} /></div>
+                  </details>
                 )}
                 {reply.mode === "read" && reply.sources.length > 0 && (
                   <div className="space-y-1.5">

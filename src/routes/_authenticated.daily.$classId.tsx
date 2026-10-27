@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { AiAssistantDock } from "@/components/ai-assistant-dock";
 import { HebrewDateInput } from "@/components/hebrew-date-input";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -426,7 +425,6 @@ function DailySummaryPage() {
         />
       )}
 
-      <AiAssistantDock classId={classId} />
     </div>
 
   );

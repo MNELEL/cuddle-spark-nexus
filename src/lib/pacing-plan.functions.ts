@@ -54,7 +54,7 @@ async function ownedClass(supabase: any, classId: string, userId: string) {
 type FutureLesson = { id: string; name: string; date: string; weekStart: string; hour: number; minute: number };
 
 /** כל שיעורי המערכת מהיום והלאה, בלי ימים ללא לימודים, בסדר כרונולוגי. */
-async function loadFutureLessons(supabase: any, classId: string, today: string): Promise<FutureLesson[]> {
+export async function loadFutureLessons(supabase: any, classId: string, today: string): Promise<FutureLesson[]> {
   const fromWeek = weekStartIso(today);
   const rows: any[] = [];
   for (let from = 0; ; from += 1000) {
@@ -88,7 +88,7 @@ async function loadFutureLessons(supabase: any, classId: string, today: string):
     .sort((a, b) => a.date.localeCompare(b.date) || a.hour - b.hour || a.minute - b.minute);
 }
 
-async function loadPlans(supabase: any, classId: string): Promise<PacingSubjectPlan[]> {
+export async function loadPlans(supabase: any, classId: string): Promise<PacingSubjectPlan[]> {
   const { data, error } = await supabase
     .from("pacing_subject_plans")
     .select("subject,mode,total_amount,unit_label,start_number,topics")
@@ -111,7 +111,7 @@ async function loadBuffer(supabase: any, classId: string): Promise<number> {
   return Number.isFinite(n) ? n : DEFAULT_BUFFER;
 }
 
-async function loadWeeks(supabase: any, classId: string, fromWeek?: string): Promise<PacingWeekRow[]> {
+export async function loadWeeks(supabase: any, classId: string, fromWeek?: string): Promise<PacingWeekRow[]> {
   let q = supabase
     .from("pacing_plan_weeks")
     .select("id,subject,week_start,lessons,amount,from_label,to_label,topics,edited,status")
@@ -219,17 +219,12 @@ export const savePacingBuffer = createServerFn({ method: "POST" })
   });
 
 /** מחשב טיוטת תוכנית לכל המקצועות שהוגדרה להם כמות או נושאים. מחליף טיוטות קודמות מהשבוע הנוכחי והלאה. */
-export const computePacingPlan = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ classId: uuid, today: dateStr }).parse(d))
-  .handler(async ({ data, context }) => {
-    const supabase = context.supabase as any;
-    await ownedClass(supabase, data.classId, context.userId);
-    const fromWeek = weekStartIso(data.today);
+export async function computePacingPlanCore(supabase: any, classId: string, today: string) {
+    const fromWeek = weekStartIso(today);
     const [lessons, plans, buffer] = await Promise.all([
-      loadFutureLessons(supabase, data.classId, data.today),
-      loadPlans(supabase, data.classId),
-      loadBuffer(supabase, data.classId),
+      loadFutureLessons(supabase, classId, today),
+      loadPlans(supabase, classId),
+      loadBuffer(supabase, classId),
     ]);
     if (plans.length === 0) throw new Error("הגדירו קודם מה צריך להספיק לפחות במקצוע אחד.");
 
@@ -248,11 +243,11 @@ export const computePacingPlan = createServerFn({ method: "POST" })
         buffer,
       );
       const { error: delErr } = await supabase
-        .from("pacing_plan_weeks").delete().eq("class_id", data.classId).eq("subject", plan.subject).gte("week_start", fromWeek);
+        .from("pacing_plan_weeks").delete().eq("class_id", classId).eq("subject", plan.subject).gte("week_start", fromWeek);
       if (delErr) { console.error("[DB Error]", delErr); throw new Error("ניקוי טיוטה קודמת נכשל."); }
       const { error: insErr } = await supabase.from("pacing_plan_weeks").insert(
         res.weeks.map((w) => ({
-          class_id: data.classId,
+          class_id: classId,
           subject: plan.subject,
           week_start: w.weekStart,
           lessons: w.lessons,
@@ -268,9 +263,18 @@ export const computePacingPlan = createServerFn({ method: "POST" })
       summary.push({ subject: plan.subject, weeks: res.weeks.length, planned: res.weeks.reduce((n, w) => n + w.amount, 0), target: plan.total_amount });
     }
     return { summary, bufferPercent: buffer };
+}
+
+export const computePacingPlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ classId: uuid, today: dateStr }).parse(d))
+  .handler(async ({ data, context }) => {
+    const supabase = context.supabase as any;
+    await ownedClass(supabase, data.classId, context.userId);
+    return computePacingPlanCore(supabase, data.classId, data.today);
   });
 
-async function relabelSubject(supabase: any, classId: string, subject: string, startNumber: number) {
+export async function relabelSubject(supabase: any, classId: string, subject: string, startNumber: number) {
   const rows = (await loadWeeks(supabase, classId)).filter((r) => r.subject === subject);
   const labels = relabel(rows.map((r) => r.amount), startNumber);
   const results = await Promise.all(
@@ -336,17 +340,12 @@ export const respreadPacing = createServerFn({ method: "POST" })
  * אישור התוכנית: הטיוטות הופכות למאושרות, והיעד של כל שיעור נכתב להערות השיעור בשבועות הקרובים ("יעד: ...").
  * הערה שכתב המלמד בעצמו לא נדרסת.
  */
-export const approvePacingPlan = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ classId: uuid, today: dateStr }).parse(d))
-  .handler(async ({ data, context }) => {
-    const supabase = context.supabase as any;
-    await ownedClass(supabase, data.classId, context.userId);
-    const fromWeek = weekStartIso(data.today);
+export async function approvePacingPlanCore(supabase: any, classId: string, today: string) {
+    const fromWeek = weekStartIso(today);
     const [plans, weeks, lessons] = await Promise.all([
-      loadPlans(supabase, data.classId),
-      loadWeeks(supabase, data.classId, fromWeek),
-      loadFutureLessons(supabase, data.classId, data.today),
+      loadPlans(supabase, classId),
+      loadWeeks(supabase, classId, fromWeek),
+      loadFutureLessons(supabase, classId, today),
     ]);
     if (weeks.length === 0) throw new Error("אין תוכנית לאשר. חשבו קודם תוכנית.");
 
@@ -390,9 +389,18 @@ export const approvePacingPlan = createServerFn({ method: "POST" })
 
     const { error } = await supabase
       .from("pacing_plan_weeks").update({ status: "approved", updated_at: new Date().toISOString() })
-      .eq("class_id", data.classId).gte("week_start", fromWeek);
+      .eq("class_id", classId).gte("week_start", fromWeek);
     if (error) { console.error("[DB Error]", error); throw new Error("סימון התוכנית כמאושרת נכשל."); }
     return { ok: true, weeks: weeks.length, lessonsUpdated: applied };
+}
+
+export const approvePacingPlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ classId: uuid, today: dateStr }).parse(d))
+  .handler(async ({ data, context }) => {
+    const supabase = context.supabase as any;
+    await ownedClass(supabase, data.classId, context.userId);
+    return approvePacingPlanCore(supabase, data.classId, data.today);
   });
 
 /** מה מתוכנן לשבוע אחד, לכל המקצועות. משמש את העלון והגיליון השבועי. */

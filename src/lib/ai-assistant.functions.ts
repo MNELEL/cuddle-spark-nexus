@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { callLovableAI } from "./ai-gateway.server";
+import { executeExtraAction, isExtraKind } from "./assistant-actions-extra.server";
 import {
   normalizeAssistantReply, buildSourceLinks, type AssistantSourceLink,
 } from "./assistant-reply";
@@ -21,9 +22,18 @@ export const ASSISTANT_ACTION_KINDS = [
   "add_announcement",
   "add_calendar_override",
   "add_recurring_rule",
+  // פעולות הסוכן (מבוצעות ב-assistant-actions-extra.server.ts)
+  "set_weekly_honor",
+  "save_pacing_subject",
+  "compute_pacing",
+  "approve_pacing",
+  "edit_pacing_week",
+  "set_day_column",
+  "swap_seats",
+  "import_timetable",
 ] as const;
 
-const ActionSchema = z.object({
+export const ActionSchema = z.object({
   kind: z.enum(ASSISTANT_ACTION_KINDS),
   summary: z.string().max(280),
   params: z.record(z.string(), ParamValue),
@@ -38,6 +48,14 @@ const CLASS_LEVEL_KINDS = new Set<AssistantActionKind>([
   "add_class_event",
   "add_calendar_override",
   "add_recurring_rule",
+  "set_weekly_honor",
+  "save_pacing_subject",
+  "compute_pacing",
+  "approve_pacing",
+  "edit_pacing_week",
+  "set_day_column",
+  "swap_seats",
+  "import_timetable",
 ]);
 
 
@@ -58,6 +76,10 @@ export type AssistantReply = {
   students: { id: string; name: string }[];
   /** תמונת מצב לכל תלמיד — מוצגת עם חיפוש וסינון מתחת לתשובת קריאה. */
   snapshot: StudentSnapshot[];
+  /** מסכים שהעוזר פותח (סוכן). */
+  navigation?: { label: string; path: string }[];
+  /** מזהה השיחה השמורה, להמשך שיחה. */
+  threadId?: string | null;
 };
 
 export type StudentSnapshot = {
@@ -244,6 +266,16 @@ export const executeAssistantAction = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     const { kind, params } = data.action;
+
+    if (isExtraKind(kind)) {
+      // פעולות הסוכן: בדיקות ובעלות בתוך הפונקציה, וכל כתיבה עוברת דרך הרשאות הבעלים
+      const { data: ownerRow, error: ownerErr } = await supabase
+        .from("classes").select("id,owner_id,status").eq("id", data.classId).maybeSingle();
+      if (ownerErr || !ownerRow || ownerRow.owner_id !== context.userId) throw new Error("הכיתה לא נמצאה");
+      if (ownerRow.status === "archived") throw new Error("הכיתה בארכיון");
+      const r = await executeExtraAction({ supabase, userId: context.userId, classId: data.classId, today: todayIso() }, kind, params);
+      return { ok: true, message: r.message };
+    }
 
     const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
     const safeDate = (v: unknown): string => {

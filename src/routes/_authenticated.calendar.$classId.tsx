@@ -1,6 +1,5 @@
 import { HDate, HebrewCalendar, Locale } from "@hebcal/core";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { AiAssistantDock } from "@/components/ai-assistant-dock";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -303,7 +302,6 @@ function CalendarPage() {
         />
       )}
 
-      <AiAssistantDock classId={classId} />
     </div>
 
   );

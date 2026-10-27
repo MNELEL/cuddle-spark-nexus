@@ -108,6 +108,54 @@ export async function callLovableAI(params: CallLovableAIParams): Promise<string
   return json.choices?.[0]?.message?.content ?? "";
 }
 
+export interface ChatToolDef {
+  type: "function";
+  function: { name: string; description: string; parameters: Record<string, unknown> };
+}
+export interface ChatToolCall { id: string; type: "function"; function: { name: string; arguments: string } }
+export interface ChatMessageOut { content: string | null; tool_calls?: ChatToolCall[] }
+
+/**
+ * Same gateway and error handling as callLovableAI, but returns the whole message,
+ * and lets the model call tools (used by the personal assistant agent).
+ */
+export async function callLovableAIChat(params: {
+  messages: AnyMessage[];
+  tools?: ChatToolDef[];
+  model?: string;
+}): Promise<ChatMessageOut> {
+  const blocked = breakerBlockedMessage();
+  if (blocked) throw new Error(blocked);
+  const apiKey = process.env.LOVABLE_API_KEY;
+  if (!apiKey) {
+    openBreaker("no_key", MSG_NO_KEY);
+    throw new Error(MSG_NO_KEY);
+  }
+  const body: Record<string, unknown> = {
+    model: params.model ?? "google/gemini-2.5-flash",
+    messages: params.messages,
+  };
+  if (params.tools?.length) { body.tools = params.tools; body.tool_choice = "auto"; }
+  const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Lovable-API-Key": apiKey,
+      "X-Lovable-AIG-SDK": "fetch",
+    },
+    body: JSON.stringify(body),
+  });
+  if (resp.status === 429) { openBreaker("rate_limited", MSG_RATE_LIMITED); throw new Error(MSG_RATE_LIMITED); }
+  if (resp.status === 402) { openBreaker("no_credits", MSG_NO_CREDITS); throw new Error(MSG_NO_CREDITS); }
+  if (!resp.ok) {
+    console.error("[AI Gateway Error]", resp.status, await resp.text().catch(() => ""));
+    throw new Error(`שגיאת AI: ${resp.status}`);
+  }
+  closeBreaker();
+  const json = (await resp.json()) as { choices?: { message?: ChatMessageOut }[] };
+  return json.choices?.[0]?.message ?? { content: "" };
+}
+
 /**
  * Shared Lovable AI Gateway embeddings caller.
  * Returns `null` on any failure (missing key, HTTP error, malformed response)
