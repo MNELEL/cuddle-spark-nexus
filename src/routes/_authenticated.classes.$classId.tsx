@@ -40,7 +40,7 @@ import {
 import { ClassTeacherName } from "@/components/class-teacher-name";
 import { ClassLibraryStatus } from "@/components/class-library-status";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowRight, Heart, Ban, MoveHorizontal, Pencil, Plus, Trash2, FolderOpen, FileText, Sparkles, Trophy, Users, Library, Monitor, Upload, Printer, Copy, Dices, Globe2, Award, ScanText, TrendingUp, CalendarDays, Wand2, MessageSquare, MoreHorizontal, LayoutGrid, Pin, Search, Megaphone } from "lucide-react";
+import { ArrowRight, Heart, Ban, MoveHorizontal, Pencil, Plus, Trash2, FolderOpen, FileText, Sparkles, Trophy, Users, Library, Monitor, Upload, Printer, Copy, Dices, Globe2, Award, ScanText, TrendingUp, CalendarDays, Wand2, MessageSquare, MoreHorizontal, LayoutGrid, Pin, Search, Megaphone, ChevronUp, ChevronDown, ListOrdered, Check } from "lucide-react";
 import { useShowGregorian } from "@/lib/date-display";
 import { toast } from "sonner";
 import { copyList, printList } from "@/lib/print-list";
@@ -59,6 +59,9 @@ import { StudentFileSheet } from "@/components/student-file-sheet";
 import { AiAssistantDock } from "@/components/ai-assistant-dock";
 import { LessonsTab } from "@/components/lessons-tab";
 import { DayTrackingPanel } from "@/components/day-tracking-panel";
+import { reorderStudents } from "@/lib/student-order.functions";
+import { formatStudentName, NAME_FORMAT_LABEL, type NameFormat } from "@/lib/student-name";
+import { useNameFormat } from "@/hooks/use-name-format";
 import { SeatFillGrid } from "@/components/seat-fill-grid";
 import { openCommandPalette } from "@/components/global-command-palette";
 import { isValidClassId } from "@/lib/class-id-guard";
@@ -120,6 +123,47 @@ function ClassToolsMenu({ classId, onAddAnnouncement }: { classId: string; onAdd
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+/** שינוי סדר הלשוניות: חצים, ואיפוס לסדר המקורי. */
+function TabOrderDialog({ order, onChange }: { order: ClassTab[]; onChange: (o: ClassTab[]) => void }) {
+  const move = (i: number, d: -1 | 1) => {
+    const j = i + d;
+    if (j < 0 || j >= order.length) return;
+    const n = [...order];
+    [n[i], n[j]] = [n[j]!, n[i]!];
+    onChange(n);
+  };
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="icon" aria-label="שינוי סדר הלשוניות" title="סדר הלשוניות">
+          <ListOrdered className="h-4 w-4" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent dir="rtl" className="sm:max-w-sm">
+        <DialogHeader><DialogTitle>סדר הלשוניות</DialogTitle></DialogHeader>
+        <ol className="space-y-1.5">
+          {order.map((t, i) => (
+            <li key={t} className="flex items-center justify-between gap-2 rounded-lg border px-3 py-2">
+              <span className="text-sm font-medium">{TAB_LABEL[t]}</span>
+              <span className="flex gap-1">
+                <Button type="button" variant="ghost" size="icon" aria-label={`הזז את ${TAB_LABEL[t]} קדימה`} disabled={i === 0} onClick={() => move(i, -1)}>
+                  <ChevronUp className="h-4 w-4" />
+                </Button>
+                <Button type="button" variant="ghost" size="icon" aria-label={`הזז את ${TAB_LABEL[t]} אחורה`} disabled={i === order.length - 1} onClick={() => move(i, 1)}>
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </span>
+            </li>
+          ))}
+        </ol>
+        <Button type="button" variant="outline" size="sm" onClick={() => onChange([...CLASS_TABS])}>
+          איפוס לסדר המקורי
+        </Button>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -212,6 +256,15 @@ const normalizeTab = (t?: string | null): ClassTab | null => {
   return LEGACY_TABS[t] ?? null;
 };
 const START_TAB_KEY = "class-start-tab";
+const TAB_ORDER_KEY = "class-tab-order";
+const TAB_LABEL: Record<ClassTab, string> = { students: "תלמידים", seating: "סידור הושבה", day: "דשבורד יומי", more: "עוד" };
+// סדר הלשוניות נשמר במכשיר; לשונית חסרה או לא מוכרת לא שוברת את המסך
+const normalizeOrder = (raw: unknown): ClassTab[] => {
+  const out: ClassTab[] = [];
+  if (Array.isArray(raw)) for (const t of raw) { const n = normalizeTab(String(t)); if (n && !out.includes(n)) out.push(n); }
+  for (const t of CLASS_TABS) if (!out.includes(t)) out.push(t);
+  return out;
+};
 
 export const Route = createFileRoute("/_authenticated/classes/$classId")({
   component: ClassDetail,
@@ -259,6 +312,7 @@ type Student = {
   father_name?: string | null; father_id?: string | null; father_phone?: string | null;
   mother_name?: string | null; mother_id?: string | null; mother_phone?: string | null;
   seat_row?: number | null; seat_col?: number | null;
+  sort_order?: number | null;
 };
 
 function ClassDetail() {
@@ -276,6 +330,17 @@ function ClassDetail() {
     setStartTab(normalizeTab(saved) ?? "seating");
   }, []);
   const [annOpen, setAnnOpen] = useState(false);
+  const [tabOrder, setTabOrder] = useState<ClassTab[]>([...CLASS_TABS]);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(TAB_ORDER_KEY);
+      if (raw) setTabOrder(normalizeOrder(JSON.parse(raw)));
+    } catch { /* אחסון חסום או ערך פגום */ }
+  }, []);
+  const saveTabOrder = (o: ClassTab[]) => {
+    setTabOrder(o);
+    try { localStorage.setItem(TAB_ORDER_KEY, JSON.stringify(o)); } catch { /* אחסון חסום */ }
+  };
   const tab: ClassTab | null = normalizeTab(search.tab) ?? startTab;
   const makeStartTab = () => {
     if (!tab) return;
@@ -390,24 +455,25 @@ function ClassDetail() {
       <Tabs value={tab ?? ""} onValueChange={setTab} dir="rtl">
         <div className="flex flex-wrap items-center gap-2">
           <TabsList className="h-auto flex-wrap">
-            <TabsTrigger value="students">תלמידים</TabsTrigger>
-            <TabsTrigger value="seating">סידור הושבה</TabsTrigger>
-            <TabsTrigger value="day">דשבורד יומי</TabsTrigger>
-            <TabsTrigger value="more">עוד</TabsTrigger>
+            {tabOrder.map((t) => (
+              <TabsTrigger key={t} value={t}>{TAB_LABEL[t]}</TabsTrigger>
+            ))}
           </TabsList>
-          {tab && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="ms-auto"
-              disabled={startTab === tab}
-              onClick={makeStartTab}
-              aria-label={startTab === tab ? "זה מסך הפתיחה של הכיתה" : "קבע את המסך הזה כמסך פתיחה"}
-              title={startTab === tab ? "מסך הפתיחה" : "קבע כמסך פתיחה"}
-            >
-              <Pin className={`h-4 w-4 ${startTab === tab ? "fill-current" : ""}`} />
-            </Button>
-          )}
+          <div className="ms-auto flex items-center">
+            <TabOrderDialog order={tabOrder} onChange={saveTabOrder} />
+            {tab && (
+              <Button
+                variant="ghost"
+                size="icon"
+                disabled={startTab === tab}
+                onClick={makeStartTab}
+                aria-label={startTab === tab ? "זה מסך הפתיחה של הכיתה" : "קבע את המסך הזה כמסך פתיחה"}
+                title={startTab === tab ? "מסך הפתיחה" : "קבע כמסך פתיחה"}
+              >
+                <Pin className={`h-4 w-4 ${startTab === tab ? "fill-current" : ""}`} />
+              </Button>
+            )}
+          </div>
         </div>
 
         {tab === null && <Skeleton className="mt-4 h-64 w-full" />}
@@ -490,6 +556,7 @@ const rowLabel = { front: "קדמית", mid: "אמצעית", back: "אחורית
 /* ---- sorting ---- */
 
 const SORT_OPTIONS = {
+  manual: "סדר ידני",
   first_name: "שם פרטי",
   last_name: "שם משפחה",
   parent_name: "שם הורה",
@@ -547,6 +614,16 @@ function sortStudents(
   const he = (a: string, b: string) => a.localeCompare(b, "he");
   const rows = [...students];
   switch (key) {
+    case "manual":
+      // סדר שנקבע ידנית; מי שעדיין בלי מקום (למשל תלמיד חדש) בסוף, לפי שם
+      return rows.sort((a, b) => {
+        const oa = a.sort_order ?? null;
+        const ob = b.sort_order ?? null;
+        if (oa == null && ob == null) return he(a.name, b.name);
+        if (oa == null) return 1;
+        if (ob == null) return -1;
+        return oa - ob;
+      });
     case "first_name":
       return rows.sort((a, b) => {
         const pa = nameParts(a); const pb = nameParts(b);
@@ -646,6 +723,9 @@ function StudentsTab({
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Student | null>(null);
   const [fileFor, setFileFor] = useState<Student | null>(null);
+  const [nameFormat, setNameFormat] = useNameFormat();
+  const qc = useQueryClient();
+  const reorderFn = useServerFn(reorderStudents);
   // המיון נשמר בכתובת; ה-localStorage הוא ברירת מחדל בלבד כשאין פרמטר
   useEffect(() => {
     const saved = localStorage.getItem(sortStorageKey(classId));
@@ -690,6 +770,28 @@ function StudentsTab({
     return searchField === "first_name" ? first : searchField === "last_name" ? (last || "—") : (s.name ?? "");
   });
   const isDirty = query.trim().length > 0 || searchField !== "full_name" || sortKey !== "first_name";
+  // סדר ידני: הזזה רק כשאין חיפוש פעיל, כדי שהמקום ברשימה יהיה ברור
+  const manualActive = sortKey === "manual" && !query.trim() && searchField === "full_name";
+  const reorderM = useMutation({
+    mutationFn: (ids: string[]) => reorderFn({ data: { classId, orderedIds: ids } }),
+    onMutate: async (ids: string[]) => {
+      // עדכון מיידי במסך, ואז רענון מהשרת
+      const pos = new Map(ids.map((id, i) => [id, i + 1]));
+      qc.setQueryData(["students", classId], (old: unknown) =>
+        Array.isArray(old) ? old.map((s: Student) => ({ ...s, sort_order: pos.get(s.id) ?? s.sort_order ?? null })) : old,
+      );
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["students", classId] }),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "שמירת הסדר נכשלה"),
+  });
+  const moveStudent = (id: string, dir: "up" | "down") => {
+    const ids = sorted.map((s) => s.id);
+    const i = ids.indexOf(id);
+    const j = dir === "up" ? i - 1 : i + 1;
+    if (i < 0 || j < 0 || j >= ids.length) return;
+    [ids[i], ids[j]] = [ids[j]!, ids[i]!];
+    reorderM.mutate(ids);
+  };
   const PAGE_SIZE = 25;
   const pageCount = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
   const safePage = Math.min(Math.max(1, page), pageCount);
@@ -774,6 +876,14 @@ function StudentsTab({
             <DropdownMenuItem onClick={() => void doCopy()}>
               <Copy className="ms-1 h-4 w-4" /> העתקת שמות
             </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>תצוגת שם התלמיד</DropdownMenuLabel>
+            {(Object.keys(NAME_FORMAT_LABEL) as NameFormat[]).map((f) => (
+              <DropdownMenuItem key={f} onClick={() => setNameFormat(f)}>
+                <Check className={`ms-1 h-4 w-4 ${nameFormat === f ? "" : "invisible"}`} /> {NAME_FORMAT_LABEL[f]}
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuSeparator />
             <DropdownMenuItem disabled={handoffM.isPending} onClick={() => handoffM.mutate()}>
               <FileText className="ms-1 h-4 w-4" /> {handoffM.isPending ? "מכין…" : "מסמך מסירה PDF"}
             </DropdownMenuItem>
@@ -788,6 +898,13 @@ function StudentsTab({
             איפוס סינון ומיון
           </Button>
         </div>
+      )}
+      {sortKey === "manual" && (
+        <p className="text-xs text-muted-foreground" aria-live="polite">
+          {manualActive
+            ? "סדר ידני: השתמש בחצים ליד כל תלמיד כדי להזיז אותו."
+            : "הזזת תלמידים זמינה כשאין חיפוש פעיל."}
+        </p>
       )}
       {searchField === "last_name" && (
         <p className="text-xs text-muted-foreground">
@@ -806,8 +923,12 @@ function StudentsTab({
         </CardContent></Card>
       ) : (
         <div className="grid gap-2">
-          {pageRows.map((s) => (
-            <StudentRow key={s.id} student={s} scoreInputs={scoreInputs}
+          {pageRows.map((s, i) => (
+            <StudentRow key={s.id} student={s} scoreInputs={scoreInputs} nameFormat={nameFormat}
+              move={manualActive ? (() => {
+                const idx = (safePage - 1) * PAGE_SIZE + i;
+                return { canUp: idx > 0, canDown: idx < sorted.length - 1, busy: reorderM.isPending, onMove: (d: "up" | "down") => moveStudent(s.id, d) };
+              })() : undefined}
               onEdit={() => { setEditing(s); setOpen(true); }}
               onOpenFile={() => setFileFor(s)} />
           ))}
@@ -910,9 +1031,11 @@ function StudentDetailsLine({ student }: { student: Student }) {
 }
 
 function StudentRow({
-  student, onEdit, onOpenFile, scoreInputs,
+  student, onEdit, onOpenFile, scoreInputs, nameFormat = "first_last", move,
 }: {
   student: Student; onEdit: () => void; onOpenFile: () => void;
+  nameFormat?: NameFormat;
+  move?: { canUp: boolean; canDown: boolean; busy: boolean; onMove: (d: "up" | "down") => void };
   scoreInputs?: { grades: { student_id: string; value: number; max_value: number }[]; attendance: { student_id: string; status: string }[]; behavior: { student_id: string; points: number }[] };
 }) {
   const remove = useServerFn(deleteStudent);
@@ -940,7 +1063,7 @@ function StudentRow({
               aria-label={`פתח תיק תלמיד: ${student.name}`}
               className="text-start font-semibold hover:underline focus-visible:underline"
             >
-              {student.name}
+              {formatStudentName(student, nameFormat)}
             </button>
             {score && <ScoreBadge score={score} size="sm" />}
           </div>
@@ -953,6 +1076,16 @@ function StudentRow({
           <StudentDetailsLine student={student} />
         </div>
         <div className="flex gap-1">
+          {move && (
+            <>
+              <Button variant="ghost" size="icon" aria-label={`הזז את ${student.name} למעלה`} disabled={!move.canUp || move.busy} onClick={() => move.onMove("up")} title="הזז למעלה">
+                <ChevronUp className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" aria-label={`הזז את ${student.name} למטה`} disabled={!move.canDown || move.busy} onClick={() => move.onMove("down")} title="הזז למטה">
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </>
+          )}
           <Button variant="ghost" size="icon" aria-label={`פתח תיק תלמיד עבור ${student.name}`} onClick={onOpenFile} title="תיק תלמיד">
             <FolderOpen className="h-4 w-4" />
           </Button>

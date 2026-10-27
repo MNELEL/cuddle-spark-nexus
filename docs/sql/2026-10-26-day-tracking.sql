@@ -123,3 +123,6 @@ where rated = true and criteria = '[]'::jsonb;
 -- ניקוי עתידי, רק אחרי שהקוד החדש באוויר ונבדק (פעולה בלתי הפיכה):
 -- alter table public.session_ratings drop column readiness, drop column listening, drop column behavior, drop column work_done;
 
+-- 8. סדר ידני של תלמידים (הורץ ב-26/10/2026). null = עדיין בלי מקום קבוע; מוצג בסוף, לפי שם.
+alter table public.students add column if not exists sort_order integer;
+

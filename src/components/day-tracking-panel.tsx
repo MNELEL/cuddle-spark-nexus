@@ -14,8 +14,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { StudentFileSheet } from "@/components/student-file-sheet";
+import { formatStudentName } from "@/lib/student-name";
+import { useNameFormat } from "@/hooks/use-name-format";
 
-type Student = { id: string; name: string };
+type Student = { id: string; name: string; first_name?: string | null; last_name?: string | null; sort_order?: number | null };
 
 // דירוג של תלמיד בשעה אחת: מפתח קריטריון ← 1 חלש, 2 בינוני, 3 טוב
 type Rating = Record<string, number>;
@@ -78,10 +80,24 @@ export function DayTrackingPanel({ classId }: { classId: string }) {
   const [date, setDate] = useState<string | null>(null);
   useEffect(() => { setDate(toIso(new Date())); }, []);
 
-  const { data: students = [] } = useQuery({
+  const { data: studentsRaw = [] } = useQuery({
     queryKey: ["students", classId],
     queryFn: () => listS({ data: { classId } }),
   }) as { data: Student[] };
+  const [nameFormat] = useNameFormat();
+  // אותו סדר ידני שנקבע ברשימת התלמידים (אם נקבע), אחרת לפי שם
+  const students = useMemo(() => {
+    const rows = [...studentsRaw];
+    if (!rows.some((s) => s.sort_order != null)) return rows;
+    return rows.sort((a, b) => {
+      const oa = a.sort_order ?? null;
+      const ob = b.sort_order ?? null;
+      if (oa == null && ob == null) return a.name.localeCompare(b.name, "he");
+      if (oa == null) return 1;
+      if (ob == null) return -1;
+      return oa - ob;
+    });
+  }, [studentsRaw]);
   const { data: day, isLoading: dayLoading } = useQuery({
     queryKey: ["day", classId, date],
     enabled: !!date,
@@ -294,7 +310,7 @@ export function DayTrackingPanel({ classId }: { classId: string }) {
                             aria-label={`פתח תיק תלמיד: ${s.name}`}
                             className="text-start hover:underline focus-visible:underline"
                           >
-                            {s.name}
+                            {formatStudentName(s, nameFormat)}
                           </button>
                         </th>
                         <td className="border-b border-l p-0.5">
