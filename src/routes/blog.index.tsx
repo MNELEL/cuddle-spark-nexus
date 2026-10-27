@@ -73,7 +73,7 @@ function BlogIndex() {
         </div>
       </header>
       <main className="mx-auto max-w-3xl px-6 py-12">
-        <h1 className="text-3xl font-bold tracking-tight">מאמרים ומדריכים</h1>
+        <h1 className="text-3xl font-bold tracking-tight">מדריכי ניהול כיתה ותבניות הוראה למלמדים</h1>
         <p className="mt-3 text-muted-foreground">
           תוכן מקצועי לרבנים, מלמדים ומנהלי תלמודי תורה — בגובה העיניים.
         </p>
