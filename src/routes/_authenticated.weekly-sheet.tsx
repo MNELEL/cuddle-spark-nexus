@@ -20,6 +20,7 @@ import {
 } from "@/lib/weekly-sheet";
 
 import { WeekScheduleCard } from "@/components/schedule/week-schedule-card";
+import { WeekPlanCard } from "@/components/schedule/week-plan-card";
 export const Route = createFileRoute("/_authenticated/weekly-sheet")({
   component: WeeklySheetPage,
   head: () => ({
@@ -150,6 +151,7 @@ function WeeklySheetPage() {
               <WeekScheduleCard classId={classId} />
             </div>
           </details>}
+      {classId !== "general" && <div className="print:hidden"><WeekPlanCard classId={classId} /></div>}
 
       <Card>
         <CardHeader className="pb-3">

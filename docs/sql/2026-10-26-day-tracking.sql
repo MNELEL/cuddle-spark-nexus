@@ -140,3 +140,48 @@ alter table public.students add column if not exists sort_order integer;
 alter table public.class_day_slots add column if not exists subject text;
 alter table public.class_day_slots add constraint class_day_slots_class_subject_key unique (class_id, subject);
 
+-- 11. תכנון קצב שנתי (הורץ ב-27/10/2026). לכל מקצוע: כמות כוללת ו/או רשימת נושאים; ושורה לכל שבוע מחושב.
+-- pacing_subject_plans.mode: amount | topics | both. start_number = מאיזו יחידה מתחילים (למשל דף 2).
+-- pacing_plan_weeks.status: draft | approved. edited = המלמד שינה את הכמות ידנית. from_label/to_label = טווח היחידות.
+create table public.pacing_subject_plans (
+  id uuid primary key default gen_random_uuid(),
+  class_id uuid not null references public.classes(id) on delete cascade,
+  subject text not null,
+  mode text not null default 'amount' check (mode in ('amount','topics','both')),
+  total_amount numeric check (total_amount is null or total_amount >= 0),
+  unit_label text not null default 'יחידות',
+  start_number numeric not null default 1,
+  topics jsonb not null default '[]'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (class_id, subject)
+);
+alter table public.pacing_subject_plans enable row level security;
+create policy pacing_subject_plans_owner_all on public.pacing_subject_plans for all to authenticated
+  using (exists (select 1 from public.classes c where c.id = pacing_subject_plans.class_id and c.owner_id = auth.uid()))
+  with check (exists (select 1 from public.classes c where c.id = pacing_subject_plans.class_id and c.owner_id = auth.uid()));
+revoke all on public.pacing_subject_plans from anon;
+
+create table public.pacing_plan_weeks (
+  id uuid primary key default gen_random_uuid(),
+  class_id uuid not null references public.classes(id) on delete cascade,
+  subject text not null,
+  week_start date not null,
+  lessons integer not null default 0 check (lessons >= 0),
+  amount numeric not null default 0 check (amount >= 0),
+  from_label text,
+  to_label text,
+  topics text,
+  edited boolean not null default false,
+  status text not null default 'draft' check (status in ('draft','approved')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (class_id, subject, week_start)
+);
+create index pacing_plan_weeks_class_week_idx on public.pacing_plan_weeks (class_id, week_start);
+alter table public.pacing_plan_weeks enable row level security;
+create policy pacing_plan_weeks_owner_all on public.pacing_plan_weeks for all to authenticated
+  using (exists (select 1 from public.classes c where c.id = pacing_plan_weeks.class_id and c.owner_id = auth.uid()))
+  with check (exists (select 1 from public.classes c where c.id = pacing_plan_weeks.class_id and c.owner_id = auth.uid()));
+revoke all on public.pacing_plan_weeks from anon;
+

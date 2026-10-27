@@ -103,6 +103,9 @@ function ClassToolsMenu({ classId, onAddAnnouncement }: { classId: string; onAdd
         <DropdownMenuItem asChild>
           <Link to="/weekly-schedule/$classId" params={{ classId }}><CalendarDays className="ms-1 h-4 w-4" /> מערכת שבועית</Link>
         </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/pacing/$classId" params={{ classId }}><ListOrdered className="ms-1 h-4 w-4" /> תכנון קצב שנתי</Link>
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuLabel>דוחות וקשר עם הורים</DropdownMenuLabel>
         <DropdownMenuItem asChild>
