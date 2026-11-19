@@ -92,7 +92,9 @@ function ResourceDetailPage() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה"),
   });
 
+  const driveUrl = (resource?.content as { drive_url?: string } | null | undefined)?.drive_url;
   const openOriginalFile = async () => {
+    if (driveUrl) { window.open(driveUrl, "_blank", "noopener"); return; }
     if (!resource?.file_path) return;
     try {
       const { url } = await signUrl({ data: { file_path: resource.file_path } });
@@ -136,7 +138,7 @@ function ResourceDetailPage() {
           </Link>
         </Button>
         <div className="ms-auto flex flex-wrap gap-2">
-          {resource.file_path && (
+          {(resource.file_path || driveUrl) && (
             <Button variant="outline" size="sm" onClick={openOriginalFile}>
               <Download className="ms-1 h-4 w-4" /> קובץ מקורי
             </Button>

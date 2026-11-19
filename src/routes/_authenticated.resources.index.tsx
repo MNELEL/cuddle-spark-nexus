@@ -34,7 +34,10 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { KODESH_SUBJECTS } from "@/lib/kodesh-subjects";
+import { KODESH_SUBJECTS as BASE_SUBJECTS } from "@/lib/kodesh-subjects";
+
+/** נושאי הספרייה: מקצועות הקודש הקיימים + נושאים שנוספו בייבוא מהדרייב */
+const KODESH_SUBJECTS = [...BASE_SUBJECTS, "היסטוריה", "טבע", "הבנת הנקרא", "דקדוק"] as const;
 import {
   listResources, upsertResource, deleteResource, generateResourceWithAI,
   listCollections, upsertCollection, deleteCollection, toggleCollectionItem,
@@ -1380,6 +1383,8 @@ function ResourceViewerDialog({
   const hasOriginal = Boolean(c.original_text && c.original_text.trim());
   const [showOriginal, setShowOriginal] = useState(c.source_kind === "upload");
   const signUrl = useServerFn(getResourceSignedUrl);
+  const driveUrl = (c as { drive_url?: string }).drive_url;
+  const driveExtra = ((c as { files?: { title: string; url: string }[] }).files ?? []);
   const openOriginalFile = async () => {
     if (!resource.file_path) return;
     try {
@@ -1450,6 +1455,22 @@ function ResourceViewerDialog({
             <Button variant="outline" size="sm" onClick={openOriginalFile}>
               <Eye className="ms-1 h-4 w-4" /> פתח את הקובץ המקורי
             </Button>
+          )}
+          {driveUrl && (
+            <Button asChild variant="outline" size="sm">
+              <a href={driveUrl} target="_blank" rel="noopener noreferrer">
+                <Eye className="ms-1 h-4 w-4" /> פתח בדרייב
+              </a>
+            </Button>
+          )}
+          {driveExtra.length > 0 && (
+            <ul className="list-disc space-y-1 ps-5 text-sm">
+              {driveExtra.map((f) => (
+                <li key={f.url}>
+                  <a href={f.url} target="_blank" rel="noopener noreferrer" className="underline">{f.title}</a>
+                </li>
+              ))}
+            </ul>
           )}
           {c.materials && c.materials.length > 0 && (
             <div>
