@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { advisorInput, interventionPlan, lessonPlanInput, lessonPlanResult, sugyaInput, sugyaResult } from "./claude-tools.schemas";
 import { hebrewDate } from "./hebrew-date";
+import { claudeExamInput, claudeExamOutputSchema, validateClaudeExam } from "./claude-exam.schemas";
 
 const BLOCK_SOURCE = "claude-tools-access-block";
 const objectSchema = (properties: Record<string, unknown>) => ({ type: "object", properties, required: Object.keys(properties), additionalProperties: false });
@@ -22,12 +23,12 @@ const outputSchemas = {
     sourceCaution: stringSchema,
   }),
 };
-async function generate(context: { supabase: any; userId: string }, key: string | undefined, system: string, input: unknown) {
+async function generate(context: { supabase: any; userId: string }, key: string | undefined, system: string, input: unknown, outputSchema?: Record<string, unknown>) {
   if (!key) throw new Error("שירות Claude אינו מוגדר כרגע.");
   // Logs are diagnostic only: a past provider failure must never block a new request.
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { runClaude } = await import("./claude-tools.server");
-  const schema = input && typeof input === "object" && "studentName" in input ? outputSchemas.letter : input && typeof input === "object" && "dilemma" in input ? outputSchemas.advisor : input && typeof input === "object" && "gradeLevel" in input ? outputSchemas.lesson : outputSchemas.sugya;
+  const schema = outputSchema ?? (input && typeof input === "object" && "studentName" in input ? outputSchemas.letter : input && typeof input === "object" && "dilemma" in input ? outputSchemas.advisor : input && typeof input === "object" && "gradeLevel" in input ? outputSchemas.lesson : outputSchemas.sugya);
   try { return await runClaude(key, system, input, schema); }
   catch (error) {
     const status = error && typeof error === "object" && "status" in error ? Number(error.status) : 0;
@@ -95,4 +96,14 @@ export const generateLessonPlan = createServerFn({ method: "POST" }).middleware(
       'אתה הרב המלמד. הכן מערך שיעור מלא בעברית מכובדת לפי המקצוע, שכבת הגיל, הנושא ומשך השיעור בנתוני המשתמש. כלול מטרות, פתיחה, ציר זמן שסך דקותיו שווה בדיוק למשך השיעור, שאלות מנחות להבנה, ובדיוק שלוש רמות של דפי עבודה (תמיכה, רגיל, העשרה) מוכנות להדפסת A4, ושיעורי בית. כשאין טקסט מקור, אל תמציא ציטוטים או מראי מקומות; ציין שחובה לאמת את המקור. החזר JSON בלבד: {"title":"","objectives":[""],"opening":"","timeline":[{"minutes":0,"activity":""}],"guidingQuestions":[""],"worksheetLevels":[{"level":"","questions":[""]}],"homework":"","sourceCaution":""}.', data);
     const { parseClaudeJson } = await import("./claude-tools.server");
     return lessonPlanResult.parse(parseClaudeJson(raw));
+  });
+
+export const generateClaudeExam = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+  .inputValidator((d) => claudeExamInput.parse(d)).handler(async ({ data, context }) => {
+    const { requireActiveAITrial } = await import("./ai-entitlement.server");
+    await requireActiveAITrial(context.supabase, context.userId);
+    const raw = await generate(context, process.env['LOVABLE_API_KEY'],
+      'אתה הרב המלמד בתלמוד תורה. הכן מבחן ומחוון בדיקה בעברית לפי המקצוע ושכבת הגיל שבנתוני המשתמש. אם צורף קטע מקור, בסס את כל השאלות והתשובות רק עליו; אחרת בסס על הנושא, בלי להמציא ציטוטים או מראי מקומות, וציין ב-sourceCaution שחובה לאמת את התוכן והמקורות לפני מסירה. צור בדיוק knowledgeCount שאלות בקיאות (זכירה, זיהוי והבנת פשט) ובדיוק depthCount שאלות העמקה (הסבר, השוואה ויישום), בקיאות תחילה. כל שאלה פתוחה, ברורה ועצמאית עם ניקוד שלם חיובי, תשובה צפויה ומחוון מפורט המאפשר ניקוד חלקי. סכום points של השאלות חייב להיות בדיוק totalPoints; סכום points של criteria בכל שאלה חייב להיות בדיוק points שלה. אין שאלות ללא תשובה מבוססת, אין קריטריונים עמומים ואין התייחסות למידע שלא סופק. התאם את ההיקף ל-durationMinutes. כתוב instructions לתלמיד בלבד בלי תשובות. החזר JSON לפי הסכמה שסופקה.', data, claudeExamOutputSchema);
+    const { parseClaudeJson } = await import("./claude-tools.server");
+    return validateClaudeExam(parseClaudeJson(raw), data);
   });

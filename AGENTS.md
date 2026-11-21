@@ -4,3 +4,4 @@
 - Seating, grade extraction, exam generation, and transcript resource prompts keep free-form caller preferences in user-role data, never system instructions, to preserve server-owned task constraints.
 - Selected trial-gated AI actions use ai-entitlement.server.ts before provider calls; it mirrors the existing trial window and legacy lazy-start behavior without changing ordinary record access.
 - Claude provider failure logs are diagnostic only and never determine access for subsequent requests, so restored credits or permissions take effect immediately.
+- Claude exam outputs must pass client-safe count and marking-scheme validation before display; student papers and teacher rubrics are separate print views to avoid exposing answers.

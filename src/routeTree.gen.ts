@@ -31,6 +31,7 @@ import { Route as AuthenticatedBellScheduleRouteImport } from './routes/_authent
 import { Route as AuthenticatedClassAnchorsRouteImport } from './routes/_authenticated.class-anchors'
 import { Route as AuthenticatedContactSheetRouteImport } from './routes/_authenticated.contact-sheet'
 import { Route as AuthenticatedDailyInsightsRouteImport } from './routes/_authenticated.daily-insights'
+import { Route as AuthenticatedExamRubricRouteImport } from './routes/_authenticated.exam-rubric'
 import { Route as AuthenticatedHebrewCalendarRouteImport } from './routes/_authenticated.hebrew-calendar'
 import { Route as AuthenticatedIngestRouteImport } from './routes/_authenticated.ingest'
 import { Route as AuthenticatedInsightsRouteImport } from './routes/_authenticated.insights'
@@ -222,6 +223,11 @@ const AuthenticatedDailyInsightsRoute =
     path: '/daily-insights',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedExamRubricRoute = AuthenticatedExamRubricRouteImport.update({
+  id: '/exam-rubric',
+  path: '/exam-rubric',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedHebrewCalendarRoute =
   AuthenticatedHebrewCalendarRouteImport.update({
     id: '/hebrew-calendar',
@@ -675,6 +681,7 @@ export interface FileRoutesByFullPath {
   '/class-anchors': typeof AuthenticatedClassAnchorsRoute
   '/contact-sheet': typeof AuthenticatedContactSheetRoute
   '/daily-insights': typeof AuthenticatedDailyInsightsRoute
+  '/exam-rubric': typeof AuthenticatedExamRubricRoute
   '/hebrew-calendar': typeof AuthenticatedHebrewCalendarRoute
   '/ingest': typeof AuthenticatedIngestRoute
   '/insights': typeof AuthenticatedInsightsRoute
@@ -770,6 +777,7 @@ export interface FileRoutesByTo {
   '/class-anchors': typeof AuthenticatedClassAnchorsRoute
   '/contact-sheet': typeof AuthenticatedContactSheetRoute
   '/daily-insights': typeof AuthenticatedDailyInsightsRoute
+  '/exam-rubric': typeof AuthenticatedExamRubricRoute
   '/hebrew-calendar': typeof AuthenticatedHebrewCalendarRoute
   '/ingest': typeof AuthenticatedIngestRoute
   '/insights': typeof AuthenticatedInsightsRoute
@@ -870,6 +878,7 @@ export interface FileRoutesById {
   '/_authenticated/class-anchors': typeof AuthenticatedClassAnchorsRoute
   '/_authenticated/contact-sheet': typeof AuthenticatedContactSheetRoute
   '/_authenticated/daily-insights': typeof AuthenticatedDailyInsightsRoute
+  '/_authenticated/exam-rubric': typeof AuthenticatedExamRubricRoute
   '/_authenticated/hebrew-calendar': typeof AuthenticatedHebrewCalendarRoute
   '/_authenticated/ingest': typeof AuthenticatedIngestRoute
   '/_authenticated/insights': typeof AuthenticatedInsightsRoute
@@ -971,6 +980,7 @@ export interface FileRouteTypes {
     | '/class-anchors'
     | '/contact-sheet'
     | '/daily-insights'
+    | '/exam-rubric'
     | '/hebrew-calendar'
     | '/ingest'
     | '/insights'
@@ -1066,6 +1076,7 @@ export interface FileRouteTypes {
     | '/class-anchors'
     | '/contact-sheet'
     | '/daily-insights'
+    | '/exam-rubric'
     | '/hebrew-calendar'
     | '/ingest'
     | '/insights'
@@ -1165,6 +1176,7 @@ export interface FileRouteTypes {
     | '/_authenticated/class-anchors'
     | '/_authenticated/contact-sheet'
     | '/_authenticated/daily-insights'
+    | '/_authenticated/exam-rubric'
     | '/_authenticated/hebrew-calendar'
     | '/_authenticated/ingest'
     | '/_authenticated/insights'
@@ -1421,6 +1433,13 @@ declare module '@tanstack/react-router' {
       path: '/daily-insights'
       fullPath: '/daily-insights'
       preLoaderRoute: typeof AuthenticatedDailyInsightsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/exam-rubric': {
+      id: '/_authenticated/exam-rubric'
+      path: '/exam-rubric'
+      fullPath: '/exam-rubric'
+      preLoaderRoute: typeof AuthenticatedExamRubricRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/hebrew-calendar': {
@@ -1978,6 +1997,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedClassAnchorsRoute: typeof AuthenticatedClassAnchorsRoute
   AuthenticatedContactSheetRoute: typeof AuthenticatedContactSheetRoute
   AuthenticatedDailyInsightsRoute: typeof AuthenticatedDailyInsightsRoute
+  AuthenticatedExamRubricRoute: typeof AuthenticatedExamRubricRoute
   AuthenticatedHebrewCalendarRoute: typeof AuthenticatedHebrewCalendarRoute
   AuthenticatedIngestRoute: typeof AuthenticatedIngestRoute
   AuthenticatedInsightsRoute: typeof AuthenticatedInsightsRoute
@@ -2034,6 +2054,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedClassAnchorsRoute: AuthenticatedClassAnchorsRoute,
   AuthenticatedContactSheetRoute: AuthenticatedContactSheetRoute,
   AuthenticatedDailyInsightsRoute: AuthenticatedDailyInsightsRoute,
+  AuthenticatedExamRubricRoute: AuthenticatedExamRubricRoute,
   AuthenticatedHebrewCalendarRoute: AuthenticatedHebrewCalendarRoute,
   AuthenticatedIngestRoute: AuthenticatedIngestRoute,
   AuthenticatedInsightsRoute: AuthenticatedInsightsRoute,
