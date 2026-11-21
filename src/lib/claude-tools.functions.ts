@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { advisorInput, interventionPlan, sugyaInput, sugyaResult } from "./claude-tools.schemas";
+import { advisorInput, interventionPlan, lessonPlanInput, lessonPlanResult, sugyaInput, sugyaResult } from "./claude-tools.schemas";
 import { hebrewDate } from "./hebrew-date";
 
 const BLOCK_SOURCE = "claude-tools-access-block";
@@ -11,13 +11,23 @@ const outputSchemas = {
   sugya: objectSchema({ title: stringSchema, introduction: stringSchema, discussion: { type: "array", items: stringSchema }, nextLesson: stringSchema, sourceCaution: stringSchema }),
   advisor: objectSchema({ summary: stringSchema, steps: { type: "array", items: objectSchema({ title: stringSchema, action: stringSchema, success: stringSchema }) } }),
   letter: objectSchema({ subject: stringSchema, body: stringSchema }),
+  lesson: objectSchema({
+    title: stringSchema,
+    objectives: { type: "array", items: stringSchema },
+    opening: stringSchema,
+    timeline: { type: "array", items: objectSchema({ minutes: { type: "number" }, activity: stringSchema }) },
+    guidingQuestions: { type: "array", items: stringSchema },
+    worksheetLevels: { type: "array", items: objectSchema({ level: stringSchema, questions: { type: "array", items: stringSchema } }) },
+    homework: stringSchema,
+    sourceCaution: stringSchema,
+  }),
 };
 async function generate(context: { supabase: any; userId: string }, key: string | undefined, system: string, input: unknown) {
   if (!key) throw new Error("שירות Claude אינו מוגדר כרגע.");
   // Logs are diagnostic only: a past provider failure must never block a new request.
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { runClaude } = await import("./claude-tools.server");
-  const schema = input && typeof input === "object" && "studentName" in input ? outputSchemas.letter : input && typeof input === "object" && "dilemma" in input ? outputSchemas.advisor : outputSchemas.sugya;
+  const schema = input && typeof input === "object" && "studentName" in input ? outputSchemas.letter : input && typeof input === "object" && "dilemma" in input ? outputSchemas.advisor : input && typeof input === "object" && "gradeLevel" in input ? outputSchemas.lesson : outputSchemas.sugya;
   try { return await runClaude(key, system, input, schema); }
   catch (error) {
     const status = error && typeof error === "object" && "status" in error ? Number(error.status) : 0;
@@ -76,4 +86,13 @@ export const generateAppreciationLetter = createServerFn({ method: "POST" }).mid
       });
     const { parseClaudeJson } = await import("./claude-tools.server");
     return z.object({ subject: z.string(), body: z.string() }).parse(parseClaudeJson(raw));
+  });
+export const generateLessonPlan = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+  .inputValidator((d) => lessonPlanInput.parse(d)).handler(async ({ data, context }) => {
+    const { requireActiveAITrial } = await import("./ai-entitlement.server");
+    await requireActiveAITrial(context.supabase, context.userId);
+    const raw = await generate(context, process.env['LOVABLE_API_KEY'],
+      'אתה הרב המלמד. הכן מערך שיעור מלא בעברית מכובדת לפי המקצוע, שכבת הגיל, הנושא ומשך השיעור בנתוני המשתמש. כלול מטרות, פתיחה, ציר זמן שסך דקותיו שווה בדיוק למשך השיעור, שאלות מנחות להבנה, ובדיוק שלוש רמות של דפי עבודה (תמיכה, רגיל, העשרה) מוכנות להדפסת A4, ושיעורי בית. כשאין טקסט מקור, אל תמציא ציטוטים או מראי מקומות; ציין שחובה לאמת את המקור. החזר JSON בלבד: {"title":"","objectives":[""],"opening":"","timeline":[{"minutes":0,"activity":""}],"guidingQuestions":[""],"worksheetLevels":[{"level":"","questions":[""]}],"homework":"","sourceCaution":""}.', data);
+    const { parseClaudeJson } = await import("./claude-tools.server");
+    return lessonPlanResult.parse(parseClaudeJson(raw));
   });

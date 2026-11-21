@@ -35,6 +35,7 @@ import { Route as AuthenticatedHebrewCalendarRouteImport } from './routes/_authe
 import { Route as AuthenticatedIngestRouteImport } from './routes/_authenticated.ingest'
 import { Route as AuthenticatedInsightsRouteImport } from './routes/_authenticated.insights'
 import { Route as AuthenticatedInstitutionRouteImport } from './routes/_authenticated.institution'
+import { Route as AuthenticatedLessonPlannerRouteImport } from './routes/_authenticated.lesson-planner'
 import { Route as AuthenticatedMapRouteImport } from './routes/_authenticated.map'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated.onboarding'
 import { Route as AuthenticatedOverviewRouteImport } from './routes/_authenticated.overview'
@@ -241,6 +242,12 @@ const AuthenticatedInstitutionRoute =
   AuthenticatedInstitutionRouteImport.update({
     id: '/institution',
     path: '/institution',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedLessonPlannerRoute =
+  AuthenticatedLessonPlannerRouteImport.update({
+    id: '/lesson-planner',
+    path: '/lesson-planner',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedMapRoute = AuthenticatedMapRouteImport.update({
@@ -672,6 +679,7 @@ export interface FileRoutesByFullPath {
   '/ingest': typeof AuthenticatedIngestRoute
   '/insights': typeof AuthenticatedInsightsRoute
   '/institution': typeof AuthenticatedInstitutionRoute
+  '/lesson-planner': typeof AuthenticatedLessonPlannerRoute
   '/map': typeof AuthenticatedMapRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/overview': typeof AuthenticatedOverviewRoute
@@ -766,6 +774,7 @@ export interface FileRoutesByTo {
   '/ingest': typeof AuthenticatedIngestRoute
   '/insights': typeof AuthenticatedInsightsRoute
   '/institution': typeof AuthenticatedInstitutionRoute
+  '/lesson-planner': typeof AuthenticatedLessonPlannerRoute
   '/map': typeof AuthenticatedMapRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/overview': typeof AuthenticatedOverviewRoute
@@ -865,6 +874,7 @@ export interface FileRoutesById {
   '/_authenticated/ingest': typeof AuthenticatedIngestRoute
   '/_authenticated/insights': typeof AuthenticatedInsightsRoute
   '/_authenticated/institution': typeof AuthenticatedInstitutionRoute
+  '/_authenticated/lesson-planner': typeof AuthenticatedLessonPlannerRoute
   '/_authenticated/map': typeof AuthenticatedMapRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/overview': typeof AuthenticatedOverviewRoute
@@ -965,6 +975,7 @@ export interface FileRouteTypes {
     | '/ingest'
     | '/insights'
     | '/institution'
+    | '/lesson-planner'
     | '/map'
     | '/onboarding'
     | '/overview'
@@ -1059,6 +1070,7 @@ export interface FileRouteTypes {
     | '/ingest'
     | '/insights'
     | '/institution'
+    | '/lesson-planner'
     | '/map'
     | '/onboarding'
     | '/overview'
@@ -1157,6 +1169,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ingest'
     | '/_authenticated/insights'
     | '/_authenticated/institution'
+    | '/_authenticated/lesson-planner'
     | '/_authenticated/map'
     | '/_authenticated/onboarding'
     | '/_authenticated/overview'
@@ -1436,6 +1449,13 @@ declare module '@tanstack/react-router' {
       path: '/institution'
       fullPath: '/institution'
       preLoaderRoute: typeof AuthenticatedInstitutionRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/lesson-planner': {
+      id: '/_authenticated/lesson-planner'
+      path: '/lesson-planner'
+      fullPath: '/lesson-planner'
+      preLoaderRoute: typeof AuthenticatedLessonPlannerRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/map': {
@@ -1962,6 +1982,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedIngestRoute: typeof AuthenticatedIngestRoute
   AuthenticatedInsightsRoute: typeof AuthenticatedInsightsRoute
   AuthenticatedInstitutionRoute: typeof AuthenticatedInstitutionRoute
+  AuthenticatedLessonPlannerRoute: typeof AuthenticatedLessonPlannerRoute
   AuthenticatedMapRoute: typeof AuthenticatedMapRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedOverviewRoute: typeof AuthenticatedOverviewRoute
@@ -2017,6 +2038,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedIngestRoute: AuthenticatedIngestRoute,
   AuthenticatedInsightsRoute: AuthenticatedInsightsRoute,
   AuthenticatedInstitutionRoute: AuthenticatedInstitutionRoute,
+  AuthenticatedLessonPlannerRoute: AuthenticatedLessonPlannerRoute,
   AuthenticatedMapRoute: AuthenticatedMapRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedOverviewRoute: AuthenticatedOverviewRoute,

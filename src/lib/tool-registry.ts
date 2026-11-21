@@ -61,6 +61,7 @@ export const TOOLS: ToolEntry[] = [
 
   // --- assess ---
   { to: "/sugya-generator", section: "assess", requires: "any", icon: "BookOpen", label: "מחולל סוגיות כיתה · Claude", desc: "מקצוע ומקום לימוד" },
+  { to: "/lesson-planner", section: "assess", requires: "any", icon: "ClipboardList", label: "מחולל מערכי שיעור · Claude", desc: "מערך מלא עם דפי עבודה בשלוש רמות, מוכן להדפסת A4" },
   { to: "/teacher-advisor", section: "assess", requires: "any", icon: "Sparkles", label: "היועץ הפדגוגי למלמד · Claude", desc: "דילמה כיתתית ותוכנית בשלושה צעדים" },
   { to: "/questions", section: "assess", requires: "any", icon: "ClipboardList", label: "מאגר שאלות", desc: "בנק שאלות לפי נושא ומקצוע" },
   { to: "/insights", section: "assess", requires: "any", icon: "LineChart", label: "תובנות", desc: "מגמות ציונים, נוכחות והתנהגות" },
