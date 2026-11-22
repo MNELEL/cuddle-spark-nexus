@@ -45,7 +45,6 @@ import {
   listUsersWithRoles,
   assignRole,
   removeRole,
-  bootstrapFirstAdmin,
   type Role,
 } from "@/lib/user-roles.functions";
 import {
@@ -96,7 +95,6 @@ function UserManagementPage() {
   const assignRoleFn = useServerFn(assignRole);
   const attachClassesFn = useServerFn(attachTeacherClassesToInstitution);
   const removeRoleFn = useServerFn(removeRole);
-  const bootstrapFn = useServerFn(bootstrapFirstAdmin);
   const listInstitutionsFn = useServerFn(listInstitutions);
   const createInstitutionFn = useServerFn(createInstitution);
   const listInstitutionClassesFn = useServerFn(listInstitutionClasses);
@@ -220,23 +218,6 @@ function UserManagementPage() {
     },
   });
 
-  const bootstrapMutation = useMutation({
-    mutationFn: async () => {
-      return await bootstrapFn();
-    },
-    onSuccess: (res) => {
-      if (res.ok) {
-        toast.success(res.message);
-        queryClient.invalidateQueries({ queryKey: ["can-manage-users"] });
-        queryClient.invalidateQueries({ queryKey: ["system-admins"] });
-      } else {
-        toast.info(res.message);
-      }
-    },
-    onError: (err) => {
-      toast.error(err instanceof Error ? err.message : "האתחול נכשל");
-    },
-  });
 
   if (isAdminLoading) {
     return (
@@ -277,8 +258,7 @@ function UserManagementPage() {
                 </li>
               </ol>
               <p className="mt-3 border-t pt-3 text-xs text-muted-foreground">
-                מנהל מערכת הוא משתמש עם תפקיד <strong>admin</strong> בטבלת התפקידים. בלחיצה על "אתחל מנהל מערכת ראשון"
-                (כאשר אין עדיין מנהל) או על ידי הקצאת תפקיד admin על ידי מנהל קיים.
+                מנהל מערכת הוא משתמש עם תפקיד <strong>admin</strong> בטבלת התפקידים. התפקיד מוקצה על ידי מנהל מערכת קיים בלבד.
               </p>
             </div>
 
@@ -290,21 +270,7 @@ function UserManagementPage() {
                   יצירת קשר עם מנהל המערכת
                 </a>
               </Button>
-              <Button
-                variant="ghost"
-                disabled={bootstrapMutation.isPending}
-                onClick={() => bootstrapMutation.mutate()}
-              >
-                {bootstrapMutation.isPending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
-                אתחל מנהל מערכת ראשון
-              </Button>
             </div>
-            <p className="text-xs text-muted-foreground">
-              כפתור האתחול פועל רק כאשר אין עדיין מנהל במערכת.
-              אחרי הלחיצה, החשבון שלך יקבל תפקיד מנהל מערכת באופן מיידי — בלי צורך באישור נוסף —
-              ותוכל לנהל משתמשים ותפקידים בעמוד זה. השינוי משפיע על הרשאות הניהול מיד,
-              אך לא על רשימות הכיתות או התלמידים הקיימות.
-            </p>
             <Link to="/classes" className="inline-block text-sm text-primary hover:underline">
               <ArrowLeft className="me-1 inline h-4 w-4" /> חזרה לכיתות
             </Link>

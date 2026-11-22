@@ -212,28 +212,6 @@ export const removeRole = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const bootstrapFirstAdmin = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { supabase, userId } = context;
-
-    const { data: existingAdmin } = await supabase
-      .from("user_roles")
-      .select("id")
-      .eq("role", "admin")
-      .limit(1)
-      .single();
-    if (existingAdmin) {
-      return { ok: false, message: "כבר קיים מנהל במערכת" };
-    }
-
-    const { error } = await supabase
-      .from("user_roles")
-      .insert({ user_id: userId, role: "admin" });
-    if (error) throw new Error(error.message);
-    return { ok: true, message: "נוצר מנהל מערכת ראשון" };
-  });
-
 /**
  * Server-side gate for the user-management screen.
  * Both admins and institution principals may open it; write actions on roles
