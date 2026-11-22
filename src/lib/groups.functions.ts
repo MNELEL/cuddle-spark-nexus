@@ -53,6 +53,14 @@ export const setStudentGroups = createServerFn({ method: "POST" })
     group_ids: z.array(z.string().uuid()),
   }).parse(d))
   .handler(async ({ data, context }) => {
+    // The student must belong to a class owned by the caller.
+    const { data: own } = await context.supabase
+      .from("students")
+      .select("id, classes!inner(owner_id)")
+      .eq("id", data.student_id)
+      .eq("classes.owner_id", context.userId)
+      .maybeSingle();
+    if (!own) throw new Error("התלמיד לא נמצא.");
     await context.supabase.from("student_groups").delete().eq("student_id", data.student_id);
     if (data.group_ids.length) {
       const rows = data.group_ids.map((gid) => ({ student_id: data.student_id, group_id: gid }));

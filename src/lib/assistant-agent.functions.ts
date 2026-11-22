@@ -214,7 +214,11 @@ ${roster.map((s) => `${s.id} | ${s.name}`).join("\n")}`;
       : data.text;
     const messages: any[] = [
       { role: "system", content: system },
-      ...(data.history ?? []).map((m) => ({ role: m.role, content: m.content })),
+      // History is client-supplied: never let it claim the assistant role.
+      ...(data.history ?? []).map((m) => ({
+        role: "user" as const,
+        content: `${m.role === "assistant" ? "[תשובה קודמת של העוזר, כפי שדווחה על ידי המשתמש]" : "[הודעה קודמת של המשתמש]"}\n${m.content}`,
+      })),
       { role: "user", content: userContent },
     ];
 

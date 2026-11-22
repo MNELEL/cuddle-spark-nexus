@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { callLovableAI } from "./ai-gateway.server";
+import { requireActiveAITrial } from "./ai-entitlement.server";
 
 export type ExamRubricItem = {
   id: string;
@@ -38,7 +39,8 @@ const inputSchema = z.object({
 export const analyzeExamPhoto = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => inputSchema.parse(d))
-  .handler(async ({ data }): Promise<ExamScanResult> => {
+  .handler(async ({ data, context }): Promise<ExamScanResult> => {
+    await requireActiveAITrial(context.supabase, context.userId);
     const rubricText = data.rubric.trim() ||
       "אין מחוון מפורש. הערך את איכות התשובות בצורה הוגנת: הבנה, דיוק, וניסוח.";
     const system = `אתה בודק מבחנים בכתב-יד של תלמידי תלמוד תורה / חיידר / בתי ספר בעברית.

@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { callLovableAI } from "./ai-gateway.server";
+import { requireActiveAITrial } from "./ai-entitlement.server";
 
 export type ExamDifficulty = "easy" | "medium" | "hard";
 export type ExamQuestionType = "open" | "mc";
@@ -47,7 +48,8 @@ const DIFF_LABEL: Record<ExamDifficulty, string> = {
 export const generateExam = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => inputSchema.parse(d))
-  .handler(async ({ data }): Promise<GeneratedExam> => {
+  .handler(async ({ data, context }): Promise<GeneratedExam> => {
+    await requireActiveAITrial(context.supabase, context.userId);
     const totalRequested = Math.max(1, data.openCount + data.mcCount);
     const numQ = Math.max(1, Math.min(30, totalRequested));
 

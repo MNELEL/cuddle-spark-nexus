@@ -84,7 +84,8 @@ export const listInstitutionTeachers = createServerFn({ method: "GET" })
     const { data: classes, error: cErr } = await supabaseAdmin
       .from("classes")
       .select("id, owner_id")
-      .in("owner_id", teacherIds);
+      .in("owner_id", teacherIds)
+      .eq("institution_id", scope.institutionId);
     if (cErr) { console.error("[DB Error]", cErr); throw new Error("הפעולה נכשלה. נסה שוב."); }
 
     const classOwner: Record<string, string> = {};

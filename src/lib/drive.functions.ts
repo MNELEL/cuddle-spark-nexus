@@ -4,10 +4,23 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { driveDownloadFile, driveListFolder, type DriveFile } from "@/lib/drive.server";
 
 /** רשימת קבצים ותיקיות בתוך תיקיית Drive אחת. */
+const DRIVE_ID = z.string().min(1).max(200).regex(/^[A-Za-z0-9_-]+$/);
+
+/** The Drive connection is shared app-wide, so only app admins may browse or import from it. */
+async function assertDriveAdmin(supabase: { rpc: (...a: never[]) => unknown }, userId: string) {
+  const { data, error } = await (supabase as unknown as {
+    rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>;
+  }).rpc("has_role", { _user_id: userId, _role: "admin" });
+  if (error || data !== true) throw new Error("ייבוא מ-Google Drive זמין למנהלי המערכת בלבד.");
+}
+
 export const listDriveFolder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ folderId: z.string().min(1).max(500) }).parse(d))
-  .handler(async ({ data }) => driveListFolder(data.folderId));
+  .inputValidator((d) => z.object({ folderId: DRIVE_ID }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertDriveAdmin(context.supabase as never, context.userId);
+    return driveListFolder(data.folderId);
+  });
 
 export type DriveImportResult = {
   ok: boolean;
@@ -24,7 +37,7 @@ export const importDriveFile = createServerFn({ method: "POST" })
     z
       .object({
         file: z.object({
-          id: z.string().min(1).max(500),
+          id: DRIVE_ID,
           name: z.string().min(1).max(500),
           mimeType: z.string().max(300),
         }),
@@ -36,6 +49,7 @@ export const importDriveFile = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<DriveImportResult> => {
     const f: DriveFile = { id: data.file.id, name: data.file.name, mimeType: data.file.mimeType, size: null, modifiedTime: null };
     const { supabase, userId } = context;
+    await assertDriveAdmin(supabase as never, userId);
     try {
       const { bytes, name, mime } = await driveDownloadFile(f);
 
